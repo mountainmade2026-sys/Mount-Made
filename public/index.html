@@ -2282,6 +2282,49 @@
                 });
             }
         });
+
+        // ── Typing placeholder animation ──
+        (function() {
+            const words = ['pickles', 'bamboo shoot', 'ngari', 'chilli', 'mushroom'];
+            const prefix = 'Search for ';
+            let wordIdx = 0, charIdx = 0, deleting = false;
+
+            function tick() {
+                const input = document.getElementById('home-search-input');
+                if (!input || document.activeElement === input) {
+                    setTimeout(tick, 300);
+                    return;
+                }
+
+                const word = words[wordIdx];
+                if (deleting) {
+                    charIdx--;
+                } else {
+                    charIdx++;
+                }
+
+                input.placeholder = prefix + word.slice(0, charIdx) + (deleting ? '' : '|');
+
+                let delay = deleting ? 60 : 110;
+
+                if (!deleting && charIdx === word.length) {
+                    // Finished typing — pause then start deleting
+                    input.placeholder = prefix + word;
+                    delay = 1600;
+                    deleting = true;
+                } else if (deleting && charIdx === 0) {
+                    // Finished deleting — move to next word
+                    deleting = false;
+                    wordIdx = (wordIdx + 1) % words.length;
+                    delay = 400;
+                }
+
+                setTimeout(tick, delay);
+            }
+
+            // Start after a short delay so the page settles
+            setTimeout(tick, 800);
+        })();
     </script>
 </body>
 </html>
