@@ -406,6 +406,11 @@ const auth = {
 
     document.body.classList.add('auth-ready');
 
+    // Always update mobile bottom nav visibility regardless of page layout
+    if (typeof window.mmBnavSetAuth === 'function') {
+      window.mmBnavSetAuth(this.isAuthenticated());
+    }
+
     if (!authButtons || !userMenu) return;
 
     if (this.isAuthenticated()) {
@@ -432,10 +437,7 @@ const auth = {
     // Update delivery address summary under logo
     this.updateDeliveryAddressUI();
 
-    // Show/hide mobile bottom nav based on login state
-    if (typeof window.mmBnavSetAuth === 'function') {
-      window.mmBnavSetAuth(this.isAuthenticated());
-    }
+    // (mmBnavSetAuth is called at the top of updateUI, before the early-return guard)
   },
 
   async fetchPrimaryDeliveryAddress(force = false) {
@@ -1198,9 +1200,9 @@ function createAlertContainer() { /* legacy — replaced by mm-toast-container *
       closeProfileSheet();
       if (typeof showConfirmDialog === 'function') {
         const ok = await showConfirmDialog('Are you sure you want to logout?', { title: 'Logout', confirmText: 'Logout' });
-        if (ok && window.auth) await window.auth.logout();
-      } else if (window.auth) {
-        await window.auth.logout();
+        if (ok) await auth.logout();
+      } else {
+        await auth.logout();
       }
     });
 
@@ -1209,6 +1211,14 @@ function createAlertContainer() { /* legacy — replaced by mm-toast-container *
 
   function openProfileSheet() {
     const overlay = getOrCreateProfileSheet();
+
+    // Always sync latest user data (sheet may have been created with defaults)
+    if (typeof auth !== 'undefined' && auth.currentUser) {
+      if (typeof window.mmBnavUpdateProfile === 'function') {
+        window.mmBnavUpdateProfile(auth.currentUser);
+      }
+    }
+
     // Sync current theme label
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     const icon = overlay.querySelector('#mm-ps-theme-icon');
