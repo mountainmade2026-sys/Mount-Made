@@ -425,6 +425,11 @@ const auth = {
 
     // Update delivery address summary under logo
     this.updateDeliveryAddressUI();
+
+    // Show/hide mobile bottom nav based on login state
+    if (typeof window.mmBnavSetAuth === 'function') {
+      window.mmBnavSetAuth(this.isAuthenticated());
+    }
   },
 
   async fetchPrimaryDeliveryAddress(force = false) {
@@ -1059,6 +1064,9 @@ function createAlertContainer() { /* legacy — replaced by mm-toast-container *
 
     document.body.appendChild(nav);
     document.body.classList.add('has-bottom-nav');
+    // Hide until auth state is confirmed
+    nav.style.display = 'none';
+    document.body.classList.remove('has-bottom-nav');
 
     // Menu button → open hamburger nav
     const menuBtn = nav.querySelector('#mm-bnav-menu-btn');
@@ -1078,6 +1086,22 @@ function createAlertContainer() { /* legacy — replaced by mm-toast-container *
   } else {
     init();
   }
+
+  // Called by auth.updateUI() to show/hide based on login state
+  window.mmBnavSetAuth = function (isLoggedIn) {
+    if (!shouldShowBottomNav()) return;
+    // Ensure the nav exists (in case init hasn't run yet)
+    if (!document.getElementById('mm-bottom-nav')) init();
+    const nav = document.getElementById('mm-bottom-nav');
+    if (!nav) return;
+    if (isLoggedIn) {
+      nav.style.display = '';
+      document.body.classList.add('has-bottom-nav');
+    } else {
+      nav.style.display = 'none';
+      document.body.classList.remove('has-bottom-nav');
+    }
+  };
 })();
 
 
