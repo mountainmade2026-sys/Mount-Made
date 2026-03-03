@@ -8957,8 +8957,16 @@
                 default:          return `width:100%;max-height:${s}px;object-fit:cover;border-radius:0;display:block;`; // full
             }
         }
-        // Alias used in older code paths
         function _bannerShapePreviewStyle(shape, size) { return _bannerShapeStyle(shape, size); }
+
+        // Crop ratio for each shape — circle/square/star/triangle need 1:1 so image fits the shape
+        function _getCropRatio(type, shape) {
+            switch (shape) {
+                case 'circle': case 'square': case 'triangle': case 'star': return [1, 1];
+                case 'rectangle': return [16, 9];
+                default: return type === 'pc' ? [20, 8] : [9, 16]; // full
+            }
+        }
 
         const _BANNER_SHAPES = [
             { key: 'full',      label: '⬜ Full',      icon: 'fas fa-expand' },
@@ -8979,20 +8987,32 @@
             btn.style.background = 'var(--primary)';
             btn.style.color = '#fff';
             btn.style.borderColor = 'var(--primary)';
-            window[`_bsShape_${slotId}`] = btn.dataset.shape;
-            // Sync size slider range label hint
-            const sizeLabel = document.getElementById(`${slotId}_sizelabel`);
-            const size = parseInt(window[`_bsSize_${slotId}`]) || _defaultBannerSize(btn.dataset.shape);
-            window[`_bsSize_${slotId}`] = size;
-            if (sizeLabel) sizeLabel.textContent = size + 'px';
+            const newShape = btn.dataset.shape;
+            window[`_bsShape_${slotId}`] = newShape;
+            // Reset size to shape default when shape changes
+            const newDefault = _defaultBannerSize(newShape);
+            window[`_bsSize_${slotId}`] = newDefault;
             const sizeRange = document.getElementById(`${slotId}_sizer`);
-            if (sizeRange) sizeRange.value = Math.min(Math.max(size, parseInt(sizeRange.min)), parseInt(sizeRange.max));
-            // Re-apply to raw preview + section preview if image loaded
+            const sizeLabel = document.getElementById(`${slotId}_sizelabel`);
+            if (sizeRange) sizeRange.value = newDefault;
+            if (sizeLabel) sizeLabel.textContent = newDefault + 'px';
+            // Re-crop with new ratio if a file is already loaded
+            const bsType = document.getElementById(slotId)?.dataset?.bstype;
+            const file   = window[`_bsFile_${slotId}`];
+            if (file && bsType) {
+                const isGif = file.type === 'image/gif' || file.name.toLowerCase().endsWith('.gif');
+                if (!isGif) {
+                    const [rW2, rH2] = _getCropRatio(bsType, newShape);
+                    const cx = parseFloat(document.getElementById(`${slotId}_cx`)?.value ?? 50);
+                    const cy = parseFloat(document.getElementById(`${slotId}_cy`)?.value ?? 50);
+                    _cropAndPreviewSlot(bsType, slotId, file, cx, cy, rW2, rH2);
+                    return; // _applySlotPreview + _refreshSectionPreview called inside
+                }
+            }
+            // No file — just update preview style if src present
             const prevEl = document.getElementById(`${slotId}_prev`);
             if (prevEl && prevEl.src && prevEl.src !== window.location.href) {
-                prevEl.style.cssText = _bannerShapeStyle(btn.dataset.shape, size);
-                const ph = document.getElementById(`${slotId}_ph`);
-                if (ph) ph.style.display = 'none';
+                prevEl.style.cssText = _bannerShapeStyle(newShape, newDefault);
                 prevEl.style.display = 'block';
             }
             _refreshSectionPreview(slotId);
@@ -9012,20 +9032,24 @@
             _refreshSectionPreview(slotId);
         };
 
-        // Update the homepage-section-preview pane inside the slot
+        // Update the live homepage-section preview inside the slot
         function _refreshSectionPreview(slotId) {
-            const shape   = window[`_bsShape_${slotId}`] || 'full';
-            const size    = parseInt(window[`_bsSize_${slotId}`]) || _defaultBannerSize(shape);
-            const srcEl   = document.getElementById(`${slotId}_prev`);
+            const shape      = window[`_bsShape_${slotId}`] || 'full';
+            const size       = parseInt(window[`_bsSize_${slotId}`]) || _defaultBannerSize(shape);
+            // Compact size for the preview pane so mock title+cards are always visible
+            const isWideBanner = ['full', 'rectangle'].includes(shape);
+            const compactSize = isWideBanner ? Math.min(size, 110) : Math.min(size, 90);
+            const srcEl      = document.getElementById(`${slotId}_prev`);
             const bannerWrap = document.getElementById(`${slotId}_sp_banner`);
-            const imgEl   = document.getElementById(`${slotId}_sp_img`);
-            const phEl    = document.getElementById(`${slotId}_sp_ph`);
+            const imgEl      = document.getElementById(`${slotId}_sp_img`);
+            const phEl       = document.getElementById(`${slotId}_sp_ph`);
             if (!bannerWrap || !imgEl) return;
             const src = srcEl?.src && srcEl.src !== window.location.href ? srcEl.src : null;
-            const isCentered = ['circle','square','triangle','star'].includes(shape);
+            const isCentered = !isWideBanner;
             bannerWrap.style.justifyContent = isCentered ? 'center' : 'flex-start';
+            bannerWrap.style.padding = isCentered ? '8px 0' : '0';
             if (src) {
-                imgEl.style.cssText = _bannerShapeStyle(shape, size);
+                imgEl.style.cssText = _bannerShapeStyle(shape, compactSize);
                 imgEl.src = src;
                 imgEl.style.display = 'block';
                 if (phEl) phEl.style.display = 'none';
@@ -9075,8 +9099,12 @@
                     const previewStyle = _bannerShapeStyle(shape, Math.min(size, 180)).replace('width:100%', 'max-width:280px;width:100%');
                     html += `<div style="position:relative;display:inline-flex;flex-direction:column;align-items:center;gap:4px;max-width:280px;">
                         <img src="${_escBannerAttr(pcData.url)}" style="${previewStyle}" alt="">
-                        <div style="display:flex;gap:4px;">
+                        <div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:center;">
                             <span style="background:rgba(0,0,0,0.55);color:#fff;font-size:0.63rem;padding:1px 6px;border-radius:3px;">PC &middot; ${shape} &middot; ${size}px</span>
+                            <button data-type="pc" data-sid="${sid}"
+                                onclick="_editSavedBanner(this.dataset.type,this.dataset.sid)"
+                                style="background:rgba(37,117,252,0.85);border:none;color:#fff;border-radius:4px;padding:1px 7px;cursor:pointer;font-size:0.68rem;" title="Edit">
+                                <i class="fas fa-edit"></i></button>
                             <button data-type="pc" data-sid="${sid}"
                                 onclick="deleteSavedSectionBanner(this.dataset.type,this.dataset.sid)"
                                 style="background:rgba(220,53,69,0.85);border:none;color:#fff;border-radius:4px;padding:1px 7px;cursor:pointer;font-size:0.68rem;" title="Delete">
@@ -9093,8 +9121,12 @@
                         : _bannerShapeStyle(shape, Math.min(size, 100));
                     html += `<div style="position:relative;display:inline-flex;flex-direction:column;align-items:center;gap:4px;">
                         <img src="${_escBannerAttr(mobData.url)}" style="${previewStyle}" alt="">
-                        <div style="display:flex;gap:4px;">
+                        <div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:center;">
                             <span style="background:rgba(0,0,0,0.55);color:#fff;font-size:0.63rem;padding:1px 6px;border-radius:3px;">MOB &middot; ${shape} &middot; ${size}px</span>
+                            <button data-type="mobile" data-sid="${sid}"
+                                onclick="_editSavedBanner(this.dataset.type,this.dataset.sid)"
+                                style="background:rgba(37,117,252,0.85);border:none;color:#fff;border-radius:4px;padding:1px 7px;cursor:pointer;font-size:0.68rem;" title="Edit">
+                                <i class="fas fa-edit"></i></button>
                             <button data-type="mobile" data-sid="${sid}"
                                 onclick="deleteSavedSectionBanner(this.dataset.type,this.dataset.sid)"
                                 style="background:rgba(220,53,69,0.85);border:none;color:#fff;border-radius:4px;padding:1px 7px;cursor:pointer;font-size:0.68rem;" title="Delete">
@@ -9128,23 +9160,25 @@
         window.addSectionBannerSlot = function(type) {
             const slotId = `bs_${type}_${++_bannerSlotCounter}`;
             const isPC = type === 'pc';
-            const rW = isPC ? 20 : 9, rH = isPC ? 8 : 16;
             const container = document.getElementById(`${type}-banners-pending`);
             if (!container) return;
-            window[`_bsShape_${slotId}`] = 'full';
-            window[`_bsSize_${slotId}`]  = 200;
+            const defaultShape = 'full';
+            const defaultSize  = _defaultBannerSize(defaultShape);
+            window[`_bsShape_${slotId}`] = defaultShape;
+            window[`_bsSize_${slotId}`]  = defaultSize;
 
             const shapeBtns = _BANNER_SHAPES.map(s => {
-                const isActive = s.key === 'full';
+                const isActive = s.key === defaultShape;
                 const aStyle = isActive ? 'background:var(--primary);color:#fff;border-color:var(--primary);' : 'background:var(--bg-secondary);color:var(--text-primary);border-color:var(--border);';
                 return `<button data-shape="${s.key}" onclick="_selectBannerShape(this,'${slotId}')"
                     style="${aStyle}border:1px solid;border-radius:20px;padding:3px 11px;font-size:0.78rem;cursor:pointer;white-space:nowrap;">${s.label}</button>`;
             }).join('');
 
-            const mockCards = Array(4).fill('<div style="background:#e8e9eb;border-radius:5px;aspect-ratio:3/4;"></div>').join('');
+            const mockCards = Array(4).fill('<div style="background:#e8e9eb;border-radius:4px;aspect-ratio:3/4;"></div>').join('');
 
             const slot = document.createElement('div');
             slot.id = slotId;
+            slot.dataset.bstype = type;
             slot.style.cssText = 'border:1.5px dashed var(--border);border-radius:10px;padding:0.9rem;margin-bottom:0.6rem;';
             slot.innerHTML = `
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.7rem;">
@@ -9152,81 +9186,75 @@
                     <button onclick="document.getElementById('${slotId}').remove()" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:1rem;"><i class="fas fa-times"></i></button>
                 </div>
 
-                <!-- Section assign -->
                 <div style="margin-bottom:0.75rem;">
                     <label class="form-label" style="font-size:0.8rem;margin-bottom:0.25rem;"><i class="fas fa-list" style="color:var(--primary);margin-right:0.3rem;"></i>Section</label>
                     <select id="${slotId}_section" class="form-select" style="margin-bottom:0;">${_bannerSectionOptionsHtml()}</select>
                 </div>
 
-                <!-- Shape selector -->
                 <div style="margin-bottom:0.75rem;">
                     <label class="form-label" style="font-size:0.8rem;margin-bottom:0.4rem;"><i class="fas fa-shapes" style="color:var(--primary);margin-right:0.3rem;"></i>Shape</label>
                     <div id="${slotId}_shapebar" style="display:flex;flex-wrap:wrap;gap:0.35rem;">${shapeBtns}</div>
+                    <div style="font-size:0.7rem;color:var(--text-muted);margin-top:0.3rem;">Circle/Square/Triangle/Star crops to 1:1 &middot; Rectangle to 16:9 &middot; Full to banner ratio</div>
                 </div>
 
-                <!-- Size slider -->
                 <div style="margin-bottom:0.85rem;">
                     <label class="form-label" style="font-size:0.8rem;margin-bottom:0.25rem;display:flex;align-items:center;gap:0.5rem;">
-                        <i class="fas fa-expand-arrows-alt" style="color:var(--primary);"></i> Size&nbsp;<span id="${slotId}_sizelabel" style="font-weight:700;color:var(--primary);">200px</span>
-                        <span style="margin-left:auto;font-size:0.72rem;color:var(--text-muted);">drag to resize</span>
+                        <i class="fas fa-expand-arrows-alt" style="color:var(--primary);"></i>Size&nbsp;<span id="${slotId}_sizelabel" style="font-weight:700;color:var(--primary);">${defaultSize}px</span>
                     </label>
-                    <input type="range" id="${slotId}_sizer" min="50" max="400" step="5" value="200"
+                    <input type="range" id="${slotId}_sizer" min="50" max="400" step="5" value="${defaultSize}"
                         style="width:100%;accent-color:var(--primary);" oninput="_updateBannerSize(this,'${slotId}')">
                     <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:var(--text-muted);margin-top:2px;"><span>50px</span><span>400px</span></div>
                 </div>
 
-                <!-- Image file -->
                 <div style="margin-bottom:0.6rem;">
                     <label class="form-label" style="font-size:0.8rem;margin-bottom:0.25rem;"><i class="fas fa-image" style="color:var(--primary);margin-right:0.3rem;"></i>Image / GIF</label>
                     <input type="file" id="${slotId}_file" class="form-input" accept=".jpg,.jpeg,.png,.gif,.webp"
-                        onchange="_onBannerSlotFileChange(this,'${type}','${slotId}',${rW},${rH})">
+                        onchange="_onBannerSlotFileChange(this,'${type}','${slotId}')">
                 </div>
 
-                <!-- Crop sliders -->
                 <div id="${slotId}_croprow" style="display:none;margin-bottom:0.7rem;border:1px solid var(--border);border-radius:6px;padding:0.65rem;">
-                    <label class="form-label" style="font-size:0.8rem;margin-bottom:0.15rem;">&#9986; Crop Horizontal</label>
-                    <input type="range" id="${slotId}_cx" min="0" max="100" value="50" class="form-input"
-                        style="margin-bottom:0.45rem;accent-color:var(--primary);" oninput="_updateBannerSlotCrop(this,'${type}','${slotId}',${rW},${rH})">
-                    <label class="form-label" style="font-size:0.8rem;margin-bottom:0.15rem;">&#9986; Crop Vertical</label>
-                    <input type="range" id="${slotId}_cy" min="0" max="100" value="50" class="form-input"
-                        style="accent-color:var(--primary);" oninput="_updateBannerSlotCrop(this,'${type}','${slotId}',${rW},${rH})">
+                    <div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:0.45rem;">Drag sliders to choose which part of the image is kept inside the shape</div>
+                    <label class="form-label" style="font-size:0.8rem;margin-bottom:0.15rem;">&#9986; Horizontal focus</label>
+                    <input type="range" id="${slotId}_cx" min="0" max="100" value="50"
+                        style="width:100%;margin-bottom:0.45rem;accent-color:var(--primary);"
+                        oninput="_updateBannerSlotCrop(this,'${type}','${slotId}')">
+                    <label class="form-label" style="font-size:0.8rem;margin-bottom:0.15rem;">&#9986; Vertical focus</label>
+                    <input type="range" id="${slotId}_cy" min="0" max="100" value="50"
+                        style="width:100%;accent-color:var(--primary);"
+                        oninput="_updateBannerSlotCrop(this,'${type}','${slotId}')">
                 </div>
 
-                <!-- Homepage Section Preview (live) -->
+                <!-- Live Homepage Section Preview -->
                 <div style="margin-bottom:0.75rem;">
                     <label class="form-label" style="font-size:0.8rem;margin-bottom:0.4rem;display:flex;align-items:center;gap:0.4rem;">
-                        <i class="fas fa-eye" style="color:var(--primary);"></i> Homepage Section Preview
-                        <span style="font-size:0.7rem;color:var(--text-muted);">(live — updates as you adjust)</span>
+                        <i class="fas fa-eye" style="color:var(--primary);"></i>Section Preview
+                        <span style="font-size:0.7rem;color:var(--text-muted);">(updates live)</span>
                     </label>
-                    <div style="border:1.5px solid var(--border);border-radius:8px;overflow:hidden;background:var(--bg-primary);">
-                        <!-- Banner strip -->
-                        <div id="${slotId}_sp_banner" style="width:100%;display:flex;align-items:center;background:#f3f4f6;min-height:40px;overflow:hidden;">
-                            <img id="${slotId}_sp_img" style="display:none;" alt="preview">
-                            <div id="${slotId}_sp_ph" style="width:100%;padding:0.85rem;text-align:center;color:var(--text-muted);font-size:0.75rem;">
-                                <i class="fas fa-image" style="font-size:1.2rem;margin-bottom:4px;display:block;"></i>Banner appears here after selecting image
+                    <div style="border:1.5px solid var(--border);border-radius:8px;overflow:hidden;background:#fff;">
+                        <div id="${slotId}_sp_banner" style="width:100%;display:flex;align-items:center;justify-content:center;background:#f3f4f6;overflow:hidden;">
+                            <img id="${slotId}_sp_img" style="display:none;" alt="">
+                            <div id="${slotId}_sp_ph" style="padding:1.1rem;text-align:center;color:#aaa;font-size:0.73rem;line-height:1.5;">
+                                <i class="fas fa-image" style="font-size:1.4rem;display:block;margin-bottom:4px;color:#ccc;"></i>Select image
                             </div>
                         </div>
-                        <!-- Mock section title -->
-                        <div style="padding:0.55rem 0.8rem 0.35rem;border-top:1px solid var(--border);">
-                            <div style="height:9px;background:#d0d3d8;border-radius:4px;width:38%;margin-bottom:5px;"></div>
-                            <div style="height:6px;background:#e4e5e8;border-radius:3px;width:60%;"></div>
+                        <div style="padding:0.45rem 0.75rem 0.3rem;background:#fff;border-top:1px solid #eee;">
+                            <div style="height:8px;background:#c8cacd;border-radius:3px;width:36%;margin-bottom:5px;"></div>
+                            <div style="height:5px;background:#dfe0e3;border-radius:2px;width:58%;"></div>
                         </div>
-                        <!-- Mock product cards -->
-                        <div style="padding:0.35rem 0.8rem 0.65rem;display:grid;grid-template-columns:repeat(4,1fr);gap:5px;">${mockCards}</div>
+                        <div style="padding:0.3rem 0.6rem 0.5rem;background:#fff;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;">${mockCards}</div>
                     </div>
                 </div>
 
-                <button class="btn btn-primary btn-sm" style="width:100%;" onclick="saveSectionBannerSlot('${type}','${slotId}',${rW},${rH})">
+                <button class="btn btn-primary btn-sm" style="width:100%;" onclick="saveSectionBannerSlot('${type}','${slotId}')">
                     <i class="fas fa-cloud-upload-alt"></i> Upload &amp; Save
                 </button>
 
-                <!-- hidden raw preview for crop reference -->
-                <img id="${slotId}_prev" src="" alt="" style="display:none;">
+                <img id="${slotId}_prev" src="" alt="" style="display:none;position:absolute;pointer-events:none;">
                 <div id="${slotId}_ph" style="display:none;"></div>`;
             container.appendChild(slot);
         };
 
-        window._onBannerSlotFileChange = async function(input, type, slotId, rW, rH) {
+        window._onBannerSlotFileChange = async function(input, type, slotId) {
             const file = input.files?.[0];
             if (!file) return;
             const validation = validateImageFile(file);
@@ -9240,15 +9268,19 @@
                 window[`_bsCropped_${slotId}`] = file;
                 _applySlotPreview(slotId, URL.createObjectURL(file));
             } else {
+                const shape = window[`_bsShape_${slotId}`] || 'full';
+                const [rW, rH] = _getCropRatio(type, shape);
                 await _cropAndPreviewSlot(type, slotId, file, 50, 50, rW, rH);
             }
         };
 
-        window._updateBannerSlotCrop = async function(rangeEl, type, slotId, rW, rH) {
+        window._updateBannerSlotCrop = async function(rangeEl, type, slotId) {
             const file = window[`_bsFile_${slotId}`];
             if (!file) return;
             const isGif = file.name.toLowerCase().endsWith('.gif') || file.type === 'image/gif';
             if (isGif) return;
+            const shape = window[`_bsShape_${slotId}`] || 'full';
+            const [rW, rH] = _getCropRatio(type, shape);
             const cx = parseFloat(document.getElementById(`${slotId}_cx`)?.value ?? 50);
             const cy = parseFloat(document.getElementById(`${slotId}_cy`)?.value ?? 50);
             await _cropAndPreviewSlot(type, slotId, file, cx, cy, rW, rH);
@@ -9275,11 +9307,12 @@
             } catch (e) { console.warn('Banner slot crop error', e); }
         }
 
-        window.saveSectionBannerSlot = async function(type, slotId, rW, rH) {
+        window.saveSectionBannerSlot = async function(type, slotId) {
             const sectionId = document.getElementById(`${slotId}_section`)?.value;
             if (!sectionId) { showAlert('Please choose a section for this banner', 'error'); return; }
             const shape = window[`_bsShape_${slotId}`] || 'full';
             const size  = parseInt(window[`_bsSize_${slotId}`]) || _defaultBannerSize(shape);
+            const [rW, rH] = _getCropRatio(type, shape);
             const fileInput = document.getElementById(`${slotId}_file`);
             let fileToUpload = window[`_bsCropped_${slotId}`];
             if (!fileToUpload && fileInput?.files?.[0]) {
@@ -9289,11 +9322,16 @@
                 const isGif = fileInput.files[0].name.toLowerCase().endsWith('.gif') || fileInput.files[0].type === 'image/gif';
                 fileToUpload = isGif ? fileInput.files[0] : await cropImageToBannerFile(fileInput.files[0], rW, rH, cx, cy);
             }
-            if (!fileToUpload) { showAlert('Please select an image first', 'error'); return; }
+            // Allow saving with existing URL (edit mode — no new file selected)
+            const existingUrl = window[`_bsExistingUrl_${slotId}`];
+            if (!fileToUpload && !existingUrl) { showAlert('Please select an image first', 'error'); return; }
             try {
-                showAlert('Uploading banner…', 'info');
-                const url = await uploadProductImage(fileToUpload);
-                if (!url) throw new Error('Upload failed');
+                showAlert('Saving banner…', 'info');
+                let url = existingUrl || null;
+                if (fileToUpload) {
+                    url = await uploadProductImage(fileToUpload);
+                    if (!url) throw new Error('Upload failed');
+                }
                 const key = `section_${type}_banners_${sectionId}`;
                 const payload = {};
                 payload[key] = JSON.stringify({ url, shape, size });
@@ -9306,6 +9344,51 @@
             } catch (e) {
                 showAlert(e.message || 'Failed to save banner', 'error');
             }
+        };
+
+        // Pre-fill a new slot with existing banner data for editing
+        window._editSavedBanner = function(type, sectionId) {
+            const key  = `section_${type}_banners_${sectionId}`;
+            const data = _parseBannerData((window._sectionBannerSettings || {})[key]);
+            addSectionBannerSlot(type);
+            const slotId = `bs_${type}_${_bannerSlotCounter}`;
+            // Pre-select section
+            const secSel = document.getElementById(`${slotId}_section`);
+            if (secSel) secSel.value = String(sectionId);
+            if (!data) return;
+            // Pre-select shape
+            const shape = data.shape || 'full';
+            window[`_bsShape_${slotId}`] = shape;
+            const shapebar = document.getElementById(`${slotId}_shapebar`);
+            if (shapebar) {
+                shapebar.querySelectorAll('button').forEach(b => {
+                    const active = b.dataset.shape === shape;
+                    b.style.background   = active ? 'var(--primary)' : 'var(--bg-secondary)';
+                    b.style.color        = active ? '#fff' : 'var(--text-primary)';
+                    b.style.borderColor  = active ? 'var(--primary)' : 'var(--border)';
+                });
+            }
+            // Pre-set size
+            const size = data.size || _defaultBannerSize(shape);
+            window[`_bsSize_${slotId}`] = size;
+            const sizeRange = document.getElementById(`${slotId}_sizer`);
+            const sizeLabel = document.getElementById(`${slotId}_sizelabel`);
+            if (sizeRange) sizeRange.value = Math.min(Math.max(size, 50), 400);
+            if (sizeLabel) sizeLabel.textContent = size + 'px';
+            // Store existing URL so user can save without re-uploading
+            window[`_bsExistingUrl_${slotId}`] = data.url;
+            // Load existing image into hidden preview + section preview
+            const prevEl = document.getElementById(`${slotId}_prev`);
+            if (prevEl) {
+                prevEl.src = data.url;
+                prevEl.onload = () => _refreshSectionPreview(slotId);
+                if (prevEl.complete) _refreshSectionPreview(slotId);
+            }
+            // Show crop row
+            const cropRow = document.getElementById(`${slotId}_croprow`);
+            if (cropRow) cropRow.style.display = '';
+            // Scroll to slot
+            document.getElementById(slotId)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         };
 
         // Delete single banner (no index needed — one banner per section per type)
