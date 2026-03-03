@@ -251,9 +251,7 @@
             .section-banner-mobile { display: flex; }
             .banner-shape-full, .banner-shape-rectangle { max-height: 160px; }
         }
-        /* Fallbacks when one type is missing */
-        .section-banners-row.no-mobile .section-banner-pc  { display: flex; }
-        .section-banners-row.no-pc    .section-banner-mobile { display: flex; }
+        /* No cross-device fallback: PC banner stays PC-only, Mobile banner stays Mobile-only */
 
         /* Homepage product cards - compact sizing + better image fit */
         #homepage-sections-container .product-card .card-image {
@@ -1806,11 +1804,9 @@
                     const pcData  = parseBannerData(settings[`section_pc_banners_${section.id}`]);
                     const mobData = parseBannerData(settings[`section_mobile_banners_${section.id}`]);
                     const hasBanners = !!(pcData || mobData);
-                    const noMob = !mobData;
-                    const noPc  = !pcData;
                     let bannersHtml = '';
                     if (hasBanners) {
-                        bannersHtml = `<div class="section-banners-row${noMob ? ' no-mobile' : ''}${noPc ? ' no-pc' : ''}">`;
+                        bannersHtml = `<div class="section-banners-row">`;
                         if (pcData) {
                             bannersHtml += `<div class="section-banner-pc"><div style="${_bannerMaskStyle(pcData.shape, pcData.size)}"><img style="${_bannerInnerImgStyle(pcData.zoom)}" src="${encodeURI(pcData.url)}" alt="${section.name} banner" loading="lazy" decoding="async" onerror="this.closest('.section-banner-pc').style.display='none'"></div></div>`;
                         }
