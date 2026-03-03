@@ -1798,12 +1798,12 @@
                     const sectionProducts = Array.isArray(section.products) ? section.products : [];
                     const sectionHeadingImageUrl = (section.heading_image_url || '').trim();
                     const safeSectionHeadingImageUrl = sectionHeadingImageUrl ? encodeURI(sectionHeadingImageUrl) : '';
-                    const showHeadingImage = !!sectionHeadingImageUrl;
 
                     // Banners from site_settings — one banner per type per section
                     const pcData  = parseBannerData(settings[`section_pc_banners_${section.id}`]);
                     const mobData = parseBannerData(settings[`section_mobile_banners_${section.id}`]);
                     const hasBanners = !!(pcData || mobData);
+                    const showHeadingImage = !!sectionHeadingImageUrl && !hasBanners;
                     let bannersHtml = '';
                     if (hasBanners) {
                         bannersHtml = `<div class="section-banners-row">`;
