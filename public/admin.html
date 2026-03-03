@@ -4339,8 +4339,8 @@
                 baseCropHeight = Math.round(sourceWidth / targetRatio);
             }
 
-            const normalizedZoom = Math.max(60, Math.min(220, parseInt(zoom) || 100));
-            const responsiveWindowScale = Math.max(0.35, Math.min(1, 0.90 / (normalizedZoom / 100)));
+            const normalizedZoom = Math.max(50, Math.min(250, parseInt(zoom) || 100));
+            const responsiveWindowScale = Math.max(0.22, Math.min(1, 0.92 / Math.pow((normalizedZoom / 100), 1.2)));
             const cropWidth = Math.max(1, Math.round(baseCropWidth * responsiveWindowScale));
             const cropHeight = Math.max(1, Math.round(baseCropHeight * responsiveWindowScale));
 
@@ -8976,7 +8976,7 @@
         }
 
         function _bannerInnerImageStyle(zoom = 100) {
-            const z = Math.max(60, Math.min(220, parseInt(zoom) || 100));
+            const z = Math.max(50, Math.min(250, parseInt(zoom) || 100));
             return `width:100%;height:100%;object-fit:cover;display:block;transform:scale(${z / 100});transform-origin:center center;`;
         }
 
@@ -9060,7 +9060,7 @@
         };
 
         window._updateBannerImageZoom = async function(rangeEl, type, slotId) {
-            const zoom = Math.max(60, Math.min(220, parseInt(rangeEl.value) || 100));
+            const zoom = Math.max(50, Math.min(250, parseInt(rangeEl.value) || 100));
             window[`_bsZoom_${slotId}`] = zoom;
             const lbl = document.getElementById(`${slotId}_zoomlabel`);
             if (lbl) lbl.textContent = zoom + '%';
@@ -9085,7 +9085,7 @@
         function _refreshSectionPreview(slotId) {
             const shape      = window[`_bsShape_${slotId}`] || 'full';
             const size       = parseInt(window[`_bsSize_${slotId}`]) || _defaultBannerSize(shape);
-            const zoom       = Math.max(60, Math.min(220, parseInt(window[`_bsZoom_${slotId}`]) || 100));
+            const zoom       = Math.max(50, Math.min(250, parseInt(window[`_bsZoom_${slotId}`]) || 100));
             // Compact size for the preview pane so mock title+cards are always visible
             const isWideBanner = ['full', 'rectangle'].includes(shape);
             const compactSize = isWideBanner ? Math.max(45, Math.min(180, Math.round(size * 0.55))) : Math.max(45, Math.min(140, Math.round(size * 0.75)));
@@ -9274,9 +9274,9 @@
                     <label class="form-label" style="font-size:0.8rem;margin-bottom:0.25rem;display:flex;align-items:center;gap:0.5rem;">
                         <i class="fas fa-search-plus" style="color:var(--primary);"></i>Image Zoom&nbsp;<span id="${slotId}_zoomlabel" style="font-weight:700;color:var(--primary);">${defaultZoom}%</span>
                     </label>
-                    <input type="range" id="${slotId}_zoom" min="60" max="220" step="5" value="${defaultZoom}"
+                    <input type="range" id="${slotId}_zoom" min="50" max="250" step="2" value="${defaultZoom}"
                         style="width:100%;accent-color:var(--primary);" oninput="_updateBannerImageZoom(this,'${type}','${slotId}')">
-                    <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:var(--text-muted);margin-top:2px;"><span>60%</span><span>220%</span></div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:var(--text-muted);margin-top:2px;"><span>50%</span><span>250%</span></div>
                     <div style="font-size:0.7rem;color:var(--text-muted);margin-top:3px;">Zoom changes only image fit inside the same shape</div>
                 </div>
 
@@ -9391,7 +9391,7 @@
             if (!sectionId) { showAlert('Please choose a section for this banner', 'error'); return; }
             const shape = window[`_bsShape_${slotId}`] || 'full';
             const size  = parseInt(window[`_bsSize_${slotId}`]) || _defaultBannerSize(shape);
-            const zoom  = Math.max(60, Math.min(220, parseInt(window[`_bsZoom_${slotId}`]) || 100));
+            const zoom  = Math.max(50, Math.min(250, parseInt(window[`_bsZoom_${slotId}`]) || 100));
             const [rW, rH] = _getCropRatio(type, shape);
             const fileInput = document.getElementById(`${slotId}_file`);
             let fileToUpload = window[`_bsCropped_${slotId}`];
@@ -9402,16 +9402,11 @@
                 const isGif = fileInput.files[0].name.toLowerCase().endsWith('.gif') || fileInput.files[0].type === 'image/gif';
                 fileToUpload = isGif ? fileInput.files[0] : await cropImageToBannerFile(fileInput.files[0], rW, rH, cx, cy, zoom);
             }
-            // Allow saving with existing URL (edit mode — no new file selected)
-            const existingUrl = window[`_bsExistingUrl_${slotId}`];
-            if (!fileToUpload && !existingUrl) { showAlert('Please select an image first', 'error'); return; }
+            if (!fileToUpload) { showAlert('Please select an image or GIF first', 'error'); return; }
             try {
                 showAlert('Saving banner…', 'info');
-                let url = existingUrl || null;
-                if (fileToUpload) {
-                    url = await uploadProductImage(fileToUpload);
-                    if (!url) throw new Error('Upload failed');
-                }
+                const url = await uploadProductImage(fileToUpload);
+                if (!url) throw new Error('Upload failed');
                 const key = `section_${type}_banners_${sectionId}`;
                 const payload = {};
                 payload[key] = JSON.stringify({ url, shape, size, zoom });
@@ -9452,7 +9447,7 @@
             const size = data.size || _defaultBannerSize(shape);
             const clampedSize = Math.min(Math.max(parseInt(size) || _defaultBannerSize(shape), 50), 400);
             window[`_bsSize_${slotId}`] = clampedSize;
-            const zoom = Math.max(60, Math.min(220, parseInt(data.zoom) || 100));
+            const zoom = Math.max(50, Math.min(250, parseInt(data.zoom) || 100));
             window[`_bsZoom_${slotId}`] = zoom;
             const sizeRange = document.getElementById(`${slotId}_sizer`);
             const sizeLabel = document.getElementById(`${slotId}_sizelabel`);
@@ -9462,22 +9457,11 @@
             if (sizeLabel) sizeLabel.textContent = clampedSize + 'px';
             if (zoomRange) zoomRange.value = zoom;
             if (zoomLabel) zoomLabel.textContent = zoom + '%';
-            // Store existing URL so user can save without re-uploading
-            window[`_bsExistingUrl_${slotId}`] = data.url;
-            // Try to load existing image as a File so crop sliders work in edit mode
-            fetch(data.url)
-                .then(res => {
-                    if (!res.ok) throw new Error('Failed to fetch existing image');
-                    return res.blob();
-                })
-                .then(blob => {
-                    const ext = (blob.type || '').split('/')[1] || 'jpg';
-                    window[`_bsFile_${slotId}`] = new File([blob], `existing-banner.${ext}`, { type: blob.type || 'image/jpeg' });
-                })
-                .catch(() => {
-                    // Keep edit-mode save functional even if source cannot be fetched
-                    window[`_bsFile_${slotId}`] = null;
-                });
+            // Force explicit file pick for updates so Site Settings always gets a fresh uploaded file URL
+            window[`_bsFile_${slotId}`] = null;
+            window[`_bsCropped_${slotId}`] = null;
+            const fileInput = document.getElementById(`${slotId}_file`);
+            if (fileInput) fileInput.value = '';
             // Load existing image into hidden preview + section preview
             const prevEl = document.getElementById(`${slotId}_prev`);
             if (prevEl) {

@@ -1760,8 +1760,8 @@ exports.updateSiteSettings = async (req, res) => {
             return res.status(400).json({ error: `${key}: size must be 10-2000 px` });
           }
           const zoom = parsed.zoom ? parseInt(parsed.zoom) : undefined;
-          if (zoom !== undefined && (isNaN(zoom) || zoom < 60 || zoom > 220)) {
-            return res.status(400).json({ error: `${key}: zoom must be 60-220 %` });
+          if (zoom !== undefined && (isNaN(zoom) || zoom < 50 || zoom > 250)) {
+            return res.status(400).json({ error: `${key}: zoom must be 50-250 %` });
           }
           updates.push({ key, value: JSON.stringify({ url, shape, ...(size ? { size } : {}), ...(zoom ? { zoom } : {}) }) });
           continue;
