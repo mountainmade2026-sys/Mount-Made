@@ -200,49 +200,60 @@
         }
         /* Section banners — shape-aware rendering */
         .section-banners-row {
+            width: 100%;
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 0.5rem 0;
+            padding: 0.4rem 0 0.6rem;
         }
-        /* Shape classes */
+        /* Wrapper divs that control PC vs Mobile visibility */
+        .section-banner-pc {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .section-banner-mobile {
+            width: 100%;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+        /* Shape classes applied to <img> */
         .banner-shape-full {
-            display: block; width: 100%; max-height: 160px;
-            object-fit: cover; border-radius: 4px;
+            display: block; width: 100%; max-height: 200px;
+            object-fit: cover; border-radius: 0;
         }
         .banner-shape-rectangle {
-            display: block; width: 100%; max-height: 160px;
+            display: block; width: 100%; max-height: 180px;
             aspect-ratio: 16/9; object-fit: cover; border-radius: 10px;
         }
         .banner-shape-circle {
             display: block; width: 140px; height: 140px;
-            border-radius: 50%; object-fit: cover;
+            border-radius: 50%; object-fit: cover; flex-shrink: 0;
         }
         .banner-shape-square {
             display: block; width: 140px; height: 140px;
-            border-radius: 8px; object-fit: cover;
+            border-radius: 8px; object-fit: cover; flex-shrink: 0;
         }
         .banner-shape-triangle {
             display: block; width: 180px; height: 160px;
-            object-fit: cover;
+            object-fit: cover; flex-shrink: 0;
             clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
         }
         .banner-shape-star {
             display: block; width: 160px; height: 160px;
-            object-fit: cover;
+            object-fit: cover; flex-shrink: 0;
             clip-path: polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);
         }
-        /* PC vs Mobile visibility */
-        .section-banner-pc { display: flex; }
-        .section-banner-mobile { display: none; }
         @media (max-width: 768px) {
-            .section-banner-pc { display: none; }
+            .section-banner-pc  { display: none; }
             .section-banner-mobile { display: flex; }
-            .banner-shape-full, .banner-shape-rectangle { max-height: 200px; }
+            .banner-shape-full, .banner-shape-rectangle { max-height: 160px; }
         }
-        /* Fallbacks */
-        .section-banners-row.no-mobile .section-banner-pc { display: flex; }
-        .section-banners-row.no-pc .section-banner-mobile { display: flex; }
+        /* Fallbacks when one type is missing */
+        .section-banners-row.no-mobile .section-banner-pc  { display: flex; }
+        .section-banners-row.no-pc    .section-banner-mobile { display: flex; }
 
         /* Homepage product cards - compact sizing + better image fit */
         #homepage-sections-container .product-card .card-image {
@@ -1793,9 +1804,9 @@
 
                     html += `
                         <section class="container">
+                            ${bannersHtml}
                             <div class="section-title">
                                 <div class="homepage-section-heading-wrap">
-                                    ${bannersHtml}
                                     <div class="homepage-section-heading-image-box ${showHeadingImage ? '' : 'hidden'}">
                                         <img class="homepage-section-heading-image" src="${showHeadingImage ? safeSectionHeadingImageUrl : ''}" alt="${section.name || 'Section'} heading image" loading="lazy" decoding="async" onerror="this.parentElement.classList.add('hidden')">
                                     </div>
