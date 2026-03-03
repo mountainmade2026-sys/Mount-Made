@@ -278,6 +278,40 @@
             to   { opacity: 1; transform: translateY(0); }
         }
 
+        /* ═══════ SITE SETTINGS QUICK NAV ═══════ */
+        #ss-quicknav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.45rem;
+            padding: 0.7rem 1rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-sm);
+            position: sticky;
+            top: 0;
+            z-index: 40;
+            margin-bottom: 1.5rem;
+        }
+        .ss-nav-btn {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            border-radius: 20px;
+            padding: 0.32rem 0.85rem;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.18s, color 0.18s, border-color 0.18s;
+            white-space: nowrap;
+            font-family: inherit;
+        }
+        .ss-nav-btn:hover, .ss-nav-btn.ss-active {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+        }
+
         /* ═══════ PAGE HEADER ═══════ */
         .admin-header {
             display: flex;
@@ -1705,7 +1739,10 @@
                     <h1><i class="fas fa-cog"></i> Site Settings</h1>
                 </div>
 
-                <div class="data-table-container">
+                <!-- Quick-nav is built dynamically by buildSiteSettingsQuickNav() -->
+                <div id="ss-quicknav"></div>
+
+                <div id="ss-sub-logo" class="data-table-container">
                     <div class="table-header">
                         <h3>Site Logo</h3>
                     </div>
@@ -1772,7 +1809,7 @@
                 </div>
 
                 <!-- Homepage Hero Slider Images -->
-                <div class="data-table-container" style="margin-top: 1.5rem;">
+                <div id="ss-sub-slider" class="data-table-container" style="margin-top: 1.5rem;">
                     <div class="table-header">
                         <h3><i class="fas fa-images"></i> Homepage Hero Slider Images</h3>
                     </div>
@@ -1853,7 +1890,7 @@
                     </div>
                 </div>
 
-                <div class="data-table-container" style="margin-top: 1.5rem;">
+                <div id="ss-sub-flipcards" class="data-table-container" style="margin-top: 1.5rem;">
                     <div class="table-header">
                         <h3><i class="fas fa-layer-group"></i> Featured Deals – Flip Cards</h3>
                     </div>
@@ -2124,7 +2161,7 @@
                     </div>
                 </div>
 
-                <div class="data-table-container" style="margin-top: 1.5rem;">
+                <div id="ss-sub-admin" class="data-table-container" style="margin-top: 1.5rem;">
                     <div class="table-header">
                         <h3>Admin Account Settings</h3>
                     </div>
@@ -2160,7 +2197,7 @@
                     </div>
                 </div>
 
-                <div class="data-table-container" style="margin-top: 1.5rem;">
+                <div id="ss-sub-delivery" class="data-table-container" style="margin-top: 1.5rem;">
                     <div class="table-header">
                         <h3>Delivery Settings</h3>
                     </div>
@@ -2190,7 +2227,7 @@
                     </div>
                 </div>
 
-                <div class="data-table-container" style="margin-top: 1.5rem;">
+                <div id="ss-sub-about" class="data-table-container" style="margin-top: 1.5rem;">
                     <div class="table-header">
                         <h3>About Us Content</h3>
                     </div>
@@ -2256,7 +2293,7 @@
                     </div>
                 </div>
 
-                <div class="data-table-container" style="margin-top: 1.5rem;">
+                <div id="ss-sub-email" class="data-table-container" style="margin-top: 1.5rem;">
                     <div class="table-header">
                         <h3>Business Email Integration</h3>
                     </div>
@@ -2279,7 +2316,7 @@
                     </div>
                 </div>
 
-                <div class="data-table-container" style="margin-top: 1.5rem;">
+                <div id="ss-sub-gpay" class="data-table-container" style="margin-top: 1.5rem;">
                     <div class="table-header">
                         <h3>Google Pay Integration</h3>
                     </div>
@@ -2336,7 +2373,7 @@
                 </div>
 
                 <!-- COD Availability Section -->
-                <div class="data-table-container" style="margin-top: 1.5rem;">
+                <div id="ss-sub-cod" class="data-table-container" style="margin-top: 1.5rem;">
                     <div class="table-header">
                         <h3><i class="fas fa-truck"></i> Cash on Delivery – Pincode Availability</h3>
                     </div>
@@ -3392,9 +3429,83 @@
                 case 'users': loadUsers(); break;
                 case 'wholesale': loadWholesaleRequests(); break;
                 case 'admin-license': loadAdminLicenseStatus({ silent: true }); break;
-                case 'site-settings': loadSiteSettings(); break;
+                case 'site-settings': loadSiteSettings(); buildSiteSettingsQuickNav(); break;
             }
         };
+
+        // ── Site Settings Quick Nav ──────────────────────────────────────────
+        window._ssNavObserver = null;
+
+        window.buildSiteSettingsQuickNav = function() {
+            var nav = document.getElementById('ss-quicknav');
+            if (!nav) return;
+
+            // Collect all labelled sub-sections
+            var subs = [
+                { id: 'ss-sub-logo',      label: 'Site Logo' },
+                { id: 'ss-sub-slider',    label: 'Hero Slider' },
+                { id: 'ss-sub-flipcards', label: 'Flip Cards' },
+                { id: 'ss-sub-admin',     label: 'Admin Account' },
+                { id: 'ss-sub-delivery',  label: 'Delivery' },
+                { id: 'ss-sub-about',     label: 'About Us' },
+                { id: 'ss-sub-email',     label: 'Business Email' },
+                { id: 'ss-sub-gpay',      label: 'Google Pay' },
+                { id: 'ss-sub-cod',       label: 'COD Pincodes' }
+            ].filter(function(s) { return !!document.getElementById(s.id); });
+
+            // Build buttons
+            nav.innerHTML = subs.map(function(s) {
+                return '<button class="ss-nav-btn" data-target="' + s.id + '" onclick="siteSettingsScrollTo(\'' + s.id + '\')">' + s.label + '</button>';
+            }).join('');
+
+            // Disconnect old observer
+            if (window._ssNavObserver) { window._ssNavObserver.disconnect(); window._ssNavObserver = null; }
+
+            // IntersectionObserver to highlight active section while scrolling
+            if ('IntersectionObserver' in window) {
+                var btns = nav.querySelectorAll('.ss-nav-btn');
+                var visible = {};
+                window._ssNavObserver = new IntersectionObserver(function(entries) {
+                    entries.forEach(function(entry) {
+                        visible[entry.target.id] = entry.isIntersecting;
+                    });
+                    // Find the first visible section
+                    var activeId = null;
+                    for (var i = 0; i < subs.length; i++) {
+                        if (visible[subs[i].id]) { activeId = subs[i].id; break; }
+                    }
+                    btns.forEach(function(btn) {
+                        btn.classList.toggle('ss-active', btn.dataset.target === activeId);
+                    });
+                }, { threshold: 0.15 });
+                subs.forEach(function(s) {
+                    var el = document.getElementById(s.id);
+                    if (el) window._ssNavObserver.observe(el);
+                });
+            }
+
+            // Activate first button initially
+            var firstBtn = nav.querySelector('.ss-nav-btn');
+            if (firstBtn) firstBtn.classList.add('ss-active');
+        };
+
+        window.siteSettingsScrollTo = function(id) {
+            var el = document.getElementById(id);
+            if (!el) return;
+            // Offset for sticky nav bar height (~52px) + a little breathing room
+            var navEl = document.getElementById('ss-quicknav');
+            var offset = navEl ? navEl.offsetHeight + 12 : 64;
+            var top = el.getBoundingClientRect().top + window.pageYOffset - offset;
+            window.scrollTo({ top: top, behavior: 'smooth' });
+            // Immediately highlight clicked button
+            var nav = document.getElementById('ss-quicknav');
+            if (nav) {
+                nav.querySelectorAll('.ss-nav-btn').forEach(function(btn) {
+                    btn.classList.toggle('ss-active', btn.dataset.target === id);
+                });
+            }
+        };
+        // ─────────────────────────────────────────────────────────────────────
 
         function formatContactDate(value) {
             if (!value) return '';
