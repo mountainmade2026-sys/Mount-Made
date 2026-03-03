@@ -4339,7 +4339,7 @@
                 baseCropHeight = Math.round(sourceWidth / targetRatio);
             }
 
-            const responsiveWindowScale = 0.96;
+            const responsiveWindowScale = 0.90;
             const cropWidth = Math.max(1, Math.round(baseCropWidth * responsiveWindowScale));
             const cropHeight = Math.max(1, Math.round(baseCropHeight * responsiveWindowScale));
 
@@ -8962,6 +8962,10 @@
         }
         function _bannerShapePreviewStyle(shape, size) { return _bannerShapeStyle(shape, size); }
 
+        function _hiddenSourcePreviewStyle(shape, size) {
+            return `${_bannerShapeStyle(shape, size)}position:absolute;left:-99999px;top:-99999px;visibility:hidden;pointer-events:none;`;
+        }
+
         // Crop ratio for each shape — circle/square/star/triangle need 1:1 so image fits the shape
         function _getCropRatio(type, shape) {
             switch (shape) {
@@ -9015,7 +9019,7 @@
             // No file — just update preview style if src present
             const prevEl = document.getElementById(`${slotId}_prev`);
             if (prevEl && prevEl.src && prevEl.src !== window.location.href) {
-                prevEl.style.cssText = _bannerShapeStyle(newShape, newDefault);
+                prevEl.style.cssText = _hiddenSourcePreviewStyle(newShape, newDefault);
                 prevEl.style.display = 'block';
             }
             _refreshSectionPreview(slotId);
@@ -9029,7 +9033,7 @@
             const shape = window[`_bsShape_${slotId}`] || 'full';
             const prevEl = document.getElementById(`${slotId}_prev`);
             if (prevEl && prevEl.src && prevEl.src !== window.location.href) {
-                prevEl.style.cssText = _bannerShapeStyle(shape, val);
+                prevEl.style.cssText = _hiddenSourcePreviewStyle(shape, val);
                 prevEl.style.display = 'block';
             }
             _refreshSectionPreview(slotId);
@@ -9046,8 +9050,14 @@
             const bannerWrap = document.getElementById(`${slotId}_sp_banner`);
             const imgEl      = document.getElementById(`${slotId}_sp_img`);
             const phEl       = document.getElementById(`${slotId}_sp_ph`);
+            const titleEl    = document.getElementById(`${slotId}_sp_title`);
+            const sectionSel = document.getElementById(`${slotId}_section`);
             if (!bannerWrap || !imgEl) return;
             const src = srcEl?.src && srcEl.src !== window.location.href ? srcEl.src : null;
+            if (titleEl && sectionSel) {
+                const opt = sectionSel.options?.[sectionSel.selectedIndex];
+                titleEl.textContent = (opt && opt.textContent) ? opt.textContent : 'Section title';
+            }
             const isCentered = !isWideBanner;
             bannerWrap.style.justifyContent = isCentered ? 'center' : 'flex-start';
             bannerWrap.style.padding = isCentered ? '8px 0' : '0';
@@ -9191,7 +9201,7 @@
 
                 <div style="margin-bottom:0.75rem;">
                     <label class="form-label" style="font-size:0.8rem;margin-bottom:0.25rem;"><i class="fas fa-list" style="color:var(--primary);margin-right:0.3rem;"></i>Section</label>
-                    <select id="${slotId}_section" class="form-select" style="margin-bottom:0;">${_bannerSectionOptionsHtml()}</select>
+                    <select id="${slotId}_section" class="form-select" style="margin-bottom:0;" onchange="_refreshSectionPreview('${slotId}')">${_bannerSectionOptionsHtml()}</select>
                 </div>
 
                 <div style="margin-bottom:0.75rem;">
@@ -9241,6 +9251,7 @@
                             </div>
                         </div>
                         <div style="padding:0.45rem 0.75rem 0.3rem;background:#fff;border-top:1px solid #eee;">
+                            <div id="${slotId}_sp_title" style="font-size:0.75rem;font-weight:700;color:#666;line-height:1.2;margin-bottom:6px;">Section title</div>
                             <div style="height:8px;background:#c8cacd;border-radius:3px;width:36%;margin-bottom:5px;"></div>
                             <div style="height:5px;background:#dfe0e3;border-radius:2px;width:58%;"></div>
                         </div>
@@ -9295,7 +9306,7 @@
             const prevEl = document.getElementById(`${slotId}_prev`);
             const phEl   = document.getElementById(`${slotId}_ph`);
             if (!prevEl) return;
-            prevEl.style.cssText = _bannerShapeStyle(shape, size);
+            prevEl.style.cssText = _hiddenSourcePreviewStyle(shape, size);
             prevEl.src = objectUrl;
             prevEl.style.display = 'block';
             if (phEl) phEl.style.display = 'none';
