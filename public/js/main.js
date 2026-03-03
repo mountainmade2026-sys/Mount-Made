@@ -2061,35 +2061,53 @@ async function initApp() {
     });
   }
 
-  // Capacitor hardware back button — navigate back instead of closing the app
+  // Hardware back button — works in Capacitor APK (including remote-URL / Render mode)
+  // NOTE: IS_NATIVE_CAPACITOR is evaluated at parse time and may be false when loading from a
+  // remote server URL, so we check Capacitor availability at runtime here instead.
   try {
-    if (IS_NATIVE_CAPACITOR) {
-      document.addEventListener('backbutton', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        const path = window.location.pathname || '/';
-        const isHome = path === '/' || path === '/index.html';
-        if (!isHome) {
-          window.history.back();
-        } else if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
-          window.Capacitor.Plugins.App.exitApp();
-        }
-      }, false);
-
-      if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
-        window.Capacitor.Plugins.App.addListener('backButton', function(data) {
-          const path = window.location.pathname || '/';
-          const isHome = path === '/' || path === '/index.html';
-          if (data && data.canGoBack && !isHome) {
-            window.history.back();
-          } else if (!isHome) {
-            window.history.back();
-          } else {
+    // Cordova-style 'backbutton' event — fires in any Capacitor/Cordova WebView, safe to add unconditionally
+    document.addEventListener('backbutton', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      const path = window.location.pathname || '/';
+      const isHome = path === '/' || path === '/index.html' || path === '';
+      if (!isHome) {
+        window.history.back();
+      } else {
+        try {
+          if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
             window.Capacitor.Plugins.App.exitApp();
           }
-        });
+        } catch(ex) {}
+      }
+    }, false);
+
+    // Capacitor App plugin listener — register now and also re-try on deviceready in case
+    // the bridge wasn't ready when this script first executed (common with remote server.url)
+    function _registerCapacitorBackButton() {
+      try {
+        if (window.Capacitor &&
+            typeof window.Capacitor.isNativePlatform === 'function' &&
+            window.Capacitor.isNativePlatform() &&
+            window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
+          window.Capacitor.Plugins.App.addListener('backButton', function(data) {
+            const path = window.location.pathname || '/';
+            const isHome = path === '/' || path === '/index.html' || path === '';
+            if (!isHome) {
+              window.history.back();
+            } else {
+              window.Capacitor.Plugins.App.exitApp();
+            }
+          });
+        }
+      } catch(ex) {
+        console.warn('Capacitor backButton registration error:', ex);
       }
     }
+
+    _registerCapacitorBackButton();
+    // Re-try after deviceready (bridge fully ready) — critical for remote-URL Capacitor apps
+    document.addEventListener('deviceready', _registerCapacitorBackButton, false);
   } catch(e) {
     console.warn('Back button handler error:', e);
   }
