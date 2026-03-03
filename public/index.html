@@ -187,6 +187,28 @@
             display: block;
         }
 
+        /* Section banners from Site Settings */
+        .section-banners-row {
+            width: 100%;
+            margin-bottom: 0.5rem;
+        }
+        .section-banners-row img {
+            width: 100%;
+            height: auto;
+            display: block;
+            margin-bottom: 4px;
+        }
+        /* PC banners: visible on desktop, hidden on mobile */
+        .section-banner-pc { display: block; }
+        .section-banner-mobile { display: none; }
+        @media (max-width: 768px) {
+            .section-banner-pc { display: none; }
+            .section-banner-mobile { display: block; }
+        }
+        /* If a section has no mobile banners, fall back to showing PC on mobile */
+        .section-banners-row.no-mobile .section-banner-pc { display: block; }
+        .section-banners-row.no-pc .section-banner-mobile { display: block; }
+
         /* Homepage product cards - compact sizing + better image fit */
         #homepage-sections-container .product-card .card-image {
             width: 100%;
@@ -1694,16 +1716,43 @@
                 }
                 
                 let html = '';
-                
+
+                // Helper to parse banner URL JSON arrays from settings
+                function parseBannerArr(val) {
+                    if (!val) return [];
+                    try { const a = JSON.parse(val); return Array.isArray(a) ? a.filter(Boolean) : []; }
+                    catch(_) { return []; }
+                }
+
                 sections.forEach((section) => {
                     const sectionProducts = Array.isArray(section.products) ? section.products : [];
                     const sectionHeadingImageUrl = (section.heading_image_url || '').trim();
                     const safeSectionHeadingImageUrl = sectionHeadingImageUrl ? encodeURI(sectionHeadingImageUrl) : '';
                     const showHeadingImage = !!sectionHeadingImageUrl;
+
+                    // Banners from site_settings
+                    const pcBanners = parseBannerArr(settings[`section_pc_banners_${section.id}`]);
+                    const mobBanners = parseBannerArr(settings[`section_mobile_banners_${section.id}`]);
+                    const hasBanners = pcBanners.length > 0 || mobBanners.length > 0;
+                    const noMob = mobBanners.length === 0;
+                    const noPc = pcBanners.length === 0;
+                    let bannersHtml = '';
+                    if (hasBanners) {
+                        bannersHtml = `<div class="section-banners-row${noMob ? ' no-mobile' : ''}${noPc ? ' no-pc' : ''}">`;
+                        pcBanners.forEach(url => {
+                            bannersHtml += `<img class="section-banner-pc" src="${encodeURI(url)}" alt="${section.name} banner" loading="lazy" decoding="async" onerror="this.style.display='none'">`;
+                        });
+                        mobBanners.forEach(url => {
+                            bannersHtml += `<img class="section-banner-mobile" src="${encodeURI(url)}" alt="${section.name} banner" loading="lazy" decoding="async" onerror="this.style.display='none'">`;
+                        });
+                        bannersHtml += `</div>`;
+                    }
+
                     html += `
                         <section class="container">
                             <div class="section-title">
                                 <div class="homepage-section-heading-wrap">
+                                    ${bannersHtml}
                                     <div class="homepage-section-heading-image-box ${showHeadingImage ? '' : 'hidden'}">
                                         <img class="homepage-section-heading-image" src="${showHeadingImage ? safeSectionHeadingImageUrl : ''}" alt="${section.name || 'Section'} heading image" loading="lazy" decoding="async" onerror="this.parentElement.classList.add('hidden')">
                                     </div>
