@@ -3257,44 +3257,31 @@
             });
         };
 
-        window.updateDiscountFromMainPrice = function(source = '') {
-            const priceInput = document.getElementById('edit-product-price');
+        window.updateDiscountFromMainPrice = function() {
+            const priceInput   = document.getElementById('edit-product-price');
             const discountInput = document.getElementById('edit-product-discount-price');
             if (!priceInput || !discountInput) return;
 
-            const basePriceRaw = String(priceInput.getAttribute('data-base-price') || priceInput.getAttribute('data-saved-price') || '').trim();
-            const basePriceAttr = parseFloat(basePriceRaw);
-            const currentPrice = parseFloat(String(priceInput.value || '').trim());
-            // ALWAYS use the stable attribute first so cascading keystrokes don't drift.
-            const basePrice = Number.isFinite(basePriceAttr) ? basePriceAttr : currentPrice;
+            // Always read stable original price from attribute set when modal opened.
+            const basePrice = parseFloat(priceInput.getAttribute('data-base-price') || '');
             if (!Number.isFinite(basePrice)) return;
 
-            const adjustmentRaw = String(discountInput.value || '').trim();
-            if (!adjustmentRaw) return;
+            const raw = discountInput.value.trim();
+            if (!raw) return;
 
-            // Avoid acting on incomplete operator-only edits during typing
-            if (/^[+\-*/.]$/.test(adjustmentRaw)) return;
+            let newPrice = null;
 
-            const safeExpr = adjustmentRaw.replace(/\s+/g, '');
-            if (!/^[0-9+\-*/().]+$/.test(safeExpr)) return;
-
-            // Leading operator means operate on current base price; otherwise treat as explicit new price.
-            const normalizedExpr = /^[+\-*/]/.test(safeExpr)
-                ? `${basePrice}${safeExpr}`
-                : safeExpr;
-
-            let evaluatedPrice = null;
-            try {
-                evaluatedPrice = Function(`"use strict"; return (${normalizedExpr});`)();
-            } catch (_) {
-                return;
+            if (/^[+\-]\d+(\.\d+)?$/.test(raw)) {
+                // signed offset: -10 subtracts, +50 adds
+                newPrice = basePrice + parseFloat(raw);
+            } else if (/^\d+(\.\d+)?$/.test(raw)) {
+                // plain positive number: set price directly
+                newPrice = parseFloat(raw);
             }
-            if (!Number.isFinite(evaluatedPrice)) return;
-            evaluatedPrice = Math.max(0, evaluatedPrice);
 
-            const updatedPriceText = Number(evaluatedPrice).toFixed(2);
-            priceInput.value = updatedPriceText;
-            // Mark as command-applied so save logic can ignore this field as discount value.
+            if (newPrice === null || !Number.isFinite(newPrice) || newPrice < 0) return;
+
+            priceInput.value = newPrice.toFixed(2);
             discountInput.setAttribute('data-command-applied', '1');
         };
     // Admin dashboard with improved mobile handling
@@ -8459,6 +8446,7 @@
                 const wholesale_price = document.getElementById('edit-product-wholesale-price').value || null;
                 const discountInputEl = document.getElementById('edit-product-discount-price');
                 const discount_price = discountInputEl?.value || null;
+                const discountWasCommand = discountInputEl?.getAttribute('data-command-applied') === '1';
                 const min_wholesale_qty = document.getElementById('edit-product-min-wholesale').value || 10;
                 const imageFiles = editProductSelectedImages;
 
@@ -8474,20 +8462,16 @@
                 }
 
                 const priceInputEl = document.getElementById('edit-product-price');
-                const basePriceRaw = String(priceInputEl?.getAttribute('data-base-price') || priceInputEl?.getAttribute('data-saved-price') || price || '').trim();
-                const parsedBasePrice = parseFloat(basePriceRaw);
                 const parsedPrice = parseFloat(price);
-                const discountRaw = String(discount_price || '').trim();
-                const discountLooksLikeCommand = /^[+\-*/]/.test(discountRaw) || /[+\-*/()]/.test(discountRaw);
-                const parsedDiscountPrice = (discount_price && !discountLooksLikeCommand) ? parseFloat(discount_price) : null;
+                // If the discount field was used as a price-adjust command, treat discount_price as null.
+                const parsedDiscountPrice = (!discountWasCommand && discount_price) ? parseFloat(discount_price) : null;
 
                 if (!Number.isFinite(parsedPrice)) {
                     showAlert('Please enter a valid price.', 'error');
                     return;
                 }
 
-                // If field held a command expression (e.g. "-10"), it was already applied to price — skip validation.
-                if (discount_price && !discountLooksLikeCommand && !Number.isFinite(parsedDiscountPrice)) {
+                if (!discountWasCommand && discount_price && !Number.isFinite(parsedDiscountPrice)) {
                     showAlert('Please enter a valid discount price.', 'error');
                     return;
                 }
