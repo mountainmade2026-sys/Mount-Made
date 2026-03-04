@@ -2986,7 +2986,7 @@
                             <div class="form-row">
                                 <div>
                                     <label class="form-label">Discount Price (₹) <small style="color: var(--text-muted); font-weight: normal;">Optional</small></label>
-                                    <input type="text" id="edit-product-discount-price" class="form-input" placeholder="0.00 or -50 or +10" oninput="updateDiscountFromMainPrice('discount')" onblur="updateDiscountFromMainPrice('discount')">
+                                    <input type="text" id="edit-product-discount-price" class="form-input" placeholder="0.00 or type -10 to reduce price" onblur="updateDiscountFromMainPrice()">
                                 </div>
                                 <div>
                                     <label class="form-label">Wholesale Price (₹)</label>
@@ -3258,31 +3258,28 @@
         };
 
         window.updateDiscountFromMainPrice = function() {
-            const priceInput   = document.getElementById('edit-product-price');
+            const priceInput    = document.getElementById('edit-product-price');
             const discountInput = document.getElementById('edit-product-discount-price');
             if (!priceInput || !discountInput) return;
 
-            // Always read stable original price from attribute set when modal opened.
-            const basePrice = parseFloat(priceInput.getAttribute('data-base-price') || '');
+            // Original price set when modal opened — never changes during editing.
+            const basePrice = parseFloat(priceInput.getAttribute('data-base-price') || priceInput.value || '');
             if (!Number.isFinite(basePrice)) return;
 
             const raw = discountInput.value.trim();
             if (!raw) return;
 
-            let newPrice = null;
+            // Only act when user typed a signed offset like -10 or +50.
+            // Plain numbers (e.g. 750) are treated as a direct discount price — leave as-is.
+            if (!/^[+\-]\d+(\.\d+)?$/.test(raw)) return;
 
-            if (/^[+\-]\d+(\.\d+)?$/.test(raw)) {
-                // signed offset: -10 subtracts, +50 adds
-                newPrice = basePrice + parseFloat(raw);
-            } else if (/^\d+(\.\d+)?$/.test(raw)) {
-                // plain positive number: set price directly
-                newPrice = parseFloat(raw);
-            }
+            const computed = basePrice + parseFloat(raw);
+            if (!Number.isFinite(computed) || computed <= 0) return;
 
-            if (newPrice === null || !Number.isFinite(newPrice) || newPrice < 0) return;
-
-            priceInput.value = newPrice.toFixed(2);
-            discountInput.setAttribute('data-command-applied', '1');
+            // Put the computed sale price INTO the discount field.
+            // Price field stays at original (900) → shows crossed-out.
+            // Discount field becomes result (890) → shows as sale price.
+            discountInput.value = computed.toFixed(2);
         };
     // Admin dashboard with improved mobile handling
     (function(){
@@ -8118,7 +8115,6 @@
                     ? ''
                     : String(product.discount_price);
                 editDiscountInput.setAttribute('data-saved-discount', savedDiscount);
-                editDiscountInput.setAttribute('data-command-applied', '0');
             }
 
             const editPriceInput = document.getElementById('edit-product-price');
@@ -8446,7 +8442,6 @@
                 const wholesale_price = document.getElementById('edit-product-wholesale-price').value || null;
                 const discountInputEl = document.getElementById('edit-product-discount-price');
                 const discount_price = discountInputEl?.value || null;
-                const discountWasCommand = discountInputEl?.getAttribute('data-command-applied') === '1';
                 const min_wholesale_qty = document.getElementById('edit-product-min-wholesale').value || 10;
                 const imageFiles = editProductSelectedImages;
 
@@ -8461,17 +8456,15 @@
                     return;
                 }
 
-                const priceInputEl = document.getElementById('edit-product-price');
                 const parsedPrice = parseFloat(price);
-                // If the discount field was used as a price-adjust command, treat discount_price as null.
-                const parsedDiscountPrice = (!discountWasCommand && discount_price) ? parseFloat(discount_price) : null;
+                const parsedDiscountPrice = discount_price ? parseFloat(discount_price) : null;
 
                 if (!Number.isFinite(parsedPrice)) {
                     showAlert('Please enter a valid price.', 'error');
                     return;
                 }
 
-                if (!discountWasCommand && discount_price && !Number.isFinite(parsedDiscountPrice)) {
+                if (discount_price && !Number.isFinite(parsedDiscountPrice)) {
                     showAlert('Please enter a valid discount price.', 'error');
                     return;
                 }
@@ -8481,7 +8474,6 @@
                     return;
                 }
 
-                // Save the current price (history base) as the new base price.
                 const priceToSave = parsedPrice;
                 const discountToSave = parsedDiscountPrice;
 
