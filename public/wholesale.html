@@ -589,6 +589,11 @@
             position: relative;
         }
 
+        /* Hidden by default on desktop; media query reveals on mobile */
+        .mobile-profile-section {
+            display: none !important;
+        }
+
         .mobile-menu-toggle {
             display: none;
             align-items: center;
@@ -678,7 +683,7 @@
 
             /* Mobile profile section inside nav menu */
             .mobile-profile-section {
-                display: flex;
+                display: flex !important;
                 flex-direction: column;
             }
 
@@ -983,7 +988,7 @@
                 <li><a href="#wholesale-contact" data-wholesale-view="dashboard">Contact Us</a></li>
                 <li id="admin-link" class="hidden"><a href="/admin">Admin</a></li>
                 <!-- Mobile-only profile section injected by JS -->
-                <li class="mobile-profile-section hidden" id="mobile-profile-section">
+                <li class="mobile-profile-section" id="mobile-profile-section">
                     <div class="mobile-profile-header">
                         <div class="mobile-profile-avatar" id="mobile-nav-avatar">U</div>
                         <div class="mobile-profile-info">
@@ -1834,8 +1839,6 @@
             function syncMobileProfile() {
                 const user = auth?.currentUser;
                 if (!user) return;
-                const section = document.getElementById('mobile-profile-section');
-                if (section) section.classList.remove('hidden');
 
                 const nameEl = document.getElementById('mobile-nav-name');
                 const roleEl = document.getElementById('mobile-nav-role');
