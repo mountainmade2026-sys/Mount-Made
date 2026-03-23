@@ -803,6 +803,35 @@ const initializeDatabase = async () => {
       ADD COLUMN IF NOT EXISTS email_forward_error TEXT;
     `);
 
+    // Create Returns table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS returns (
+        id SERIAL PRIMARY KEY,
+        order_id INTEGER REFERENCES orders(id) ON DELETE CASCADE,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        reason TEXT NOT NULL,
+        status VARCHAR(50) DEFAULT 'requested',
+        admin_notes TEXT,
+        refund_amount DECIMAL(10, 2),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        processed_at TIMESTAMP
+      );
+    `);
+
+    // Create Return Items table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS return_items (
+        id SERIAL PRIMARY KEY,
+        return_id INTEGER REFERENCES returns(id) ON DELETE CASCADE,
+        order_item_id INTEGER REFERENCES order_items(id) ON DELETE CASCADE,
+        product_id INTEGER REFERENCES products(id),
+        quantity INTEGER NOT NULL,
+        price DECIMAL(10, 2) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
     // Create indexes for better performance
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_id);
@@ -815,6 +844,10 @@ const initializeDatabase = async () => {
       CREATE INDEX IF NOT EXISTS idx_addresses_user ON addresses(user_id);
       CREATE INDEX IF NOT EXISTS idx_contact_messages_type_created ON contact_messages(message_type, created_at DESC);
       CREATE INDEX IF NOT EXISTS idx_contact_messages_unread ON contact_messages(is_read, created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_returns_user ON returns(user_id);
+      CREATE INDEX IF NOT EXISTS idx_returns_order ON returns(order_id);
+      CREATE INDEX IF NOT EXISTS idx_returns_status ON returns(status);
+      CREATE INDEX IF NOT EXISTS idx_return_items_return ON return_items(return_id);
     `);
 
     // Create or replace a dynamic stock report VIEW that always reflects
@@ -907,7 +940,9 @@ const initializeDatabase = async () => {
       'addresses',
       'backups',
       'uploads',
-      'contact_messages'
+      'contact_messages',
+      'returns',
+      'return_items'
     ];
 
     for (const tableName of idIntegrityTables) {
