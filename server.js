@@ -697,6 +697,10 @@ app.get('/orders', (req, res) => {
   return sendHtmlPage(req, res, 'orders.html');
 });
 
+app.get('/returns', (req, res) => {
+  return sendHtmlPage(req, res, 'returns.html');
+});
+
 app.get('/product-details', (req, res) => {
   return sendHtmlPage(req, res, 'product-details.html');
 });

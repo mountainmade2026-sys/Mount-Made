@@ -49,6 +49,9 @@
                                 <a href="/orders" class="accd-item">
                                     <span class="accd-icon"><i class="fas fa-box-open"></i></span>My Orders
                                 </a>
+                                <a href="/returns" class="accd-item">
+                                    <span class="accd-icon"><i class="fas fa-undo-alt"></i></span>My Returns
+                                </a>
                                 <button class="accd-item" onclick="openAccountManagementModal()">
                                     <span class="accd-icon"><i class="fas fa-key"></i></span>Change Password
                                 </button>
@@ -77,13 +80,6 @@
             </h2>
         </div>
         <div id="orders-list" class="orders-list"></div>
-
-        <div style="margin-top: 2.5rem;">
-            <h3 style="margin-bottom: 1rem; display:flex; align-items:center; gap: 0.5rem; color: var(--primary);">
-                <i class="fas fa-undo-alt"></i> My Returns
-            </h3>
-            <div id="returns-list" class="orders-list"></div>
-        </div>
     </section>
 
     <style>
@@ -151,16 +147,6 @@
             }
         }
 
-        .return-status-badge {
-            display: inline-flex; align-items: center; padding: 0.3rem 0.75rem;
-            border-radius: 9999px; font-size: 0.78rem; font-weight: 600;
-        }
-        .return-status-requested { background: var(--warning-bg, #fff3cd); color: var(--warning, #d97706); }
-        .return-status-approved  { background: var(--info-bg, #cfe2ff); color: var(--info, #3b82f6); }
-        .return-status-received  { background: var(--primary-bg, #d1f5e0); color: var(--primary, #1a4731); }
-        .return-status-refunded  { background: var(--success-bg, #d1fae5); color: var(--success, #10b981); }
-        .return-status-rejected  { background: var(--error-bg, #fee2e2); color: var(--error, #ef4444); }
-
         .return-modal-overlay {
             position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 9999;
             display: flex; align-items: center; justify-content: center; padding: 1rem;
@@ -189,11 +175,6 @@
     <script>
         let ordersRefreshInterval = null;
         let _ordersCache = [];
-
-        function getReturnStatusText(status) {
-            const map = { requested:'Return Requested', approved:'Return Approved', received:'Products Received', refunded:'Refunded', rejected:'Return Rejected' };
-            return map[status] || status;
-        }
 
         function getCustomerOrderStatusText(status) {
             if (!status) return 'Order Pending';
@@ -408,57 +389,14 @@
 
             try {
                 const resp = await api.post('/returns', { order_id: orderId, reason, items });
-                showAlert(resp.message || 'Return request submitted!', 'success');
+                showAlert(resp.message || 'Return request submitted! Redirecting...', 'success');
                 const modal = document.getElementById('return-modal');
                 if (modal) modal.remove();
-                await loadMyReturns();
+                setTimeout(() => { window.location.href = '/returns'; }, 1500);
             } catch (err) {
                 showAlert(err.message || 'Failed to submit return request.', 'error');
             } finally {
                 if (btn) btn.disabled = false;
-            }
-        }
-
-        async function loadMyReturns() {
-            const container = document.getElementById('returns-list');
-            try {
-                const resp = await api.get('/returns');
-                const returns = resp.returns || [];
-
-                if (!returns.length) {
-                    container.innerHTML = '<div class="card"><div class="card-content text-center" style="color:var(--text-light);"><p>No return requests yet</p></div></div>';
-                    return;
-                }
-
-                container.innerHTML = returns.map(r => {
-                    const items = (r.items || []).filter(i => i.id);
-                    return `
-                        <div class="card">
-                            <div class="card-content">
-                                <div class="order-header" style="margin-bottom:1rem;">
-                                    <div class="order-header-left">
-                                        <strong>Return RET-${r.id}</strong>
-                                        <p style="color:var(--text-light);margin-top:0.25rem;">Order #${r.order_number || r.order_id} &bull; ${formatDate(r.created_at)}</p>
-                                    </div>
-                                    <div class="order-header-right">
-                                        <span class="return-status-badge return-status-${r.status}">${getReturnStatusText(r.status)}</span>
-                                        <p style="margin-top:0.5rem;font-size:1.15rem;font-weight:700;color:var(--primary);">₹${parseFloat(r.refund_amount || 0).toFixed(2)}</p>
-                                    </div>
-                                </div>
-                                <div style="border-top:1px solid var(--border);padding-top:1rem;">
-                                    <strong style="display:block;margin-bottom:0.4rem;">Returned Items:</strong>
-                                    ${items.map(i => `<div style="display:flex;justify-content:space-between;padding:0.4rem 0;"><span>${i.product_name || 'Product'} x${i.quantity}</span><span>₹${parseFloat(i.price * i.quantity).toFixed(2)}</span></div>`).join('')}
-                                    <div style="margin-top:0.75rem;color:var(--text-light);font-size:0.88rem;">
-                                        <strong>Reason:</strong> ${r.reason || '—'}
-                                    </div>
-                                    ${r.admin_notes ? `<div style="margin-top:0.4rem;color:var(--text-light);font-size:0.88rem;"><strong>Admin Notes:</strong> ${r.admin_notes}</div>` : ''}
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-            } catch (err) {
-                container.innerHTML = '<div class="card"><div class="card-content text-center" style="color:var(--text-light);"><p>Could not load returns</p></div></div>';
             }
         }
 
@@ -495,7 +433,8 @@
                 const redirect = encodeURIComponent('/orders');
                 window.location.href = `/login?redirect=${redirect}`;
             } else {
-                await loadOrders();                await loadMyReturns();                startOrdersAutoRefresh();
+                await loadOrders();
+                startOrdersAutoRefresh();
             }
 
             // Account dropdown toggle

@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Returns</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/mobile-enhancements.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <span class="nav-corner nav-corner-tl" aria-hidden="true"></span>
+        <span class="nav-corner nav-corner-tr" aria-hidden="true"></span>
+        <span class="nav-corner nav-corner-bl" aria-hidden="true"></span>
+        <span class="nav-corner nav-corner-br" aria-hidden="true"></span>
+        <div class="navbar-container">
+            <button class="mobile-menu-toggle" aria-label="Open navigation menu">
+                <i class="fas fa-bars"></i>
+            </button>
+            <a href="/" class="navbar-brand">
+                <span class="navbar-tagline">GOURMET GROCERIES</span>
+            </a>
+            <ul class="navbar-menu">
+                <li><a href="/">Home</a></li>
+                <li><a href="/products">Products</a></li>
+                <li id="admin-link" class="hidden"><a href="/admin">Admin</a></li>
+            </ul>
+            <div class="navbar-actions">
+                <div id="auth-buttons"><a href="/login" class="btn btn-secondary btn-sm">Login</a></div>
+                <div id="user-menu" class="hidden flex gap-2" style="align-items: center;">
+                    <a href="/cart" class="icon-button"><i class="fas fa-shopping-cart"></i><span id="cart-badge" class="cart-badge hidden">0</span></a>
+                    <div class="account-menu">
+                        <button id="account-toggle" class="icon-button" title="Account">
+                            <i class="fas fa-user-circle"></i>
+                        </button>
+                        <div id="account-dropdown" class="account-dropdown hidden">
+                            <div class="accd-header">
+                                <div class="accd-avatar" id="account-avatar">U</div>
+                                <div class="accd-user">
+                                    <div class="accd-name" id="account-display-name">User</div>
+                                    <div class="accd-role" id="account-display-role">Member</div>
+                                </div>
+                            </div>
+                            <div class="accd-group">
+                                <button class="accd-item" onclick="openProfileModal()">
+                                    <span class="accd-icon"><i class="fas fa-user-edit"></i></span>Edit Profile
+                                </button>
+                                <a href="/orders" class="accd-item">
+                                    <span class="accd-icon"><i class="fas fa-box-open"></i></span>My Orders
+                                </a>
+                                <a href="/returns" class="accd-item">
+                                    <span class="accd-icon"><i class="fas fa-undo-alt"></i></span>My Returns
+                                </a>
+                                <button class="accd-item" onclick="openAccountManagementModal()">
+                                    <span class="accd-icon"><i class="fas fa-key"></i></span>Change Password
+                                </button>
+                            </div>
+                            <div class="accd-group">
+                                <button id="theme-toggle" class="accd-item">
+                                    <span class="accd-icon"><i class="fas fa-moon"></i></span>Switch to Dark Mode
+                                </button>
+                            </div>
+                            <div class="accd-group accd-group-last">
+                                <button id="account-logout" class="accd-item accd-item-danger">
+                                    <span class="accd-icon"><i class="fas fa-sign-out-alt"></i></span>Logout
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <section class="container">
+        <div class="section-title">
+            <h2 style="font-size: 3rem; line-height: 1;">
+                <i class="fas fa-undo-alt"></i>
+            </h2>
+        </div>
+
+        <!-- Return Stats Summary -->
+        <div id="returns-stats" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:1rem; margin-bottom:2rem;"></div>
+
+        <div id="returns-list" class="returns-list"></div>
+    </section>
+
+    <style>
+        .returns-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .return-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .return-header-left { min-width: 0; }
+        .return-header-right { text-align: right; }
+
+        .return-status-badge {
+            display: inline-flex; align-items: center; padding: 0.3rem 0.75rem;
+            border-radius: 9999px; font-size: 0.78rem; font-weight: 600;
+        }
+        .return-status-requested { background: var(--warning-bg, #fff3cd); color: var(--warning, #d97706); }
+        .return-status-approved  { background: var(--info-bg, #cfe2ff); color: var(--info, #3b82f6); }
+        .return-status-received  { background: var(--primary-bg, #d1f5e0); color: var(--primary, #1a4731); }
+        .return-status-refunded  { background: var(--success-bg, #d1fae5); color: var(--success, #10b981); }
+        .return-status-rejected  { background: var(--error-bg, #fee2e2); color: var(--error, #ef4444); }
+
+        .return-stat-card {
+            background: var(--bg-primary, #fff);
+            border: 1px solid var(--border, #e5e7eb);
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            text-align: center;
+        }
+        .return-stat-card .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary, #1a4731);
+        }
+        .return-stat-card .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-light, #64748b);
+            margin-top: 0.25rem;
+        }
+
+        .return-timeline {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+            flex-wrap: wrap;
+        }
+        .return-timeline-step {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: 0.78rem;
+            color: var(--text-light, #64748b);
+        }
+        .return-timeline-step.active {
+            color: var(--primary, #1a4731);
+            font-weight: 600;
+        }
+        .return-timeline-step.completed {
+            color: var(--success, #10b981);
+        }
+        .return-timeline-connector {
+            width: 20px;
+            height: 2px;
+            background: var(--border, #e5e7eb);
+        }
+        .return-timeline-connector.completed {
+            background: var(--success, #10b981);
+        }
+
+        .empty-returns {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--text-light, #64748b);
+        }
+        .empty-returns i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.4;
+        }
+
+        @media (max-width: 600px) {
+            .return-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .return-header-right { text-align: left; }
+        }
+    </style>
+
+    <script src="/js/main.js"></script>
+    <script>
+        function getReturnStatusText(status) {
+            const map = {
+                requested: 'Return Requested',
+                approved: 'Return Approved',
+                received: 'Products Received',
+                refunded: 'Refunded',
+                rejected: 'Return Rejected'
+            };
+            return map[status] || status;
+        }
+
+        function getTimelineSteps(status) {
+            const steps = ['requested', 'approved', 'received', 'refunded'];
+            if (status === 'rejected') {
+                return ['requested', 'rejected'];
+            }
+            const currentIdx = steps.indexOf(status);
+            return steps.map((step, i) => ({
+                label: step.charAt(0).toUpperCase() + step.slice(1),
+                completed: i < currentIdx,
+                active: i === currentIdx
+            }));
+        }
+
+        function renderTimeline(status) {
+            if (status === 'rejected') {
+                return `<div class="return-timeline">
+                    <div class="return-timeline-step completed"><i class="fas fa-circle" style="font-size:0.5rem;"></i> Requested</div>
+                    <div class="return-timeline-connector completed"></div>
+                    <div class="return-timeline-step active" style="color:var(--error);"><i class="fas fa-times-circle"></i> Rejected</div>
+                </div>`;
+            }
+            const steps = getTimelineSteps(status);
+            return `<div class="return-timeline">${steps.map((s, i) => {
+                const cls = s.completed ? 'completed' : s.active ? 'active' : '';
+                const icon = s.completed ? '<i class="fas fa-check-circle"></i>' : s.active ? '<i class="fas fa-circle" style="font-size:0.5rem;"></i>' : '<i class="far fa-circle" style="font-size:0.5rem;"></i>';
+                const connector = i < steps.length - 1 ? `<div class="return-timeline-connector ${s.completed ? 'completed' : ''}"></div>` : '';
+                return `<div class="return-timeline-step ${cls}">${icon} ${s.label}</div>${connector}`;
+            }).join('')}</div>`;
+        }
+
+        async function loadReturns() {
+            const container = document.getElementById('returns-list');
+            const statsContainer = document.getElementById('returns-stats');
+
+            try {
+                const resp = await api.get('/returns');
+                const returns = resp.returns || [];
+
+                // Compute simple stats
+                const total = returns.length;
+                const pending = returns.filter(r => r.status === 'requested').length;
+                const approved = returns.filter(r => r.status === 'approved' || r.status === 'received').length;
+                const refunded = returns.filter(r => r.status === 'refunded').length;
+                const rejected = returns.filter(r => r.status === 'rejected').length;
+
+                if (total > 0) {
+                    statsContainer.innerHTML = `
+                        <div class="return-stat-card">
+                            <div class="stat-value">${total}</div>
+                            <div class="stat-label">Total Returns</div>
+                        </div>
+                        <div class="return-stat-card">
+                            <div class="stat-value" style="color:var(--warning);">${pending}</div>
+                            <div class="stat-label">Pending</div>
+                        </div>
+                        <div class="return-stat-card">
+                            <div class="stat-value" style="color:var(--info);">${approved}</div>
+                            <div class="stat-label">In Progress</div>
+                        </div>
+                        <div class="return-stat-card">
+                            <div class="stat-value" style="color:var(--success);">${refunded}</div>
+                            <div class="stat-label">Refunded</div>
+                        </div>
+                    `;
+                } else {
+                    statsContainer.innerHTML = '';
+                }
+
+                if (!returns.length) {
+                    container.innerHTML = `
+                        <div class="empty-returns">
+                            <div><i class="fas fa-undo-alt"></i></div>
+                            <h3 style="margin-bottom:0.5rem;">No Returns Yet</h3>
+                            <p>You haven't submitted any return requests. You can return delivered products from the <a href="/orders" style="color:var(--primary);font-weight:600;">My Orders</a> page.</p>
+                        </div>`;
+                    return;
+                }
+
+                container.innerHTML = returns.map(r => {
+                    const items = (r.items || []).filter(i => i.id);
+                    return `
+                        <div class="card">
+                            <div class="card-content">
+                                <div class="return-header" style="margin-bottom:1rem;">
+                                    <div class="return-header-left">
+                                        <strong>Return RET-${r.id}</strong>
+                                        <p style="color:var(--text-light);margin-top:0.25rem;">Order #${r.order_number || r.order_id} &bull; ${formatDate(r.created_at)}</p>
+                                    </div>
+                                    <div class="return-header-right">
+                                        <span class="return-status-badge return-status-${r.status}">${getReturnStatusText(r.status)}</span>
+                                        <p style="margin-top:0.5rem;font-size:1.15rem;font-weight:700;color:var(--primary);">Refund: ${formatCurrency(r.refund_amount || 0)}</p>
+                                    </div>
+                                </div>
+                                ${renderTimeline(r.status)}
+                                <div style="border-top:1px solid var(--border);padding-top:1rem;margin-top:0.75rem;">
+                                    <strong style="display:block;margin-bottom:0.4rem;">Returned Items:</strong>
+                                    ${items.map(i => `
+                                        <div style="display:flex;justify-content:space-between;padding:0.4rem 0;">
+                                            <span>${i.product_name || 'Product'} x${i.quantity}</span>
+                                            <span>${formatCurrency(i.price * i.quantity)}</span>
+                                        </div>
+                                    `).join('')}
+                                    <div style="margin-top:0.75rem;color:var(--text-light);font-size:0.88rem;">
+                                        <strong>Reason:</strong> ${r.reason || '—'}
+                                    </div>
+                                    ${r.admin_notes ? `<div style="margin-top:0.4rem;padding:0.5rem 0.75rem;background:var(--bg-secondary,#f8fafc);border-radius:6px;color:var(--text-light);font-size:0.88rem;"><i class="fas fa-comment-dots" style="color:var(--primary);margin-right:0.3rem;"></i><strong>Admin:</strong> ${r.admin_notes}</div>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (err) {
+                container.innerHTML = `
+                    <div class="empty-returns">
+                        <div><i class="fas fa-exclamation-triangle"></i></div>
+                        <h3>Could Not Load Returns</h3>
+                        <p>Please try again later.</p>
+                    </div>`;
+            }
+        }
+
+        (async () => {
+            const user = await auth.checkAuth();
+
+            if (!user) {
+                const redirect = encodeURIComponent('/returns');
+                window.location.href = `/login?redirect=${redirect}`;
+            } else {
+                await loadReturns();
+            }
+
+            // Account dropdown toggle
+            const accountToggle = document.getElementById('account-toggle');
+            const accountDropdown = document.getElementById('account-dropdown');
+
+            if (accountToggle && accountDropdown) {
+                accountToggle.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    accountDropdown.classList.toggle('hidden');
+                });
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('.account-menu')) {
+                        accountDropdown.classList.add('hidden');
+                    }
+                });
+            }
+
+            const accountLogout = document.getElementById('account-logout');
+            if (accountLogout) {
+                accountLogout.addEventListener('click', async () => {
+                    if (await showConfirmDialog('Are you sure you want to logout?', { title: 'Logout', confirmText: 'Logout' })) {
+                        await auth.logout();
+                    }
+                });
+            }
+        })();
+    </script>
+</body>
+</html>
