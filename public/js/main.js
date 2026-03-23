@@ -1132,6 +1132,11 @@ function createAlertContainer() { /* legacy — replaced by mm-toast-container *
               <span class="mm-ps-item-label">My Orders</span>
               <i class="fas fa-chevron-right mm-ps-chevron"></i>
             </a>
+            <a href="/returns" class="mm-ps-item">
+              <span class="mm-ps-item-icon"><i class="fas fa-undo-alt"></i></span>
+              <span class="mm-ps-item-label">My Returns</span>
+              <i class="fas fa-chevron-right mm-ps-chevron"></i>
+            </a>
             <a href="/addresses" class="mm-ps-item">
               <span class="mm-ps-item-icon"><i class="fas fa-map-marker-alt"></i></span>
               <span class="mm-ps-item-label">My Addresses</span>
