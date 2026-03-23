@@ -4582,6 +4582,27 @@
         };
 
         // Loaders (simplified - add your actual API calls)
+        // ── Animated count-up helper ──
+        function animateCountUp(el, target, prefix, decimals, duration) {
+            prefix = prefix || '';
+            decimals = decimals || 0;
+            duration = duration || 1200;
+            const start = 0;
+            const startTime = performance.now();
+            function update(now) {
+                const elapsed = now - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                // ease-out cubic
+                const ease = 1 - Math.pow(1 - progress, 3);
+                const current = start + (target - start) * ease;
+                el.textContent = prefix + (decimals > 0 ? current.toFixed(decimals) : Math.round(current));
+                if (progress < 1) requestAnimationFrame(update);
+            }
+            requestAnimationFrame(update);
+        }
+
+        let _dashboardRefreshTimer = null;
+
         async function loadDashboard() {
             try {
                 showLoading('stats-container');
@@ -4603,49 +4624,65 @@
                     <div class="stat-card primary">
                         <div class="stat-card-icon"><i class="fas fa-shopping-cart"></i></div>
                         <div class="stat-card-label">Orders</div>
-                        <div class="stat-card-value">${parseInt(stats.total_orders) || 0}</div>
+                        <div class="stat-card-value" data-count="${parseInt(stats.total_orders) || 0}" data-prefix="" data-decimals="0">0</div>
                     </div>
                     <div class="stat-card success">
                         <div class="stat-card-icon"><i class="fas fa-dollar-sign"></i></div>
                         <div class="stat-card-label">Revenue</div>
-                        <div class="stat-card-value">₹${parseFloat(stats.total_revenue || 0).toFixed(2)}</div>
+                        <div class="stat-card-value" data-count="${parseFloat(stats.total_revenue || 0)}" data-prefix="₹" data-decimals="2">₹0.00</div>
                     </div>
                     <div class="stat-card info">
                         <div class="stat-card-icon"><i class="fas fa-chart-line"></i></div>
                         <div class="stat-card-label">Profit</div>
-                        <div class="stat-card-value">₹${parseFloat(stats.total_profit || 0).toFixed(2)}</div>
+                        <div class="stat-card-value" data-count="${parseFloat(stats.total_profit || 0)}" data-prefix="₹" data-decimals="2">₹0.00</div>
                     </div>
                     <div class="stat-card warning">
                         <div class="stat-card-icon"><i class="fas fa-receipt"></i></div>
                         <div class="stat-card-label">Loss</div>
-                        <div class="stat-card-value">₹${parseFloat(stats.total_spent || 0).toFixed(2)}</div>
+                        <div class="stat-card-value" data-count="${parseFloat(stats.total_spent || 0)}" data-prefix="₹" data-decimals="2">₹0.00</div>
                     </div>
                     <div class="stat-card info">
                         <div class="stat-card-icon"><i class="fas fa-users"></i></div>
                         <div class="stat-card-label">Customers</div>
-                        <div class="stat-card-value">${parseInt(stats.total_customers) || 0}</div>
+                        <div class="stat-card-value" data-count="${parseInt(stats.total_customers) || 0}" data-prefix="" data-decimals="0">0</div>
                     </div>
                     <div class="stat-card warning">
                         <div class="stat-card-icon"><i class="fas fa-box"></i></div>
                         <div class="stat-card-label">Products</div>
-                        <div class="stat-card-value">${parseInt(stats.total_products) || 0}</div>
+                        <div class="stat-card-value" data-count="${parseInt(stats.total_products) || 0}" data-prefix="" data-decimals="0">0</div>
                     </div>
                     <div class="stat-card primary">
                         <div class="stat-card-icon"><i class="fas fa-boxes"></i></div>
                         <div class="stat-card-label">Stock Units</div>
-                        <div class="stat-card-value">${parseInt(stats.stock_units) || 0}</div>
+                        <div class="stat-card-value" data-count="${parseInt(stats.stock_units) || 0}" data-prefix="" data-decimals="0">0</div>
                     </div>
                     <div class="stat-card success">
                         <div class="stat-card-icon"><i class="fas fa-warehouse"></i></div>
                         <div class="stat-card-label">Stock Value</div>
-                        <div class="stat-card-value">₹${parseFloat(stats.stock_value || 0).toFixed(2)}</div>
+                        <div class="stat-card-value" data-count="${parseFloat(stats.stock_value || 0)}" data-prefix="₹" data-decimals="2">₹0.00</div>
                     </div>
                     <div class="stat-card info">
                         <div class="stat-card-icon"><i class="fas fa-chart-pie"></i></div>
                         <div class="stat-card-label">Stock Profit</div>
-                        <div class="stat-card-value">₹${parseFloat(stats.stock_profit || 0).toFixed(2)}</div>
+                        <div class="stat-card-value" data-count="${parseFloat(stats.stock_profit || 0)}" data-prefix="₹" data-decimals="2">₹0.00</div>
                     </div>
                 `;
+
+                // Trigger count-up animation on all stat values
+                document.querySelectorAll('#stats-container .stat-card-value[data-count]').forEach(el => {
+                    const target = parseFloat(el.dataset.count) || 0;
+                    const prefix = el.dataset.prefix || '';
+                    const decimals = parseInt(el.dataset.decimals) || 0;
+                    animateCountUp(el, target, prefix, decimals, 1400);
+                });
+
+                // Auto-refresh dashboard every 30 seconds while visible
+                if (_dashboardRefreshTimer) clearInterval(_dashboardRefreshTimer);
+                _dashboardRefreshTimer = setInterval(() => {
+                    if (window._currentSection === 'dashboard') {
+                        loadDashboardSilent();
+                    }
+                }, 30000);
 
                 // Recent Orders (dynamic)
                 try {
@@ -4772,6 +4809,38 @@
                         <div class="stat-card-value">0</div>
                     </div>
                 `;
+            }
+        }
+
+        // Silent dashboard refresh — updates stat numbers without showing a loading spinner
+        async function loadDashboardSilent() {
+            try {
+                const data = await api.get('/admin/dashboard/stats');
+                const stats = data.stats || {};
+                const mapping = [
+                    { label: 'Orders',       value: parseInt(stats.total_orders) || 0,           prefix: '',  decimals: 0 },
+                    { label: 'Revenue',      value: parseFloat(stats.total_revenue || 0),        prefix: '₹', decimals: 2 },
+                    { label: 'Profit',       value: parseFloat(stats.total_profit || 0),         prefix: '₹', decimals: 2 },
+                    { label: 'Loss',         value: parseFloat(stats.total_spent || 0),          prefix: '₹', decimals: 2 },
+                    { label: 'Customers',    value: parseInt(stats.total_customers) || 0,        prefix: '',  decimals: 0 },
+                    { label: 'Products',     value: parseInt(stats.total_products) || 0,         prefix: '',  decimals: 0 },
+                    { label: 'Stock Units',  value: parseInt(stats.stock_units) || 0,            prefix: '',  decimals: 0 },
+                    { label: 'Stock Value',  value: parseFloat(stats.stock_value || 0),          prefix: '₹', decimals: 2 },
+                    { label: 'Stock Profit', value: parseFloat(stats.stock_profit || 0),         prefix: '₹', decimals: 2 },
+                ];
+                const cards = document.querySelectorAll('#stats-container .stat-card-value[data-count]');
+                cards.forEach((el, i) => {
+                    if (mapping[i]) {
+                        const prev = parseFloat(el.dataset.count) || 0;
+                        const next = mapping[i].value;
+                        if (prev !== next) {
+                            el.dataset.count = next;
+                            animateCountUp(el, next, mapping[i].prefix, mapping[i].decimals, 800);
+                        }
+                    }
+                });
+            } catch (e) {
+                // silent — don't disrupt the UI
             }
         }
 
