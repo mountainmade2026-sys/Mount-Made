@@ -1884,7 +1884,7 @@
                         ${order.status === 'delivered' ? `
                         <div class="ws-order-footer">
                             <button class="ws-btn-cancel" onclick="openWholesaleReturnModal(${order.id})" style="color:var(--warning,#d97706);border-color:var(--warning,#d97706);">
-                                <i class="fas fa-undo-alt"></i> Return Products
+                                <i class="fas fa-undo-alt"></i> Return
                             </button>
                         </div>` : ''}
                     </div>
@@ -1928,13 +1928,29 @@
             }
         }
 
-        // ── Wholesale Return Functions ────────────────────────────────
+        // ── Wholesale Return Functions — Multi-Step Modal ────────────────────
+        const WS_RETURN_REASONS = [
+            { id: 'wrong_item', icon: 'fa-exchange-alt', label: 'Wrong Item Received' },
+            { id: 'damaged', icon: 'fa-box-open', label: 'Damaged / Broken' },
+            { id: 'not_as_described', icon: 'fa-image', label: 'Not as Described' },
+            { id: 'quality_issue', icon: 'fa-thumbs-down', label: 'Quality Issue' },
+            { id: 'expired', icon: 'fa-calendar-times', label: 'Expired Product' },
+            { id: 'changed_mind', icon: 'fa-heart-broken', label: 'Changed My Mind' },
+        ];
+
+        const WS_PRODUCT_CONDITIONS = [
+            { id: 'unopened', icon: 'fa-box', label: 'Unopened / Sealed' },
+            { id: 'opened', icon: 'fa-box-open', label: 'Opened' },
+            { id: 'damaged', icon: 'fa-bolt', label: 'Damaged' },
+        ];
+
         let _wsOrdersCache = [];
+        let _wsReturnStep = 1;
+        let _wsReturnOrderId = null;
 
         const _origLoadWholesaleOrders = loadWholesaleOrders;
         loadWholesaleOrders = async function() {
             await _origLoadWholesaleOrders();
-            // Cache orders for return modal
             try {
                 const data = await api.get('/orders');
                 _wsOrdersCache = data.orders || [];
@@ -1944,69 +1960,203 @@
         function openWholesaleReturnModal(orderId) {
             const order = _wsOrdersCache.find(o => o.id === orderId);
             if (!order || order.status !== 'delivered') return;
+            _wsReturnOrderId = orderId;
+            _wsReturnStep = 1;
 
             const items = order.items || [];
             const itemsHtml = items.map(item => `
-                <label style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0;border-bottom:1px solid #e5e7eb;">
-                    <input type="checkbox" class="ws-return-item-cb" data-order-item-id="${item.id}" data-quantity="${item.quantity}" checked>
-                    <div style="flex:1;"><div style="font-weight:600;">${item.product_name}</div>
-                    <div style="color:#64748b;font-size:0.85rem;">Qty: ${item.quantity} &times; ${formatCurrency(item.price || item.subtotal / item.quantity)}</div></div>
-                    <span style="font-weight:600;">${formatCurrency(item.subtotal)}</span>
+                <label class="ws-ri-check" onclick="this.classList.toggle('ws-ri-sel', this.querySelector('input').checked)">
+                    <input type="checkbox" class="ws-return-item-cb" data-order-item-id="${item.id}" data-product-name="${item.product_name}" data-quantity="${item.quantity}" data-price="${item.price || item.subtotal / item.quantity}" data-subtotal="${item.subtotal}" checked onchange="this.closest('.ws-ri-check').classList.toggle('ws-ri-sel', this.checked);">
+                    <div style="flex:1;"><div style="font-weight:600;font-size:0.92rem;">${item.product_name}</div>
+                    <div style="color:#64748b;font-size:0.82rem;">Qty: ${item.quantity} &times; ${formatCurrency(item.price || item.subtotal / item.quantity)}</div></div>
+                    <span style="font-weight:700;color:var(--primary,#1a4731);">${formatCurrency(item.subtotal)}</span>
+                </label>
+            `).join('');
+
+            const reasonsHtml = WS_RETURN_REASONS.map(r => `
+                <label class="ws-rr-opt" onclick="wsSelectReason(this)">
+                    <input type="radio" name="ws-return-reason" value="${r.id}" style="display:none;">
+                    <i class="fas ${r.icon}"></i><span>${r.label}</span>
+                </label>
+            `).join('');
+
+            const conditionsHtml = WS_PRODUCT_CONDITIONS.map(c => `
+                <label class="ws-rc-opt" onclick="wsSelectCondition(this)">
+                    <input type="radio" name="ws-return-condition" value="${c.id}" style="display:none;">
+                    <i class="fas ${c.icon}"></i><span>${c.label}</span>
                 </label>
             `).join('');
 
             const overlay = document.createElement('div');
             overlay.id = 'ws-return-modal';
-            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1rem;';
+            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1rem;animation:wsFadeIn .2s ease;';
             overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
             overlay.innerHTML = `
-                <div style="background:#fff;border-radius:12px;max-width:520px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,0.2);">
-                    <div style="padding:1.25rem 1.5rem;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center;">
-                        <h3 style="margin:0;font-size:1.1rem;"><i class="fas fa-undo-alt" style="color:#d97706;"></i> Return Products</h3>
-                        <button onclick="document.getElementById('ws-return-modal').remove()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;">&times;</button>
+                <style>
+                    @keyframes wsFadeIn { from { opacity:0; } to { opacity:1; } }
+                    @keyframes wsSlideUp { from { opacity:0;transform:translateY(24px); } to { opacity:1;transform:translateY(0); } }
+                    .ws-rm { background:#fff;border-radius:16px;max-width:560px;width:100%;max-height:92vh;overflow-y:auto;box-shadow:0 12px 48px rgba(0,0,0,0.22);animation:wsSlideUp .3s ease; }
+                    .ws-rm-head { padding:1.25rem 1.5rem;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#fff;z-index:1;border-radius:16px 16px 0 0; }
+                    .ws-rm-body { padding:1.25rem 1.5rem; }
+                    .ws-rm-foot { padding:1rem 1.5rem;border-top:1px solid #e5e7eb;display:flex;justify-content:flex-end;gap:0.75rem;position:sticky;bottom:0;background:#fff;border-radius:0 0 16px 16px; }
+                    .ws-rm-close { background:none;border:none;font-size:1.5rem;cursor:pointer;color:#94a3b8;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center; }
+                    .ws-rm-close:hover { background:#f1f5f9; }
+                    .ws-rm-stepper { display:flex;align-items:center;gap:0;margin-bottom:1.5rem; }
+                    .ws-rm-stp { display:flex;align-items:center;gap:0.4rem;font-size:0.78rem;font-weight:600;color:#94a3b8; }
+                    .ws-rm-stp.active { color:#1a4731; }
+                    .ws-rm-stp.done { color:#10b981; }
+                    .ws-rm-stp-n { width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.72rem;border:2px solid #e5e7eb;background:#fff; }
+                    .ws-rm-stp.active .ws-rm-stp-n { border-color:#1a4731;background:#1a4731;color:#fff; }
+                    .ws-rm-stp.done .ws-rm-stp-n { border-color:#10b981;background:#10b981;color:#fff; }
+                    .ws-rm-stp-line { flex:1;height:2px;background:#e5e7eb;margin:0 0.5rem; }
+                    .ws-rm-stp-line.done { background:#10b981; }
+                    .ws-ri-check { display:flex;align-items:center;gap:0.75rem;padding:0.75rem;border-radius:10px;border:2px solid #e5e7eb;margin-bottom:0.5rem;cursor:pointer;transition:all .15s; }
+                    .ws-ri-check:hover { border-color:#1a4731; }
+                    .ws-ri-sel { border-color:#1a4731;background:rgba(26,71,49,0.04); }
+                    .ws-ri-check input[type=checkbox] { accent-color:#1a4731;width:18px;height:18px;cursor:pointer; }
+                    .ws-rr-grid { display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:1rem; }
+                    .ws-rr-opt { display:flex;align-items:center;gap:0.5rem;padding:0.7rem 0.85rem;border:2px solid #e5e7eb;border-radius:10px;cursor:pointer;font-size:0.85rem;transition:all .15s; }
+                    .ws-rr-opt:hover { border-color:#1a4731; }
+                    .ws-rr-opt.selected { border-color:#1a4731;background:rgba(26,71,49,0.04);font-weight:600; }
+                    .ws-rr-opt i { font-size:1rem;color:#94a3b8; }
+                    .ws-rr-opt.selected i { color:#1a4731; }
+                    .ws-rc-grid { display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5rem;margin-bottom:1rem; }
+                    .ws-rc-opt { display:flex;flex-direction:column;align-items:center;gap:0.35rem;padding:0.85rem 0.5rem;border:2px solid #e5e7eb;border-radius:10px;cursor:pointer;font-size:0.78rem;text-align:center;transition:all .15s; }
+                    .ws-rc-opt:hover { border-color:#1a4731; }
+                    .ws-rc-opt.selected { border-color:#1a4731;background:rgba(26,71,49,0.04);font-weight:600; }
+                    .ws-rc-opt i { font-size:1.3rem;color:#94a3b8; }
+                    .ws-rc-opt.selected i { color:#1a4731; }
+                    .ws-rm-ta { width:100%;padding:0.75rem;border:2px solid #e5e7eb;border-radius:10px;font-size:0.92rem;resize:vertical;min-height:80px;font-family:inherit; }
+                    .ws-rm-ta:focus { outline:none;border-color:#1a4731; }
+                    .ws-rm-stitle { font-weight:700;font-size:0.9rem;margin-bottom:0.6rem;color:#1e293b; }
+                    .ws-rm-scard { background:#f8fafc;border-radius:10px;padding:1rem;margin-bottom:0.75rem;border:1px solid #e5e7eb; }
+                    .ws-rm-srow { display:flex;justify-content:space-between;padding:0.3rem 0;font-size:0.88rem; }
+                    .ws-rm-srow.total { font-weight:700;border-top:1px solid #e5e7eb;padding-top:0.6rem;margin-top:0.3rem; }
+                    .ws-rm-btn-ret { padding:0.6rem 1.25rem;border:none;border-radius:10px;font-weight:600;font-size:0.9rem;cursor:pointer;display:inline-flex;align-items:center;gap:0.4rem;background:#1a4731;color:#fff;transition:all .15s; }
+                    .ws-rm-btn-ret:hover { opacity:0.9; }
+                    .ws-rm-btn-ret:disabled { opacity:0.5;cursor:not-allowed; }
+                    .ws-rm-btn-dis { padding:0.6rem 1.25rem;border:2px solid #e5e7eb;border-radius:10px;font-weight:600;font-size:0.9rem;cursor:pointer;background:transparent;color:#1e293b;display:inline-flex;align-items:center;gap:0.4rem;transition:all .15s; }
+                    .ws-rm-btn-dis:hover { border-color:#ef4444;color:#ef4444; }
+                    @media(max-width:500px) { .ws-rr-grid { grid-template-columns:1fr; } .ws-rc-grid { grid-template-columns:1fr 1fr; } .ws-rm { border-radius:16px 16px 0 0;max-height:95vh; } #ws-return-modal { align-items:flex-end;padding:0; } }
+                </style>
+                <div class="ws-rm">
+                    <div class="ws-rm-head">
+                        <h3 style="margin:0;font-size:1.15rem;display:flex;align-items:center;gap:0.5rem;"><i class="fas fa-undo-alt" style="color:#d97706;"></i> Return Request</h3>
+                        <button class="ws-rm-close" onclick="document.getElementById('ws-return-modal').remove()">&times;</button>
                     </div>
-                    <div style="padding:1.25rem 1.5rem;">
-                        <p style="margin:0 0 0.5rem;color:#64748b;font-size:0.9rem;">Order <strong>#${order.order_number}</strong></p>
-                        <p style="margin:0 0 1rem;font-size:0.88rem;">Select items to return:</p>
-                        ${itemsHtml}
-                        <div style="margin-top:1rem;">
-                            <label style="display:block;font-weight:600;margin-bottom:0.35rem;">Reason for Return</label>
-                            <textarea id="ws-return-reason" rows="3" style="width:100%;padding:0.75rem;border:1px solid #e5e7eb;border-radius:8px;font-size:0.95rem;resize:vertical;" placeholder="Describe why you want to return..."></textarea>
+                    <div class="ws-rm-body">
+                        <p style="margin:0 0 1rem;color:#64748b;font-size:0.88rem;">Order <strong>#${order.order_number}</strong> &bull; ${formatDate(order.created_at)}</p>
+                        <div class="ws-rm-stepper">
+                            <div class="ws-rm-stp active" id="ws-rm-stp-1"><span class="ws-rm-stp-n">1</span> Items</div>
+                            <div class="ws-rm-stp-line" id="ws-rm-line-1"></div>
+                            <div class="ws-rm-stp" id="ws-rm-stp-2"><span class="ws-rm-stp-n">2</span> Reason</div>
+                            <div class="ws-rm-stp-line" id="ws-rm-line-2"></div>
+                            <div class="ws-rm-stp" id="ws-rm-stp-3"><span class="ws-rm-stp-n">3</span> Review</div>
+                        </div>
+                        <div id="ws-rm-page-1">
+                            <div class="ws-rm-stitle">Which items do you want to return?</div>
+                            ${itemsHtml}
+                        </div>
+                        <div id="ws-rm-page-2" style="display:none;">
+                            <div class="ws-rm-stitle">Why are you returning?</div>
+                            <div class="ws-rr-grid">${reasonsHtml}</div>
+                            <div class="ws-rm-stitle">What is the product condition?</div>
+                            <div class="ws-rc-grid">${conditionsHtml}</div>
+                            <div class="ws-rm-stitle">Additional details <span style="font-weight:400;color:#94a3b8;font-size:0.8rem;">(optional)</span></div>
+                            <textarea class="ws-rm-ta" id="ws-return-details" placeholder="Tell us more about what happened..."></textarea>
+                        </div>
+                        <div id="ws-rm-page-3" style="display:none;">
+                            <div class="ws-rm-stitle">Review Your Return</div>
+                            <div class="ws-rm-scard" id="ws-rm-summary-items"></div>
+                            <div class="ws-rm-scard" id="ws-rm-summary-reason"></div>
+                            <div style="padding:0.6rem 0;font-size:0.85rem;color:#64748b;"><i class="fas fa-info-circle" style="color:#3b82f6;"></i> Once submitted, our team will review your request within 24-48 hours.</div>
                         </div>
                     </div>
-                    <div style="padding:1rem 1.5rem;border-top:1px solid #e5e7eb;display:flex;justify-content:flex-end;gap:0.75rem;">
-                        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('ws-return-modal').remove()">Cancel</button>
-                        <button class="btn btn-primary btn-sm" id="ws-return-submit" onclick="submitWholesaleReturn(${orderId})">
-                            <i class="fas fa-paper-plane"></i> Submit Return
-                        </button>
+                    <div class="ws-rm-foot">
+                        <button class="ws-rm-btn-dis" id="ws-rm-btn-back" onclick="wsReturnStepBack()" style="display:none;"><i class="fas fa-arrow-left"></i> Back</button>
+                        <div style="flex:1;"></div>
+                        <button class="ws-rm-btn-dis" onclick="document.getElementById('ws-return-modal').remove()"><i class="fas fa-times"></i> Discard</button>
+                        <button class="ws-rm-btn-ret" id="ws-rm-btn-next" onclick="wsReturnStepNext()">Next <i class="fas fa-arrow-right"></i></button>
                     </div>
                 </div>
             `;
             document.body.appendChild(overlay);
+            document.querySelectorAll('.ws-ri-check').forEach(el => el.classList.add('ws-ri-sel'));
         }
 
-        async function submitWholesaleReturn(orderId) {
-            const reason = (document.getElementById('ws-return-reason').value || '').trim();
-            if (!reason) { alert('Please provide a reason.'); return; }
+        function wsSelectReason(el) { document.querySelectorAll('.ws-rr-opt').forEach(o => o.classList.remove('selected')); el.classList.add('selected'); el.querySelector('input').checked = true; }
+        function wsSelectCondition(el) { document.querySelectorAll('.ws-rc-opt').forEach(o => o.classList.remove('selected')); el.classList.add('selected'); el.querySelector('input').checked = true; }
 
-            const cbs = document.querySelectorAll('.ws-return-item-cb:checked');
-            if (!cbs.length) { alert('Select at least one item.'); return; }
+        function wsUpdateReturnSummary() {
+            const checked = document.querySelectorAll('.ws-return-item-cb:checked');
+            let total = 0, html = '';
+            checked.forEach(cb => {
+                const name = cb.dataset.productName, qty = parseInt(cb.dataset.quantity), sub = parseFloat(cb.dataset.subtotal);
+                total += sub;
+                html += `<div class="ws-rm-srow"><span>${name} &times; ${qty}</span><span>${formatCurrency(sub)}</span></div>`;
+            });
+            html += `<div class="ws-rm-srow total"><span>Estimated Refund</span><span style="color:#10b981;">${formatCurrency(total)}</span></div>`;
+            const si = document.getElementById('ws-rm-summary-items'); if (si) si.innerHTML = html;
+
+            const re = document.querySelector('input[name="ws-return-reason"]:checked');
+            const co = document.querySelector('input[name="ws-return-condition"]:checked');
+            const det = (document.getElementById('ws-return-details')?.value || '').trim();
+            const rl = re ? WS_RETURN_REASONS.find(r => r.id === re.value)?.label : '—';
+            const cl = co ? WS_PRODUCT_CONDITIONS.find(c => c.id === co.value)?.label : '—';
+            const sr = document.getElementById('ws-rm-summary-reason');
+            if (sr) sr.innerHTML = `<div class="ws-rm-srow"><span style="color:#64748b;">Reason</span><span style="font-weight:600;">${rl}</span></div><div class="ws-rm-srow"><span style="color:#64748b;">Condition</span><span style="font-weight:600;">${cl}</span></div>${det ? `<div style="margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid #e5e7eb;font-size:0.85rem;color:#64748b;"><strong>Details:</strong> ${det}</div>` : ''}`;
+        }
+
+        function wsSetReturnStep(step) {
+            _wsReturnStep = step;
+            for (let i = 1; i <= 3; i++) {
+                const p = document.getElementById(`ws-rm-page-${i}`), s = document.getElementById(`ws-rm-stp-${i}`);
+                if (p) p.style.display = i === step ? 'block' : 'none';
+                if (s) { s.classList.remove('active','done'); if (i < step) s.classList.add('done'); else if (i === step) s.classList.add('active'); }
+                if (i < 3) { const l = document.getElementById(`ws-rm-line-${i}`); if (l) l.classList.toggle('done', i < step); }
+            }
+            const bb = document.getElementById('ws-rm-btn-back'), nb = document.getElementById('ws-rm-btn-next');
+            if (bb) bb.style.display = step > 1 ? '' : 'none';
+            if (nb) { if (step === 3) { nb.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Return'; nb.onclick = wsSubmitReturn; } else { nb.innerHTML = 'Next <i class="fas fa-arrow-right"></i>'; nb.onclick = wsReturnStepNext; } }
+        }
+
+        function wsReturnStepNext() {
+            if (_wsReturnStep === 1) {
+                if (!document.querySelectorAll('.ws-return-item-cb:checked').length) { alert('Select at least one item.'); return; }
+                wsSetReturnStep(2);
+            } else if (_wsReturnStep === 2) {
+                if (!document.querySelector('input[name="ws-return-reason"]:checked')) { alert('Select a reason.'); return; }
+                if (!document.querySelector('input[name="ws-return-condition"]:checked')) { alert('Select the product condition.'); return; }
+                wsUpdateReturnSummary();
+                wsSetReturnStep(3);
+            }
+        }
+
+        function wsReturnStepBack() { if (_wsReturnStep > 1) wsSetReturnStep(_wsReturnStep - 1); }
+
+        async function wsSubmitReturn() {
+            const re = document.querySelector('input[name="ws-return-reason"]:checked');
+            const co = document.querySelector('input[name="ws-return-condition"]:checked');
+            const det = (document.getElementById('ws-return-details')?.value || '').trim();
+            const rl = WS_RETURN_REASONS.find(r => r.id === re.value)?.label || re.value;
+            const cl = WS_PRODUCT_CONDITIONS.find(c => c.id === co.value)?.label || co.value;
+            let reason = `Reason: ${rl}. Condition: ${cl}.`;
+            if (det) reason += ` Details: ${det}`;
 
             const items = [];
-            cbs.forEach(cb => items.push({ order_item_id: parseInt(cb.dataset.orderItemId), quantity: parseInt(cb.dataset.quantity) }));
+            document.querySelectorAll('.ws-return-item-cb:checked').forEach(cb => items.push({ order_item_id: parseInt(cb.dataset.orderItemId), quantity: parseInt(cb.dataset.quantity) }));
 
-            const btn = document.getElementById('ws-return-submit');
-            if (btn) btn.disabled = true;
+            const btn = document.getElementById('ws-rm-btn-next');
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...'; }
 
             try {
-                await api.post('/returns', { order_id: orderId, reason, items });
-                alert('Return request submitted! Redirecting to My Returns...');
+                await api.post('/returns', { order_id: _wsReturnOrderId, reason, items });
+                alert('Return request submitted successfully!');
                 document.getElementById('ws-return-modal')?.remove();
                 window.location.href = '/returns';
             } catch (err) {
                 alert(err?.message || 'Failed to submit return.');
-            } finally {
-                if (btn) btn.disabled = false;
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Return'; }
             }
         }
 

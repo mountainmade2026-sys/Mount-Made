@@ -147,26 +147,128 @@
             }
         }
 
+        /* ── Return Modal ─────────────────────────── */
         .return-modal-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 9999;
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 9999;
             display: flex; align-items: center; justify-content: center; padding: 1rem;
+            animation: rmFadeIn .2s ease;
         }
+        @keyframes rmFadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes rmSlideUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+
         .return-modal {
-            background: #fff; border-radius: 12px; max-width: 520px; width: 100%;
-            max-height: 90vh; overflow-y: auto; box-shadow: 0 8px 40px rgba(0,0,0,0.2);
+            background: var(--bg-primary, #fff); border-radius: 16px; max-width: 560px; width: 100%;
+            max-height: 92vh; overflow-y: auto; box-shadow: 0 12px 48px rgba(0,0,0,0.22);
+            animation: rmSlideUp .3s ease;
         }
         .return-modal-header {
             padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border, #e5e7eb);
             display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top: 0; background: var(--bg-primary, #fff); z-index: 1; border-radius: 16px 16px 0 0;
         }
-        .return-modal-header h3 { margin: 0; font-size: 1.1rem; }
+        .return-modal-header h3 { margin: 0; font-size: 1.15rem; display: flex; align-items: center; gap: 0.5rem; }
         .return-modal-body { padding: 1.25rem 1.5rem; }
         .return-modal-footer {
             padding: 1rem 1.5rem; border-top: 1px solid var(--border, #e5e7eb);
             display: flex; justify-content: flex-end; gap: 0.75rem;
+            position: sticky; bottom: 0; background: var(--bg-primary, #fff); border-radius: 0 0 16px 16px;
         }
-        .return-item-check { display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0; border-bottom: 1px solid var(--border, #e5e7eb); }
-        .return-item-check:last-child { border-bottom: none; }
+        .return-modal-close {
+            background: none; border: none; font-size: 1.5rem; cursor: pointer;
+            color: var(--text-light); width: 36px; height: 36px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; transition: background .15s;
+        }
+        .return-modal-close:hover { background: var(--bg-secondary, #f1f5f9); }
+
+        /* Stepper */
+        .rm-stepper { display: flex; align-items: center; gap: 0; margin-bottom: 1.5rem; }
+        .rm-step {
+            display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; font-weight: 600;
+            color: var(--text-light, #94a3b8); transition: color .2s;
+        }
+        .rm-step.active { color: var(--primary, #1a4731); }
+        .rm-step.done { color: var(--success, #10b981); }
+        .rm-step-num {
+            width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 0.72rem; border: 2px solid var(--border, #e5e7eb); background: var(--bg-primary, #fff); transition: all .2s;
+        }
+        .rm-step.active .rm-step-num { border-color: var(--primary, #1a4731); background: var(--primary, #1a4731); color: #fff; }
+        .rm-step.done .rm-step-num { border-color: var(--success, #10b981); background: var(--success, #10b981); color: #fff; }
+        .rm-step-line { flex: 1; height: 2px; background: var(--border, #e5e7eb); margin: 0 0.5rem; transition: background .2s; }
+        .rm-step-line.done { background: var(--success, #10b981); }
+
+        /* Item Selection */
+        .return-item-check {
+            display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; border-radius: 10px;
+            border: 2px solid var(--border, #e5e7eb); margin-bottom: 0.5rem; cursor: pointer; transition: all .15s;
+        }
+        .return-item-check:hover { border-color: var(--primary, #1a4731); background: rgba(26,71,49,0.02); }
+        .return-item-check.selected { border-color: var(--primary, #1a4731); background: rgba(26,71,49,0.04); }
+        .return-item-check input[type="checkbox"] { accent-color: var(--primary, #1a4731); width: 18px; height: 18px; cursor: pointer; }
+
+        /* Reason Options */
+        .rm-reason-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 1rem; }
+        .rm-reason-option {
+            display: flex; align-items: center; gap: 0.5rem; padding: 0.7rem 0.85rem;
+            border: 2px solid var(--border, #e5e7eb); border-radius: 10px; cursor: pointer;
+            font-size: 0.85rem; transition: all .15s; background: var(--bg-primary, #fff);
+        }
+        .rm-reason-option:hover { border-color: var(--primary, #1a4731); }
+        .rm-reason-option.selected { border-color: var(--primary, #1a4731); background: rgba(26,71,49,0.04); font-weight: 600; }
+        .rm-reason-option i { font-size: 1rem; color: var(--text-light); transition: color .15s; }
+        .rm-reason-option.selected i { color: var(--primary, #1a4731); }
+        .rm-reason-option input { display: none; }
+
+        /* Condition Options */
+        .rm-condition-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; margin-bottom: 1rem; }
+        .rm-condition-option {
+            display: flex; flex-direction: column; align-items: center; gap: 0.35rem; padding: 0.85rem 0.5rem;
+            border: 2px solid var(--border, #e5e7eb); border-radius: 10px; cursor: pointer;
+            font-size: 0.78rem; text-align: center; transition: all .15s; background: var(--bg-primary, #fff);
+        }
+        .rm-condition-option:hover { border-color: var(--primary, #1a4731); }
+        .rm-condition-option.selected { border-color: var(--primary, #1a4731); background: rgba(26,71,49,0.04); font-weight: 600; }
+        .rm-condition-option i { font-size: 1.3rem; color: var(--text-light); transition: color .15s; }
+        .rm-condition-option.selected i { color: var(--primary, #1a4731); }
+        .rm-condition-option input { display: none; }
+
+        .rm-textarea {
+            width: 100%; padding: 0.75rem; border: 2px solid var(--border, #e5e7eb); border-radius: 10px;
+            font-size: 0.92rem; resize: vertical; min-height: 80px; font-family: inherit; transition: border-color .15s;
+        }
+        .rm-textarea:focus { outline: none; border-color: var(--primary, #1a4731); }
+
+        .rm-section-title { font-weight: 700; font-size: 0.9rem; margin-bottom: 0.6rem; color: var(--text-primary, #1e293b); }
+
+        /* Summary */
+        .rm-summary-card {
+            background: var(--bg-secondary, #f8fafc); border-radius: 10px; padding: 1rem; margin-bottom: 0.75rem;
+            border: 1px solid var(--border, #e5e7eb);
+        }
+        .rm-summary-row { display: flex; justify-content: space-between; padding: 0.3rem 0; font-size: 0.88rem; }
+        .rm-summary-row.total { font-weight: 700; border-top: 1px solid var(--border); padding-top: 0.6rem; margin-top: 0.3rem; }
+
+        /* Action Buttons */
+        .rm-btn-return {
+            padding: 0.6rem 1.25rem; border: none; border-radius: 10px; font-weight: 600; font-size: 0.9rem;
+            cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem; transition: all .15s;
+            background: var(--primary, #1a4731); color: #fff;
+        }
+        .rm-btn-return:hover { opacity: 0.9; transform: translateY(-1px); }
+        .rm-btn-return:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .rm-btn-discard {
+            padding: 0.6rem 1.25rem; border: 2px solid var(--border, #e5e7eb); border-radius: 10px;
+            font-weight: 600; font-size: 0.9rem; cursor: pointer; background: transparent;
+            color: var(--text-primary); display: inline-flex; align-items: center; gap: 0.4rem; transition: all .15s;
+        }
+        .rm-btn-discard:hover { border-color: var(--error, #ef4444); color: var(--error, #ef4444); }
+
+        @media (max-width: 500px) {
+            .rm-reason-grid { grid-template-columns: 1fr; }
+            .rm-condition-grid { grid-template-columns: 1fr 1fr; }
+            .return-modal { border-radius: 16px 16px 0 0; max-height: 95vh; }
+            .return-modal-overlay { align-items: flex-end; padding: 0; }
+        }
 
         /* account dropdown styles moved to styles.css */
     </style>
@@ -296,18 +398,18 @@
                             <strong style="display: block; margin-bottom: 0.5rem;">Items:</strong>
                             ${order.items.map(item => `<div style="display: flex; justify-content: space-between; padding: 0.5rem 0;"><span>${item.product_name} x ${item.quantity}</span><span>${formatCurrency(item.subtotal)}</span></div>`).join('')}
 
-                            ${canCustomerCancel(order) ? `
-                                <div style="margin-top: 1rem; display:flex; justify-content:flex-end; gap:0.5rem;">
-                                    <button class="btn btn-danger btn-sm" onclick="cancelOrder(${order.id})">
-                                        <i class="fas fa-times"></i> Cancel Order
-                                    </button>
-                                </div>
-                            ` : ''}
-                            ${order.status === 'delivered' ? `
-                                <div style="margin-top: 1rem; display:flex; justify-content:flex-end; gap:0.5rem;">
-                                    <button class="btn btn-secondary btn-sm" onclick="openReturnModal(${order.id})" style="border-color:var(--warning);color:var(--warning);">
-                                        <i class="fas fa-undo-alt"></i> Return Products
-                                    </button>
+                            ${(canCustomerCancel(order) || order.status === 'delivered') ? `
+                                <div style="margin-top: 1rem; display:flex; justify-content:flex-end; gap:0.5rem; flex-wrap:wrap;">
+                                    ${canCustomerCancel(order) ? `
+                                        <button class="btn btn-danger btn-sm" onclick="cancelOrder(${order.id})">
+                                            <i class="fas fa-times"></i> Cancel Order
+                                        </button>
+                                    ` : ''}
+                                    ${order.status === 'delivered' ? `
+                                        <button class="btn btn-secondary btn-sm" onclick="openReturnModal(${order.id})" style="border-color:var(--warning);color:var(--warning);">
+                                            <i class="fas fa-undo-alt"></i> Return
+                                        </button>
+                                    ` : ''}
                                 </div>
                             ` : ''}
                         </div>
@@ -316,20 +418,56 @@
             `).join('');
         }
 
-        // ── Return Products Functions ──────────────────────────────
+        // ── Return Products — Multi-Step Modal ──────────────────
+        const RETURN_REASONS = [
+            { id: 'wrong_item', icon: 'fa-exchange-alt', label: 'Wrong Item Received' },
+            { id: 'damaged', icon: 'fa-box-open', label: 'Damaged / Broken' },
+            { id: 'not_as_described', icon: 'fa-image', label: 'Not as Described' },
+            { id: 'quality_issue', icon: 'fa-thumbs-down', label: 'Quality Issue' },
+            { id: 'expired', icon: 'fa-calendar-times', label: 'Expired Product' },
+            { id: 'changed_mind', icon: 'fa-heart-broken', label: 'Changed My Mind' },
+        ];
+
+        const PRODUCT_CONDITIONS = [
+            { id: 'unopened', icon: 'fa-box', label: 'Unopened / Sealed' },
+            { id: 'opened', icon: 'fa-box-open', label: 'Opened' },
+            { id: 'damaged', icon: 'fa-bolt', label: 'Damaged' },
+        ];
+
+        let _returnStep = 1;
+        let _returnOrderId = null;
+
         function openReturnModal(orderId) {
             const order = _ordersCache.find(o => o.id === orderId);
             if (!order || order.status !== 'delivered') return;
+            _returnOrderId = orderId;
+            _returnStep = 1;
 
             const items = order.items || [];
             const itemsHtml = items.map(item => `
-                <label class="return-item-check">
-                    <input type="checkbox" class="return-item-cb" data-order-item-id="${item.id}" data-quantity="${item.quantity}" checked>
+                <label class="return-item-check" onclick="this.classList.toggle('selected', this.querySelector('input').checked)">
+                    <input type="checkbox" class="return-item-cb" data-order-item-id="${item.id}" data-product-name="${item.product_name}" data-quantity="${item.quantity}" data-price="${item.price || item.subtotal / item.quantity}" data-subtotal="${item.subtotal}" checked onchange="this.closest('.return-item-check').classList.toggle('selected', this.checked); updateReturnSummary();">
                     <div style="flex:1;">
-                        <div style="font-weight:600;">${item.product_name}</div>
-                        <div style="color:var(--text-light);font-size:0.85rem;">Qty: ${item.quantity} &times; ${formatCurrency(item.price || item.subtotal / item.quantity)}</div>
+                        <div style="font-weight:600;font-size:0.92rem;">${item.product_name}</div>
+                        <div style="color:var(--text-light);font-size:0.82rem;">Qty: ${item.quantity} &times; ${formatCurrency(item.price || item.subtotal / item.quantity)}</div>
                     </div>
-                    <span style="font-weight:600;">${formatCurrency(item.subtotal)}</span>
+                    <span style="font-weight:700;color:var(--primary);">${formatCurrency(item.subtotal)}</span>
+                </label>
+            `).join('');
+
+            const reasonsHtml = RETURN_REASONS.map(r => `
+                <label class="rm-reason-option" onclick="selectReason(this)">
+                    <input type="radio" name="return-reason" value="${r.id}">
+                    <i class="fas ${r.icon}"></i>
+                    <span>${r.label}</span>
+                </label>
+            `).join('');
+
+            const conditionsHtml = PRODUCT_CONDITIONS.map(c => `
+                <label class="rm-condition-option" onclick="selectCondition(this)">
+                    <input type="radio" name="return-condition" value="${c.id}">
+                    <i class="fas ${c.icon}"></i>
+                    <span>${c.label}</span>
                 </label>
             `).join('');
 
@@ -340,42 +478,177 @@
             modal.innerHTML = `
                 <div class="return-modal">
                     <div class="return-modal-header">
-                        <h3><i class="fas fa-undo-alt" style="color:var(--warning);"></i> Return Products</h3>
-                        <button onclick="document.getElementById('return-modal').remove()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--text-light);">&times;</button>
+                        <h3><i class="fas fa-undo-alt" style="color:var(--warning);"></i> Return Request</h3>
+                        <button class="return-modal-close" onclick="document.getElementById('return-modal').remove()">&times;</button>
                     </div>
                     <div class="return-modal-body">
-                        <p style="margin:0 0 0.5rem;color:var(--text-light);font-size:0.9rem;">Order <strong>#${order.order_number}</strong></p>
-                        <p style="margin:0 0 1rem;font-size:0.88rem;">Select items you want to return:</p>
-                        <div id="return-items-list">${itemsHtml}</div>
-                        <div style="margin-top:1rem;">
-                            <label style="display:block;font-weight:600;margin-bottom:0.35rem;">Reason for Return</label>
-                            <textarea id="return-reason" rows="3" style="width:100%;padding:0.75rem;border:1px solid var(--border,#e5e7eb);border-radius:8px;font-size:0.95rem;resize:vertical;" placeholder="Please describe why you want to return these products..."></textarea>
+                        <p style="margin:0 0 1rem;color:var(--text-light);font-size:0.88rem;">Order <strong>#${order.order_number}</strong> &bull; ${formatDate(order.created_at)}</p>
+
+                        <!-- Stepper -->
+                        <div class="rm-stepper">
+                            <div class="rm-step active" id="rm-step-1"><span class="rm-step-num">1</span> Items</div>
+                            <div class="rm-step-line" id="rm-line-1"></div>
+                            <div class="rm-step" id="rm-step-2"><span class="rm-step-num">2</span> Reason</div>
+                            <div class="rm-step-line" id="rm-line-2"></div>
+                            <div class="rm-step" id="rm-step-3"><span class="rm-step-num">3</span> Review</div>
+                        </div>
+
+                        <!-- Step 1: Select Items -->
+                        <div id="rm-page-1">
+                            <div class="rm-section-title">Which items do you want to return?</div>
+                            <div id="return-items-list">${itemsHtml}</div>
+                        </div>
+
+                        <!-- Step 2: Reason & Condition -->
+                        <div id="rm-page-2" style="display:none;">
+                            <div class="rm-section-title">Why are you returning?</div>
+                            <div class="rm-reason-grid">${reasonsHtml}</div>
+
+                            <div class="rm-section-title">What is the product condition?</div>
+                            <div class="rm-condition-grid">${conditionsHtml}</div>
+
+                            <div class="rm-section-title">Additional details <span style="font-weight:400;color:var(--text-light);font-size:0.8rem;">(optional)</span></div>
+                            <textarea class="rm-textarea" id="return-details" placeholder="Tell us more about what happened — any extra details help us process your return faster..."></textarea>
+                        </div>
+
+                        <!-- Step 3: Review & Confirm -->
+                        <div id="rm-page-3" style="display:none;">
+                            <div class="rm-section-title">Review Your Return</div>
+                            <div class="rm-summary-card" id="rm-summary-items"></div>
+                            <div class="rm-summary-card" id="rm-summary-reason"></div>
+                            <div style="padding:0.6rem 0;font-size:0.85rem;color:var(--text-light);">
+                                <i class="fas fa-info-circle" style="color:var(--info);"></i>
+                                Once submitted, our team will review your request within 24–48 hours. You'll be notified of any updates.
+                            </div>
                         </div>
                     </div>
                     <div class="return-modal-footer">
-                        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('return-modal').remove()">Cancel</button>
-                        <button class="btn btn-primary btn-sm" onclick="submitReturnRequest(${orderId})" id="return-submit-btn">
-                            <i class="fas fa-paper-plane"></i> Submit Return
+                        <button class="rm-btn-discard" id="rm-btn-back" onclick="returnStepBack()" style="display:none;">
+                            <i class="fas fa-arrow-left"></i> Back
+                        </button>
+                        <div style="flex:1;"></div>
+                        <button class="rm-btn-discard" onclick="document.getElementById('return-modal').remove()">
+                            <i class="fas fa-times"></i> Discard
+                        </button>
+                        <button class="rm-btn-return" id="rm-btn-next" onclick="returnStepNext()">
+                            Next <i class="fas fa-arrow-right"></i>
                         </button>
                     </div>
                 </div>
             `;
             document.body.appendChild(modal);
+
+            // Auto-select all items
+            document.querySelectorAll('.return-item-check').forEach(el => el.classList.add('selected'));
         }
 
-        async function submitReturnRequest(orderId) {
-            const reason = (document.getElementById('return-reason').value || '').trim();
-            if (!reason) {
-                showAlert('Please provide a reason for the return.', 'error');
-                return;
+        function selectReason(el) {
+            document.querySelectorAll('.rm-reason-option').forEach(o => o.classList.remove('selected'));
+            el.classList.add('selected');
+            el.querySelector('input').checked = true;
+        }
+
+        function selectCondition(el) {
+            document.querySelectorAll('.rm-condition-option').forEach(o => o.classList.remove('selected'));
+            el.classList.add('selected');
+            el.querySelector('input').checked = true;
+        }
+
+        function updateReturnSummary() {
+            const checked = document.querySelectorAll('.return-item-cb:checked');
+            let totalRefund = 0;
+            let itemsHtml = '';
+            checked.forEach(cb => {
+                const name = cb.dataset.productName;
+                const qty = parseInt(cb.dataset.quantity);
+                const subtotal = parseFloat(cb.dataset.subtotal);
+                totalRefund += subtotal;
+                itemsHtml += `<div class="rm-summary-row"><span>${name} &times; ${qty}</span><span>${formatCurrency(subtotal)}</span></div>`;
+            });
+            itemsHtml += `<div class="rm-summary-row total"><span>Estimated Refund</span><span style="color:var(--success);">${formatCurrency(totalRefund)}</span></div>`;
+
+            const summaryItems = document.getElementById('rm-summary-items');
+            if (summaryItems) summaryItems.innerHTML = itemsHtml;
+
+            const reasonEl = document.querySelector('input[name="return-reason"]:checked');
+            const conditionEl = document.querySelector('input[name="return-condition"]:checked');
+            const details = (document.getElementById('return-details')?.value || '').trim();
+
+            const reasonLabel = reasonEl ? RETURN_REASONS.find(r => r.id === reasonEl.value)?.label : '—';
+            const conditionLabel = conditionEl ? PRODUCT_CONDITIONS.find(c => c.id === conditionEl.value)?.label : '—';
+
+            const summaryReason = document.getElementById('rm-summary-reason');
+            if (summaryReason) {
+                summaryReason.innerHTML = `
+                    <div class="rm-summary-row"><span style="color:var(--text-light);">Reason</span><span style="font-weight:600;">${reasonLabel}</span></div>
+                    <div class="rm-summary-row"><span style="color:var(--text-light);">Condition</span><span style="font-weight:600;">${conditionLabel}</span></div>
+                    ${details ? `<div style="margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid var(--border);font-size:0.85rem;color:var(--text-light);"><strong>Details:</strong> ${details}</div>` : ''}
+                `;
             }
+        }
+
+        function setReturnStep(step) {
+            _returnStep = step;
+            for (let i = 1; i <= 3; i++) {
+                const page = document.getElementById(`rm-page-${i}`);
+                const stepEl = document.getElementById(`rm-step-${i}`);
+                if (page) page.style.display = i === step ? 'block' : 'none';
+                if (stepEl) {
+                    stepEl.classList.remove('active', 'done');
+                    if (i < step) stepEl.classList.add('done');
+                    else if (i === step) stepEl.classList.add('active');
+                }
+                if (i < 3) {
+                    const line = document.getElementById(`rm-line-${i}`);
+                    if (line) { line.classList.toggle('done', i < step); }
+                }
+            }
+
+            const backBtn = document.getElementById('rm-btn-back');
+            const nextBtn = document.getElementById('rm-btn-next');
+            if (backBtn) backBtn.style.display = step > 1 ? '' : 'none';
+            if (nextBtn) {
+                if (step === 3) {
+                    nextBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Return';
+                    nextBtn.onclick = submitReturnRequest;
+                } else {
+                    nextBtn.innerHTML = 'Next <i class="fas fa-arrow-right"></i>';
+                    nextBtn.onclick = returnStepNext;
+                }
+            }
+        }
+
+        function returnStepNext() {
+            if (_returnStep === 1) {
+                const checked = document.querySelectorAll('.return-item-cb:checked');
+                if (!checked.length) { showAlert('Please select at least one item to return.', 'error'); return; }
+                setReturnStep(2);
+            } else if (_returnStep === 2) {
+                const reason = document.querySelector('input[name="return-reason"]:checked');
+                if (!reason) { showAlert('Please select a reason for the return.', 'error'); return; }
+                const condition = document.querySelector('input[name="return-condition"]:checked');
+                if (!condition) { showAlert('Please select the product condition.', 'error'); return; }
+                updateReturnSummary();
+                setReturnStep(3);
+            }
+        }
+
+        function returnStepBack() {
+            if (_returnStep > 1) setReturnStep(_returnStep - 1);
+        }
+
+        async function submitReturnRequest() {
+            const reasonEl = document.querySelector('input[name="return-reason"]:checked');
+            const conditionEl = document.querySelector('input[name="return-condition"]:checked');
+            const details = (document.getElementById('return-details')?.value || '').trim();
+
+            const reasonLabel = RETURN_REASONS.find(r => r.id === reasonEl.value)?.label || reasonEl.value;
+            const conditionLabel = PRODUCT_CONDITIONS.find(c => c.id === conditionEl.value)?.label || conditionEl.value;
+
+            let reason = `Reason: ${reasonLabel}. Condition: ${conditionLabel}.`;
+            if (details) reason += ` Details: ${details}`;
 
             const checkboxes = document.querySelectorAll('.return-item-cb:checked');
-            if (!checkboxes.length) {
-                showAlert('Please select at least one item to return.', 'error');
-                return;
-            }
-
             const items = [];
             checkboxes.forEach(cb => {
                 items.push({
@@ -384,19 +657,18 @@
                 });
             });
 
-            const btn = document.getElementById('return-submit-btn');
-            if (btn) btn.disabled = true;
+            const btn = document.getElementById('rm-btn-next');
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...'; }
 
             try {
-                const resp = await api.post('/returns', { order_id: orderId, reason, items });
-                showAlert(resp.message || 'Return request submitted! Redirecting...', 'success');
+                const resp = await api.post('/returns', { order_id: _returnOrderId, reason, items });
+                showAlert(resp.message || 'Return request submitted successfully!', 'success');
                 const modal = document.getElementById('return-modal');
                 if (modal) modal.remove();
                 setTimeout(() => { window.location.href = '/returns'; }, 1500);
             } catch (err) {
                 showAlert(err.message || 'Failed to submit return request.', 'error');
-            } finally {
-                if (btn) btn.disabled = false;
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Return'; }
             }
         }
 
