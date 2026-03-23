@@ -1881,7 +1881,7 @@
                                 <i class="fas fa-times-circle"></i> Cancel Order
                             </button>
                         </div>` : ''}
-                        ${order.status === 'delivered' ? `
+                        ${(order.status === 'delivered' || order.status === 'shipped') ? `
                         <div class="ws-order-footer">
                             <button class="ws-btn-cancel" onclick="openWholesaleReturnModal(${order.id})" style="color:var(--warning,#d97706);border-color:var(--warning,#d97706);">
                                 <i class="fas fa-undo-alt"></i> Return
@@ -1959,7 +1959,7 @@
 
         function openWholesaleReturnModal(orderId) {
             const order = _wsOrdersCache.find(o => o.id === orderId);
-            if (!order || order.status !== 'delivered') return;
+            if (!order || (order.status !== 'delivered' && order.status !== 'shipped')) return;
             _wsReturnOrderId = orderId;
             _wsReturnStep = 1;
 
