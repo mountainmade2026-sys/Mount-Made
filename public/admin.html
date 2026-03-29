@@ -11476,7 +11476,41 @@ ${docHtml.outerHTML}
             _prepDocDate();
             const docHtml = document.getElementById('ownership-doc-content');
             if (!docHtml) return;
-            _buildDocWindow(docHtml, true);
+
+            // Show loading state on button
+            const btn = document.querySelector('[onclick="downloadOwnershipDoc()"]');
+            const origHtml = btn ? btn.innerHTML : null;
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating…'; }
+
+            function doDownload() {
+                const opt = {
+                    margin:       [10, 12, 10, 12],
+                    filename:     'Mountain_Made_Ownership_Certificate.pdf',
+                    image:        { type: 'jpeg', quality: 0.98 },
+                    html2canvas:  { scale: 2, useCORS: true, logging: false },
+                    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                };
+                // Clone node so we don't mutate the displayed document
+                const clone = docHtml.cloneNode(true);
+                window.html2pdf().set(opt).from(clone).save().then(function() {
+                    if (btn) { btn.disabled = false; btn.innerHTML = origHtml; }
+                }).catch(function() {
+                    if (btn) { btn.disabled = false; btn.innerHTML = origHtml; }
+                });
+            }
+
+            if (window.html2pdf) {
+                doDownload();
+            } else {
+                const s = document.createElement('script');
+                s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+                s.onload = doDownload;
+                s.onerror = function() {
+                    if (btn) { btn.disabled = false; btn.innerHTML = origHtml; }
+                    showAlert('Failed to load PDF library. Please check your internet connection.', 'error');
+                };
+                document.head.appendChild(s);
+            }
         };
 
         // Set document issue date when section opens
