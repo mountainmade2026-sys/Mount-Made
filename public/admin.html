@@ -2837,7 +2837,10 @@
                     <p>Official software ownership and development certificate for Mountain Made</p>
                 </div>
 
-                <div style="display:flex; justify-content:flex-end; margin-bottom:1.5rem;">
+                <div style="display:flex; justify-content:flex-end; gap:0.75rem; margin-bottom:1.5rem; flex-wrap:wrap;">
+                    <button class="btn btn-secondary" onclick="printOwnershipDoc()" style="gap:0.5rem;">
+                        <i class="fas fa-print"></i> Print
+                    </button>
                     <button class="btn btn-primary" onclick="downloadOwnershipDoc()" style="gap:0.5rem;">
                         <i class="fas fa-file-pdf"></i> Download as PDF
                     </button>
@@ -11424,16 +11427,7 @@
         // ==================== END BACKUP FUNCTIONS ====================
 
         // ==================== OWNERSHIP DOCUMENT ====================
-        window.downloadOwnershipDoc = function downloadOwnershipDoc() {
-            // Set live date
-            const dateEl = document.getElementById('doc-issue-date');
-            const today = new Date();
-            const formatted = today.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
-            if (dateEl) dateEl.textContent = formatted;
-
-            const docHtml = document.getElementById('ownership-doc-content');
-            if (!docHtml) return;
-
+        function _buildDocWindow(docHtml, autoSave) {
             const printWindow = window.open('', '_blank', 'width=900,height=1100');
             printWindow.document.write(`<!DOCTYPE html>
 <html lang="en">
@@ -11455,12 +11449,34 @@
 ${docHtml.outerHTML}
 <script>
   window.onload = function() {
+    ${autoSave ? 'document.title = "Mountain_Made_Ownership_Certificate";' : ''}
     setTimeout(function(){ window.print(); }, 400);
   };
 <\/script>
 </body>
 </html>`);
             printWindow.document.close();
+        }
+
+        function _prepDocDate() {
+            const dateEl = document.getElementById('doc-issue-date');
+            const today = new Date();
+            const formatted = today.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+            if (dateEl) dateEl.textContent = formatted;
+        }
+
+        window.printOwnershipDoc = function printOwnershipDoc() {
+            _prepDocDate();
+            const docHtml = document.getElementById('ownership-doc-content');
+            if (!docHtml) return;
+            _buildDocWindow(docHtml, false);
+        };
+
+        window.downloadOwnershipDoc = function downloadOwnershipDoc() {
+            _prepDocDate();
+            const docHtml = document.getElementById('ownership-doc-content');
+            if (!docHtml) return;
+            _buildDocWindow(docHtml, true);
         };
 
         // Set document issue date when section opens
