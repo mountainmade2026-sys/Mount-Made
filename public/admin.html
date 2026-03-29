@@ -1322,6 +1322,11 @@
             <div class="admin-nav-item" onclick="showSection('database-backup')">
                 <i class="fas fa-database"></i> Database Backup
             </div>
+
+            <div class="sidebar-section-title">Documents</div>
+            <div class="admin-nav-item" onclick="showSection('ownership-document')">
+                <i class="fas fa-certificate"></i> Ownership Document
+            </div>
             </div><!-- /.sidebar-nav-scroll -->
 
             <!-- Copyright -->
@@ -2823,6 +2828,235 @@
                 </div>
             </div>
 
+            <!-- ═══════════════════════════════════════════════
+                 OWNERSHIP DOCUMENT SECTION
+                 ═══════════════════════════════════════════════ -->
+            <div id="ownership-document" class="section">
+                <div class="admin-header">
+                    <h1><i class="fas fa-certificate"></i> Ownership Document</h1>
+                    <p>Official software ownership and development certificate for Mountain Made</p>
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; margin-bottom:1.5rem;">
+                    <button class="btn btn-primary" onclick="downloadOwnershipDoc()" style="gap:0.5rem;">
+                        <i class="fas fa-file-pdf"></i> Download as PDF
+                    </button>
+                </div>
+
+                <!-- Document Card -->
+                <div id="ownership-doc-content" style="
+                    max-width: 860px;
+                    margin: 0 auto;
+                    background: #fff;
+                    border: 1px solid #d4d9d6;
+                    border-radius: 14px;
+                    overflow: hidden;
+                    box-shadow: 0 8px 40px rgba(14,34,24,0.13), 0 2px 8px rgba(14,34,24,0.07);
+                    font-family: 'Georgia', 'Times New Roman', serif;
+                ">
+
+                    <!-- Document Header Banner -->
+                    <div style="
+                        background: linear-gradient(135deg, #0e2218 0%, #1a4731 55%, #225e3d 100%);
+                        padding: 3rem 3rem 2.5rem;
+                        text-align: center;
+                        position: relative;
+                        overflow: hidden;
+                    ">
+                        <!-- Decorative circles -->
+                        <div style="position:absolute;top:-40px;right:-40px;width:180px;height:180px;border-radius:50%;background:rgba(212,175,55,0.08);"></div>
+                        <div style="position:absolute;bottom:-30px;left:-30px;width:140px;height:140px;border-radius:50%;background:rgba(212,175,55,0.06);"></div>
+
+                        <div style="position:relative; z-index:1;">
+                            <div style="display:inline-flex;align-items:center;justify-content:center;width:72px;height:72px;border-radius:50%;background:rgba(212,175,55,0.18);border:2px solid rgba(212,175,55,0.5);margin-bottom:1.25rem;">
+                                <i class="fas fa-mountain" style="font-size:1.9rem; color:#d4af37;"></i>
+                            </div>
+                            <h1 style="color:#fff; font-size:1.85rem; font-weight:700; letter-spacing:0.06em; margin:0 0 0.35rem; text-transform:uppercase; font-family:'Segoe UI',sans-serif;">Mountain Made</h1>
+                            <p style="color:#d4af37; font-size:0.85rem; letter-spacing:0.18em; text-transform:uppercase; margin:0 0 1.5rem; font-family:'Segoe UI',sans-serif;">Est. &mdash; Original Software</p>
+                            <h2 style="color:rgba(255,255,255,0.92); font-size:1.15rem; font-weight:400; letter-spacing:0.03em; margin:0; border-top:1px solid rgba(212,175,55,0.35); padding-top:1.25rem; font-family:'Segoe UI',sans-serif;">Certificate of Original Software Ownership &amp; Development</h2>
+                        </div>
+                    </div>
+
+                    <!-- Document Reference Bar -->
+                    <div style="background:#f7f9f8; border-bottom:1px solid #e0e8e3; padding:0.85rem 3rem; display:flex; flex-wrap:wrap; gap:1rem; justify-content:space-between; font-family:'Segoe UI',sans-serif; font-size:0.82rem; color:#5a6e62;">
+                        <span><strong style="color:#1a4731;">Ref No:</strong> MM-OWN-2024-001</span>
+                        <span><strong style="color:#1a4731;">Issue Date:</strong> <span id="doc-issue-date">—</span></span>
+                        <span><strong style="color:#1a4731;">Status:</strong> <span style="color:#10b981; font-weight:600;">Active &amp; Valid</span></span>
+                        <span><strong style="color:#1a4731;">Classification:</strong> Proprietary</span>
+                    </div>
+
+                    <!-- Document Body -->
+                    <div style="padding: 2.75rem 3rem; color:#2c3e35; line-height:1.85;">
+
+                        <!-- Opening Declaration -->
+                        <p style="font-size:1.05rem; font-style:italic; color:#3a5044; text-align:center; margin-bottom:2.25rem; padding:1.25rem 2rem; background:#f0f7f3; border-left:4px solid #d4af37; border-radius:0 8px 8px 0;">
+                            This document certifies that the Mountain Made E-Commerce Platform has been conceived, designed, and built entirely from scratch by Mountain Made, and this software is the sole and exclusive property of Mountain Made.
+                        </p>
+
+                        <!-- Section 1 -->
+                        <div style="margin-bottom:2rem;">
+                            <h3 style="font-size:1rem; font-weight:700; color:#1a4731; text-transform:uppercase; letter-spacing:0.1em; font-family:'Segoe UI',sans-serif; border-bottom:2px solid #e0ebe3; padding-bottom:0.5rem; margin-bottom:1rem;">
+                                <span style="display:inline-block;width:26px;height:26px;background:#1a4731;color:#fff;border-radius:50%;text-align:center;line-height:26px;font-size:0.78rem;margin-right:0.5rem;">1</span>
+                                Software Identification
+                            </h3>
+                            <table style="width:100%; border-collapse:collapse; font-family:'Segoe UI',sans-serif; font-size:0.9rem;">
+                                <tr style="border-bottom:1px solid #e8eeeb;">
+                                    <td style="padding:0.6rem 0; color:#5a6e62; width:38%;">Software Name</td>
+                                    <td style="padding:0.6rem 0; font-weight:600; color:#1a2e22;">Mountain Made E-Commerce Platform</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid #e8eeeb;">
+                                    <td style="padding:0.6rem 0; color:#5a6e62;">Software Type</td>
+                                    <td style="padding:0.6rem 0; font-weight:600; color:#1a2e22;">Full-Stack Web &amp; Mobile E-Commerce Application</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid #e8eeeb;">
+                                    <td style="padding:0.6rem 0; color:#5a6e62;">Platform</td>
+                                    <td style="padding:0.6rem 0; font-weight:600; color:#1a2e22;">Web (Browser) &amp; Android Mobile (PWA / APK)</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid #e8eeeb;">
+                                    <td style="padding:0.6rem 0; color:#5a6e62;">Owner &amp; Proprietor</td>
+                                    <td style="padding:0.6rem 0; font-weight:600; color:#1a2e22;">Mountain Made</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid #e8eeeb;">
+                                    <td style="padding:0.6rem 0; color:#5a6e62;">Development Origin</td>
+                                    <td style="padding:0.6rem 0; font-weight:600; color:#10b981;">Built Entirely from Scratch &mdash; No Templates or Clones</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:0.6rem 0; color:#5a6e62;">Document Reference</td>
+                                    <td style="padding:0.6rem 0; font-weight:600; color:#1a2e22;">MM-OWN-2024-001</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- Section 2 -->
+                        <div style="margin-bottom:2rem;">
+                            <h3 style="font-size:1rem; font-weight:700; color:#1a4731; text-transform:uppercase; letter-spacing:0.1em; font-family:'Segoe UI',sans-serif; border-bottom:2px solid #e0ebe3; padding-bottom:0.5rem; margin-bottom:1rem;">
+                                <span style="display:inline-block;width:26px;height:26px;background:#1a4731;color:#fff;border-radius:50%;text-align:center;line-height:26px;font-size:0.78rem;margin-right:0.5rem;">2</span>
+                                Declaration of Original Development
+                            </h3>
+                            <p style="font-family:'Segoe UI',sans-serif; font-size:0.92rem; margin-bottom:0.85rem;">
+                                We, the proprietors of <strong>Mountain Made</strong>, hereby declare and certify that the Mountain Made E-Commerce Platform is an <strong>original work of software engineering</strong>, created entirely from the ground up. Every line of code, every design element, every database schema, and every business logic component was authored specifically for Mountain Made.
+                            </p>
+                            <p style="font-family:'Segoe UI',sans-serif; font-size:0.92rem; margin-bottom:0.85rem;">
+                                This platform was not derived from, copied from, or built upon any commercially available software template, open-source clone repository, or third-party pre-built codebase. The development process involved full custom architecture planning, original UI/UX design, and bespoke backend engineering tailored exclusively to the operational needs of Mountain Made.
+                            </p>
+                            <p style="font-family:'Segoe UI',sans-serif; font-size:0.92rem;">
+                                The intellectual property comprising this software — including but not limited to source code, design systems, database structures, API specifications, business workflows, and compiled application binaries — belongs unconditionally and exclusively to <strong>Mountain Made</strong>.
+                            </p>
+                        </div>
+
+                        <!-- Section 3 -->
+                        <div style="margin-bottom:2rem;">
+                            <h3 style="font-size:1rem; font-weight:700; color:#1a4731; text-transform:uppercase; letter-spacing:0.1em; font-family:'Segoe UI',sans-serif; border-bottom:2px solid #e0ebe3; padding-bottom:0.5rem; margin-bottom:1rem;">
+                                <span style="display:inline-block;width:26px;height:26px;background:#1a4731;color:#fff;border-radius:50%;text-align:center;line-height:26px;font-size:0.78rem;margin-right:0.5rem;">3</span>
+                                Core Features &amp; Capabilities
+                            </h3>
+                            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:0.75rem; font-family:'Segoe UI',sans-serif; font-size:0.88rem;">
+                                <div style="display:flex;align-items:flex-start;gap:0.6rem;"><i class="fas fa-check-circle" style="color:#10b981;margin-top:2px;flex-shrink:0;"></i><span>Full-featured storefront with product catalog, filters, and search</span></div>
+                                <div style="display:flex;align-items:flex-start;gap:0.6rem;"><i class="fas fa-check-circle" style="color:#10b981;margin-top:2px;flex-shrink:0;"></i><span>Secure customer authentication and profile management</span></div>
+                                <div style="display:flex;align-items:flex-start;gap:0.6rem;"><i class="fas fa-check-circle" style="color:#10b981;margin-top:2px;flex-shrink:0;"></i><span>Shopping cart, checkout flow, and order management</span></div>
+                                <div style="display:flex;align-items:flex-start;gap:0.6rem;"><i class="fas fa-check-circle" style="color:#10b981;margin-top:2px;flex-shrink:0;"></i><span>Wholesale portal with tiered pricing and access control</span></div>
+                                <div style="display:flex;align-items:flex-start;gap:0.6rem;"><i class="fas fa-check-circle" style="color:#10b981;margin-top:2px;flex-shrink:0;"></i><span>Comprehensive admin panel with real-time dashboard</span></div>
+                                <div style="display:flex;align-items:flex-start;gap:0.6rem;"><i class="fas fa-check-circle" style="color:#10b981;margin-top:2px;flex-shrink:0;"></i><span>Automated database backup and restore system</span></div>
+                                <div style="display:flex;align-items:flex-start;gap:0.6rem;"><i class="fas fa-check-circle" style="color:#10b981;margin-top:2px;flex-shrink:0;"></i><span>Customer returns and refund management workflow</span></div>
+                                <div style="display:flex;align-items:flex-start;gap:0.6rem;"><i class="fas fa-check-circle" style="color:#10b981;margin-top:2px;flex-shrink:0;"></i><span>Contact &amp; customer support messaging system</span></div>
+                                <div style="display:flex;align-items:flex-start;gap:0.6rem;"><i class="fas fa-check-circle" style="color:#10b981;margin-top:2px;flex-shrink:0;"></i><span>Progressive Web App (PWA) with Android APK support</span></div>
+                                <div style="display:flex;align-items:flex-start;gap:0.6rem;"><i class="fas fa-check-circle" style="color:#10b981;margin-top:2px;flex-shrink:0;"></i><span>Voice-assisted navigation and accessibility features</span></div>
+                                <div style="display:flex;align-items:flex-start;gap:0.6rem;"><i class="fas fa-check-circle" style="color:#10b981;margin-top:2px;flex-shrink:0;"></i><span>Admin license verification and multi-tier role system</span></div>
+                                <div style="display:flex;align-items:flex-start;gap:0.6rem;"><i class="fas fa-check-circle" style="color:#10b981;margin-top:2px;flex-shrink:0;"></i><span>Responsive design optimised for mobile and desktop</span></div>
+                            </div>
+                        </div>
+
+                        <!-- Section 4 -->
+                        <div style="margin-bottom:2rem;">
+                            <h3 style="font-size:1rem; font-weight:700; color:#1a4731; text-transform:uppercase; letter-spacing:0.1em; font-family:'Segoe UI',sans-serif; border-bottom:2px solid #e0ebe3; padding-bottom:0.5rem; margin-bottom:1rem;">
+                                <span style="display:inline-block;width:26px;height:26px;background:#1a4731;color:#fff;border-radius:50%;text-align:center;line-height:26px;font-size:0.78rem;margin-right:0.5rem;">4</span>
+                                Technology Stack
+                            </h3>
+                            <div style="display:flex; flex-wrap:wrap; gap:0.55rem; font-family:'Segoe UI',sans-serif;">
+                                <span style="background:#e8f4ee;color:#1a4731;padding:0.3rem 0.85rem;border-radius:999px;font-size:0.82rem;font-weight:600;">Node.js</span>
+                                <span style="background:#e8f4ee;color:#1a4731;padding:0.3rem 0.85rem;border-radius:999px;font-size:0.82rem;font-weight:600;">Express.js</span>
+                                <span style="background:#e8f4ee;color:#1a4731;padding:0.3rem 0.85rem;border-radius:999px;font-size:0.82rem;font-weight:600;">PostgreSQL</span>
+                                <span style="background:#e8f4ee;color:#1a4731;padding:0.3rem 0.85rem;border-radius:999px;font-size:0.82rem;font-weight:600;">HTML5 / CSS3</span>
+                                <span style="background:#e8f4ee;color:#1a4731;padding:0.3rem 0.85rem;border-radius:999px;font-size:0.82rem;font-weight:600;">Vanilla JavaScript</span>
+                                <span style="background:#e8f4ee;color:#1a4731;padding:0.3rem 0.85rem;border-radius:999px;font-size:0.82rem;font-weight:600;">Capacitor (Android)</span>
+                                <span style="background:#e8f4ee;color:#1a4731;padding:0.3rem 0.85rem;border-radius:999px;font-size:0.82rem;font-weight:600;">JWT Authentication</span>
+                                <span style="background:#e8f4ee;color:#1a4731;padding:0.3rem 0.85rem;border-radius:999px;font-size:0.82rem;font-weight:600;">RESTful API</span>
+                                <span style="background:#e8f4ee;color:#1a4731;padding:0.3rem 0.85rem;border-radius:999px;font-size:0.82rem;font-weight:600;">PWA / Service Workers</span>
+                                <span style="background:#e8f4ee;color:#1a4731;padding:0.3rem 0.85rem;border-radius:999px;font-size:0.82rem;font-weight:600;">Render Cloud Hosting</span>
+                            </div>
+                        </div>
+
+                        <!-- Section 5 -->
+                        <div style="margin-bottom:2rem;">
+                            <h3 style="font-size:1rem; font-weight:700; color:#1a4731; text-transform:uppercase; letter-spacing:0.1em; font-family:'Segoe UI',sans-serif; border-bottom:2px solid #e0ebe3; padding-bottom:0.5rem; margin-bottom:1rem;">
+                                <span style="display:inline-block;width:26px;height:26px;background:#1a4731;color:#fff;border-radius:50%;text-align:center;line-height:26px;font-size:0.78rem;margin-right:0.5rem;">5</span>
+                                Intellectual Property Rights
+                            </h3>
+                            <p style="font-family:'Segoe UI',sans-serif; font-size:0.92rem; margin-bottom:0.85rem;">
+                                All intellectual property rights in and to the Mountain Made E-Commerce Platform — including all source code files, compiled binaries, design assets, database schemas, API contracts, documentation, and associated materials — are and shall remain the exclusive property of <strong>Mountain Made</strong>.
+                            </p>
+                            <p style="font-family:'Segoe UI',sans-serif; font-size:0.92rem; margin-bottom:0.85rem;">
+                                No part of this software may be reproduced, distributed, reverse-engineered, sublicensed, or transferred to any third party without the express prior written consent of Mountain Made. Unauthorised use, copying, or distribution of this software, or any portion thereof, is strictly prohibited and may result in legal action.
+                            </p>
+                            <p style="font-family:'Segoe UI',sans-serif; font-size:0.92rem;">
+                                This software is provided exclusively for the internal business operations of Mountain Made. Any external deployment, white-labelling, or resale requires a separate written agreement with Mountain Made.
+                            </p>
+                        </div>
+
+                        <!-- Section 6 -->
+                        <div style="margin-bottom:2.5rem;">
+                            <h3 style="font-size:1rem; font-weight:700; color:#1a4731; text-transform:uppercase; letter-spacing:0.1em; font-family:'Segoe UI',sans-serif; border-bottom:2px solid #e0ebe3; padding-bottom:0.5rem; margin-bottom:1rem;">
+                                <span style="display:inline-block;width:26px;height:26px;background:#1a4731;color:#fff;border-radius:50%;text-align:center;line-height:26px;font-size:0.78rem;margin-right:0.5rem;">6</span>
+                                Contact &amp; Business Information
+                            </h3>
+                            <table style="width:100%; border-collapse:collapse; font-family:'Segoe UI',sans-serif; font-size:0.9rem;">
+                                <tr style="border-bottom:1px solid #e8eeeb;">
+                                    <td style="padding:0.6rem 0; color:#5a6e62; width:38%;">Business Name</td>
+                                    <td style="padding:0.6rem 0; font-weight:600; color:#1a2e22;">Mountain Made</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid #e8eeeb;">
+                                    <td style="padding:0.6rem 0; color:#5a6e62;">Software Title</td>
+                                    <td style="padding:0.6rem 0; font-weight:600; color:#1a2e22;">Mountain Made E-Commerce Platform</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid #e8eeeb;">
+                                    <td style="padding:0.6rem 0; color:#5a6e62;">Classification</td>
+                                    <td style="padding:0.6rem 0; font-weight:600; color:#1a2e22;">Proprietary Commercial Software</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:0.6rem 0; color:#5a6e62;">All Rights</td>
+                                    <td style="padding:0.6rem 0; font-weight:600; color:#1a2e22;">Reserved &mdash; Mountain Made &copy; 2024</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- Signature / Seal Area -->
+                        <div style="border-top:1px solid #c8d8cc; padding-top:2rem; display:flex; flex-wrap:wrap; gap:2rem; align-items:flex-end; justify-content:space-between; font-family:'Segoe UI',sans-serif;">
+                            <div>
+                                <p style="font-size:0.82rem; color:#7a8f85; margin-bottom:0.35rem;">Authorised by</p>
+                                <p style="font-size:1.05rem; font-weight:700; color:#1a4731; letter-spacing:0.04em;">Mountain Made Administration</p>
+                                <p style="font-size:0.82rem; color:#7a8f85; margin-top:0.25rem;">E-Commerce Platform Ownership Certificate</p>
+                            </div>
+                            <div style="text-align:center;">
+                                <div style="display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:90px;height:90px;border-radius:50%;border:3px solid #1a4731;background:#f0f7f3;">
+                                    <i class="fas fa-mountain" style="font-size:1.6rem;color:#1a4731;margin-bottom:0.2rem;"></i>
+                                    <span style="font-size:0.6rem;color:#1a4731;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;">Mountain<br>Made</span>
+                                </div>
+                                <p style="font-size:0.72rem;color:#7a8f85;margin-top:0.4rem;">Official Seal</p>
+                            </div>
+                        </div>
+
+                    </div><!-- /body -->
+
+                    <!-- Document Footer -->
+                    <div style="background:linear-gradient(135deg,#0e2218,#1a4731); padding:1.1rem 3rem; display:flex; flex-wrap:wrap; gap:0.75rem; justify-content:space-between; align-items:center; font-family:'Segoe UI',sans-serif; font-size:0.78rem; color:rgba(255,255,255,0.6);">
+                        <span>&copy; Mountain Made &mdash; All Rights Reserved</span>
+                        <span>Document Ref: MM-OWN-2024-001 &nbsp;|&nbsp; Mountain Made E-Commerce Platform</span>
+                        <span>Proprietary &amp; Confidential</span>
+                    </div>
+
+                </div><!-- /ownership-doc-content -->
+            </div><!-- /ownership-document section -->
+
             <!-- Add Product Modal -->
             <div id="add-product-modal" class="modal">
                 <div class="modal-content modal-content-xl">
@@ -3381,7 +3615,7 @@
     (function(){
         const sectionIds = [
                 'dashboard','manage-products','upload-products','categories','homepage-sections','stock-reports','order-history','customers-orders','returns',
-            'customers','activities','messages','users','wholesale','admin-license','site-settings','database-backup'
+            'customers','activities','messages','users','wholesale','admin-license','site-settings','database-backup','ownership-document'
             ];
 
         // Caches
@@ -11188,6 +11422,62 @@
         };
 
         // ==================== END BACKUP FUNCTIONS ====================
+
+        // ==================== OWNERSHIP DOCUMENT ====================
+        window.downloadOwnershipDoc = function downloadOwnershipDoc() {
+            // Set live date
+            const dateEl = document.getElementById('doc-issue-date');
+            const today = new Date();
+            const formatted = today.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+            if (dateEl) dateEl.textContent = formatted;
+
+            const docHtml = document.getElementById('ownership-doc-content');
+            if (!docHtml) return;
+
+            const printWindow = window.open('', '_blank', 'width=900,height=1100');
+            printWindow.document.write(`<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mountain Made — Ownership Certificate</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Segoe UI',system-ui,sans-serif; background:#fff; color:#2c3e35; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  @media print {
+    body { margin:0; }
+    @page { size: A4; margin: 10mm 12mm; }
+  }
+</style>
+</head>
+<body>
+${docHtml.outerHTML}
+<script>
+  window.onload = function() {
+    setTimeout(function(){ window.print(); }, 400);
+  };
+<\/script>
+</body>
+</html>`);
+            printWindow.document.close();
+        };
+
+        // Set document issue date when section opens
+        const _origShowSectionForDoc = window.showSection;
+        window.showSection = function(sectionId) {
+            if (typeof _origShowSectionForDoc === 'function') {
+                _origShowSectionForDoc(sectionId);
+            }
+            if (sectionId === 'ownership-document') {
+                const dateEl = document.getElementById('doc-issue-date');
+                if (dateEl) {
+                    const today = new Date();
+                    dateEl.textContent = today.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+                }
+            }
+        };
+        // ==================== END OWNERSHIP DOCUMENT ====================
 
         document.addEventListener('DOMContentLoaded', initializeAdmin);
     })();
