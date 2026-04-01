@@ -3600,11 +3600,11 @@
             const preview = document.getElementById(previewId);
             if (!preview) return;
             if (!Number.isFinite(price) || price <= 0 || !Number.isFinite(pct) || pct < 1 || pct > 100) {
-                preview.textContent = '';
+                preview.innerHTML = '';
                 return;
             }
             const discounted = price * (1 - pct / 100);
-            preview.textContent = `Discounted price: \u20b9${discounted.toFixed(2)} (saving \u20b9${(price - discounted).toFixed(2)})`;
+            preview.innerHTML = `<span style="text-decoration:line-through;color:var(--text-muted,#7a8f85);margin-right:6px;">\u20b9${price.toFixed(2)}</span><strong style="color:var(--success,#10b981);">\u20b9${discounted.toFixed(2)}</strong><span style="color:var(--text-muted,#7a8f85);margin-left:6px;font-size:0.9em;">(saving \u20b9${(price - discounted).toFixed(2)})</span>`;
         };
     // Admin dashboard with improved mobile handling
     (function(){
