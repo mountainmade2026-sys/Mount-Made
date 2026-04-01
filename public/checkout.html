@@ -841,8 +841,57 @@
         }
 
         async function loadCheckout() {
-            // Clean up direct buy flag
-            sessionStorage.removeItem('directBuy');
+            // Check for direct buy (Buy Now from product page)
+            const urlParams = new URLSearchParams(window.location.search);
+            const isDirectBuy = urlParams.get('directbuy') === '1';
+
+            if (isDirectBuy) {
+                const rawItem = sessionStorage.getItem('directBuyItem');
+                sessionStorage.removeItem('directBuyItem');
+                if (!rawItem) {
+                    window.location.href = '/products';
+                    return;
+                }
+                const item = (() => { try { return JSON.parse(rawItem); } catch { return null; } })();
+                if (!item) {
+                    window.location.href = '/products';
+                    return;
+                }
+                cartData = { cartItems: [item], total: item.price * item.quantity };
+                checkoutCartSubtotal = item.price * item.quantity;
+                const priceBlock = (() => {
+                    const base = item.original_price != null ? parseFloat(item.original_price) : null;
+                    const sale = resolveItemUnitPrice(item);
+                    const showDiscount = base != null && sale != null && sale < base;
+                    if (showDiscount) {
+                        return `<span style="text-decoration: line-through; color: #d14343; font-size: 0.9em; margin-right: 6px;">${formatCurrency(base)}</span><span style="color: var(--primary); font-weight: 700;">${formatCurrency(sale)}</span>`;
+                    }
+                    return sale != null ? formatCurrency(sale) : '—';
+                })();
+                document.getElementById('order-items').innerHTML = `<div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; gap:0.75rem; align-items:center;">
+                    <span>
+                        <div>${item.name}</div>
+                        <div style="display:flex; align-items:center; gap:0.4rem; color: var(--text-secondary); font-size: 0.9rem; margin-top:0.2rem;">
+                            <label for="checkout-qty-${item.id}" style="font-size:0.8rem;">Qty</label>
+                            <input type="number"
+                                   id="checkout-qty-${item.id}"
+                                   value="${item.quantity}"
+                                   min="1"
+                                   max="${item.stock_quantity || ''}"
+                                   style="width:60px; padding:0.2rem 0.35rem; font-size:0.85rem; border:1px solid var(--border); border-radius:4px;"
+                                   onchange="updateCheckoutQuantity(${item.id}, this.value)">
+                            <span>× ${priceBlock}</span>
+                        </div>
+                    </span>
+                    <strong>${formatCurrency(item.price * item.quantity)}</strong>
+                </div>`;
+                updateOrderSummaryTotals();
+                await loadUserAddresses();
+                return;
+            }
+
+            // Clean up stale direct buy flag
+            sessionStorage.removeItem('directBuyItem');
             
             const fetched = await cart.fetch();
             cartData = normalizeCartPayload(fetched || {});
@@ -934,6 +983,22 @@
                 if (current && input) input.value = current.quantity;
                 return;
             }
+
+            // For direct buy, update in-memory only (no cart API call)
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('directbuy') === '1') {
+                const item = cartData?.cartItems?.find(i => i.id === itemId);
+                if (item) {
+                    item.quantity = qty;
+                    cartData.total = item.price * qty;
+                    checkoutCartSubtotal = item.price * qty;
+                    const subtotalEl = document.querySelector(`#checkout-qty-${itemId}`)?.closest('div')?.parentElement?.querySelector('strong');
+                    if (subtotalEl) subtotalEl.textContent = formatCurrency(item.price * qty);
+                    updateOrderSummaryTotals();
+                }
+                return;
+            }
+
             try {
                 await cart.update(itemId, qty);
                 await loadCheckout();
@@ -1278,7 +1343,11 @@
             const itemsContainer = document.getElementById('order-items');
             const totalEl = document.getElementById('order-total');
             if (itemsContainer) {
-                itemsContainer.innerHTML = '<p class="text-center">Your order has been placed and the cart has been cleared.</p>';
+                const urlParams = new URLSearchParams(window.location.search);
+                const msg = urlParams.get('directbuy') === '1'
+                    ? 'Your order has been placed successfully.'
+                    : 'Your order has been placed and the cart has been cleared.';
+                itemsContainer.innerHTML = `<p class="text-center">${msg}</p>`;
             }
             if (totalEl) {
                 totalEl.textContent = formatCurrency(0);

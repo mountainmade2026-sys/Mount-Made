@@ -1397,31 +1397,22 @@
                 return;
             }
 
-            // Load addresses if not loaded
-            if (userAddresses.length === 0) {
-                await loadUserAddresses();
-            }
+            const basePrice = parseFloat(product.price || 0);
+            const discountPrice = product.discount_price != null ? parseFloat(product.discount_price) : null;
+            const sellingPrice = (discountPrice !== null && discountPrice < basePrice) ? discountPrice : basePrice;
 
-            // Load COD pincodes from admin settings (once)
-            if (!quickCodPincodes.length) {
-                try {
-                    const resp = await api.get('/products/settings');
-                    const raw = String((resp.settings || {}).cod_available_pincodes || '').trim();
-                    quickCodPincodes = raw ? raw.split(',').map(p => p.trim()).filter(Boolean) : [];
-                } catch (e) {
-                    quickCodPincodes = [];
-                }
-            }
+            const directBuyItem = {
+                product_id: product.id,
+                id: product.id,
+                name: product.name,
+                price: sellingPrice,
+                original_price: (discountPrice !== null && discountPrice < basePrice) ? basePrice : null,
+                quantity: selectedQuantity,
+                stock_quantity: product.stock_quantity
+            };
 
-            // If user has addresses, show selection modal
-            if (userAddresses.length > 0) {
-                showAddressSelectionModal();
-            } else {
-                // No addresses, redirect to address management
-                if (await showConfirmDialog('You need to add a delivery address first. Go to address management?', { title: 'Address Required', confirmText: 'Go to Addresses' })) {
-                    window.location.href = '/addresses';
-                }
-            }
+            sessionStorage.setItem('directBuyItem', JSON.stringify(directBuyItem));
+            window.location.href = '/checkout?directbuy=1';
         }
 
         function showAddressSelectionModal() {
