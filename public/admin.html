@@ -5699,7 +5699,7 @@
                     return;
                 }
 
-                let html = '<div class="data-table-container"><table class="data-table"><thead><tr><th>#</th><th>Order</th><th>Customer</th><th>Total</th><th>Delivery</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody>';
+                let html = '<div class="data-table-container"><table class="data-table"><thead><tr><th>#</th><th>Order</th><th>Customer</th><th>Items</th><th>Total</th><th>Delivery</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody>';
                 orders.forEach(o => {
                     const statusBadgeClass = o.status === 'delivered' ? 'badge-success' : o.status === 'cancelled' ? 'badge-danger' : 'badge-warning';
                     const statusLabel = o.status || 'pending';
@@ -5719,6 +5719,11 @@
                             : 'Standard (Free)';
                     }
 
+                    const items = Array.isArray(o.items) ? o.items : [];
+                    const itemsHtml = items.length
+                        ? items.map(it => `<div style="white-space:nowrap;">${it.product_name} &times; ${it.quantity}</div>`).join('')
+                        : '<span style="color:var(--text-muted);">—</span>';
+
                     const actionsHtml = o.status === 'pending'
                         ? `
                             <button class="action-btn action-btn-success" onclick="updateOrderStatus(${o.id}, 'processing')">
@@ -5735,6 +5740,7 @@
                             <td>#${o.id}</td>
                             <td>${o.order_number || '-'}</td>
                             <td>${o.full_name || 'No account'}<br><small>${o.email || ''}</small></td>
+                            <td style="font-size:0.85rem;">${itemsHtml}</td>
                             <td>${formatCurrency(o.total_amount)}</td>
                             <td>${deliveryLabel}</td>
                             <td><span class="badge ${statusBadgeClass}">${statusLabel}</span></td>
@@ -7892,7 +7898,7 @@
                 return;
             }
 
-            let html = '<div class="data-table-container"><table class="data-table"><thead><tr><th>#</th><th>Order</th><th>Customer</th><th>Total</th><th>Delivery</th><th>Status</th><th>Date</th></tr></thead><tbody>';
+            let html = '<div class="data-table-container"><table class="data-table"><thead><tr><th>#</th><th>Order</th><th>Customer</th><th>Items</th><th>Total</th><th>Delivery</th><th>Status</th><th>Date</th></tr></thead><tbody>';
             filtered.forEach(o => {
                 const deliverySpeed = (o.delivery_speed || 'standard').toLowerCase();
                 const deliveryCharge = o.delivery_charge != null ? parseFloat(o.delivery_charge) : 0;
@@ -7909,11 +7915,17 @@
                         : 'Standard (Free)';
                 }
 
+                const items = Array.isArray(o.items) ? o.items : [];
+                const itemsHtml = items.length
+                    ? items.map(it => `<div style="white-space:nowrap;">${it.product_name} &times; ${it.quantity}</div>`).join('')
+                    : '<span style="color:var(--text-muted);">—</span>';
+
                 html += `
                     <tr>
                         <td>#${o.id}</td>
                         <td>${o.order_number || '-'}</td>
                         <td>${o.full_name || 'No account'}<br><small>${o.email || ''}</small></td>
+                        <td style="font-size:0.85rem;">${itemsHtml}</td>
                         <td>${formatCurrency(o.total_amount)}</td>
                         <td>${deliveryLabel}</td>
                         <td><span class="badge badge-${o.status === 'delivered' ? 'success' : o.status === 'cancelled' ? 'danger' : 'warning'}">${o.status}</span></td>
@@ -7946,10 +7958,15 @@
                 return;
             }
 
-            let html = '<div class="data-table-container"><table class="data-table"><thead><tr><th>#</th><th>Order</th><th>Customer</th><th>Total</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody>';
+            let html = '<div class="data-table-container"><table class="data-table"><thead><tr><th>#</th><th>Order</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody>';
             filtered.forEach(o => {
                 const statusBadgeClass = o.status === 'delivered' ? 'badge-success' : o.status === 'cancelled' ? 'badge-danger' : 'badge-warning';
                 const statusLabel = o.status || 'pending';
+
+                const items = Array.isArray(o.items) ? o.items : [];
+                const itemsHtml = items.length
+                    ? items.map(it => `<div style="white-space:nowrap;">${it.product_name} &times; ${it.quantity}</div>`).join('')
+                    : '<span style="color:var(--text-muted);">—</span>';
 
                 const actionsHtml = o.status === 'pending'
                     ? `
@@ -7967,6 +7984,7 @@
                         <td>#${o.id}</td>
                         <td>${o.order_number || '-'}</td>
                         <td>${o.full_name || 'No account'}<br><small>${o.email || ''}</small></td>
+                        <td style="font-size:0.85rem;">${itemsHtml}</td>
                         <td>${formatCurrency(o.total_amount)}</td>
                         <td><span class="badge ${statusBadgeClass}">${statusLabel}</span></td>
                         <td>${formatDate(o.created_at)}</td>

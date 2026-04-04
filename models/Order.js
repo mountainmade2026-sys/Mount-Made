@@ -239,15 +239,18 @@ class Order {
   static async findAll(filters = {}) {
     let query = `
       SELECT o.*, u.full_name, u.email,
-             json_agg(
-               json_build_object(
-                 'id', oi.id,
-                 'product_id', oi.product_id,
-                 'product_name', oi.product_name,
-                 'quantity', oi.quantity,
-                 'price', oi.price,
-                 'subtotal', oi.subtotal
-               )
+             COALESCE(
+               json_agg(
+                 json_build_object(
+                   'id', oi.id,
+                   'product_id', oi.product_id,
+                   'product_name', oi.product_name,
+                   'quantity', oi.quantity,
+                   'price', oi.price,
+                   'subtotal', oi.subtotal
+                 )
+               ) FILTER (WHERE oi.id IS NOT NULL),
+               '[]'
              ) as items
       FROM orders o
       LEFT JOIN users u ON o.user_id = u.id
