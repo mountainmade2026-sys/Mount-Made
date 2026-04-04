@@ -99,7 +99,7 @@ class Order {
           delivery_speed,
           delivery_charge
         )
-        VALUES ($1, $2, $3, $4, $5, $6, COALESCE($7, 'unpaid'), $8, $9, $10, $11, $12, $13, $14, $15, 'pending', $16, $17)
+        VALUES ($1, $2, $3, $4, $5, $6, COALESCE($7, 'unpaid'), $8, $9, $10, $11, $12, $13, $14, 'pending', $15, $16)
         RETURNING *
       `;
 
