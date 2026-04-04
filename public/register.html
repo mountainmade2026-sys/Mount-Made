@@ -543,13 +543,7 @@
 
                 const userData = getRegistrationFormData();
 
-                // Google sign-up only needs phone verification (email/password come from Google)
-                if (!userData.phone) {
-                    throw new Error('Please enter your phone number and verify it with OTP.');
-                }
-                if (!userData.phone_verification_token) {
-                    throw new Error('Please verify your phone number with OTP first.');
-                }
+                // For wholesale, still need address fields
                 if (userData.role === 'wholesale') {
                     if (!userData.business_name || !userData.tax_id || !userData.address_line1 || !userData.city || !userData.state || !userData.postal_code) {
                         throw new Error('Business name, tax ID, and address are required for wholesale accounts.');

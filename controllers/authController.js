@@ -467,11 +467,19 @@ exports.googleAuth = async (req, res) => {
 
     const selectedRole = role === 'wholesale' ? 'wholesale' : 'customer';
     const fallbackName = String(full_name || payload.name || 'Google User').trim();
-    const normalizedPhone = normalizePhoneToE164(phone);
 
-    const decodedPhoneToken = verifyPhoneVerificationToken(phone_verification_token);
-    if (!decodedPhoneToken || decodedPhoneToken.phone !== normalizedPhone) {
-      return res.status(400).json({ error: 'Phone verification is required before registration.' });
+    // Phone is optional for Google sign-up
+    let normalizedPhone = null;
+    if (phone && String(phone).trim()) {
+      try { normalizedPhone = normalizePhoneToE164(phone); } catch (_) {}
+    }
+
+    // If phone provided, verify OTP token; skip if no phone given
+    if (normalizedPhone) {
+      const decodedPhoneToken = verifyPhoneVerificationToken(phone_verification_token);
+      if (!decodedPhoneToken || decodedPhoneToken.phone !== normalizedPhone) {
+        return res.status(400).json({ error: 'Phone verification token is invalid. Please re-verify your phone.' });
+      }
     }
 
     const wholesaleValidationError = validateWholesaleFields({
