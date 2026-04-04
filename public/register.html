@@ -559,7 +559,13 @@
                     state: userData.state,
                     postal_code: userData.postal_code
                 };
-                await api.post('/auth/google', payload);
+                const result = await api.post('/auth/google', payload);
+                const isExisting = String(result?.message || '').toLowerCase().includes('login');
+                if (isExisting) {
+                    showAlert('This Google account is already registered. Logging you in...', 'info');
+                    setTimeout(() => { window.location.href = redirectUrl || '/'; }, 1200);
+                    return;
+                }
                 showAlert('Google registration successful!', 'success');
                 setTimeout(() => {
                     if (userData.role === 'wholesale') {
@@ -626,9 +632,14 @@
                     postal_code: userData.postal_code
                 };
 
-                await api.post('/auth/google', payload);
+                const result = await api.post('/auth/google', payload);
+                const isExisting = String(result?.message || '').toLowerCase().includes('login');
+                if (isExisting) {
+                    showAlert('This Google account is already registered. Logging you in...', 'info');
+                    setTimeout(() => { window.location.href = redirectUrl || '/'; }, 1200);
+                    return;
+                }
                 showAlert('Google registration successful!', 'success');
-
                 setTimeout(() => {
                     if (userData.role === 'wholesale') {
                         showAlert('Your account is pending approval.', 'info');
