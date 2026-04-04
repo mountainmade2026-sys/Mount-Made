@@ -544,6 +544,8 @@
                     scopes: ['profile', 'email'],
                     grantOfflineAccess: false
                 });
+                // Sign out first to force the account picker to show
+                try { await GoogleAuth.signOut(); } catch (_) {}
                 const user = await GoogleAuth.signIn();
                 const idToken = user?.authentication?.idToken;
                 if (!idToken) throw new Error('Google sign-in did not return a token.');
@@ -562,8 +564,7 @@
                 const result = await api.post('/auth/google', payload);
                 const isExisting = String(result?.message || '').toLowerCase().includes('login');
                 if (isExisting) {
-                    showAlert('This Google account is already registered. Logging you in...', 'info');
-                    setTimeout(() => { window.location.href = redirectUrl || '/'; }, 1200);
+                    showAlert('This Google account is already registered. Please use the Login page to sign in.', 'error');
                     return;
                 }
                 showAlert('Google registration successful!', 'success');
@@ -635,8 +636,7 @@
                 const result = await api.post('/auth/google', payload);
                 const isExisting = String(result?.message || '').toLowerCase().includes('login');
                 if (isExisting) {
-                    showAlert('This Google account is already registered. Logging you in...', 'info');
-                    setTimeout(() => { window.location.href = redirectUrl || '/'; }, 1200);
+                    showAlert('This Google account is already registered. Please use the Login page to sign in.', 'error');
                     return;
                 }
                 showAlert('Google registration successful!', 'success');
