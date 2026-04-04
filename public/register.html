@@ -391,6 +391,12 @@
         const passwordInput = document.getElementById('password');
         const confirmPasswordInput = document.getElementById('confirm_password');
 
+        // Hide Google button inside Capacitor mobile app (WebView doesn't support GSI popup)
+        const isCapacitorApp = !!(window.Capacitor?.isNativePlatform?.() || window.Capacitor?.platform);
+        if (isCapacitorApp && googleSignupBtn) {
+            googleSignupBtn.style.display = 'none';
+        }
+
         let googleClientConfig = { enabled: false, clientId: null };
 
         function getRegistrationFormData() {
@@ -519,8 +525,8 @@
         }
 
         async function loadGoogleClientConfig() {
+            if (isCapacitorApp) return; // skip in mobile app
             try {
-                googleClientConfig = await api.get('/auth/google/config');
                 if (!googleClientConfig?.enabled || !googleClientConfig?.clientId) {
                     googleSignupBtn.disabled = true;
                     googleSignupBtn.style.opacity = '0.6';

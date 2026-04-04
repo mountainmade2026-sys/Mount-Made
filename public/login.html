@@ -297,8 +297,15 @@
         const googleLoginBtn = document.getElementById('google-login-btn');
         let googleClientConfig = { enabled: false, clientId: null };
 
+        // Hide Google button inside Capacitor mobile app (WebView doesn't support GSI popup)
+        const isCapacitorApp = !!(window.Capacitor?.isNativePlatform?.() || window.Capacitor?.platform);
+        if (isCapacitorApp && googleLoginBtn) {
+            googleLoginBtn.style.display = 'none';
+        }
+
         async function loadGoogleClientConfig() {
             try {
+                if (isCapacitorApp) return; // skip in app
                 googleClientConfig = await api.get('/auth/google/config');
                 if (!googleClientConfig?.enabled || !googleClientConfig?.clientId) {
                     if (googleLoginBtn) {
