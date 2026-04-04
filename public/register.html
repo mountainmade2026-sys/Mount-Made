@@ -229,17 +229,17 @@
                 
                 <div class="form-group">
                     <label class="form-label">Full Name *</label>
-                    <input type="text" id="full_name" class="form-input" required>
+                    <input type="text" id="full_name" class="form-input">
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Email Address *</label>
-                    <input type="email" id="email" class="form-input" required>
+                    <input type="email" id="email" class="form-input">
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Phone Number *</label>
-                    <input type="tel" id="phone" class="form-input" required>
+                    <input type="tel" id="phone" class="form-input">
                     <input type="hidden" id="phone_verification_token">
                     <div style="display:flex; gap:0.5rem; margin-top:0.5rem; flex-wrap:wrap;">
                         <button id="send-otp-btn" type="button" class="btn btn-secondary" style="padding:0.45rem 0.75rem;">
@@ -255,12 +255,12 @@
 
                 <div class="form-group">
                     <label class="form-label">Password * (min 6 characters)</label>
-                    <input type="password" id="password" class="form-input" required minlength="6">
+                    <input type="password" id="password" class="form-input" minlength="6">
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Confirm Password *</label>
-                    <input type="password" id="confirm_password" class="form-input" required minlength="6">
+                    <input type="password" id="confirm_password" class="form-input" minlength="6">
                 </div>
 
                 <div class="form-group" style="margin-top:0.25rem;">
@@ -490,6 +490,34 @@
             }
         }
 
+        let googleOverlayRendered = false;
+
+        function initGoogleSignup() {
+            const tryInit = () => {
+                if (!window.google?.accounts?.id) return false;
+                google.accounts.id.initialize({
+                    client_id: googleClientConfig.clientId,
+                    callback: handleGoogleCredentialResponse
+                });
+                googleSignupBtn.style.position = 'relative';
+                googleSignupBtn.style.overflow = 'hidden';
+                const overlay = document.createElement('div');
+                overlay.style.cssText = 'position:absolute;inset:0;z-index:1;display:flex;align-items:stretch;overflow:hidden;opacity:0.01;';
+                google.accounts.id.renderButton(overlay, {
+                    type: 'standard',
+                    size: 'large',
+                    width: Math.max(googleSignupBtn.offsetWidth || 200, 200)
+                });
+                googleSignupBtn.appendChild(overlay);
+                googleOverlayRendered = true;
+                return true;
+            };
+            if (!tryInit()) {
+                const timer = setInterval(() => { if (tryInit()) clearInterval(timer); }, 200);
+                setTimeout(() => clearInterval(timer), 10000);
+            }
+        }
+
         async function loadGoogleClientConfig() {
             try {
                 googleClientConfig = await api.get('/auth/google/config');
@@ -497,6 +525,8 @@
                     googleSignupBtn.disabled = true;
                     googleSignupBtn.style.opacity = '0.6';
                     googleSignupBtn.title = 'Google sign-up is not configured on server.';
+                } else {
+                    initGoogleSignup();
                 }
             } catch (error) {
                 googleSignupBtn.disabled = true;
@@ -558,22 +588,24 @@
         }
 
         async function startGoogleSignup() {
+            if (googleOverlayRendered) return; // overlay handles the click
             if (!window.google?.accounts?.id) {
-                showAlert('Google script is not loaded. Please refresh page.', 'error');
+                showAlert('Google script is not loaded. Please refresh the page.', 'error');
                 return;
             }
-
             if (!googleClientConfig?.enabled || !googleClientConfig?.clientId) {
                 showAlert('Google sign-up is not configured on server.', 'error');
                 return;
             }
-
             google.accounts.id.initialize({
                 client_id: googleClientConfig.clientId,
                 callback: handleGoogleCredentialResponse
             });
-
-            google.accounts.id.prompt();
+            google.accounts.id.prompt((notification) => {
+                if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                    showAlert('Google sign-in was blocked by browser. Please refresh and try again.', 'error');
+                }
+            });
         }
 
         showPasswordToggle.addEventListener('change', () => {
