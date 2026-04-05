@@ -6224,9 +6224,16 @@
             }
         };
 
-        window.openReturnActionModal = function(returnId) {
-            const r = (window._returnsCache || []).find(x => x.id === returnId);
-            if (!r) return;
+        window.openReturnActionModal = async function(returnId) {
+            let r = (window._returnsCache || []).find(x => x.id == returnId);
+            if (!r) {
+                try {
+                    const resp = await api.get('/admin/returns');
+                    window._returnsCache = resp.returns || [];
+                    r = window._returnsCache.find(x => x.id == returnId);
+                } catch(e) { /* ignore */ }
+            }
+            if (!r) { showAlert('Could not load return details.', 'error'); return; }
 
             const items = (r.items || []).filter(i => i.id);
             const itemsHtml = items.map(i => `
@@ -6283,9 +6290,16 @@
             document.body.insertAdjacentHTML('beforeend', modalHtml);
         }
 
-        window.openReturnViewModal = function(returnId) {
-            const r = (window._returnsCache || []).find(x => x.id === returnId);
-            if (!r) return;
+        window.openReturnViewModal = async function(returnId) {
+            let r = (window._returnsCache || []).find(x => x.id == returnId);
+            if (!r) {
+                try {
+                    const resp = await api.get('/admin/returns');
+                    window._returnsCache = resp.returns || [];
+                    r = window._returnsCache.find(x => x.id == returnId);
+                } catch(e) { /* ignore */ }
+            }
+            if (!r) { showAlert('Could not load return details.', 'error'); return; }
 
             const items = (r.items || []).filter(i => i.id);
             const itemsHtml = items.map(i => `
