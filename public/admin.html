@@ -6191,8 +6191,11 @@
                     <td>
                         <div class="table-actions">
                             ${quickActions}
-                            <button class="action-btn" onclick="openReturnActionModal(${r.id})" title="Manage">
-                                <i class="fas fa-edit"></i>
+                            <button class="action-btn action-btn-view" onclick="openReturnViewModal(${r.id})" title="View Details">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                            <button class="action-btn" onclick="openReturnActionModal(${r.id})" title="Edit / Update Status">
+                                <i class="fas fa-edit"></i> Edit
                             </button>
                         </div>
                     </td>
@@ -6252,7 +6255,7 @@
                                 <strong>Order:</strong> #${r.order_number || r.order_id}<br>
                                 <strong>Customer:</strong> ${r.customer_name} (${r.customer_email})<br>
                                 <strong>Refund Amount:</strong> ₹${parseFloat(r.refund_amount || 0).toFixed(2)}<br>
-                                <strong>Reason:</strong> ${r.reason || '—'}
+                                <strong>Reason:</strong> ${getReturnReasonHtml(r.reason)}
                             </div>
                             <div style="margin-bottom:1rem;">
                                 <strong>Items:</strong>
@@ -6277,6 +6280,63 @@
                 </div>
             `;
 
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
+
+        function openReturnViewModal(returnId) {
+            const r = (window._returnsCache || []).find(x => x.id === returnId);
+            if (!r) return;
+
+            const items = (r.items || []).filter(i => i.id);
+            const itemsHtml = items.map(i => `
+                <div style="display:flex;align-items:center;gap:0.75rem;padding:0.5rem 0;border-bottom:1px solid var(--border);">
+                    ${i.product_image ? `<img src="${i.product_image}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;border:1px solid var(--border);">` : ''}
+                    <div>
+                        <div style="font-weight:600;">${i.product_name || 'Product #' + i.product_id}</div>
+                        <div style="color:var(--text-muted);font-size:0.85rem;">Qty: ${i.quantity} × ₹${parseFloat(i.price).toFixed(2)}</div>
+                    </div>
+                </div>
+            `).join('');
+
+            const reasonEntry = _returnReasonLabels[r.reason];
+            const reasonDisplay = reasonEntry
+                ? `<span style="font-size:1rem;"><i class="fas ${reasonEntry.icon}" style="margin-right:0.4rem;color:var(--primary);"></i><strong>${reasonEntry.label}</strong></span>`
+                : `<span style="font-size:0.95rem;white-space:pre-wrap;word-break:break-word;">${(r.reason || '—').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span>`;
+
+            const returnLabel = r.return_number || `RET-${r.id}`;
+
+            const modalHtml = `
+                <div class="modal active" id="return-view-modal" onclick="if(event.target===this)this.remove()">
+                    <div class="modal-content" style="max-width:560px;">
+                        <div class="modal-header">
+                            <h3><i class="fas fa-eye"></i> Return ${returnLabel}</h3>
+                            <button class="modal-close" onclick="document.getElementById('return-view-modal').remove()">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem 1.5rem;margin-bottom:1.25rem;">
+                                <div><span style="color:var(--text-muted);font-size:0.8rem;text-transform:uppercase;letter-spacing:.05em;">Order</span><div style="font-weight:600;">#${r.order_number || r.order_id}</div></div>
+                                <div><span style="color:var(--text-muted);font-size:0.8rem;text-transform:uppercase;letter-spacing:.05em;">Status</span><div>${getReturnStatusBadge(r.status)}</div></div>
+                                <div><span style="color:var(--text-muted);font-size:0.8rem;text-transform:uppercase;letter-spacing:.05em;">Customer</span><div style="font-weight:600;">${r.customer_name || '—'}</div></div>
+                                <div><span style="color:var(--text-muted);font-size:0.8rem;text-transform:uppercase;letter-spacing:.05em;">Email</span><div style="font-size:0.85rem;">${r.customer_email || '—'}</div></div>
+                                <div><span style="color:var(--text-muted);font-size:0.8rem;text-transform:uppercase;letter-spacing:.05em;">Refund Amount</span><div style="font-weight:700;color:var(--success);">₹${parseFloat(r.refund_amount || 0).toFixed(2)}</div></div>
+                                <div><span style="color:var(--text-muted);font-size:0.8rem;text-transform:uppercase;letter-spacing:.05em;">Date</span><div>${formatDate(r.created_at)}</div></div>
+                            </div>
+                            <div style="margin-bottom:1.25rem;padding:1rem;background:var(--bg-light,#f8f9fa);border-radius:8px;border-left:4px solid var(--primary);">
+                                <div style="color:var(--text-muted);font-size:0.8rem;text-transform:uppercase;letter-spacing:.05em;margin-bottom:0.4rem;">Return Reason</div>
+                                ${reasonDisplay}
+                            </div>
+                            ${r.admin_notes ? `<div style="margin-bottom:1.25rem;padding:0.75rem 1rem;background:#fffbea;border-radius:8px;border-left:4px solid var(--warning);"><div style="color:var(--text-muted);font-size:0.8rem;text-transform:uppercase;letter-spacing:.05em;margin-bottom:0.4rem;">Admin Notes</div><div style="font-size:0.9rem;white-space:pre-wrap;">${r.admin_notes.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div></div>` : ''}
+                            <div><strong style="display:block;margin-bottom:0.5rem;">Returned Items:</strong>${itemsHtml || '<p style="color:var(--text-muted);">No items listed</p>'}</div>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn btn-secondary" onclick="document.getElementById('return-view-modal').remove()">Close</button>
+                            <button class="btn btn-primary" onclick="document.getElementById('return-view-modal').remove();openReturnActionModal(${r.id})">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
             document.body.insertAdjacentHTML('beforeend', modalHtml);
         }
 
