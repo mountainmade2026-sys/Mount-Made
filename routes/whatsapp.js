@@ -26,11 +26,13 @@ router.post('/send', async (req, res) => {
     return res.status(400).json({ error: 'Invalid phone number format.' });
   }
 
-  const phoneNumberId = (process.env.WHATSAPP_PHONE_NUMBER_ID || '').trim();
-  const accessToken   = (process.env.WHATSAPP_ACCESS_TOKEN   || '').trim();
+  const configured = !!(
+    (process.env.TWILIO_ACCOUNT_SID   || '').trim() &&
+    (process.env.TWILIO_AUTH_TOKEN    || '').trim() &&
+    (process.env.TWILIO_WHATSAPP_FROM || '').trim()
+  );
 
-  if (!phoneNumberId || !accessToken) {
-    // API not set up — return a wa.me click-to-chat link as fallback
+  if (!configured) {
     const waLink = getWhatsAppLink(phone, message);
     return res.json({ sent: false, waLink, reason: 'WhatsApp API not configured. Use the link to send manually.' });
   }
@@ -40,7 +42,6 @@ router.post('/send', async (req, res) => {
     return res.json({ sent: true });
   } catch (err) {
     console.error('[WHATSAPP] Manual send error:', err.message);
-    // Still provide the wa.me fallback on error
     const waLink = getWhatsAppLink(phone, message);
     return res.status(500).json({ sent: false, waLink, error: err.message });
   }
@@ -48,12 +49,13 @@ router.post('/send', async (req, res) => {
 
 /**
  * GET /api/whatsapp/status
- * Returns whether WhatsApp API credentials are configured.
+ * Returns whether Twilio WhatsApp credentials are configured.
  */
 router.get('/status', (req, res) => {
   const configured = !!(
-    (process.env.WHATSAPP_PHONE_NUMBER_ID || '').trim() &&
-    (process.env.WHATSAPP_ACCESS_TOKEN   || '').trim()
+    (process.env.TWILIO_ACCOUNT_SID   || '').trim() &&
+    (process.env.TWILIO_AUTH_TOKEN    || '').trim() &&
+    (process.env.TWILIO_WHATSAPP_FROM || '').trim()
   );
   res.json({ configured });
 });

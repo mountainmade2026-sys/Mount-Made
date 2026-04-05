@@ -1,23 +1,163 @@
 /**
- * WhatsApp Business Cloud API service
+ * WhatsApp via Twilio
  *
- * HOW TO SET UP (one-time, ~10 minutes):
- * 1. Go to https://developers.facebook.com and create a developer account
- * 2. Create a new App → choose "Business" type
- * 3. Click "Add Product" → choose "WhatsApp" → click Setup
- * 4. Under "Getting Started", copy:
- *      - Phone Number ID   → set as WHATSAPP_PHONE_NUMBER_ID in Render env vars
- *      - Temporary Token   → set as WHATSAPP_ACCESS_TOKEN in Render env vars
- * 5. Add your customer's WhatsApp number as a "Test Recipient" in the dashboard
- * 6. For production: generate a permanent token and register your real business number
+ * HOW TO SET UP (free sandbox, ~5 minutes):
+ * 1. Sign up at https://twilio.com (free trial — no credit card needed to start)
+ * 2. From dashboard copy:
+ *      Account SID  → TWILIO_ACCOUNT_SID
+ *      Auth Token   → TWILIO_AUTH_TOKEN
+ * 3. Go to Messaging → Try it out → Send a WhatsApp message
+ * 4. The sandbox FROM number is shown there (e.g. +14155238886)
+ *      → set TWILIO_WHATSAPP_FROM=whatsapp:+14155238886
+ * 5. Each customer must first send "join <word>" to that number once to opt in
+ *    (sandbox only — production doesn't need this)
+ * 6. For production: register your own WhatsApp business number in Twilio console
  *
  * Required Render env vars:
- *   WHATSAPP_PHONE_NUMBER_ID   (from Meta Developer dashboard)
- *   WHATSAPP_ACCESS_TOKEN      (from Meta Developer dashboard)
- *   WHATSAPP_API_VERSION       (optional, defaults to v20.0)
+ *   TWILIO_ACCOUNT_SID        (from Twilio dashboard)
+ *   TWILIO_AUTH_TOKEN         (from Twilio dashboard)
+ *   TWILIO_WHATSAPP_FROM      (e.g. whatsapp:+14155238886)
  */
 
-const API_VERSION = process.env.WHATSAPP_API_VERSION || 'v20.0';
+const twilio = require('twilio');
+
+/**
+ * Format Indian phone number for Twilio WhatsApp (e.g. whatsapp:+919876543210)
+ */
+function formatPhone(phone) {
+  if (!phone) return null;
+  const digits = String(phone).replace(/\D/g, '');
+  let e164;
+  if (digits.length === 10) e164 = '+91' + digits;
+  else if (digits.startsWith('91') && digits.length === 12) e164 = '+' + digits;
+  else if (digits.startsWith('0') && digits.length === 11) e164 = '+91' + digits.slice(1);
+  else if (digits.length >= 10) e164 = '+' + digits;
+  else return null;
+  return e164;
+}
+
+/**
+ * Generate a wa.me click-to-chat link — works without any API credentials.
+ */
+function getWhatsAppLink(phone, text) {
+  const e164 = formatPhone(phone);
+  if (!e164) return null;
+  const num = e164.replace('+', '');
+  return `https://wa.me/${num}?text=${encodeURIComponent(text || '')}`;
+}
+
+/**
+ * Send a WhatsApp message via Twilio.
+ * In sandbox mode customers must first send "join <word>" to the from-number.
+ * Returns { skipped: true } silently when credentials are not configured.
+ */
+async function sendWhatsAppMessage(phone, message) {
+  const accountSid = (process.env.TWILIO_ACCOUNT_SID    || '').trim();
+  const authToken  = (process.env.TWILIO_AUTH_TOKEN     || '').trim();
+  const from       = (process.env.TWILIO_WHATSAPP_FROM  || '').trim();
+
+  if (!accountSid || !authToken || !from) {
+    console.log('[WHATSAPP] Twilio not configured — skipping send');
+    return { skipped: true };
+  }
+
+  const e164 = formatPhone(phone);
+  if (!e164) {
+    console.log('[WHATSAPP] Invalid phone number:', phone);
+    return { skipped: true };
+  }
+
+  const client = twilio(accountSid, authToken);
+  const msg = await client.messages.create({
+    from,
+    to: 'whatsapp:' + e164,
+    body: message
+  });
+
+  console.log(`[WHATSAPP] Sent to ${e164}: ${msg.sid}`);
+  return msg;
+}
+
+// ── Pre-built notification messages ──────────────────────────────────────
+
+async function notifyOrderPlaced(phone, name, orderNumber, totalAmount) {
+  const msg =
+    `Hello ${name}! 🎉\n\n` +
+    `Your order *${orderNumber}* has been placed successfully!\n\n` +
+    `💰 Total: ₹${totalAmount}\n\n` +
+    `We will confirm your order shortly.\n\n` +
+    `— Mount Made 🌿`;
+  return sendWhatsAppMessage(phone, msg).catch(err =>
+    console.error('[WHATSAPP] notifyOrderPlaced failed:', err.message)
+  );
+}
+
+async function notifyOrderConfirmed(phone, name, orderNumber) {
+  const msg =
+    `Hello ${name}! ✅\n\n` +
+    `Great news! Your order *${orderNumber}* has been *confirmed* and is now being processed.\n\n` +
+    `We will update you when it is on its way.\n\n` +
+    `— Mount Made 🌿`;
+  return sendWhatsAppMessage(phone, msg).catch(err =>
+    console.error('[WHATSAPP] notifyOrderConfirmed failed:', err.message)
+  );
+}
+
+async function notifyOrderDeclined(phone, name, orderNumber) {
+  const msg =
+    `Hello ${name},\n\n` +
+    `We are sorry to inform you that your order *${orderNumber}* has been *declined*.\n\n` +
+    `If you have any questions, please contact us.\n\n` +
+    `— Mount Made 🌿`;
+  return sendWhatsAppMessage(phone, msg).catch(err =>
+    console.error('[WHATSAPP] notifyOrderDeclined failed:', err.message)
+  );
+}
+
+async function notifyOrderDelivered(phone, name, orderNumber) {
+  const msg =
+    `Hello ${name}! 🚚\n\n` +
+    `Your order *${orderNumber}* has been *delivered* successfully!\n\n` +
+    `Thank you for shopping with Mount Made. We hope you love your products! 🌿`;
+  return sendWhatsAppMessage(phone, msg).catch(err =>
+    console.error('[WHATSAPP] notifyOrderDelivered failed:', err.message)
+  );
+}
+
+async function notifyReturnApproved(phone, name, returnNumber) {
+  const msg =
+    `Hello ${name}! ✅\n\n` +
+    `Your return request *${returnNumber}* has been *approved*.\n\n` +
+    `Please ship the item(s) back to us. Your refund will be processed once we receive them.\n\n` +
+    `— Mount Made 🌿`;
+  return sendWhatsAppMessage(phone, msg).catch(err =>
+    console.error('[WHATSAPP] notifyReturnApproved failed:', err.message)
+  );
+}
+
+async function notifyReturnRejected(phone, name, returnNumber) {
+  const msg =
+    `Hello ${name},\n\n` +
+    `We are sorry, your return request *${returnNumber}* has been *declined*.\n\n` +
+    `For more information, please contact our support team.\n\n` +
+    `— Mount Made 🌿`;
+  return sendWhatsAppMessage(phone, msg).catch(err =>
+    console.error('[WHATSAPP] notifyReturnRejected failed:', err.message)
+  );
+}
+
+module.exports = {
+  formatPhone,
+  getWhatsAppLink,
+  sendWhatsAppMessage,
+  notifyOrderPlaced,
+  notifyOrderConfirmed,
+  notifyOrderDeclined,
+  notifyOrderDelivered,
+  notifyReturnApproved,
+  notifyReturnRejected
+};
+
 
 /**
  * Format Indian phone number for WhatsApp API (no +, just digits e.g. 919876543210)
