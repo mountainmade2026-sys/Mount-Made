@@ -1135,6 +1135,7 @@ exports.getStockReports = async (req, res) => {
         is_active: product.is_active,
         created_at: product.created_at,
         transactions: transactionsResult.rows.map(t => ({
+          type: t.type,
           order_id: t.order_id,
           order_number: t.order_number,
           order_date: t.order_date,
@@ -1239,6 +1240,7 @@ exports.getStockStatements = async (req, res) => {
         is_active: product.is_active,
         created_at: product.created_at,
         transactions: transactionsResult.rows.map(t => ({
+          type: t.type || 'sale',
           order_id: t.order_id,
           order_number: t.order_number,
           order_date: t.order_date,
