@@ -2733,7 +2733,7 @@ exports.updateReturnStatus = async (req, res) => {
       updateParams
     );
 
-    // If received — restock product quantities
+    // If received — restock product quantities, then auto-advance to refunded
     if (status === 'received') {
       const returnItems = await client.query(
         'SELECT product_id, quantity FROM return_items WHERE return_id = $1',
@@ -2745,9 +2745,16 @@ exports.updateReturnStatus = async (req, res) => {
           [ri.quantity, ri.product_id]
         );
       }
+      // Auto-advance to refunded so customer sees refund confirmation immediately
+      await client.query(
+        `UPDATE returns SET status = 'refunded', processed_at = NOW(), updated_at = NOW() WHERE id = $1`,
+        [id]
+      );
     }
 
     await client.query('COMMIT');
+
+    const finalStatus = status === 'received' ? 'refunded' : status;
 
     const updated = await client.query(
       `SELECT r.*, u.full_name as customer_name, o.order_number
@@ -2755,7 +2762,7 @@ exports.updateReturnStatus = async (req, res) => {
        WHERE r.id = $1`, [id]
     );
 
-    res.json({ message: `Return status updated to "${status}".`, return: updated.rows[0] });
+    res.json({ message: `Return status updated to "${finalStatus}".`, return: updated.rows[0] });
   } catch (error) {
     await client.query('ROLLBACK').catch(() => {});
     console.error('Update return status error:', error);
