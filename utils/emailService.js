@@ -5,7 +5,8 @@ function createTransporter() {
   const host = String(process.env.SMTP_HOST || '').trim();
   const port = parseInt(process.env.SMTP_PORT || '587', 10);
   const user = String(process.env.SMTP_USER || '').trim();
-  const pass = String(process.env.SMTP_PASS || '').trim();
+  // Strip whitespace/spaces in case the app password was pasted with spaces
+  const pass = String(process.env.SMTP_PASS || '').replace(/\s/g, '');
 
   if (!host || !user || !pass) return null;
 
