@@ -408,8 +408,15 @@ app.get('/uploads/:id', async (req, res, next) => {
     }
 
     const row = result.rows[0];
+    // Use ETag so browsers revalidate on next page load.
+    // Do NOT use immutable — upload IDs can be reused if the table is wiped.
+    const etag = `"upload-${id}-${row.data.length}"`;
+    if (req.headers['if-none-match'] === etag) {
+      return res.status(304).end();
+    }
     res.setHeader('Content-Type', row.mimetype);
-    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    res.setHeader('ETag', etag);
+    res.setHeader('Cache-Control', 'public, no-cache');
     return res.send(row.data);
   } catch (err) {
     console.error('Serve upload error:', err);

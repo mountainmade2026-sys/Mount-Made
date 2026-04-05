@@ -626,8 +626,22 @@ exports.deleteProduct = async (req, res) => {
     if (!existing) {
       return res.status(404).json({ error: 'Product not found.' });
     }
+
+    // Extract upload IDs from image URLs before deleting
+    const imageUrls = [
+      ...(existing.images || []),
+      existing.image_url
+    ].filter(Boolean);
+    const uploadIds = imageUrls
+      .map(url => { const m = String(url).match(/^\/uploads\/(\d+)$/); return m ? parseInt(m[1], 10) : null; })
+      .filter(Boolean);
     
     const product = await Product.delete(id);
+
+    // Delete orphaned upload rows so old images can't reappear
+    if (uploadIds.length > 0) {
+      await db.query(`DELETE FROM uploads WHERE id = ANY($1::int[])`, [uploadIds]);
+    }
     
     res.json({ message: 'Product deleted successfully.' });
   } catch (error) {
