@@ -471,7 +471,7 @@ exports.getUserActivities = async (req, res) => {
     const parsedLimit = parseInt(limit, 10);
     const safeLimit = Number.isFinite(parsedLimit) && parsedLimit > 0 ? parsedLimit : 50;
 
-    // Get recent user activities from orders and user registrations
+    // Get recent user activities from orders, returns, and user registrations
     const query = `
       SELECT *
       FROM (
@@ -486,6 +486,18 @@ exports.getUserActivities = async (req, res) => {
           u.email              AS email
         FROM orders o
         JOIN users u ON o.user_id = u.id
+        UNION ALL
+        SELECT
+          'return'::text           AS activity_type,
+          COALESCE(r.return_number, r.id::text) AS reference_id,
+          r.status::text           AS status,
+          r.refund_amount::numeric AS total_amount,
+          r.updated_at             AS created_at,
+          u.id                     AS user_id,
+          u.full_name              AS full_name,
+          u.email                  AS email
+        FROM returns r
+        JOIN users u ON r.user_id = u.id
         UNION ALL
         SELECT 
           'user_registered'::text AS activity_type,

@@ -1803,6 +1803,9 @@
                             <select class="filter-select" id="activities-type-filter" onchange="filterActivities()">
                                 <option value="">All Types</option>
                                 <option value="order">Orders</option>
+                                <option value="return">Returns</option>
+                                <option value="refunded">Refunded</option>
+                                <option value="declined">Declined</option>
                                 <option value="user_registered">User Registered</option>
                             </select>
                             <input type="date" class="filter-select" id="activities-date-from" onchange="filterActivities()" title="From date">
@@ -4909,11 +4912,6 @@
                         <div class="stat-card-label">Profit</div>
                         <div class="stat-card-value" data-count="${parseFloat(stats.total_profit || 0)}" data-prefix="₹" data-decimals="2">₹0.00</div>
                     </div>
-                    <div class="stat-card warning">
-                        <div class="stat-card-icon"><i class="fas fa-receipt"></i></div>
-                        <div class="stat-card-label">Loss</div>
-                        <div class="stat-card-value" data-count="${parseFloat(stats.total_spent || 0)}" data-prefix="₹" data-decimals="2">₹0.00</div>
-                    </div>
                     <div class="stat-card info">
                         <div class="stat-card-icon"><i class="fas fa-users"></i></div>
                         <div class="stat-card-label">Customers</div>
@@ -5094,7 +5092,6 @@
                     { label: 'Orders',       value: parseInt(stats.total_orders) || 0,           prefix: '',  decimals: 0 },
                     { label: 'Revenue',      value: parseFloat(stats.total_revenue || 0),        prefix: '₹', decimals: 2 },
                     { label: 'Profit',       value: parseFloat(stats.total_profit || 0),         prefix: '₹', decimals: 2 },
-                    { label: 'Loss',         value: parseFloat(stats.total_spent || 0),          prefix: '₹', decimals: 2 },
                     { label: 'Customers',    value: parseInt(stats.total_customers) || 0,        prefix: '',  decimals: 0 },
                     { label: 'Products',     value: parseInt(stats.total_products) || 0,         prefix: '',  decimals: 0 },
                     { label: 'Stock Units',  value: parseInt(stats.stock_units) || 0,            prefix: '',  decimals: 0 },
@@ -7787,6 +7784,10 @@
                     const amount = parseFloat(a.total_amount || 0).toFixed(2);
                     const status = a.status || 'pending';
                     label = `Order #${a.reference_id} - ₹${amount} (${status})`;
+                } else if (activityType === 'return') {
+                    const status = a.status || '';
+                    const amount = a.total_amount ? ` - ₹${parseFloat(a.total_amount).toFixed(2)}` : '';
+                    label = `Return #${a.reference_id}${amount} (${status})`;
                 } else if (activityType === 'user_registered') {
                     label = 'New user registered';
                 }
@@ -7799,7 +7800,16 @@
                     label.toLowerCase().includes(search) ||
                     (String(a.reference_id || '')).toLowerCase().includes(searchTerm);
 
-                const matchesType = !typeFilter || activityType === typeFilter;
+                // 'refunded' and 'declined' filters match return rows with that status
+                let matchesType = false;
+                if (!typeFilter) {
+                    matchesType = true;
+                } else if (typeFilter === 'refunded' || typeFilter === 'declined') {
+                    const mappedStatus = typeFilter === 'declined' ? 'rejected' : 'refunded';
+                    matchesType = activityType === 'return' && a.status === mappedStatus;
+                } else {
+                    matchesType = activityType === typeFilter;
+                }
 
                 let matchesDate = true;
                 if (fromDate && createdDate && createdDate < fromDate) {
@@ -7825,17 +7835,26 @@
                 const createdAt = a.created_at || '';
 
                 let label = 'Unknown activity';
+                let typeLabel = activityType;
                 if (activityType === 'order') {
                     const amount = parseFloat(a.total_amount || 0).toFixed(2);
                     const status = a.status || 'pending';
                     label = `Order #${a.reference_id} - ₹${amount} (${status})`;
+                    typeLabel = 'Order';
+                } else if (activityType === 'return') {
+                    const status = a.status || '';
+                    const amount = a.total_amount ? ` - ₹${parseFloat(a.total_amount).toFixed(2)}` : '';
+                    label = `Return #${a.reference_id}${amount} (${status})`;
+                    const statusMap = { refunded: 'Refunded', rejected: 'Declined', requested: 'Return Requested', approved: 'Return Approved', received: 'Return Received' };
+                    typeLabel = statusMap[status] || 'Return';
                 } else if (activityType === 'user_registered') {
                     label = 'New user registered';
+                    typeLabel = 'Registered';
                 }
 
                 html += `
                     <tr>
-                        <td>${activityType}</td>
+                        <td>${typeLabel}</td>
                         <td>${userName}${userEmail ? '<br><small>' + userEmail + '</small>' : ''}</td>
                         <td>${label}</td>
                         <td>${formatDate(createdAt)}</td>
