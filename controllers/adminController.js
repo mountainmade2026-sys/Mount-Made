@@ -943,21 +943,39 @@ exports.updateOrderStatus = async (req, res) => {
 exports.getDashboardStats = async (req, res) => {
   try {
     const orderCountQuery = await db.query('SELECT COUNT(*) as total_orders FROM orders');
-    const revenueQuery = await db.query(
-      "SELECT COALESCE(SUM(total_amount), 0) as total_revenue FROM orders WHERE status != 'cancelled'"
-    );
 
-    // "Spent" = estimated cost of goods sold, using products.wholesale_price as cost price
-    // Profit = revenue - spent
-    const spentQuery = await db.query(
-      `
-        SELECT COALESCE(SUM(oi.quantity * COALESCE(p.wholesale_price, 0)), 0) as total_spent
-        FROM order_items oi
-        JOIN orders o ON o.id = oi.order_id
-        LEFT JOIN products p ON p.id = oi.product_id
-        WHERE o.status != 'cancelled'
-      `
-    );
+    // Revenue = only delivered orders (customer actually received the product)
+    // Subtract refunded return amounts
+    const revenueQuery = await db.query(`
+      SELECT
+        COALESCE(SUM(o.total_amount), 0)
+          - COALESCE((
+              SELECT SUM(r.refund_amount)
+              FROM returns r
+              WHERE r.status = 'refunded' AND r.refund_amount IS NOT NULL
+            ), 0)
+        AS total_revenue
+      FROM orders o
+      WHERE o.status = 'delivered'
+    `);
+
+    // Cost (spent) = wholesale cost of delivered items only, minus returned items
+    const spentQuery = await db.query(`
+      SELECT
+        COALESCE(SUM(oi.quantity * COALESCE(p.wholesale_price, 0)), 0)
+          - COALESCE((
+              SELECT SUM(ri.quantity * COALESCE(p2.wholesale_price, 0))
+              FROM return_items ri
+              JOIN returns r ON r.id = ri.return_id
+              LEFT JOIN products p2 ON p2.id = ri.product_id
+              WHERE r.status = 'refunded'
+            ), 0)
+        AS total_spent
+      FROM order_items oi
+      JOIN orders o ON o.id = oi.order_id
+      LEFT JOIN products p ON p.id = oi.product_id
+      WHERE o.status = 'delivered'
+    `);
 
     const userCountQuery = await db.query(
       "SELECT COUNT(*) as total_customers FROM users WHERE role IN ('customer','wholesale')"
@@ -1073,8 +1091,13 @@ exports.getStockReports = async (req, res) => {
         p.images,
         p.is_active,
         p.created_at,
+        -- total_sold: all non-cancelled (for stock tracking purposes)
         COALESCE(SUM(CASE WHEN o.status != 'cancelled' THEN oi.quantity ELSE 0 END), 0) as total_sold,
-        (p.stock_quantity + COALESCE(SUM(CASE WHEN o.status != 'cancelled' THEN oi.quantity ELSE 0 END), 0)) as initial_stock
+        (p.stock_quantity + COALESCE(SUM(CASE WHEN o.status != 'cancelled' THEN oi.quantity ELSE 0 END), 0)) as initial_stock,
+        -- revenue: only delivered orders (customer actually received & paid)
+        COALESCE(SUM(CASE WHEN o.status = 'delivered' THEN oi.subtotal ELSE 0 END), 0) as total_revenue,
+        -- cost: wholesale price of delivered items
+        COALESCE(SUM(CASE WHEN o.status = 'delivered' THEN oi.quantity * COALESCE(p.wholesale_price, 0) ELSE 0 END), 0) as total_cost
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.id
       LEFT JOIN order_items oi ON p.id = oi.product_id
@@ -1145,6 +1168,9 @@ exports.getStockReports = async (req, res) => {
         current_stock: parseInt(product.current_stock) || 0,
         total_sold: parseInt(product.total_sold) || 0,
         initial_stock: parseInt(product.initial_stock) || 0,
+        total_revenue: parseFloat(product.total_revenue) || 0,
+        total_cost: parseFloat(product.total_cost) || 0,
+        total_profit: (parseFloat(product.total_revenue) || 0) - (parseFloat(product.total_cost) || 0),
         images: product.images,
         is_active: product.is_active,
         created_at: product.created_at,

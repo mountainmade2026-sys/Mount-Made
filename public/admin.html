@@ -1687,6 +1687,14 @@
                         <div class="stat-value" id="out-stock-count">0</div>
                         <div class="stat-label">Out of Stock</div>
                     </div>
+                    <div class="stat-card" style="border-left-color: var(--primary);">
+                        <div class="stat-value" id="stock-total-revenue">$0.00</div>
+                        <div class="stat-label">Total Revenue (Delivered)</div>
+                    </div>
+                    <div class="stat-card" style="border-left-color: var(--success);">
+                        <div class="stat-value" id="stock-total-profit">$0.00</div>
+                        <div class="stat-label">Total Profit (Delivered)</div>
+                    </div>
                 </div>
 
                 <div id="stock-reports-list"></div>
@@ -5268,11 +5276,21 @@
             const lowStock = stockReports.filter(p => p.current_stock > 0 && p.current_stock <= 10).length;
             const outOfStock = stockReports.filter(p => p.current_stock <= 0).length;
 
+            let totalRevenue = 0, totalProfit = 0;
+            stockReports.forEach(p => {
+                totalRevenue += parseFloat(p.total_revenue) || 0;
+                totalProfit += parseFloat(p.total_profit) || 0;
+            });
+
             // Update stats cards
             document.getElementById('total-products-count').textContent = totalProducts;
             document.getElementById('in-stock-count').textContent = inStock;
             document.getElementById('low-stock-count').textContent = lowStock;
             document.getElementById('out-stock-count').textContent = outOfStock;
+            document.getElementById('stock-total-revenue').textContent = formatCurrency(totalRevenue);
+            const profitEl = document.getElementById('stock-total-profit');
+            profitEl.textContent = formatCurrency(totalProfit);
+            profitEl.style.color = totalProfit >= 0 ? 'var(--success)' : 'var(--danger)';
         }
 
         function renderStockReportsTable(stockReports) {
@@ -5291,6 +5309,8 @@
                 '<th>Total Sold</th>' +
                 '<th>Remaining Stock</th>' +
                 '<th>Stock Value</th>' +
+                '<th>Revenue</th>' +
+                '<th>Profit</th>' +
                 '<th>Status</th>' +
                 '<th>Actions</th>' +
                 '</tr></thead><tbody>';
@@ -5301,9 +5321,12 @@
                 const totalSold = parseInt(product.total_sold) || 0;
                 const price = parseFloat(product.price) || 0;
                 const stockValue = currentStock * price;
+                const totalRevenue = parseFloat(product.total_revenue) || 0;
+                const totalProfit = parseFloat(product.total_profit) || 0;
 
                 const statusClass = currentStock > 10 ? 'success' : currentStock > 0 ? 'warning' : 'danger';
                 const statusText = currentStock > 10 ? 'In Stock' : currentStock > 0 ? 'Low Stock' : 'Out of Stock';
+                const profitColor = totalProfit >= 0 ? 'var(--success)' : 'var(--danger)';
 
                 html += `
                     <tr>
@@ -5322,6 +5345,8 @@
                         <td>${totalSold}</td>
                         <td>${currentStock}</td>
                         <td>${formatCurrency(stockValue)}</td>
+                        <td>${formatCurrency(totalRevenue)}</td>
+                        <td style="color: ${profitColor}; font-weight: 600;">${formatCurrency(totalProfit)}</td>
                         <td><span class="badge badge-${statusClass}">${statusText}</span></td>
                         <td>
                             <button class="action-btn action-btn-view" onclick="viewStockHistory(${product.id})">
