@@ -6126,7 +6126,7 @@
             container.innerHTML = html;
         }
 
-        async function quickUpdateReturn(returnId, status) {
+        window.quickUpdateReturn = async function(returnId, status) {
             const label = status === 'approved' ? 'approve' : 'decline';
             if (!(await showConfirmDialog(`Are you sure you want to ${label} this return?`, {
                 title: 'Update Return Status',
@@ -6141,7 +6141,7 @@
             } catch (err) {
                 showAlert(err.message || 'Failed to update return.', 'error');
             }
-        }
+        };
 
         function openReturnActionModal(returnId) {
             const r = (window._returnsCache || []).find(x => x.id === returnId);
