@@ -5,7 +5,7 @@ const db = require('../config/database');
 const nodemailer = require('nodemailer');
 
 // ── Send a result email back to admin after they take action ─────────────
-async function sendActionResultEmail({ subject, icon, color, title, detail }) {
+async function sendActionResultEmail({ subject, icon, color, title, detail, actionButtonHtml }) {
   const host  = String(process.env.SMTP_HOST || '').trim();
   const port  = parseInt(process.env.SMTP_PORT || '465', 10);
   const user  = String(process.env.SMTP_USER || '').trim();
@@ -24,7 +24,8 @@ async function sendActionResultEmail({ subject, icon, color, title, detail }) {
     <h2 style="color:#fff;margin:0;font-size:22px;">${title}</h2>
   </div>
   <div style="padding:24px;text-align:center;">
-    <p style="color:#555;font-size:15px;margin:0 0 8px;">${detail}</p>
+    <p style="color:#555;font-size:15px;margin:0 0 16px;">${detail}</p>
+    ${actionButtonHtml || ''}
     <p style="color:#aaa;font-size:12px;margin-top:20px;">Mount Made &mdash; ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })} IST</p>
   </div>
 </div>
@@ -130,7 +131,7 @@ router.get('/order/:id/:action', async (req, res) => {
   const { id, action } = req.params;
   const { token } = req.query;
 
-  if (!['confirm', 'decline'].includes(action)) {
+  if (!['confirm', 'decline', 'deliver'].includes(action)) {
     return res.status(400).send(page('⚠️', '#dc3545', 'Unknown Action', 'The requested action is not recognized.'));
   }
 
@@ -139,7 +140,7 @@ router.get('/order/:id/:action', async (req, res) => {
     return res.status(401).send(page('🔒', '#dc3545', 'Link Invalid or Expired', error));
   }
 
-  const newStatus = action === 'confirm' ? 'processing' : 'cancelled';
+  const newStatus = action === 'confirm' ? 'processing' : action === 'deliver' ? 'delivered' : 'cancelled';
 
   try {
     const checkResult = await db.query(
@@ -153,8 +154,12 @@ router.get('/order/:id/:action', async (req, res) => {
 
     const order = checkResult.rows[0];
 
-    // Already handled
-    if (order.status !== 'pending') {
+    // Already handled — but allow deliver when status is processing
+    const alreadyHandled = action === 'deliver'
+      ? (order.status === 'delivered' || order.status === 'cancelled')
+      : order.status !== 'pending';
+
+    if (alreadyHandled) {
       const alreadyLabel = order.status.charAt(0).toUpperCase() + order.status.slice(1);
       return res.send(page('ℹ️', '#17a2b8', 'Already Processed', `Order ${order.order_number} has already been marked as <strong>${alreadyLabel}</strong>. No changes were made.`));
     }
@@ -192,16 +197,34 @@ router.get('/order/:id/:action', async (req, res) => {
     }
 
     if (action === 'confirm') {
-      // Send result email back to admin inbox
+      // Build a "Mark as Delivered" button for the result email
+      const deliveredToken = jwt.sign(
+        { type: 'order', id: String(order.id), action: 'deliver' },
+        process.env.JWT_SECRET,
+        { expiresIn: '30d' }
+      );
+      const baseUrl = String(process.env.APP_BASE_URL || '').replace(/\/$/, '');
+      const deliveredUrl = `${baseUrl}/api/email-actions/order/${order.id}/deliver?token=${deliveredToken}`;
+      const deliveredBtn = `<a href="${deliveredUrl}" style="display:inline-block;padding:14px 32px;background:#28a745;color:#fff;text-decoration:none;border-radius:6px;font-size:15px;font-weight:bold;margin-top:8px;">&#128666; Mark as Delivered</a>`;
+
       setImmediate(() => sendActionResultEmail({
         subject: `✅ Order Confirmed: ${order.order_number}`,
         icon: '✅', color: '#28a745',
         title: 'Order Confirmed',
-        detail: `Order <strong>${order.order_number}</strong> has been confirmed and is now being processed.`
+        detail: `Order <strong>${order.order_number}</strong> has been confirmed and is now being processed. Click below when the order is delivered:`,
+        actionButtonHtml: deliveredBtn
       }));
       return res.send(page('✅', '#28a745', 'Order Confirmed!', `Order <strong>${order.order_number}</strong> has been confirmed and moved to Processing.`));
+    } else if (action === 'deliver') {
+      setImmediate(() => sendActionResultEmail({
+        subject: `🚚 Order Delivered: ${order.order_number}`,
+        icon: '🚚', color: '#17a2b8',
+        title: 'Order Delivered',
+        detail: `Order <strong>${order.order_number}</strong> has been marked as delivered successfully.`
+      }));
+      return res.send(page('🚚', '#28a745', 'Order Delivered!', `Order <strong>${order.order_number}</strong> has been marked as delivered successfully.`));
     } else {
-      // Send result email back to admin inbox
+      // Decline — just notify, no further button
       setImmediate(() => sendActionResultEmail({
         subject: `❌ Order Declined: ${order.order_number}`,
         icon: '❌', color: '#dc3545',
