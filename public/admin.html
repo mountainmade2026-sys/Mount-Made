@@ -7960,8 +7960,11 @@
                     : '<span style="color:var(--text-muted);">—</span>';
 
                 const isFinal = o.status === 'delivered' || o.status === 'cancelled';
+                const isPending = o.status === 'pending';
                 const actionsHtml = isFinal
                     ? '<span style="color:var(--text-muted);font-size:0.82rem;">—</span>'
+                    : isPending
+                    ? '<span style="color:var(--text-muted);font-size:0.82rem;font-style:italic;">Awaiting confirmation</span>'
                     : `<div class="table-actions">
                         <button class="action-btn action-btn-success" onclick="updateOrderStatus(${o.id}, 'delivered')" title="Mark as Delivered">
                             <i class="fas fa-check-circle"></i> Delivered
