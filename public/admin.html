@@ -358,6 +358,8 @@
             position: fixed;
             top: 0;
             z-index: 9000;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
         #ss-quicknav-spacer { height: 0; }
         .ss-nav-btn {
@@ -3888,9 +3890,8 @@
             nav.innerHTML = subs.map(function(s) {
                 return '<button class="ss-nav-btn" data-target="' + s.id + '" onclick="siteSettingsScrollTo(\'' + s.id + '\')">' + s.label + '</button>';
             }).join('') +
-            '<span style="flex:1"></span>' +
-            '<button class="ss-nav-btn ss-nav-lara-btn" id="ss-lara-btn" title="Turn Lara voice on/off" onclick="(function(){var b=document.getElementById(\'lara-voice-toggle-btn\');if(b)b.click();})()" style="margin-left:0.5rem;"><i class="fas fa-volume-up" style="margin-right:4px"></i>Lara: <span id="ss-lara-state">Off</span></button>' +
-            '<button class="ss-nav-btn ss-nav-logout-btn" onclick="(function(){var b=document.getElementById(\'logout-btn\');if(b)b.click();})()" style="margin-left:0.25rem;background:rgba(239,68,68,0.13);border-color:rgba(239,68,68,0.4);color:#ef4444;"><i class="fas fa-sign-out-alt" style="margin-right:4px"></i>Logout</button>';
+            '<button class="ss-nav-btn" id="ss-lara-btn" title="Turn Lara voice on/off" onclick="(function(){var b=document.getElementById(\'lara-voice-toggle-btn\');if(b)b.click();})()" style="background:rgba(26,71,49,0.1);border-color:var(--primary-light);color:var(--primary);"><i class="fas fa-volume-up" style="margin-right:4px"></i>Lara: <span id="ss-lara-state">Off</span></button>' +
+            '<button class="ss-nav-btn" onclick="(function(){var b=document.getElementById(\'logout-btn\');if(b)b.click();})()" style="background:rgba(239,68,68,0.1);border-color:#ef4444;color:#ef4444;"><i class="fas fa-sign-out-alt" style="margin-right:4px"></i>Logout</button>';
 
             // Show and position the fixed nav
             nav.style.display = 'flex';
