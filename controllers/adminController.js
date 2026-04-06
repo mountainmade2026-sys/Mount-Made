@@ -1676,6 +1676,7 @@ exports.updateSiteSettings = async (req, res) => {
     const {
       logo_url,
       logo_size,
+      logo_size_mobile,
       homepage_hero_title,
       homepage_hero_subtitle,
       homepage_hero_image_url,
@@ -1750,6 +1751,13 @@ exports.updateSiteSettings = async (req, res) => {
         return res.status(400).json({ error: 'Logo size must be a number between 20 and 80.' });
       }
       updates.push({ key: 'logo_size', value: String(parsedLogoSize) });
+    }
+    if (logo_size_mobile !== undefined) {
+      const parsedMobileSize = parseInt(logo_size_mobile, 10);
+      if (Number.isNaN(parsedMobileSize) || parsedMobileSize < 16 || parsedMobileSize > 60) {
+        return res.status(400).json({ error: 'Mobile logo size must be a number between 16 and 60.' });
+      }
+      updates.push({ key: 'logo_size_mobile', value: String(parsedMobileSize) });
     }
     if (homepage_hero_title !== undefined) {
       updates.push({ key: 'homepage_hero_title', value: homepage_hero_title });

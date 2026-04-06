@@ -2158,21 +2158,39 @@ function preloadLogoImage(logoUrl) {
   document.head.appendChild(link);
 }
 
-function applySiteLogo(logoUrl, logoSizeValue) {
+function applySiteLogo(logoUrl, logoSizeValue, logoSizeMobileValue) {
   const normalizedLogo = (logoUrl && logoUrl !== 'default') ? logoUrl : null;
   const isAdminRoute = window.location.pathname.startsWith('/admin');
   const defaultLogoSize = isAdminRoute ? 28 : 40;
-  const logoHeight = normalizeLogoSize(logoSizeValue, defaultLogoSize);
-  const logoWidth = Math.round(logoHeight * 4);
+  const defaultMobileSize = isAdminRoute ? 24 : 30;
+  const desktopHeight = normalizeLogoSize(logoSizeValue, defaultLogoSize);
+  const mobileHeight = logoSizeMobileValue ? Math.max(16, Math.min(parseInt(logoSizeMobileValue, 10) || defaultMobileSize, 60)) : defaultMobileSize;
+  const desktopWidth = Math.round(desktopHeight * 4);
+  const mobileWidth = Math.round(mobileHeight * 4);
 
   if (normalizedLogo) {
     preloadLogoImage(normalizedLogo);
   }
 
+  // Inject/update a dynamic style tag for responsive logo sizing
+  var styleId = '_logo-responsive-style';
+  var styleEl = document.getElementById(styleId);
+  if (!styleEl) {
+    styleEl = document.createElement('style');
+    styleEl.id = styleId;
+    document.head.appendChild(styleEl);
+  }
+  styleEl.textContent = `
+    .navbar-brand img.site-logo-dynamic { max-height: ${desktopHeight}px; max-width: ${desktopWidth}px; object-fit: contain; }
+    @media (max-width: 767px) {
+      .navbar-brand img.site-logo-dynamic { max-height: ${mobileHeight}px; max-width: ${mobileWidth}px; }
+    }
+  `;
+
   const navbarBrands = document.querySelectorAll('.navbar-brand');
   navbarBrands.forEach(brand => {
     const logoHtml = normalizedLogo
-      ? `<img src="${normalizedLogo}" alt="Site Logo" style="max-height: ${logoHeight}px; max-width: ${logoWidth}px; object-fit: contain;" decoding="async">`
+      ? `<img src="${normalizedLogo}" alt="Site Logo" class="site-logo-dynamic" decoding="async">`
       : '';
 
     const brandTextHtml = '';
@@ -2194,8 +2212,9 @@ async function loadSiteLogo() {
   try {
     const cachedLogo = localStorage.getItem(SITE_LOGO_CACHE_KEY);
     const cachedLogoSize = localStorage.getItem(SITE_LOGO_SIZE_CACHE_KEY);
+    const cachedLogoSizeMobile = localStorage.getItem('site_logo_size_mobile');
     if (cachedLogo) {
-      applySiteLogo(cachedLogo, cachedLogoSize);
+      applySiteLogo(cachedLogo, cachedLogoSize, cachedLogoSizeMobile);
     }
 
     const response = await fetch(`${API_BASE}/products/settings`, {
@@ -2208,6 +2227,7 @@ async function loadSiteLogo() {
       const settings = data.settings || {};
       const logoUrl = settings.logo_url && settings.logo_url !== 'default' ? settings.logo_url : '';
       const normalizedLogoSize = normalizeLogoSize(settings.logo_size, 40);
+      const mobileLogoSize = settings.logo_size_mobile || '30';
 
       if (logoUrl) {
         localStorage.setItem(SITE_LOGO_CACHE_KEY, logoUrl);
@@ -2216,8 +2236,9 @@ async function loadSiteLogo() {
       }
 
       localStorage.setItem(SITE_LOGO_SIZE_CACHE_KEY, String(normalizedLogoSize));
+      localStorage.setItem('site_logo_size_mobile', String(mobileLogoSize));
 
-      applySiteLogo(logoUrl, normalizedLogoSize);
+      applySiteLogo(logoUrl, normalizedLogoSize, mobileLogoSize);
 
       // Apply dynamic footer contact info
       applyFooterContact(settings);
