@@ -435,13 +435,14 @@
                 position: fixed;
                 top: 62px; /* matches navbar height */
                 left: 0;
-                height: calc(100vh - 62px);
+                height: calc(100vh - 62px - 64px - env(safe-area-inset-bottom, 0px));
                 overflow-y: auto;
                 z-index: 900;
                 transform: translateX(-100%);
                 transition: transform 0.3s ease;
                 background-color: var(--bg-primary);
                 box-shadow: 4px 0 24px rgba(0,0,0,0.22);
+                padding-bottom: 1rem;
             }
 
             .filter-sidebar.is-open {
