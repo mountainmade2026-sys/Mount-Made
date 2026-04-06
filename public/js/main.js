@@ -2218,6 +2218,9 @@ async function loadSiteLogo() {
       localStorage.setItem(SITE_LOGO_SIZE_CACHE_KEY, String(normalizedLogoSize));
 
       applySiteLogo(logoUrl, normalizedLogoSize);
+
+      // Apply dynamic footer contact info
+      applyFooterContact(settings);
     }
   } catch (error) {
     // Silently fail - keep default logo
@@ -2230,6 +2233,29 @@ if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', loadSiteLogo);
 } else {
   loadSiteLogo();
+}
+
+function applyFooterContact(settings) {
+  var email = (settings.contact_email || '').trim();
+  var phone = (settings.contact_phone || '').trim();
+  var location = (settings.contact_location || '').trim();
+
+  var emailEl = document.getElementById('footer-contact-email');
+  var phoneEl = document.getElementById('footer-contact-phone');
+  var locationEl = document.getElementById('footer-contact-location');
+
+  if (emailEl) {
+    if (email) { emailEl.textContent = email; emailEl.parentElement.style.display = ''; }
+    else { emailEl.parentElement.style.display = 'none'; }
+  }
+  if (phoneEl) {
+    if (phone) { phoneEl.textContent = phone; phoneEl.parentElement.style.display = ''; }
+    else { phoneEl.parentElement.style.display = 'none'; }
+  }
+  if (locationEl) {
+    if (location) { locationEl.textContent = location; locationEl.parentElement.style.display = ''; }
+    else { locationEl.parentElement.style.display = 'none'; }
+  }
 }
 
 // Export for use in other scripts

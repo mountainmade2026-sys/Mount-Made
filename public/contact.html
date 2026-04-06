@@ -168,9 +168,9 @@
             <div class="footer-section">
                 <h3>Contact</h3>
                 <ul>
-                    <li><i class="fas fa-envelope"></i> <span id="support-email-display">hello@mountain-made.com</span></li>
-                    <li><i class="fas fa-phone"></i> (555) 123-4567</li>
-                    <li><i class="fas fa-map-marker-alt"></i> India, Manipur</li>
+                    <li><i class="fas fa-envelope"></i> <span id="footer-contact-email">hello@mountain-made.com</span></li>
+                    <li><i class="fas fa-phone"></i> <span id="footer-contact-phone">(555) 123-4567</span></li>
+                    <li><i class="fas fa-map-marker-alt"></i> <span id="footer-contact-location">India, Manipur</span></li>
                 </ul>
             </div>
         </div>
@@ -230,13 +230,13 @@
                 const data = await api.get('/products/settings');
                 const settings = data?.settings || {};
                 const value = (settings.business_support_email || '').trim() || 'hello@mountain-made.com';
-                const displayIds = ['support-email-display', 'contact-send-to-email'];
+                const displayIds = ['footer-contact-email', 'contact-send-to-email'];
                 displayIds.forEach((id) => {
                     const el = document.getElementById(id);
                     if (el) el.textContent = value;
                 });
             } catch (_) {
-                const displayIds = ['support-email-display', 'contact-send-to-email'];
+                const displayIds = ['footer-contact-email', 'contact-send-to-email'];
                 displayIds.forEach((id) => {
                     const el = document.getElementById(id);
                     if (el) el.textContent = 'hello@mountain-made.com';

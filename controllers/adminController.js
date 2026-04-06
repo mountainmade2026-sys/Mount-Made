@@ -1694,6 +1694,9 @@ exports.updateSiteSettings = async (req, res) => {
       about_us_paragraph_3,
       about_us_paragraph_4,
       about_us_paragraph_5,
+      contact_email,
+      contact_phone,
+      contact_location,
       business_support_email,
       admin_license_blocked,
       admin_license_expires_at,
@@ -1801,6 +1804,19 @@ exports.updateSiteSettings = async (req, res) => {
     }
     if (about_us_paragraph_5 !== undefined) {
       updates.push({ key: 'about_us_paragraph_5', value: String(about_us_paragraph_5 || '').trim() });
+    }
+    if (contact_email !== undefined) {
+      const val = String(contact_email || '').trim();
+      if (val && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
+        return res.status(400).json({ error: 'Contact email must be a valid email address.' });
+      }
+      updates.push({ key: 'contact_email', value: val });
+    }
+    if (contact_phone !== undefined) {
+      updates.push({ key: 'contact_phone', value: String(contact_phone || '').trim() });
+    }
+    if (contact_location !== undefined) {
+      updates.push({ key: 'contact_location', value: String(contact_location || '').trim() });
     }
     if (business_support_email !== undefined) {
       const emailValue = String(business_support_email || '').trim();

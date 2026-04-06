@@ -2521,6 +2521,36 @@
                     </div>
                 </div>
 
+                <div id="ss-sub-contact" class="data-table-container" style="margin-top: 1.5rem;">
+                    <div class="table-header">
+                        <h3>Footer Contact Info</h3>
+                    </div>
+                    <div style="padding: 2rem;">
+                        <p style="color: var(--text-muted); margin-bottom: 1.5rem;">
+                            Edit the contact details shown in the footer across all pages. Leave a field empty to hide it.
+                        </p>
+
+                        <div class="form-group" style="margin-bottom: 1rem; max-width: 520px;">
+                            <label class="form-label" for="contact-email"><i class="fas fa-envelope" style="margin-right:6px;color:var(--primary)"></i>Contact Email</label>
+                            <input type="email" id="contact-email" class="form-input" placeholder="hello@mountain-made.com">
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 1rem; max-width: 520px;">
+                            <label class="form-label" for="contact-phone"><i class="fas fa-phone" style="margin-right:6px;color:var(--primary)"></i>Phone Number</label>
+                            <input type="text" id="contact-phone" class="form-input" placeholder="(555) 123-4567">
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 1rem; max-width: 520px;">
+                            <label class="form-label" for="contact-location"><i class="fas fa-map-marker-alt" style="margin-right:6px;color:var(--primary)"></i>Location</label>
+                            <input type="text" id="contact-location" class="form-input" placeholder="India, Manipur">
+                        </div>
+
+                        <button class="btn btn-primary" onclick="saveContactInfoSettings()">
+                            <i class="fas fa-save"></i> Save Contact Info
+                        </button>
+                    </div>
+                </div>
+
                 <div id="ss-sub-email" class="data-table-container" style="margin-top: 1.5rem;">
                     <div class="table-header">
                         <h3>Business Email Integration</h3>
@@ -3878,6 +3908,7 @@
                 { id: 'ss-sub-admin',     label: 'Admin Account' },
                 { id: 'ss-sub-delivery',  label: 'Delivery' },
                 { id: 'ss-sub-about',     label: 'About Us' },
+                { id: 'ss-sub-contact',   label: 'Contact Info' },
                 { id: 'ss-sub-email',     label: 'Business Email' },
                 { id: 'ss-sub-gpay',      label: 'Google Pay' },
                 { id: 'ss-sub-cod',       label: 'COD Pincodes' }
@@ -6924,6 +6955,14 @@
                 if (aboutParagraph4El) aboutParagraph4El.value = settings.about_us_paragraph_4 || '';
                 if (aboutParagraph5El) aboutParagraph5El.value = settings.about_us_paragraph_5 || '';
 
+                // Populate contact info settings
+                const contactEmailEl = document.getElementById('contact-email');
+                const contactPhoneEl = document.getElementById('contact-phone');
+                const contactLocationEl = document.getElementById('contact-location');
+                if (contactEmailEl) contactEmailEl.value = settings.contact_email || '';
+                if (contactPhoneEl) contactPhoneEl.value = settings.contact_phone || '';
+                if (contactLocationEl) contactLocationEl.value = settings.contact_location || '';
+
                 // Populate delivery settings
                 const fastEnabledInput = document.getElementById('fast-delivery-enabled');
                 const fastChargeInput = document.getElementById('fast-delivery-charge');
@@ -7578,6 +7617,37 @@
             } catch (error) {
                 console.error('Save About Us settings error:', error);
                 showAlert(error.message || 'Failed to save About Us content', 'error');
+            }
+        };
+
+        window.saveContactInfoSettings = async function() {
+            try {
+                const contact_email = (document.getElementById('contact-email')?.value || '').trim();
+                const contact_phone = (document.getElementById('contact-phone')?.value || '').trim();
+                const contact_location = (document.getElementById('contact-location')?.value || '').trim();
+
+                if (contact_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact_email)) {
+                    showAlert('Please enter a valid contact email address.', 'error');
+                    document.getElementById('contact-email')?.focus();
+                    return;
+                }
+
+                showAlert('Saving contact info...', 'info');
+                const response = await api.post('/admin/settings', {
+                    contact_email,
+                    contact_phone,
+                    contact_location
+                });
+
+                if (response && (response.success || response.message)) {
+                    showAlert('Contact info saved successfully!', 'success');
+                    await loadSiteSettings();
+                } else {
+                    throw new Error(response?.error || 'Failed to save contact info');
+                }
+            } catch (error) {
+                console.error('Save contact info error:', error);
+                showAlert(error.message || 'Failed to save contact info', 'error');
             }
         };
 
