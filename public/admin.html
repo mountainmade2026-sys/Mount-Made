@@ -5161,14 +5161,24 @@
             sel.innerHTML = opts;
         }
 
-        function dashboardHistoryApplyYear() {
-            const year = document.getElementById('dh-year-select').value;
-            document.getElementById('dh-from').value = '';
-            document.getElementById('dh-to').value = '';
-            dashboardHistoryLoad();
+        function _dhFormatDate(raw) {
+            if (!raw) return '—';
+            // raw can be "2026-04-05T00:00:00.000Z" or "2026-04-05"
+            const d = new Date(raw);
+            if (isNaN(d.getTime())) return raw;
+            const dd = String(d.getUTCDate()).padStart(2, '0');
+            const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+            const yyyy = d.getUTCFullYear();
+            return `${dd}/${mm}/${yyyy}`;
         }
 
-        async function dashboardHistoryLoad() {
+        window.dashboardHistoryApplyYear = function() {
+            document.getElementById('dh-from').value = '';
+            document.getElementById('dh-to').value = '';
+            window.dashboardHistoryLoad();
+        };
+
+        window.dashboardHistoryLoad = async function() {
             const wrap = document.getElementById('dh-table-wrap');
             const summaryEl = document.getElementById('dh-summary');
             const exportBtn = document.getElementById('dh-export-btn');
@@ -5231,7 +5241,7 @@
                 rows.forEach(r => {
                     const profitColor = r.profit >= 0 ? 'color:var(--success);' : 'color:var(--danger);';
                     html += `<tr>
-                        <td><strong>${r.date}</strong></td>
+                        <td><strong>${_dhFormatDate(r.date)}</strong></td>
                         <td>${r.orders}</td>
                         <td>${formatCurrency(r.revenue)}</td>
                         <td>${formatCurrency(r.cost)}</td>
@@ -5245,23 +5255,23 @@
             } catch (err) {
                 wrap.innerHTML = `<div class="empty-state"><p>Error loading history: ${err.message || err}</p></div>`;
             }
-        }
+        };
 
-        function dashboardHistoryReset() {
+        window.dashboardHistoryReset = function() {
             document.getElementById('dh-from').value = '';
             document.getElementById('dh-to').value = '';
             document.getElementById('dh-year-select').value = '';
-            dashboardHistoryLoad();
-        }
+            window.dashboardHistoryLoad();
+        };
 
-        function dashboardHistoryExport() {
+        window.dashboardHistoryExport = function() {
             const rows = window._dhRows || [];
             if (!rows.length) return;
             const header = ['Date','Orders','Revenue','Cost','Delivery Fees','Profit'];
             const csvRows = [header.join(',')];
             rows.forEach(r => {
                 csvRows.push([
-                    r.date,
+                    _dhFormatDate(r.date),
                     r.orders,
                     r.revenue.toFixed(2),
                     r.cost.toFixed(2),
@@ -5280,7 +5290,7 @@
             a.download = `sales-history-${label}.csv`;
             a.click();
             URL.revokeObjectURL(url);
-        }
+        };
         // ── End Dashboard Sales History ──────────────────────────────────
 
         async function loadProducts() {
