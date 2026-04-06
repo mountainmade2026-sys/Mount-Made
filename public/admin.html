@@ -7094,22 +7094,31 @@
             // Edit Logo Modal Logic
             window.openEditLogoModal = function() {
                 const fileInput = document.getElementById('logo-upload');
-                const file = fileInput.files[0];
-                if (!file) {
-                    showAlert('Please select a logo file first', 'warning');
-                    return;
+                const file = fileInput && fileInput.files[0];
+                const currentLogoImg = document.getElementById('current-logo-img');
+                const editImg = document.getElementById('edit-logo-crop-img');
+                const modal = document.getElementById('edit-logo-modal');
+
+                if (file) {
+                    // Use newly selected file
+                    const validation = validateImageFile(file);
+                    if (!validation.valid) {
+                        showAlert(validation.error, 'error');
+                        return;
+                    }
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        editImg.src = e.target.result;
+                        modal.style.display = 'flex';
+                    };
+                    reader.readAsDataURL(file);
+                } else if (currentLogoImg && currentLogoImg.src && currentLogoImg.style.display !== 'none') {
+                    // Use current active logo
+                    editImg.src = currentLogoImg.src;
+                    modal.style.display = 'flex';
+                } else {
+                    showAlert('No logo available to edit. Upload a logo first or select a file.', 'warning');
                 }
-                const validation = validateImageFile(file);
-                if (!validation.valid) {
-                    showAlert(validation.error, 'error');
-                    return;
-                }
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    document.getElementById('edit-logo-crop-img').src = e.target.result;
-                    document.getElementById('edit-logo-modal').style.display = 'flex';
-                };
-                reader.readAsDataURL(file);
             };
 
             window.closeEditLogoModal = function() {
