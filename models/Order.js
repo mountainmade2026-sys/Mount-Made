@@ -56,7 +56,10 @@ class Order {
     const client = await db.pool.connect();
     
     try {
-      await client.query('BEGIN');
+      // Use SERIALIZABLE isolation so concurrent orders on the same product
+      // are fully serialised — the second transaction will see the committed
+      // stock and fail cleanly instead of both succeeding then one rolling back.
+      await client.query('BEGIN ISOLATION LEVEL SERIALIZABLE');
 
       const {
         user_id,
@@ -76,6 +79,28 @@ class Order {
         delivery_speed = null,
         delivery_charge = 0
       } = orderData;
+
+      // Lock all product rows involved in this order (sorted by id to prevent deadlocks)
+      // This forces concurrent orders for the same product to queue rather than race.
+      const productIds = [...new Set(items.map(i => i.product_id))].sort((a, b) => a - b);
+      const lockedProducts = await client.query(
+        `SELECT id, name, stock_quantity FROM products WHERE id = ANY($1) FOR UPDATE`,
+        [productIds]
+      );
+      const stockMap = {};
+      lockedProducts.rows.forEach(p => { stockMap[p.id] = p; });
+
+      // Pre-check stock for all items while holding the lock
+      for (const item of items) {
+        const prod = stockMap[item.product_id];
+        if (!prod) throw new Error(`Product not found: ${item.product_name}`);
+        if ((prod.stock_quantity || 0) < item.quantity) {
+          if (prod.stock_quantity <= 0) {
+            throw new Error(`"${item.product_name}" is now out of stock. Please remove it from your cart.`);
+          }
+          throw new Error(`Only ${prod.stock_quantity} unit(s) of "${item.product_name}" left in stock. Please update your quantity.`);
+        }
+      }
       
       // Generate unique business order number (MMDLDDMMYYYY, then MMDLDDMMYYYY2, MMDLDDMMYYYY3...)
       const orderBase = this.buildOrderNumberBase(new Date());

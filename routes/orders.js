@@ -56,11 +56,10 @@ router.post('/', async (req, res) => {
     });
   } catch (error) {
     console.error('Create order error:', error);
-    res.status(500).json({ error: 'Failed to create order.' });
+    const isStockError = /stock|out of stock|unavailable/i.test(error.message);
+    res.status(isStockError ? 409 : 500).json({ error: error.message || 'Failed to create order.' });
   }
 });
-
-// Get user's orders
 router.get('/', async (req, res) => {
   try {
     const { status, limit } = req.query;
@@ -221,14 +220,6 @@ router.post('/quick-buy', async (req, res) => {
 
     const product = productResult.rows[0];
     const retailPrice = product.discount_price != null ? product.discount_price : product.price;
-    
-    // Check stock
-    if ((product.stock_quantity || 0) <= 0) {
-      return res.status(400).json({ error: `"${product.name}" is out of stock.` });
-    }
-    if (product.stock_quantity < quantity) {
-      return res.status(400).json({ error: `Only ${product.stock_quantity} item(s) of "${product.name}" are available.` });
-    }
 
     // Determine price based on user type
     const isWholesale = req.user.role === 'wholesale' && req.user.is_approved;
@@ -270,7 +261,8 @@ router.post('/quick-buy', async (req, res) => {
     });
   } catch (error) {
     console.error('Quick buy error:', error);
-    res.status(500).json({ error: 'Failed to process quick buy.' });
+    const isStockError = /stock|out of stock|unavailable/i.test(error.message);
+    res.status(isStockError ? 409 : 500).json({ error: error.message || 'Failed to process quick buy.' });
   }
 });
 
