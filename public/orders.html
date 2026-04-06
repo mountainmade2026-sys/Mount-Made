@@ -406,9 +406,15 @@
                                         </button>
                                     ` : ''}
                                     ${(order.status === 'delivered' || order.status === 'shipped') ? `
-                                        <button class="btn btn-secondary btn-sm" onclick="openReturnModal(${order.id})" style="border-color:var(--warning);color:var(--warning);">
-                                            <i class="fas fa-undo-alt"></i> Return
-                                        </button>
+                                        ${order.return_status ? `
+                                            <span style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.35rem 0.75rem;border-radius:4px;font-size:0.85rem;font-weight:600;background:${order.return_status === 'refunded' ? 'var(--success, #28a745)' : order.return_status === 'rejected' ? 'var(--danger, #dc3545)' : 'var(--warning, #ffc107)'};color:${order.return_status === 'requested' || order.return_status === 'approved' ? '#212529' : '#fff'};">
+                                                <i class="fas fa-undo-alt"></i> Return ${order.return_status.charAt(0).toUpperCase() + order.return_status.slice(1)}
+                                            </span>
+                                        ` : `
+                                            <button class="btn btn-secondary btn-sm" onclick="openReturnModal(${order.id})" style="border-color:var(--warning);color:var(--warning);">
+                                                <i class="fas fa-undo-alt"></i> Return
+                                            </button>
+                                        `}
                                     ` : ''}
                                 </div>
                             ` : ''}

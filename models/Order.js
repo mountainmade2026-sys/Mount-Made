@@ -230,7 +230,8 @@ class Order {
 
   static async findByUserId(userId, filters = {}) {
     let query = `
-      SELECT o.*, 
+      SELECT o.*,
+             (SELECT r.status FROM returns r WHERE r.order_id = o.id AND r.user_id = o.user_id AND r.status != 'rejected' ORDER BY r.created_at DESC LIMIT 1) AS return_status,
              json_agg(
                json_build_object(
                  'id', oi.id,
