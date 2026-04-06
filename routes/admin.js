@@ -20,6 +20,7 @@ router.use(enforceAdminLicense);
 
 // Dashboard
 router.get('/dashboard/stats', adminController.getDashboardStats);
+router.get('/dashboard/history', adminController.getDashboardHistory);
 
 // Stock Reports
 router.get('/stock-reports', adminController.getStockReports);

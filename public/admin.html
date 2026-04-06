@@ -1431,6 +1431,32 @@
                         <div class="empty-state"><div class="spinner"></div></div>
                     </div>
                 </div>
+
+                <!-- Sales History by Date / Year -->
+                <div class="data-table-container" id="dashboard-history-section">
+                    <div class="table-header" style="flex-wrap:wrap;gap:0.75rem;">
+                        <h3><i class="fas fa-calendar-alt"></i> Sales History</h3>
+                        <div style="display:flex;gap:0.6rem;flex-wrap:wrap;align-items:center;">
+                            <select id="dh-year-select" class="filter-select" style="min-width:100px;" onchange="dashboardHistoryApplyYear()">
+                            </select>
+                            <input type="date" id="dh-from" class="form-input" style="width:140px;" title="From date">
+                            <input type="date" id="dh-to"   class="form-input" style="width:140px;" title="To date">
+                            <button class="btn btn-primary btn-sm" onclick="dashboardHistoryLoad()">
+                                <i class="fas fa-search"></i> Filter
+                            </button>
+                            <button class="btn btn-secondary btn-sm" onclick="dashboardHistoryReset()">
+                                <i class="fas fa-rotate"></i> Reset
+                            </button>
+                            <button class="btn btn-secondary btn-sm" id="dh-export-btn" onclick="dashboardHistoryExport()" style="display:none;">
+                                <i class="fas fa-download"></i> Export CSV
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Summary cards -->
+                    <div id="dh-summary" style="display:none;padding:1rem 1.25rem 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:0.75rem;"></div>
+                    <!-- Table -->
+                    <div id="dh-table-wrap" style="padding:0 0 0.5rem;"></div>
+                </div>
             </div>
 
             <!-- Messages Section -->
@@ -5056,6 +5082,13 @@
                     console.warn('Dashboard low stock failed:', e);
                     document.getElementById('low-stock-container').innerHTML = '<div class="empty-state"><p>No low stock products</p></div>';
                 }
+
+                // Sales History — load current year by default
+                _dhInitYearSelect();
+                const thisYear = new Date().getFullYear();
+                document.getElementById('dh-year-select').value = String(thisYear);
+                dashboardHistoryLoad();
+
             } catch (error) {
                 console.error('Load dashboard error:', error);
                 document.getElementById('stats-container').innerHTML = `
@@ -5113,6 +5146,142 @@
                 // silent — don't disrupt the UI
             }
         }
+
+        // ── Dashboard Sales History ──────────────────────────────────────
+        window._dhRows = [];
+
+        function _dhInitYearSelect() {
+            const sel = document.getElementById('dh-year-select');
+            if (!sel || sel.options.length > 1) return;
+            const thisYear = new Date().getFullYear();
+            let opts = '<option value="">All Years</option>';
+            for (let y = thisYear; y >= thisYear - 10; y--) {
+                opts += `<option value="${y}">${y}</option>`;
+            }
+            sel.innerHTML = opts;
+        }
+
+        function dashboardHistoryApplyYear() {
+            const year = document.getElementById('dh-year-select').value;
+            document.getElementById('dh-from').value = '';
+            document.getElementById('dh-to').value = '';
+            dashboardHistoryLoad();
+        }
+
+        async function dashboardHistoryLoad() {
+            const wrap = document.getElementById('dh-table-wrap');
+            const summaryEl = document.getElementById('dh-summary');
+            const exportBtn = document.getElementById('dh-export-btn');
+            wrap.innerHTML = '<div class="empty-state"><div class="spinner"></div></div>';
+            summaryEl.style.display = 'none';
+            exportBtn.style.display = 'none';
+
+            const from  = document.getElementById('dh-from').value;
+            const to    = document.getElementById('dh-to').value;
+            const year  = document.getElementById('dh-year-select').value;
+
+            let qs = '';
+            if (from && to)   qs = `?from=${from}&to=${to}`;
+            else if (year)    qs = `?year=${year}`;
+
+            try {
+                const data = await api.get('/admin/dashboard/history' + qs);
+                const rows = data.rows || [];
+                const s    = data.summary || {};
+                window._dhRows = rows;
+
+                // Summary cards
+                summaryEl.innerHTML = `
+                    <div class="stat-card primary"  style="padding:0.65rem 0.9rem;min-height:unset;">
+                        <div class="stat-card-label" style="font-size:0.75rem;">Orders</div>
+                        <div class="stat-card-value" style="font-size:1.2rem;">${s.total_orders || 0}</div>
+                    </div>
+                    <div class="stat-card success" style="padding:0.65rem 0.9rem;min-height:unset;">
+                        <div class="stat-card-label" style="font-size:0.75rem;">Revenue</div>
+                        <div class="stat-card-value" style="font-size:1.2rem;">${formatCurrency(s.total_revenue || 0)}</div>
+                    </div>
+                    <div class="stat-card info" style="padding:0.65rem 0.9rem;min-height:unset;">
+                        <div class="stat-card-label" style="font-size:0.75rem;">Profit</div>
+                        <div class="stat-card-value" style="font-size:1.2rem;color:${(s.total_profit||0)>=0?'var(--success)':'var(--danger)'};">${formatCurrency(s.total_profit || 0)}</div>
+                    </div>
+                    <div class="stat-card warning" style="padding:0.65rem 0.9rem;min-height:unset;">
+                        <div class="stat-card-label" style="font-size:0.75rem;">Cost</div>
+                        <div class="stat-card-value" style="font-size:1.2rem;">${formatCurrency(s.total_cost || 0)}</div>
+                    </div>
+                    <div class="stat-card primary" style="padding:0.65rem 0.9rem;min-height:unset;">
+                        <div class="stat-card-label" style="font-size:0.75rem;">Delivery Fees</div>
+                        <div class="stat-card-value" style="font-size:1.2rem;">${formatCurrency(s.total_delivery_fees || 0)}</div>
+                    </div>
+                    <div class="stat-card danger" style="padding:0.65rem 0.9rem;min-height:unset;">
+                        <div class="stat-card-label" style="font-size:0.75rem;">Refunds</div>
+                        <div class="stat-card-value" style="font-size:1.2rem;">${formatCurrency(s.total_refunds || 0)}</div>
+                    </div>
+                `;
+                summaryEl.style.display = 'grid';
+
+                if (!rows.length) {
+                    wrap.innerHTML = '<div class="empty-state" style="padding:1.5rem;"><p>No orders found for the selected period.</p></div>';
+                    return;
+                }
+
+                let html = '<div class="data-table-container" style="box-shadow:none;border-radius:0;margin:0;">';
+                html += '<table class="data-table"><thead><tr>' +
+                    '<th>Date</th><th>Orders</th><th>Revenue</th><th>Cost</th><th>Delivery Fees</th><th>Profit</th>' +
+                    '</tr></thead><tbody>';
+                rows.forEach(r => {
+                    const profitColor = r.profit >= 0 ? 'color:var(--success);' : 'color:var(--danger);';
+                    html += `<tr>
+                        <td><strong>${r.date}</strong></td>
+                        <td>${r.orders}</td>
+                        <td>${formatCurrency(r.revenue)}</td>
+                        <td>${formatCurrency(r.cost)}</td>
+                        <td>${formatCurrency(r.delivery_fees)}</td>
+                        <td style="${profitColor}font-weight:600;">${formatCurrency(r.profit)}</td>
+                    </tr>`;
+                });
+                html += '</tbody></table></div>';
+                wrap.innerHTML = html;
+                exportBtn.style.display = '';
+            } catch (err) {
+                wrap.innerHTML = `<div class="empty-state"><p>Error loading history: ${err.message || err}</p></div>`;
+            }
+        }
+
+        function dashboardHistoryReset() {
+            document.getElementById('dh-from').value = '';
+            document.getElementById('dh-to').value = '';
+            document.getElementById('dh-year-select').value = '';
+            dashboardHistoryLoad();
+        }
+
+        function dashboardHistoryExport() {
+            const rows = window._dhRows || [];
+            if (!rows.length) return;
+            const header = ['Date','Orders','Revenue','Cost','Delivery Fees','Profit'];
+            const csvRows = [header.join(',')];
+            rows.forEach(r => {
+                csvRows.push([
+                    r.date,
+                    r.orders,
+                    r.revenue.toFixed(2),
+                    r.cost.toFixed(2),
+                    r.delivery_fees.toFixed(2),
+                    r.profit.toFixed(2)
+                ].join(','));
+            });
+            const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+            const url  = URL.createObjectURL(blob);
+            const a    = document.createElement('a');
+            a.href     = url;
+            const from = document.getElementById('dh-from').value;
+            const to   = document.getElementById('dh-to').value;
+            const year = document.getElementById('dh-year-select').value;
+            const label = from && to ? `${from}_to_${to}` : year || 'all';
+            a.download = `sales-history-${label}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        // ── End Dashboard Sales History ──────────────────────────────────
 
         async function loadProducts() {
             try {

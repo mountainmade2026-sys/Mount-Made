@@ -951,10 +951,84 @@ exports.updateOrderStatus = async (req, res) => {
   }
 };
 
+// Dashboard History (orders grouped by day, filterable by date range or year)
+exports.getDashboardHistory = async (req, res) => {
+  try {
+    const { from, to, year } = req.query;
+    const params = [];
+    const conditions = ["o.status != 'cancelled'"];
+
+    if (from && to) {
+      params.push(from, to);
+      conditions.push(`o.created_at::date >= $${params.length - 1} AND o.created_at::date <= $${params.length}`);
+    } else if (year) {
+      const y = parseInt(year, 10);
+      if (!isNaN(y)) {
+        params.push(y);
+        conditions.push(`EXTRACT(YEAR FROM o.created_at) = $${params.length}`);
+      }
+    }
+
+    const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+
+    const rowsResult = await db.query(`
+      SELECT
+        o.created_at::date                                     AS date,
+        COUNT(DISTINCT o.id)                                   AS orders,
+        COALESCE(SUM(o.total_amount) FILTER (WHERE o.status = 'delivered'), 0) AS revenue,
+        COALESCE(SUM(oi.quantity * COALESCE(p.wholesale_price, 0)) FILTER (WHERE o.status = 'delivered'), 0) AS cost,
+        COALESCE(SUM(o.delivery_charge) FILTER (WHERE o.status = 'delivered'), 0) AS delivery_fees
+      FROM orders o
+      LEFT JOIN order_items oi ON oi.order_id = o.id
+      LEFT JOIN products p ON p.id = oi.product_id
+      ${where}
+      GROUP BY o.created_at::date
+      ORDER BY o.created_at::date DESC
+    `, params);
+
+    const refundWhere = from && to
+      ? `AND r.processed_at::date >= '${from}' AND r.processed_at::date <= '${to}'`
+      : year && !isNaN(parseInt(year, 10))
+        ? `AND EXTRACT(YEAR FROM r.processed_at) = ${parseInt(year, 10)}`
+        : '';
+    const refundResult = await db.query(
+      `SELECT COALESCE(SUM(r.refund_amount), 0) AS total_refunds FROM returns r WHERE r.status = 'refunded' ${refundWhere}`
+    );
+    const totalRefunds = parseFloat(refundResult.rows[0]?.total_refunds) || 0;
+
+    const rows = rowsResult.rows.map(r => ({
+      date: r.date,
+      orders: parseInt(r.orders) || 0,
+      revenue: parseFloat(r.revenue) || 0,
+      cost: parseFloat(r.cost) || 0,
+      delivery_fees: parseFloat(r.delivery_fees) || 0,
+      profit: (parseFloat(r.revenue) || 0) - (parseFloat(r.cost) || 0)
+    }));
+
+    const totalRevenue = rows.reduce((s, r) => s + r.revenue, 0) - totalRefunds;
+    const totalCost = rows.reduce((s, r) => s + r.cost, 0);
+    const totalOrders = rows.reduce((s, r) => s + r.orders, 0);
+    const totalDelivery = rows.reduce((s, r) => s + r.delivery_fees, 0);
+
+    res.json({
+      rows,
+      summary: {
+        total_orders: totalOrders,
+        total_revenue: totalRevenue,
+        total_cost: totalCost,
+        total_profit: totalRevenue - totalCost,
+        total_delivery_fees: totalDelivery,
+        total_refunds: totalRefunds
+      }
+    });
+  } catch (error) {
+    console.error('Get dashboard history error:', error);
+    res.status(500).json({ error: 'Failed to fetch dashboard history.' });
+  }
+};
+
 // Dashboard Statistics
 exports.getDashboardStats = async (req, res) => {
-  try {
-    const orderCountQuery = await db.query('SELECT COUNT(*) as total_orders FROM orders');
 
     // Revenue = only delivered orders (customer actually received the product)
     // Subtract refunded return amounts
