@@ -797,7 +797,25 @@
                     size: 'large',
                     width: Math.max(googleSignupBtn.offsetWidth || 200, 200)
                 });
+                // Agreement gate: block Google overlay click if checkbox is unchecked
+                const agreementGate = document.createElement('div');
+                agreementGate.style.cssText = 'position:absolute;inset:0;z-index:2;cursor:pointer;';
+                agreementGate.addEventListener('click', (e) => {
+                    const cb = document.getElementById('agree-terms');
+                    if (!cb || !cb.checked) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        document.getElementById('agreement-error')?.classList.add('visible');
+                        document.getElementById('agreement-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        showAlert('Please agree to the Terms & Privacy Policy first.', 'error');
+                    } else {
+                        // Let click pass through to Google overlay
+                        agreementGate.style.pointerEvents = 'none';
+                        setTimeout(() => { agreementGate.style.pointerEvents = ''; }, 500);
+                    }
+                });
                 googleSignupBtn.appendChild(overlay);
+                googleSignupBtn.appendChild(agreementGate);
                 googleOverlayRendered = true;
                 return true;
             };
@@ -950,6 +968,13 @@
         }
 
         async function startGoogleSignup() {
+            // Check agreement before any Google sign-up flow
+            if (!document.getElementById('agree-terms')?.checked) {
+                document.getElementById('agreement-error')?.classList.add('visible');
+                document.getElementById('agreement-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                showAlert('Please agree to the Terms & Privacy Policy first.', 'error');
+                return;
+            }
             if (isCapacitorApp) {
                 await nativeGoogleSignup();
                 return;
