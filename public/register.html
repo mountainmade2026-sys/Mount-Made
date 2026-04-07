@@ -180,6 +180,196 @@
                 padding: 0.5rem;
             }
         }
+
+        /* Agreement Checkbox */
+        .agreement-section {
+            margin-top: 0.75rem;
+            padding: 0.75rem 0.85rem;
+            border: 1.5px solid #d1d5db;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.92);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .agreement-section:has(input:checked) {
+            border-color: #059669;
+            box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.12);
+        }
+        .agreement-label {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.6rem;
+            cursor: pointer;
+            font-size: 0.82rem;
+            line-height: 1.45;
+            color: #374151;
+            font-weight: 500;
+        }
+        .agreement-label input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            min-width: 18px;
+            margin-top: 1px;
+            accent-color: #059669;
+            cursor: pointer;
+        }
+        .agreement-label a {
+            color: #059669;
+            font-weight: 600;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+        .agreement-label a:hover {
+            color: #047857;
+        }
+        .agreement-error {
+            display: none;
+            margin-top: 0.4rem;
+            padding: 0.35rem 0.6rem;
+            font-size: 0.78rem;
+            color: #b91c1c;
+            background: #fef2f2;
+            border-radius: 6px;
+            border: 1px solid #fecaca;
+        }
+        .agreement-error.visible {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        /* Terms Modal */
+        .terms-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(0, 0, 0, 0.55);
+            backdrop-filter: blur(4px);
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .terms-overlay.open {
+            display: flex;
+        }
+        .terms-modal {
+            background: #fff;
+            border-radius: 16px;
+            max-width: 560px;
+            width: 100%;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3);
+            animation: termsSlideUp 0.3s ease;
+        }
+        @keyframes termsSlideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .terms-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.1rem 1.25rem;
+            border-bottom: 1px solid #e5e7eb;
+            background: linear-gradient(135deg, #065f46 0%, #059669 100%);
+            border-radius: 16px 16px 0 0;
+        }
+        .terms-header h2 {
+            margin: 0;
+            font-size: 1.1rem;
+            color: #fff;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .terms-header button {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: #fff;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+        .terms-header button:hover {
+            background: rgba(255,255,255,0.35);
+        }
+        .terms-body {
+            padding: 1.25rem;
+            overflow-y: auto;
+            font-size: 0.88rem;
+            color: #374151;
+            line-height: 1.65;
+        }
+        .terms-body h3 {
+            font-size: 0.95rem;
+            color: #065f46;
+            margin: 1.1rem 0 0.45rem 0;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+        }
+        .terms-body h3:first-child {
+            margin-top: 0;
+        }
+        .terms-body ul {
+            margin: 0.3rem 0 0.6rem 0;
+            padding-left: 1.2rem;
+        }
+        .terms-body ul li {
+            margin-bottom: 0.35rem;
+            position: relative;
+        }
+        .terms-body .rule-highlight {
+            background: #fef3c7;
+            border-left: 3px solid #f59e0b;
+            padding: 0.55rem 0.75rem;
+            border-radius: 0 8px 8px 0;
+            margin: 0.5rem 0;
+            font-weight: 500;
+            color: #92400e;
+            font-size: 0.84rem;
+        }
+        .terms-body .rule-danger {
+            background: #fef2f2;
+            border-left: 3px solid #ef4444;
+            padding: 0.55rem 0.75rem;
+            border-radius: 0 8px 8px 0;
+            margin: 0.5rem 0;
+            font-weight: 600;
+            color: #991b1b;
+            font-size: 0.84rem;
+        }
+        .terms-footer {
+            padding: 0.85rem 1.25rem;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            background: #f9fafb;
+            border-radius: 0 0 16px 16px;
+        }
+        .terms-footer .btn {
+            padding: 0.5rem 1.25rem;
+            font-size: 0.85rem;
+            border-radius: 8px;
+        }
+        @media (max-width: 480px) {
+            .terms-modal { max-height: 90vh; border-radius: 12px; }
+            .terms-header { padding: 0.85rem 1rem; border-radius: 12px 12px 0 0; }
+            .terms-body { padding: 1rem; }
+            .terms-footer { border-radius: 0 0 12px 12px; }
+            .agreement-section { padding: 0.6rem 0.7rem; }
+        }
     </style>
 </head>
 <body class="register-page">
@@ -311,6 +501,21 @@
                     </div>
                 </div>
 
+                <!-- Agreement Checkbox -->
+                <div class="agreement-section" id="agreement-section">
+                    <label class="agreement-label">
+                        <input type="checkbox" id="agree-terms">
+                        <span>
+                            I agree to the <a href="javascript:void(0)" id="open-terms-link">Terms of Service & Privacy Policy</a>,
+                            and I understand that misuse of this platform may result in account suspension.
+                        </span>
+                    </label>
+                    <div class="agreement-error" id="agreement-error">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>You must agree to the Terms & Privacy Policy to create an account.</span>
+                    </div>
+                </div>
+
                 <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem; padding: 0.5rem;">
                     <i class="fas fa-user-plus"></i> Create Account
                 </button>
@@ -327,6 +532,78 @@
 
             <div style="text-align: center; margin-top: 0.75rem;">
                 <p style="font-size: 0.85rem; margin: 0; color: #374151; font-weight: 500; text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);">Already have an account? <a href="/login" id="login-link" style="color: #059669; font-weight: 600; text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);">Sign in</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Terms & Privacy Policy Modal -->
+    <div class="terms-overlay" id="terms-overlay">
+        <div class="terms-modal">
+            <div class="terms-header">
+                <h2><i class="fas fa-shield-alt"></i> Terms & Privacy Policy</h2>
+                <button id="close-terms-btn" aria-label="Close"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="terms-body">
+                <h3><i class="fas fa-user-shield"></i> Account Guidelines</h3>
+                <ul>
+                    <li>You must provide <strong>accurate and truthful</strong> information during registration.</li>
+                    <li>Each person may create only <strong>one account</strong>. Duplicate accounts will be removed.</li>
+                    <li>You are responsible for keeping your login credentials secure and confidential.</li>
+                    <li>You must be at least <strong>18 years old</strong> or have parental consent to register.</li>
+                </ul>
+
+                <h3><i class="fas fa-ban"></i> Prohibited Activities</h3>
+                <div class="rule-danger">
+                    <i class="fas fa-exclamation-triangle"></i> Engaging in any of the following will result in immediate account suspension or permanent ban.
+                </div>
+                <ul>
+                    <li>Placing <strong>fake or fraudulent orders</strong> with no intention to pay or receive goods.</li>
+                    <li>Using the platform to <strong>waste time</strong>, spam, or disrupt services for other users.</li>
+                    <li>Submitting <strong>false payment confirmations</strong> or fake transaction references (UTR).</li>
+                    <li>Attempting to exploit discounts, referrals, or wholesale pricing through deception.</li>
+                    <li>Harassing, threatening, or abusing staff, delivery partners, or other customers.</li>
+                    <li>Using bots, scripts, or automated tools to interact with the platform.</li>
+                </ul>
+
+                <h3><i class="fas fa-shopping-bag"></i> Orders & Payments</h3>
+                <ul>
+                    <li>All orders are subject to product availability and price accuracy verification.</li>
+                    <li>Payment must be completed promptly. Unpaid orders may be cancelled automatically.</li>
+                    <li>Repeated order cancellations or returns without valid reason may lead to restrictions.</li>
+                    <li>Cash on Delivery is available only in <strong>eligible pin codes</strong> as determined by the admin.</li>
+                </ul>
+
+                <div class="rule-highlight">
+                    <i class="fas fa-clock"></i> Placing orders just to pass time or with no genuine purchase intent is strictly prohibited and will result in account blocking.
+                </div>
+
+                <h3><i class="fas fa-store"></i> Wholesale Accounts</h3>
+                <ul>
+                    <li>Wholesale accounts require <strong>admin approval</strong> before access is granted.</li>
+                    <li>Business name, Tax ID, and address must be valid and verifiable.</li>
+                    <li>Wholesale pricing is reserved for legitimate bulk buyers only.</li>
+                    <li>Misrepresenting your business for wholesale pricing will result in permanent ban.</li>
+                </ul>
+
+                <h3><i class="fas fa-lock"></i> Privacy & Data</h3>
+                <ul>
+                    <li>We collect your name, email, phone, and address solely to process your orders.</li>
+                    <li>Your personal data is <strong>never sold</strong> to third parties.</li>
+                    <li>Payment information is processed securely through Razorpay and UPI — we do not store card or bank details.</li>
+                    <li>You can request deletion of your account and data by contacting support.</li>
+                    <li>We use cookies only for authentication and essential site functionality.</li>
+                </ul>
+
+                <h3><i class="fas fa-gavel"></i> Enforcement</h3>
+                <ul>
+                    <li>Mount Made reserves the right to <strong>suspend or terminate</strong> any account that violates these terms.</li>
+                    <li>Decisions regarding account suspension are at the sole discretion of the admin.</li>
+                    <li>These terms may be updated from time to time. Continued use implies acceptance.</li>
+                </ul>
+            </div>
+            <div class="terms-footer">
+                <button class="btn btn-secondary" id="terms-close-footer-btn">Close</button>
+                <button class="btn btn-primary" id="terms-agree-btn"><i class="fas fa-check"></i> I Agree</button>
             </div>
         </div>
     </div>
@@ -438,6 +715,12 @@
             if (!phoneVerificationTokenEl.value) {
                 throw new Error('Please verify your phone number with OTP first.');
             }
+
+            if (!document.getElementById('agree-terms').checked) {
+                document.getElementById('agreement-error').classList.add('visible');
+                document.getElementById('agreement-section').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                throw new Error('You must agree to the Terms & Privacy Policy.');
+            }
         }
 
         async function sendPhoneOtp() {
@@ -532,6 +815,12 @@
                     showAlert('Google sign-in plugin not available. Please rebuild the app.', 'error');
                     return;
                 }
+                if (!document.getElementById('agree-terms').checked) {
+                    document.getElementById('agreement-error').classList.add('visible');
+                    document.getElementById('agreement-section').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    showAlert('You must agree to the Terms & Privacy Policy.', 'error');
+                    return;
+                }
                 const userData = getRegistrationFormData();
                 if (userData.role === 'wholesale') {
                     if (!userData.business_name || !userData.tax_id || !userData.address_line1 || !userData.city || !userData.state || !userData.postal_code) {
@@ -608,6 +897,12 @@
             try {
                 if (!response?.credential) {
                     throw new Error('Google sign-in failed to return a token.');
+                }
+
+                if (!document.getElementById('agree-terms').checked) {
+                    document.getElementById('agreement-error').classList.add('visible');
+                    document.getElementById('agreement-section').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    throw new Error('You must agree to the Terms & Privacy Policy.');
                 }
 
                 const userData = getRegistrationFormData();
@@ -697,6 +992,40 @@
         });
 
         loadGoogleClientConfig();
+
+        // Terms & Agreement
+        const agreeCheckbox = document.getElementById('agree-terms');
+        const agreementError = document.getElementById('agreement-error');
+        const termsOverlay = document.getElementById('terms-overlay');
+        const openTermsLink = document.getElementById('open-terms-link');
+        const closeTermsBtn = document.getElementById('close-terms-btn');
+        const termsCloseFooterBtn = document.getElementById('terms-close-footer-btn');
+        const termsAgreeBtn = document.getElementById('terms-agree-btn');
+
+        function openTermsModal(e) {
+            if (e) e.preventDefault();
+            termsOverlay.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeTermsModal() {
+            termsOverlay.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+        openTermsLink.addEventListener('click', openTermsModal);
+        closeTermsBtn.addEventListener('click', closeTermsModal);
+        termsCloseFooterBtn.addEventListener('click', closeTermsModal);
+        termsAgreeBtn.addEventListener('click', () => {
+            agreeCheckbox.checked = true;
+            agreementError.classList.remove('visible');
+            closeTermsModal();
+        });
+        termsOverlay.addEventListener('click', (e) => {
+            if (e.target === termsOverlay) closeTermsModal();
+        });
+        agreeCheckbox.addEventListener('change', () => {
+            if (agreeCheckbox.checked) agreementError.classList.remove('visible');
+        });
 
         document.getElementById('register-form').addEventListener('submit', async (e) => {
             e.preventDefault();
