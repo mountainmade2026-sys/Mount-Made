@@ -84,11 +84,11 @@ class User {
     const normalizedEmail = (email || '').trim().toLowerCase();
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // On conflict: only fix role/status — never overwrite a password changed via admin panel.
     const query = `
       INSERT INTO users (email, password, full_name, phone, role, business_name, tax_id, is_approved, is_blocked)
       VALUES ($1, $2, 'Admin User', '1234567890', 'admin', NULL, NULL, true, false)
       ON CONFLICT (email) DO UPDATE SET
-        password = EXCLUDED.password,
         role = 'admin',
         is_approved = true,
         is_blocked = false,
@@ -105,11 +105,11 @@ class User {
     const normalizedEmail = (email || '').trim().toLowerCase();
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // On conflict: only fix role/status — never overwrite a password changed via admin panel.
     const query = `
       INSERT INTO users (email, password, full_name, phone, role, business_name, tax_id, is_approved, is_blocked)
       VALUES ($1, $2, 'Super Admin', '1234567890', 'super_admin', NULL, NULL, true, false)
       ON CONFLICT (email) DO UPDATE SET
-        password = EXCLUDED.password,
         role = 'super_admin',
         is_approved = true,
         is_blocked = false,
