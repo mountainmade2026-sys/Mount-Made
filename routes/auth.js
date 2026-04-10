@@ -45,6 +45,7 @@ router.post('/phone/login/verify-otp', otpVerifyRateLimit, authController.verify
 router.post('/forgot-password/send-otp', otpSendRateLimit, authController.sendForgotPasswordOtp);
 router.post('/forgot-password/reset', otpVerifyRateLimit, authController.resetPasswordWithOtp);
 router.post('/logout', authController.logout);
+router.post('/check-admin', authController.checkIsAdmin);
 router.get('/check', optionalAuth, authController.checkAuth);
 
 // Protected routes

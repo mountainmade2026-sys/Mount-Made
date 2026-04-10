@@ -863,6 +863,30 @@ exports.changePassword = async (req, res) => {
   }
 };
 
+exports.checkIsAdmin = async (req, res) => {
+  try {
+    const { identifier } = req.body || {};
+    const rawIdentifier = String(identifier || '').trim();
+    if (!rawIdentifier) return res.json({ is_admin: false });
+
+    const looksLikeEmail = rawIdentifier.includes('@');
+    let user = null;
+    if (looksLikeEmail) {
+      user = await User.findByEmail(rawIdentifier.toLowerCase());
+    } else {
+      try {
+        user = await User.findByPhone(normalizePhoneToE164(rawIdentifier));
+      } catch (_) {}
+      if (!user) user = await User.findByPhone(rawIdentifier);
+    }
+
+    const isAdmin = user && (user.role === 'admin' || user.role === 'super_admin');
+    return res.json({ is_admin: !!isAdmin });
+  } catch (_) {
+    return res.json({ is_admin: false });
+  }
+};
+
 exports.checkAuth = async (req, res) => {
   try {
     if (!req.user) {

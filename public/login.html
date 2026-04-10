@@ -668,16 +668,31 @@
 
             if (!identifier || !password) return;
 
-            // Determine if this could be an admin login (heuristic: any login)
-            // We show CAPTCHA for ALL logins; bypass if remember-me token valid for this identifier
+            // Check if this identifier belongs to an admin account
+            let isAdmin = false;
+            try {
+                const roleResp = await api.post('/auth/check-admin', { identifier });
+                isAdmin = roleResp?.is_admin === true;
+            } catch (_) {
+                // If check fails, proceed without CAPTCHA (fail open for non-critical path)
+                isAdmin = false;
+            }
+
+            if (!isAdmin) {
+                // Non-admin (customer / wholesale): skip CAPTCHA entirely
+                await performLogin(identifier, password, false);
+                return;
+            }
+
+            // Admin account: check remember-me bypass
             const bypass = getRememberBypass();
             const isBypass = bypass && bypass.identifier === identifier;
 
             if (isBypass) {
-                // Fast path: skip CAPTCHA
+                // Fast path: already verified recently
                 await performLogin(identifier, password, rememberMe);
             } else {
-                // Show CAPTCHA first
+                // Show CAPTCHA modal
                 showCaptchaOverlay({ identifier, password, rememberMe });
             }
         });
@@ -706,12 +721,13 @@
                 return;
             }
 
-            // CAPTCHA passed
+            // CAPTCHA passed — save login data BEFORE hideCaptchaOverlay clears it
+            const loginData = _pendingLoginData;
             if (errorEl) errorEl.textContent = '';
             hideCaptchaOverlay();
 
-            if (_pendingLoginData) {
-                const { identifier, password, rememberMe } = _pendingLoginData;
+            if (loginData) {
+                const { identifier, password, rememberMe } = loginData;
                 await performLogin(identifier, password, rememberMe);
             }
         });
