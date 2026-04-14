@@ -570,6 +570,18 @@
             margin-bottom: 1.5rem;
         }
 
+        /* Inner horizontal scroll wrapper — keeps border-radius on container
+           while allowing wide tables to scroll on mobile */
+        .data-table-scroll {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            width: 100%;
+        }
+        /* Subtle scrollbar hint on mobile */
+        .data-table-scroll::-webkit-scrollbar { height: 4px; }
+        .data-table-scroll::-webkit-scrollbar-track { background: var(--bg); }
+        .data-table-scroll::-webkit-scrollbar-thumb { background: var(--border-dark); border-radius: 4px; }
+
         .table-header {
             display: flex;
             justify-content: space-between;
@@ -1224,12 +1236,13 @@
             .data-table thead th,
             .data-table tbody td { padding: 0.7rem 0.6rem; }
             .table-actions { flex-direction: column; }
-            .action-btn { width: 100%; justify-content: center; }
+            /* Only force full width on standalone action buttons (not inside table rows) */
+            .section > .data-table-container .action-btn { width: auto; }
 
             .modal { padding: 0.75rem; }
             .modal-content { max-height: calc(100vh - 1.5rem); height: calc(100vh - 1.5rem); }
             .admin-header { flex-direction: column; align-items: flex-start; }
-            .admin-main { overflow-x: hidden; }
+            /* Do NOT use overflow-x: hidden here — it clips scrollable table containers */
 
             .controls { flex-direction: column; align-items: stretch; }
             .controls .search-box { max-width: 100%; }
@@ -1270,6 +1283,16 @@
             #stock-history-modal .modal-body { padding: 0.75rem; }
             #stock-history-modal .data-table thead th,
             #stock-history-modal .data-table tbody td { padding: 0.55rem 0.65rem; font-size: 0.78rem; }
+        }
+
+        /* ═══════ STOCK TABLE: responsive column visibility ═══════ */
+        @media (max-width: 640px) {
+            .stock-table th.col-hide-xs,
+            .stock-table td.col-hide-xs { display: none; }
+        }
+        @media (max-width: 480px) {
+            .stock-table th.col-hide-sm,
+            .stock-table td.col-hide-sm { display: none; }
         }
 
         @media (max-width: 767px) {
@@ -5699,14 +5722,16 @@
 
             let html = '<div class="data-table-container">';
             html += '<div class="table-header"><h3>Product Stock Overview</h3></div>';
-            html += '<table class="data-table"><thead><tr>' +
+            // Inner scroll wrapper — allows horizontal scroll on mobile while keeping card border-radius
+            html += '<div class="data-table-scroll">';
+            html += '<table class="data-table stock-table" style="min-width:860px"><thead><tr>' +
                 '<th>Product</th>' +
-                '<th>Category</th>' +
+                '<th class="col-hide-xs">Category</th>' +
                 '<th>Price</th>' +
-                '<th>Initial Stock</th>' +
+                '<th class="col-hide-sm">Initial Stock</th>' +
                 '<th>Total Sold</th>' +
-                '<th>Remaining Stock</th>' +
-                '<th>Stock Value</th>' +
+                '<th>Remaining</th>' +
+                '<th class="col-hide-xs">Stock Value</th>' +
                 '<th>Revenue</th>' +
                 '<th>Profit</th>' +
                 '<th>Status</th>' +
@@ -5729,33 +5754,33 @@
                 html += `
                     <tr>
                         <td>
-                            <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                ${product.images && product.images[0] ? `<img src="${product.images[0]}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border);">` : ''}
+                            <div style="display: flex; align-items: center; gap: 0.75rem; min-width: 140px;">
+                                ${product.images && product.images[0] ? `<img src="${product.images[0]}" style="width: 36px; height: 36px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); flex-shrink:0;">` : ''}
                                 <div>
-                                    <div style="font-weight: 600; color: var(--text-dark);">${product.name}</div>
-                                    <div style="font-size: 0.8rem; color: var(--text-muted);">ID: #${product.id}</div>
+                                    <div style="font-weight: 600; color: var(--text-dark); white-space: nowrap;">${escapeHtml(product.name)}</div>
+                                    <div style="font-size: 0.78rem; color: var(--text-muted);">ID: #${product.id}</div>
                                 </div>
                             </div>
                         </td>
-                        <td>${product.category_name || 'N/A'}</td>
-                        <td>${formatCurrency(price)}</td>
-                        <td>${initialStock}</td>
+                        <td class="col-hide-xs" style="white-space: nowrap;">${escapeHtml(product.category_name || 'N/A')}</td>
+                        <td style="white-space: nowrap;">${formatCurrency(price)}</td>
+                        <td class="col-hide-sm">${initialStock}</td>
                         <td>${totalSold}</td>
-                        <td>${currentStock}</td>
-                        <td>${formatCurrency(stockValue)}</td>
-                        <td>${formatCurrency(totalRevenue)}</td>
-                        <td style="color: ${profitColor}; font-weight: 600;">${formatCurrency(totalProfit)}</td>
-                        <td><span class="badge badge-${statusClass}">${statusText}</span></td>
-                        <td>
+                        <td><strong>${currentStock}</strong></td>
+                        <td class="col-hide-xs" style="white-space: nowrap;">${formatCurrency(stockValue)}</td>
+                        <td style="white-space: nowrap;">${formatCurrency(totalRevenue)}</td>
+                        <td style="color: ${profitColor}; font-weight: 600; white-space: nowrap;">${formatCurrency(totalProfit)}</td>
+                        <td><span class="badge badge-${statusClass}" style="white-space: nowrap;">${statusText}</span></td>
+                        <td style="white-space: nowrap;">
                             <button class="action-btn action-btn-view" onclick="viewStockHistory(${product.id})">
-                                <i class="fas fa-history"></i> View History
+                                <i class="fas fa-history"></i> <span class="hide-mobile">View </span>History
                             </button>
                         </td>
                     </tr>
                 `;
             });
 
-            html += '</tbody></table></div>';
+            html += '</tbody></table></div></div>';
             document.getElementById('stock-reports-list').innerHTML = html;
         }
 
