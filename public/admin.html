@@ -566,14 +566,9 @@
             border-radius: var(--radius-xl);
             box-shadow: var(--shadow-sm);
             border: 1px solid var(--border);
-            overflow-x: auto;           /* allow horizontal scroll on mobile */
-            overflow-y: hidden;         /* clip vertical edges (border-radius corners) */
-            -webkit-overflow-scrolling: touch;
+            overflow: hidden;           /* maintain border-radius clipping for non-table content */
             margin-bottom: 1.5rem;
         }
-        .data-table-container::-webkit-scrollbar { height: 4px; }
-        .data-table-container::-webkit-scrollbar-track { background: var(--bg); }
-        .data-table-container::-webkit-scrollbar-thumb { background: var(--border-dark); border-radius: 4px; }
 
         /* Inner horizontal scroll wrapper — keeps border-radius on container
            while allowing wide tables to scroll on mobile */
@@ -604,10 +599,16 @@
         }
 
         .data-table {
+            display: block;             /* allows overflow-x:auto on the table itself */
             width: 100%;
-            min-width: 560px;           /* prevent columns crushing on very narrow screens */
+            min-width: 560px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
             border-collapse: collapse;
         }
+        .data-table::-webkit-scrollbar { height: 4px; }
+        .data-table::-webkit-scrollbar-track { background: var(--bg); }
+        .data-table::-webkit-scrollbar-thumb { background: var(--border-dark); border-radius: 4px; }
 
         .data-table thead {
             background: #f7faf8;
@@ -834,6 +835,20 @@
         }
 
         .alert.show { display: flex; }
+
+        /* Alert as a fixed toast so it's always visible regardless of scroll position */
+        #alert {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            left: auto;
+            max-width: 380px;
+            width: calc(100vw - 3rem);
+            z-index: 10000;
+            margin: 0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.18);
+            transition: opacity 0.3s;
+        }
 
         .alert-success { background: #f0fdf6; color: #065f46; border: 1px solid #a7f3d0; }
         .alert-error   { background: #fff5f5; color: #991b1b; border: 1px solid #fca5a5; }
@@ -1832,6 +1847,9 @@
             <div id="order-history" class="section">
                 <div class="admin-header">
                     <h1><i class="fas fa-history"></i> Order History</h1>
+                    <button class="btn btn-secondary btn-sm" onclick="downloadOrdersCSV()">
+                        <i class="fas fa-download"></i> <span class="hide-mobile">Export </span>CSV
+                    </button>
                 </div>
 
                 <div class="controls">
@@ -3295,8 +3313,8 @@
 
                             <div class="form-row">
                                 <div>
-                                    <label class="form-label">Discount % <small style="color: var(--text-muted); font-weight: normal;">Optional, 1–100</small></label>
-                                    <input type="number" id="product-discount-percent" class="form-input" placeholder="e.g. 10" min="1" max="100" step="0.01" oninput="calcDiscountPreview('product-price','product-discount-percent','product-discount-preview')">
+                                    <label class="form-label">Discount Amount (₹) <small style="color: var(--text-muted); font-weight: normal;">Optional — subtracted from price</small></label>
+                                    <input type="number" id="product-discount-percent" class="form-input" placeholder="e.g. 50" min="0" step="0.01" oninput="calcDiscountPreview('product-price','product-discount-percent','product-discount-preview')">
                                     <small id="product-discount-preview" style="color:var(--success,#10b981);display:block;margin-top:4px;min-height:1.2em;"></small>
                                 </div>
                                 <div>
@@ -3532,8 +3550,8 @@
 
                             <div class="form-row">
                                 <div>
-                                    <label class="form-label">Discount % <small style="color: var(--text-muted); font-weight: normal;">Optional, 1–100</small></label>
-                                    <input type="number" id="edit-product-discount-percent" class="form-input" placeholder="e.g. 10" min="1" max="100" step="0.01" oninput="calcDiscountPreview('edit-product-price','edit-product-discount-percent','edit-product-discount-preview')">
+                                    <label class="form-label">Discount Amount (₹) <small style="color: var(--text-muted); font-weight: normal;">Optional — subtracted from price</small></label>
+                                    <input type="number" id="edit-product-discount-percent" class="form-input" placeholder="e.g. 50" min="0" step="0.01" oninput="calcDiscountPreview('edit-product-price','edit-product-discount-percent','edit-product-discount-preview')">
                                     <small id="edit-product-discount-preview" style="color:var(--success,#10b981);display:block;margin-top:4px;min-height:1.2em;"></small>
                                 </div>
                                 <div>
@@ -8994,6 +9012,8 @@
                     ? `<button class="action-btn" style="background:#25d366;color:#fff;margin-top:4px;" onclick="openWhatsApp('${o.id}', '${waPhone}', \`${waMsg.replace(/`/g,"'")}\`)" title="Send WhatsApp"><i class="fab fa-whatsapp"></i> WhatsApp</button>`
                     : '';
 
+                const invoiceBtn = `<button class="action-btn" style="background:#6c63ff;color:#fff;margin-top:4px;" onclick="printOrderInvoice(${o.id})" title="Download Invoice"><i class="fas fa-file-invoice"></i> Invoice</button>`;
+
                 html += `
                     <tr>
                         <td>#${o.id}</td>
@@ -9004,12 +9024,91 @@
                         <td>${deliveryLabel}</td>
                         <td><span class="badge badge-${effectiveStatus === 'delivered' ? 'success' : effectiveStatus === 'returned' ? 'info' : effectiveStatus === 'cancelled' ? 'danger' : 'warning'}">${effectiveStatus}</span></td>
                         <td>${formatDate(o.created_at)}</td>
-                        <td>${actionsHtml}</td>
+                        <td>
+                            ${actionsHtml}
+                            ${invoiceBtn}
+                        </td>
                     </tr>
                 `;
             });
             html += '</tbody></table></div>';
             document.getElementById('orders-list').innerHTML = html;
+        };
+
+        /* ── Order Invoice Printer ── */
+        window.printOrderInvoice = function(orderId) {
+            const orders = window._ordersCache || [];
+            const o = orders.find(x => x.id == orderId);
+            if (!o) { showAlert('Order not found', 'error'); return; }
+            const items = Array.isArray(o.items) ? o.items : [];
+            const rows = items.map(it => `
+                <tr>
+                    <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;">${escapeHtml(it.product_name || 'Item')}</td>
+                    <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:center;">${it.quantity}</td>
+                    <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;">&#8377;${parseFloat(it.price||0).toFixed(2)}</td>
+                    <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;">&#8377;${(parseFloat(it.price||0)*parseInt(it.quantity||1)).toFixed(2)}</td>
+                </tr>`).join('');
+            const html = `<!DOCTYPE html><html><head><title>Invoice ${escapeHtml(o.order_number||'')}</title>
+            <style>body{font-family:Arial,sans-serif;max-width:700px;margin:40px auto;color:#222;font-size:14px;}
+            .hdr{display:flex;justify-content:space-between;padding-bottom:1rem;border-bottom:2px solid #1a4731;margin-bottom:1.5rem;}
+            .brand{font-size:1.6rem;font-weight:800;color:#1a4731;}
+            table{width:100%;border-collapse:collapse;margin-top:1rem;}
+            th{background:#f0fdf4;padding:0.5rem 0.75rem;border:1px solid #ddd;font-weight:700;text-align:left;}
+            .total-row td{font-weight:700;}
+            @media print{body{margin:20px;}.no-print{display:none}}</style></head><body>
+            <div class="hdr">
+                <div><div class="brand">Mount Made</div><div style="color:#666;">Tax Invoice</div></div>
+                <div style="text-align:right;">
+                    <div><strong>Invoice:</strong> ${escapeHtml(o.order_number||String(o.id))}</div>
+                    <div><strong>Date:</strong> ${formatDate(o.created_at)}</div>
+                    <div><strong>Status:</strong> ${o.status||'—'}</div>
+                </div>
+            </div>
+            <div style="margin-bottom:1.5rem;">
+                <strong>Customer:</strong> ${escapeHtml(o.full_name||'N/A')}<br>
+                <strong>Email:</strong> ${escapeHtml(o.email||'N/A')}
+                ${o.phone ? `<br><strong>Phone:</strong> ${escapeHtml(o.phone)}` : ''}
+            </div>
+            <table><thead><tr><th>Product</th><th>Qty</th><th>Unit Price</th><th>Subtotal</th></tr></thead>
+            <tbody>${rows}</tbody>
+            <tfoot><tr class="total-row">
+                <td colspan="3" style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;">Order Total</td>
+                <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;">&#8377;${parseFloat(o.total_amount||0).toFixed(2)}</td>
+            </tr></tfoot></table>
+            <div style="margin-top:2rem;color:#666;font-size:0.85rem;"><p>Thank you for shopping with Mount Made!</p></div>
+            <div class="no-print" style="margin-top:1.5rem;"><button onclick="window.print()" style="padding:0.5rem 1rem;background:#1a4731;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:1rem;">&#128424; Print / Save PDF</button></div>
+            </body></html>`;
+            const w = window.open('', '_blank', 'width=760,height=920');
+            if (!w) { showAlert('Pop-up blocked. Please allow pop-ups for this site.', 'error'); return; }
+            w.document.write(html);
+            w.document.close();
+            w.focus();
+        };
+
+        /* ── Orders CSV Exporter ── */
+        window.downloadOrdersCSV = function() {
+            const orders = window._ordersCache || [];
+            if (!orders.length) { showAlert('No orders to export. Load order history first.', 'warning'); return; }
+            const cols = ['Order #','ID','Customer','Email','Phone','Items','Total','Delivery','Status','Date'];
+            const rows = orders.map(o => {
+                const items = Array.isArray(o.items) ? o.items.map(it => `${it.product_name}x${it.quantity}`).join('; ') : '';
+                const deliverySpeed = (o.delivery_speed||'standard');
+                const deliveryCharge = parseFloat(o.delivery_charge)||0;
+                const deliveryLabel = `${deliverySpeed}${deliveryCharge > 0 ? ' +'+deliveryCharge : ' Free'}`;
+                return [
+                    o.order_number||o.id, o.id, o.full_name||'', o.email||'', o.phone||'',
+                    items, parseFloat(o.total_amount||0).toFixed(2), deliveryLabel, o.status||'',
+                    o.created_at ? new Date(o.created_at).toLocaleDateString('en-IN') : ''
+                ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(',');
+            });
+            const csv = [cols.join(','), ...rows].join('\n');
+            const blob = new Blob(['\uFEFF' + csv, { type: 'text/csv;charset=utf-8;' }]);
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = `mount-made-orders-${new Date().toISOString().slice(0,10)}.csv`;
+            document.body.appendChild(a); a.click();
+            document.body.removeChild(a); URL.revokeObjectURL(url);
+            showAlert(`Exported ${orders.length} orders to CSV`, 'success');
         };
 
         window.filterCustomerOrders = function() {
@@ -9494,9 +9593,9 @@
             try {
                 const name = document.getElementById('product-name').value;
                 const price = document.getElementById('product-price').value;
-                const discountPct = parseFloat(document.getElementById('product-discount-percent').value || '');
-                const discount_price = (Number.isFinite(discountPct) && discountPct >= 1 && discountPct <= 100)
-                    ? parseFloat(price) * (1 - discountPct / 100)
+                const discountAmt = parseFloat(document.getElementById('product-discount-percent').value || '');
+                const discount_price = (Number.isFinite(discountAmt) && discountAmt > 0 && discountAmt < parseFloat(price))
+                    ? parseFloat(price) - discountAmt
                     : null;
                 const stock = document.getElementById('product-stock').value;
                 const category_id = document.getElementById('product-category').value;
@@ -9522,7 +9621,7 @@
                 }
 
                 if (discount_price !== null && (!Number.isFinite(discount_price) || discount_price >= parseFloat(price))) {
-                    showAlert('Discount percentage produced an invalid price. Please enter a value between 1 and 100.', 'error');
+                    showAlert('Discount amount must be less than the product price.', 'error');
                     return;
                 }
 
@@ -9806,14 +9905,14 @@
             document.getElementById('edit-product-wholesale-price').value = product.wholesale_price || '';
             document.getElementById('edit-product-stock').value = product.stock_quantity || 0;
 
-            // Reverse-calculate discount % from saved discount_price
+            // Show saved discount as the exact ₹ amount that was subtracted
             const editPctInput = document.getElementById('edit-product-discount-percent');
             if (editPctInput) {
                 const basePrice = parseFloat(product.price || '');
                 const savedDiscount = parseFloat(product.discount_price || '');
                 if (Number.isFinite(basePrice) && basePrice > 0 && Number.isFinite(savedDiscount) && savedDiscount < basePrice) {
-                    const pct = ((basePrice - savedDiscount) / basePrice) * 100;
-                    editPctInput.value = parseFloat(pct.toFixed(2));
+                    // Store the discount amount (₹), not the percentage
+                    editPctInput.value = parseFloat((basePrice - savedDiscount).toFixed(2));
                 } else {
                     editPctInput.value = '';
                 }
@@ -10127,10 +10226,10 @@
                 }
                 const description = document.getElementById('edit-product-description').value;
                 const wholesale_price = document.getElementById('edit-product-wholesale-price').value || null;
-                const discountPct = parseFloat(document.getElementById('edit-product-discount-percent')?.value || '');
+                const discountAmt = parseFloat(document.getElementById('edit-product-discount-percent')?.value || '');
                 const parsedPrice = parseFloat(price);
-                const parsedDiscountPrice = (Number.isFinite(discountPct) && discountPct >= 1 && discountPct <= 100)
-                    ? parsedPrice * (1 - discountPct / 100)
+                const parsedDiscountPrice = (Number.isFinite(discountAmt) && discountAmt > 0 && discountAmt < parsedPrice)
+                    ? parsedPrice - discountAmt
                     : null;
                 const min_wholesale_qty = document.getElementById('edit-product-min-wholesale').value || 10;
                 const imageFiles = editProductSelectedImages;

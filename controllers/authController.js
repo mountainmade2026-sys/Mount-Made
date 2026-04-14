@@ -935,6 +935,7 @@ exports.checkAuth = async (req, res) => {
         id: user.id,
         email: user.email,
         full_name: user.full_name,
+        phone: user.phone || null,
         role: user.role,
         is_approved: user.is_approved,
         profile_photo: user.profile_photo
@@ -942,5 +943,27 @@ exports.checkAuth = async (req, res) => {
     });
   } catch (error) {
     res.json({ authenticated: false });
+  }
+};
+
+exports.updatePhone = async (req, res) => {
+  try {
+    const { phone, phone_verification_token } = req.body || {};
+    if (!phone) {
+      return res.status(400).json({ error: 'Phone number is required.' });
+    }
+    const normalizedPhone = normalizePhoneToE164(phone);
+    const decoded = verifyPhoneVerificationToken(phone_verification_token);
+    if (!decoded || decoded.phone !== normalizedPhone) {
+      return res.status(400).json({ error: 'Phone verification token is invalid. Please re-verify your phone.' });
+    }
+    await db.query(
+      'UPDATE users SET phone = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+      [normalizedPhone, req.user.id]
+    );
+    return res.json({ message: 'Phone number saved successfully.', phone: normalizedPhone });
+  } catch (error) {
+    console.error('Update phone error:', error);
+    return res.status(400).json({ error: error.message || 'Failed to update phone number.' });
   }
 };

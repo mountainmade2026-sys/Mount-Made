@@ -60,6 +60,7 @@ router.get('/check', optionalAuth, authController.checkAuth);
 // Protected routes
 router.get('/profile', authenticateToken, authController.getProfile);
 router.put('/profile', authenticateToken, authController.updateProfile);
+router.post('/update-phone', authenticateToken, authController.updatePhone);
 router.put('/change-password', authenticateToken, authController.changePassword);
 
 module.exports = router;

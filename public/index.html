@@ -2024,6 +2024,12 @@
                     return;
                 }
 
+                // Force Google users without phone to add phone before ordering
+                if (user.role === 'customer' && !user.phone) {
+                    showPhoneRequiredModal();
+                    return;
+                }
+
                 const quantity = getHomeQuantity(productId);
                 // Navigate to product details with quick-buy modal auto-opened
                 window.location.href = `/product-details?id=${productId}&quickbuy=1&qty=${quantity}`;
@@ -2273,6 +2279,15 @@
             loadCategories();
             loadHomepageSections();
             loadCarouselProducts();
+            // Check if Google-signup user needs to add phone
+            (async () => {
+                try {
+                    const user = await auth.checkAuth();
+                    if (user && user.role === 'customer' && !user.phone) {
+                        showPhoneRequiredModal();
+                    }
+                } catch (_) {}
+            })();
 
             // Wire carousel navigation
             document.getElementById('carousel-prev').addEventListener('click', () => {
@@ -2394,6 +2409,94 @@
             // Start after a short delay so the page settles
             setTimeout(tick, 800);
         })();
+    </script>
+
+    <!-- ══ Phone Required Modal (Google OAuth users without phone) ══ -->
+    <div id="phone-required-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99999;align-items:center;justify-content:center;">
+        <div style="background:#fff;border-radius:16px;padding:2rem 1.75rem;max-width:420px;width:calc(100% - 2rem);box-shadow:0 20px 60px rgba(0,0,0,0.25);">
+            <div style="text-align:center;margin-bottom:1.25rem;">
+                <div style="font-size:2.5rem;margin-bottom:0.5rem;">📱</div>
+                <h2 style="font-size:1.25rem;font-weight:800;color:#1a4731;margin:0 0 0.4rem;">Add Your Phone Number</h2>
+                <p style="color:#6b7280;font-size:0.9rem;margin:0;">To place orders on Mount Made, please verify your phone number.</p>
+            </div>
+            <div id="phone-modal-step-1">
+                <label style="display:block;font-size:0.85rem;font-weight:600;color:#374151;margin-bottom:0.4rem;">Phone Number</label>
+                <div style="display:flex;gap:0.5rem;">
+                    <input type="tel" id="pm-phone" placeholder="+91 98765 43210" style="flex:1;padding:0.6rem 0.85rem;border:1.5px solid #d1d5db;border-radius:8px;font-size:0.95rem;outline:none;" oninput="document.getElementById('pm-phone-err').textContent=''">
+                    <button onclick="pmSendOtp()" id="pm-send-btn" style="padding:0.6rem 1rem;background:#1a4731;color:#fff;border:none;border-radius:8px;font-size:0.85rem;font-weight:700;cursor:pointer;white-space:nowrap;">Send OTP</button>
+                </div>
+                <div id="pm-phone-err" style="color:#dc2626;font-size:0.8rem;margin-top:0.3rem;"></div>
+            </div>
+            <div id="phone-modal-step-2" style="display:none;margin-top:1rem;">
+                <label style="display:block;font-size:0.85rem;font-weight:600;color:#374151;margin-bottom:0.4rem;">Enter OTP sent to <span id="pm-phone-display"></span></label>
+                <div style="display:flex;gap:0.5rem;">
+                    <input type="text" id="pm-otp" placeholder="6-digit OTP" maxlength="8" inputmode="numeric" style="flex:1;padding:0.6rem 0.85rem;border:1.5px solid #d1d5db;border-radius:8px;font-size:1.1rem;letter-spacing:0.15em;text-align:center;outline:none;">
+                    <button onclick="pmVerifyOtp()" id="pm-verify-btn" style="padding:0.6rem 1rem;background:#1a4731;color:#fff;border:none;border-radius:8px;font-size:0.85rem;font-weight:700;cursor:pointer;">Verify</button>
+                </div>
+                <div id="pm-otp-err" style="color:#dc2626;font-size:0.8rem;margin-top:0.3rem;"></div>
+                <button onclick="document.getElementById('phone-modal-step-2').style.display='none';document.getElementById('phone-modal-step-1').style.display='';" style="background:none;border:none;color:#6b7280;font-size:0.8rem;margin-top:0.5rem;cursor:pointer;text-decoration:underline;">Change number</button>
+            </div>
+            <div id="pm-success" style="display:none;text-align:center;margin-top:1rem;">
+                <div style="color:#059669;font-size:1.5rem;">✓</div>
+                <p style="color:#059669;font-weight:700;margin:0.4rem 0 0;">Phone number verified! You can now place orders.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showPhoneRequiredModal() {
+            const modal = document.getElementById('phone-required-modal');
+            if (modal) modal.style.display = 'flex';
+        }
+
+        async function pmSendOtp() {
+            const phone = (document.getElementById('pm-phone')?.value || '').trim();
+            const errEl = document.getElementById('pm-phone-err');
+            const btn   = document.getElementById('pm-send-btn');
+            if (!phone) { errEl.textContent = 'Please enter your phone number.'; return; }
+            btn.disabled = true; btn.textContent = 'Sending…';
+            errEl.textContent = '';
+            try {
+                await api.post('/auth/phone/send-otp', { phone });
+                document.getElementById('pm-phone-display').textContent = phone;
+                document.getElementById('phone-modal-step-1').style.display = 'none';
+                document.getElementById('phone-modal-step-2').style.display = '';
+            } catch (e) {
+                errEl.textContent = e.message || 'Failed to send OTP. Check your number and try again.';
+            } finally {
+                btn.disabled = false; btn.textContent = 'Send OTP';
+            }
+        }
+
+        async function pmVerifyOtp() {
+            const phone = (document.getElementById('pm-phone')?.value || '').trim();
+            const otp   = (document.getElementById('pm-otp')?.value   || '').trim();
+            const errEl = document.getElementById('pm-otp-err');
+            const btn   = document.getElementById('pm-verify-btn');
+            if (!otp) { errEl.textContent = 'Please enter the OTP.'; return; }
+            btn.disabled = true; btn.textContent = 'Verifying…';
+            errEl.textContent = '';
+            try {
+                // Verify OTP and get token
+                const otpRes = await api.post('/auth/phone/verify-otp', { phone, code: otp });
+                const token  = otpRes.phone_verification_token || otpRes.token;
+                if (!token) throw new Error('Verification failed. Please try again.');
+                // Save phone to profile
+                await api.post('/auth/update-phone', { phone, phone_verification_token: token });
+                // Update local auth state
+                if (auth.currentUser) auth.currentUser.phone = phone;
+                document.getElementById('phone-modal-step-2').style.display = 'none';
+                document.getElementById('pm-success').style.display = '';
+                setTimeout(() => {
+                    const modal = document.getElementById('phone-required-modal');
+                    if (modal) modal.style.display = 'none';
+                }, 2000);
+            } catch (e) {
+                errEl.textContent = e.message || 'Invalid OTP. Please try again.';
+            } finally {
+                btn.disabled = false; btn.textContent = 'Verify';
+            }
+        }
     </script>
 </body>
 </html>
