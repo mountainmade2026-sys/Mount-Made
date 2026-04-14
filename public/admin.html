@@ -3001,7 +3001,7 @@
 
                     <!-- Reference Bar -->
                     <div style="background:#f2efe4;border-bottom:1px solid #d4c28a;padding:0.65rem 3.5rem;display:flex;flex-wrap:wrap;gap:0.5rem 2rem;font-family:'Segoe UI',Arial,sans-serif;font-size:0.79rem;color:#6b5f45;">
-                        <span><strong style="color:#1c2a4a;">Reference No:</strong> MM-OWN-2024-001</span>
+                        <span><strong style="color:#1c2a4a;">Reference No:</strong> MM-OWN-2026-001</span>
                         <span><strong style="color:#1c2a4a;">Issued:</strong> <span id="doc-issue-date">—</span></span>
                         <span><strong style="color:#1c2a4a;">Status:</strong> Valid &amp; Active</span>
                         <span style="margin-left:auto;"><strong style="color:#1c2a4a;">Classification:</strong> Proprietary &amp; Confidential</span>
@@ -3041,7 +3041,7 @@
                                 </tr>
                                 <tr>
                                     <td style="padding:0.6rem 0;color:#6b5f45;font-family:'Segoe UI',Arial,sans-serif;font-size:0.84rem;">Document Reference</td>
-                                    <td style="padding:0.6rem 0;font-weight:600;color:#1c2a4a;">MM-OWN-2024-001</td>
+                                    <td style="padding:0.6rem 0;font-weight:600;color:#1c2a4a;">MM-OWN-2026-001</td>
                                 </tr>
                             </table>
                         </div>
@@ -3087,10 +3087,94 @@
 
                         <!-- IV. Technology Stack -->
                         <div style="margin-bottom:2.25rem;">
-                            <h3 style="font-size:0.75rem;font-weight:700;color:#1c2a4a;text-transform:uppercase;letter-spacing:0.2em;font-family:'Segoe UI',Arial,sans-serif;padding-bottom:0.5rem;border-bottom:1.5px solid #1c2a4a;margin-bottom:1.1rem;">IV. &nbsp; Technology Stack</h3>
-                            <p style="font-size:0.9rem;line-height:2.1;color:#2c3546;">
-                                Node.js &nbsp;&bull;&nbsp; Express.js &nbsp;&bull;&nbsp; PostgreSQL &nbsp;&bull;&nbsp; HTML5 / CSS3 &nbsp;&bull;&nbsp; Vanilla JavaScript &nbsp;&bull;&nbsp; Capacitor (Android) &nbsp;&bull;&nbsp; JWT Authentication &nbsp;&bull;&nbsp; RESTful API &nbsp;&bull;&nbsp; Progressive Web App &nbsp;&bull;&nbsp; Service Workers &nbsp;&bull;&nbsp; Render Cloud Hosting
-                            </p>
+                            <h3 style="font-size:0.75rem;font-weight:700;color:#1c2a4a;text-transform:uppercase;letter-spacing:0.2em;font-family:'Segoe UI',Arial,sans-serif;padding-bottom:0.5rem;border-bottom:1.5px solid #1c2a4a;margin-bottom:1.1rem;">IV. &nbsp; Technology Stack &amp; Dependencies</h3>
+                            <table style="width:100%;border-collapse:collapse;font-size:0.88rem;color:#2c3546;margin-bottom:0.75rem;">
+                                <tr style="background:#f2efe4;">
+                                    <td colspan="2" style="padding:0.45rem 0.6rem;font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:#1c2a4a;font-family:'Segoe UI',Arial,sans-serif;">Runtime &amp; Framework</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid #e4dcc4;">
+                                    <td style="padding:0.5rem 0.75rem 0.5rem 0;width:50%;"><strong>Node.js</strong> &mdash; Server-side JavaScript runtime</td>
+                                    <td style="padding:0.5rem 0 0.5rem 0.75rem;"><strong>Express.js v4</strong> &mdash; Web application framework</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid #e4dcc4;background:#f2efe4;">
+                                    <td colspan="2" style="padding:0.45rem 0.6rem;font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:#1c2a4a;font-family:'Segoe UI',Arial,sans-serif;">Database</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid #e4dcc4;">
+                                    <td style="padding:0.5rem 0.75rem 0.5rem 0;"><strong>PostgreSQL</strong> &mdash; Relational database</td>
+                                    <td style="padding:0.5rem 0 0.5rem 0.75rem;"><strong>pg (node-postgres)</strong> &mdash; PostgreSQL client</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid #e4dcc4;background:#f2efe4;">
+                                    <td colspan="2" style="padding:0.45rem 0.6rem;font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:#1c2a4a;font-family:'Segoe UI',Arial,sans-serif;">Authentication &amp; Security</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid #e4dcc4;">
+                                    <td style="padding:0.5rem 0.75rem 0.5rem 0;"><strong>jsonwebtoken (JWT)</strong> &mdash; Token-based auth</td>
+                                    <td style="padding:0.5rem 0 0.5rem 0.75rem;"><strong>bcryptjs</strong> &mdash; Password hashing</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid #e4dcc4;">
+                                    <td style="padding:0.5rem 0.75rem 0.5rem 0;"><strong>google-auth-library</strong> &mdash; Google OAuth 2.0 sign-in</td>
+                                    <td style="padding:0.5rem 0 0.5rem 0.75rem;"><strong>cookie-parser</strong> &mdash; HTTP cookie handling</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid #e4dcc4;">
+                                    <td style="padding:0.5rem 0.75rem 0.5rem 0;"><strong>express-rate-limit</strong> &mdash; Brute-force protection</td>
+                                    <td style="padding:0.5rem 0 0.5rem 0.75rem;"><strong>express-validator</strong> &mdash; Input validation</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid #e4dcc4;">
+                                    <td style="padding:0.5rem 0.75rem 0.5rem 0;"><strong>cors</strong> &mdash; Cross-origin resource sharing</td>
+                                    <td style="padding:0.5rem 0 0.5rem 0.75rem;"><strong>dotenv</strong> &mdash; Environment variable management</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid #e4dcc4;background:#f2efe4;">
+                                    <td colspan="2" style="padding:0.45rem 0.6rem;font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:#1c2a4a;font-family:'Segoe UI',Arial,sans-serif;">Payments &amp; Communications</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid #e4dcc4;">
+                                    <td style="padding:0.5rem 0.75rem 0.5rem 0;"><strong>Razorpay SDK</strong> &mdash; Payment gateway integration</td>
+                                    <td style="padding:0.5rem 0 0.5rem 0.75rem;"><strong>nodemailer</strong> &mdash; Transactional email (Gmail SMTP)</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid #e4dcc4;">
+                                    <td style="padding:0.5rem 0.75rem 0.5rem 0;"><strong>Twilio</strong> &mdash; Phone OTP &amp; WhatsApp messaging</td>
+                                    <td style="padding:0.5rem 0 0.5rem 0.75rem;"><strong>Google Pay (UPI)</strong> &mdash; Native UPI payment support</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid #e4dcc4;background:#f2efe4;">
+                                    <td colspan="2" style="padding:0.45rem 0.6rem;font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:#1c2a4a;font-family:'Segoe UI',Arial,sans-serif;">File Handling &amp; Performance</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid #e4dcc4;">
+                                    <td style="padding:0.5rem 0.75rem 0.5rem 0;"><strong>multer</strong> &mdash; File &amp; image upload handling</td>
+                                    <td style="padding:0.5rem 0 0.5rem 0.75rem;"><strong>compression</strong> &mdash; HTTP response compression (gzip)</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid #e4dcc4;">
+                                    <td style="padding:0.5rem 0.75rem 0.5rem 0;"><strong>html-minifier-terser</strong> &mdash; HTML minification</td>
+                                    <td style="padding:0.5rem 0 0.5rem 0.75rem;"><strong>terser</strong> &mdash; JavaScript minification &amp; optimisation</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid #e4dcc4;">
+                                    <td style="padding:0.5rem 0.75rem 0.5rem 0;"><strong>javascript-obfuscator</strong> &mdash; Code obfuscation</td>
+                                    <td style="padding:0.5rem 0 0.5rem 0.75rem;"><strong>path</strong> &mdash; Node.js file path utilities</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid #e4dcc4;background:#f2efe4;">
+                                    <td colspan="2" style="padding:0.45rem 0.6rem;font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:#1c2a4a;font-family:'Segoe UI',Arial,sans-serif;">Mobile &amp; Frontend</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid #e4dcc4;">
+                                    <td style="padding:0.5rem 0.75rem 0.5rem 0;"><strong>Capacitor v8</strong> &mdash; Native Android / iOS app wrapper</td>
+                                    <td style="padding:0.5rem 0 0.5rem 0.75rem;"><strong>HTML5 / CSS3</strong> &mdash; UI markup &amp; styling</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid #e4dcc4;">
+                                    <td style="padding:0.5rem 0.75rem 0.5rem 0;"><strong>Vanilla JavaScript (ES6+)</strong> &mdash; All client-side logic</td>
+                                    <td style="padding:0.5rem 0 0.5rem 0.75rem;"><strong>Progressive Web App</strong> &mdash; Service workers, offline cache</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid #e4dcc4;">
+                                    <td style="padding:0.5rem 0.75rem 0.5rem 0;"><strong>Font Awesome 6</strong> &mdash; Icon library</td>
+                                    <td style="padding:0.5rem 0 0.5rem 0.75rem;"><strong>Google Sign-In (GSI)</strong> &mdash; OAuth popup &amp; mobile SDK</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid #e4dcc4;background:#f2efe4;">
+                                    <td colspan="2" style="padding:0.45rem 0.6rem;font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:#1c2a4a;font-family:'Segoe UI',Arial,sans-serif;">Infrastructure &amp; DevOps</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:0.5rem 0.75rem 0.5rem 0;"><strong>Render Cloud</strong> &mdash; Hosting &amp; deployment</td>
+                                    <td style="padding:0.5rem 0 0.5rem 0.75rem;"><strong>Neon (PostgreSQL)</strong> &mdash; Cloud database (production)</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:0.5rem 0.75rem 0.5rem 0;"><strong>nodemon</strong> &mdash; Development hot-reload</td>
+                                    <td style="padding:0.5rem 0 0.5rem 0.75rem;"><strong>RESTful API Architecture</strong> &mdash; All client-server communication</td>
+                                </tr>
+                            </table>
                         </div>
 
                         <!-- V. Intellectual Property -->
@@ -3119,7 +3203,7 @@
                                 </tr>
                                 <tr>
                                     <td style="padding:0.6rem 0;color:#6b5f45;font-family:'Segoe UI',Arial,sans-serif;font-size:0.84rem;">All Rights</td>
-                                    <td style="padding:0.6rem 0;font-weight:600;color:#1c2a4a;">Reserved &mdash; Mount Made &copy; 2024</td>
+                                    <td style="padding:0.6rem 0;font-weight:600;color:#1c2a4a;">Reserved &mdash; Mount Made &copy; 2026</td>
                                 </tr>
                             </table>
                         </div>
@@ -3131,19 +3215,11 @@
                                 <p style="font-size:0.79rem;color:#6b5f45;margin:0.4rem 0 0;font-family:'Segoe UI',Arial,sans-serif;">Authorised Signature</p>
                                 <p style="font-size:0.9rem;font-weight:600;color:#1c2a4a;margin:0.15rem 0 0;">Mount Made Administration</p>
                             </div>
-                            <div style="text-align:center;">
-                                <div style="
-                                    display:inline-flex;flex-direction:column;align-items:center;justify-content:center;
-                                    width:96px;height:96px;border-radius:50%;
-                                    border:2px solid #1c2a4a;
-                                    outline:2px solid #b8952a;outline-offset:4px;
-                                    background:#fefcf5;
-                                ">
-                                    <span style="font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;font-family:'Segoe UI',Arial,sans-serif;color:#1c2a4a;line-height:1.4;text-align:center;">MOUNT<br>MADE</span>
-                                    <div style="width:38px;height:1px;background:#b8952a;margin:0.2rem 0;"></div>
-                                    <span style="font-size:0.5rem;color:#8a7650;letter-spacing:0.1em;font-family:'Segoe UI',Arial,sans-serif;text-transform:uppercase;">Certified</span>
-                                </div>
-                                <p style="font-size:0.72rem;color:#8a7650;margin:0.45rem 0 0;font-family:'Segoe UI',Arial,sans-serif;">Official Seal</p>
+                            <div style="min-width:200px;text-align:center;">
+                                <div style="height:38px;border-bottom:1px solid #1c2a4a;max-width:220px;margin:0 auto;"></div>
+                                <p style="font-size:0.79rem;color:#6b5f45;margin:0.4rem 0 0;font-family:'Segoe UI',Arial,sans-serif;">Developer Signature</p>
+                                <p style="font-size:0.9rem;font-weight:700;color:#1c2a4a;margin:0.15rem 0 0;">Athoiba Pukhrambam</p>
+                                <p style="font-size:0.78rem;color:#8a7650;margin:0.1rem 0 0;font-family:'Segoe UI',Arial,sans-serif;letter-spacing:0.04em;">Lead Developer &amp; Architect</p>
                             </div>
                             <div style="min-width:200px;text-align:right;">
                                 <div style="min-width:200px;height:38px;border-bottom:1px solid #1c2a4a;"></div>
@@ -3157,7 +3233,7 @@
                     <!-- Document Footer -->
                     <div style="background:#f2efe4;border-top:1px solid #d4c28a;padding:0.8rem 3.5rem;display:flex;flex-wrap:wrap;gap:0.5rem 2rem;justify-content:space-between;align-items:center;font-family:'Segoe UI',Arial,sans-serif;font-size:0.75rem;color:#8a7650;">
                         <span>&copy; Mount Made &mdash; All Rights Reserved</span>
-                        <span style="letter-spacing:0.04em;">Ref: MM-OWN-2024-001 &nbsp;|&nbsp; Proprietary &amp; Confidential</span>
+                        <span style="letter-spacing:0.04em;">Ref: MM-OWN-2026-001 &nbsp;|&nbsp; Proprietary &amp; Confidential</span>
                         <span>Mount Made E-Commerce Platform</span>
                     </div>
 
@@ -12439,8 +12515,7 @@ ${docHtml.outerHTML}
         }
 
         function _prepDocDate() {
-            const today = new Date();
-            const formatted = today.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+            const formatted = '14 April 2026';
             const dateEl = document.getElementById('doc-issue-date');
             if (dateEl) dateEl.textContent = formatted;
             const signEl = document.getElementById('doc-sign-date');
