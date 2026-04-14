@@ -5,6 +5,14 @@ const { authenticateToken, optionalAuth } = require('../middleware/auth');
 
 const authRateStore = new Map();
 
+// Clean up expired entries every 10 minutes to prevent memory leak
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of authRateStore.entries()) {
+    if (entry.expiresAt <= now) authRateStore.delete(key);
+  }
+}, 10 * 60 * 1000).unref();
+
 const authRateLimit = ({ windowMs, maxAttempts }) => (req, res, next) => {
 	const ip = req.ip || req.headers['x-forwarded-for'] || 'unknown';
 	const loginIdentifier = String(req.body?.identifier || req.body?.email || req.body?.phone || '').trim().toLowerCase();

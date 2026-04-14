@@ -200,7 +200,9 @@ router.post('/:id/cancel', async (req, res) => {
 // Quick buy - create order from single product
 router.post('/quick-buy', async (req, res) => {
   try {
-    const { product_id, quantity = 1, shipping_address, payment_method = 'cash_on_delivery', notes } = req.body;
+    const product_id = parseInt(req.body.product_id, 10);
+    const quantity = Math.max(1, parseInt(req.body.quantity, 10) || 1);
+    const { shipping_address, payment_method = 'cash_on_delivery', notes } = req.body;
     
     if (!product_id) {
       return res.status(400).json({ error: 'Product ID is required.' });

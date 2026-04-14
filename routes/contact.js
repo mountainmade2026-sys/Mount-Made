@@ -4,6 +4,16 @@ const db = require('../config/database');
 const nodemailer = require('nodemailer');
 const https = require('https');
 const { optionalAuth } = require('../middleware/auth');
+const rateLimit = require('express-rate-limit');
+
+// Contact form: max 5 submissions per IP per 10 minutes to prevent spam
+const contactLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many contact requests. Please try again in 10 minutes.' }
+});
 
 const DEFAULT_SUPPORT_EMAIL = 'hello@mountain-made.com';
 
@@ -248,7 +258,7 @@ async function forwardContactMessageByEmail(payload) {
   return { sent: true, recipient: toEmail };
 }
 
-router.post('/', optionalAuth, async (req, res) => {
+router.post('/', contactLimiter, optionalAuth, async (req, res) => {
   try {
     const {
       full_name,

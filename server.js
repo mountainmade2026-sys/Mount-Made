@@ -135,23 +135,14 @@ const upload = multer({
     }
 });
 
-// ── Rate limiters ────────────────────────────────────────────────────────
-// Strict: login, register, OTP — brute force targets
+// ── Rate limiter ─────────────────────────────────────────────────────────
+// Auth route limiter — brute-force protection on login/register/OTP
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 20,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many attempts. Please try again in 15 minutes.' }
-});
-
-// General API limit — prevents scraping / DoS
-const apiLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 500,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: 'Too many requests. Please slow down.' }
 });
 
 // Middleware
@@ -233,8 +224,6 @@ app.use((req, res, next) => {
   };
   next();
 });
-// Apply general rate limit to all API routes
-app.use('/api/', apiLimiter);
 
 // Page-level access guard: keep wholesale and public experiences separated.
 // - Approved wholesale users are redirected away from public browsing pages.
@@ -520,8 +509,8 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Server is running' });
 });
 
-// DB diagnostics endpoint for restore/schema troubleshooting
-app.get('/api/health/db', async (req, res) => {
+// DB diagnostics endpoint for restore/schema troubleshooting (admin only)
+app.get('/api/health/db', authenticateToken, adminCheck, async (req, res) => {
   try {
     const checks = {};
 

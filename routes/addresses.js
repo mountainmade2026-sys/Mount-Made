@@ -79,7 +79,7 @@ router.post('/', async (req, res) => {
          (user_id, label, full_name, phone, address_line1, address_line2, city, state, postal_code, country, is_default)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
          RETURNING *`,
-        [req.user.id, label, full_name, phone, address_line1, address_line2, city, state, postal_code, country || 'USA', is_default || false]
+        [req.user.id, label, full_name, phone, address_line1, address_line2, city, state, postal_code, country || 'India', is_default || false]
       );
 
       await client.query('COMMIT');

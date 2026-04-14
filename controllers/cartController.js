@@ -44,9 +44,10 @@ exports.getCart = async (req, res) => {
 
 exports.addToCart = async (req, res) => {
   try {
-    const { product_id, quantity } = req.body;
+    const product_id = parseInt(req.body.product_id, 10);
+    const quantity = parseInt(req.body.quantity, 10);
 
-    if (!product_id || !quantity || quantity < 1) {
+    if (!product_id || isNaN(product_id) || isNaN(quantity) || quantity < 1) {
       return res.status(400).json({ error: 'Valid product ID and quantity are required.' });
     }
 
@@ -70,8 +71,8 @@ exports.addToCart = async (req, res) => {
     );
 
     if (existingItem.rows.length > 0) {
-      // Update quantity
-      const newQuantity = existingItem.rows[0].quantity + quantity;
+      // Update quantity — use Number() to ensure numeric addition, not string concatenation
+      const newQuantity = Number(existingItem.rows[0].quantity) + quantity;
       
       if (product.stock_quantity < newQuantity) {
         return res.status(400).json({ error: `Only ${product.stock_quantity} item(s) available in stock.` });
@@ -99,9 +100,9 @@ exports.addToCart = async (req, res) => {
 exports.updateCartItem = async (req, res) => {
   try {
     const { id } = req.params;
-    const { quantity } = req.body;
+    const quantity = parseInt(req.body.quantity, 10);
 
-    if (!quantity || quantity < 1) {
+    if (isNaN(quantity) || quantity < 1) {
       return res.status(400).json({ error: 'Valid quantity is required.' });
     }
 
