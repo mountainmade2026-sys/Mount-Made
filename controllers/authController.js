@@ -227,6 +227,37 @@ const createWholesaleAddress = async (userId, {
   );
 };
 
+// Gmail local-part rules: letters, numbers, dots, hyphens only; 6–30 chars; no leading/trailing/consecutive dots
+const GMAIL_LOCAL_RE = /^[a-zA-Z0-9]([a-zA-Z0-9.]*[a-zA-Z0-9])?$/;
+function isValidGmailAddress(email) {
+  if (typeof email !== 'string') return false;
+  const lower = email.trim().toLowerCase();
+  const atIdx = lower.lastIndexOf('@');
+  if (atIdx < 1) return false;
+  const local = lower.slice(0, atIdx);
+  const domain = lower.slice(atIdx + 1);
+  if (domain !== 'gmail.com') return false;
+  if (local.length < 6 || local.length > 30) return false;
+  if (local.includes('..')) return false;
+  return GMAIL_LOCAL_RE.test(local);
+}
+
+exports.checkEmail = async (req, res) => {
+  try {
+    const email = (req.query.email || '').trim().toLowerCase();
+    if (!email) return res.json({ status: 'invalid' });
+    if (!isValidGmailAddress(email)) {
+      return res.json({ status: 'invalid' });
+    }
+    const existing = await User.findByEmail(email);
+    if (existing) return res.json({ status: 'taken' });
+    return res.json({ status: 'available' });
+  } catch (err) {
+    console.error('checkEmail error:', err);
+    return res.status(500).json({ status: 'error' });
+  }
+};
+
 exports.register = async (req, res) => {
   try {
     const {
@@ -260,7 +291,7 @@ exports.register = async (req, res) => {
     // Check if user exists
     const existingUser = await User.findByEmail(normalizedEmail);
     if (existingUser) {
-      return res.status(400).json({ error: 'User with this email already exists.' });
+      return res.status(400).json({ error: 'This Gmail is already been used.' });
     }
 
     const wholesaleValidationError = validateWholesaleFields({
