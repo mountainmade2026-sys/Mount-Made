@@ -683,6 +683,34 @@ const initializeDatabase = async () => {
         ) THEN
           ALTER TABLE orders ADD COLUMN dispatched_at TIMESTAMP;
         END IF;
+
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'orders' AND column_name = 'delivery_otp'
+        ) THEN
+          ALTER TABLE orders ADD COLUMN delivery_otp VARCHAR(6);
+        END IF;
+
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'orders' AND column_name = 'delivery_otp_expires_at'
+        ) THEN
+          ALTER TABLE orders ADD COLUMN delivery_otp_expires_at TIMESTAMP;
+        END IF;
+
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'orders' AND column_name = 'out_for_delivery_at'
+        ) THEN
+          ALTER TABLE orders ADD COLUMN out_for_delivery_at TIMESTAMP;
+        END IF;
+
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'orders' AND column_name = 'courier_phone'
+        ) THEN
+          ALTER TABLE orders ADD COLUMN courier_phone VARCHAR(20);
+        END IF;
       END $$;
     `);
 

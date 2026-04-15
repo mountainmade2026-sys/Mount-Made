@@ -307,5 +307,35 @@ module.exports = {
   notifyOrderDeclined,
   notifyOrderDelivered,
   notifyReturnApproved,
-  notifyReturnRejected
+  notifyReturnRejected,
+  notifyOutForDelivery,
+  notifyCourierDispatch
 };
+
+async function notifyOutForDelivery(phone, name, orderNumber, otp) {
+  const msg =
+    `Hello ${name}! \u{1F69A}\n\n` +
+    `Great news! Your order *${orderNumber}* is *Out for Delivery* and will reach you shortly.\n\n` +
+    `\uD83D\uDD10 *Your Delivery OTP: ${otp}*\n\n` +
+    `Please share this OTP with the delivery person when they arrive to confirm receipt.\n\n` +
+    `\u26A0\uFE0F Do NOT share this OTP with anyone else.\n\n` +
+    `\u2014 Mount Made \uD83C\uDF3F`;
+  return sendWhatsAppMessage(phone, msg).catch(err =>
+    console.error('[WHATSAPP] notifyOutForDelivery failed:', err.message)
+  );
+}
+
+async function notifyCourierDispatch(courierPhone, orderNumber, confirmUrl) {
+  const msg =
+    `*Mount Made \u2014 Delivery Assignment* \uD83D\uDCE6\n\n` +
+    `You have been assigned delivery for order *${orderNumber}*.\n\n` +
+    `*Instructions:*\n` +
+    `1. Deliver the package to the customer.\n` +
+    `2. Ask the customer for their *6-digit OTP*.\n` +
+    `3. Open the link below, enter the OTP and press Confirm Delivery.\n\n` +
+    `\uD83D\uDD17 Confirm Delivery Link:\n${confirmUrl}\n\n` +
+    `\u2014 Mount Made Team`;
+  return sendWhatsAppMessage(courierPhone, msg).catch(err =>
+    console.error('[WHATSAPP] notifyCourierDispatch failed:', err.message)
+  );
+}

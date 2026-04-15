@@ -1006,6 +1006,135 @@ exports.updateOrderTracking = async (req, res) => {
   }
 };
 
+// Mark order as Out for Delivery — generate OTP, notify customer + courier
+exports.markOutForDelivery = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { courier_phone } = req.body;
+
+    // Generate 6-digit OTP
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    const otpExpiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000); // 2 hours
+
+    const result = await db.query(
+      `UPDATE orders
+       SET status                  = 'out_for_delivery',
+           delivery_otp            = $1,
+           delivery_otp_expires_at = $2,
+           out_for_delivery_at     = CURRENT_TIMESTAMP,
+           courier_phone           = $3,
+           updated_at              = CURRENT_TIMESTAMP
+       WHERE id = $4 AND status IN ('shipped', 'processing')
+       RETURNING *`,
+      [otp, otpExpiresAt, courier_phone || null, id]
+    );
+
+    if (!result.rows.length) {
+      return res.status(400).json({ error: 'Order not found or already delivered/cancelled.' });
+    }
+
+    const order = result.rows[0];
+
+    // Get customer info
+    const userResult = await db.query(
+      'SELECT full_name, email, phone FROM users WHERE id = $1',
+      [order.user_id]
+    );
+    const customer = userResult.rows[0] || {};
+
+    const baseUrl = String(process.env.APP_BASE_URL || `http://localhost:${process.env.PORT || 3000}`).replace(/\/$/, '');
+    const confirmUrl = `${baseUrl}/delivery-confirm?order=${id}`;
+
+    // Fire-and-forget: notify customer (email + WhatsApp) and courier (WhatsApp)
+    Promise.resolve().then(async () => {
+      const { sendDeliveryOtpEmail } = require('../utils/emailService');
+      const { notifyOutForDelivery, notifyCourierDispatch } = require('../utils/whatsappService');
+
+      if (customer.email) {
+        try {
+          await sendDeliveryOtpEmail(customer.email, customer.full_name || 'Customer', order.order_number || order.id, otp);
+        } catch (e) { console.error('[OFD] Email OTP failed:', e.message); }
+      }
+      if (customer.phone) {
+        try {
+          await notifyOutForDelivery(customer.phone, customer.full_name || 'Customer', order.order_number || order.id, otp);
+        } catch (e) { console.error('[OFD] WhatsApp OTP failed:', e.message); }
+      }
+      if (courier_phone) {
+        try {
+          await notifyCourierDispatch(courier_phone, order.order_number || order.id, confirmUrl);
+        } catch (e) { console.error('[OFD] Courier WhatsApp failed:', e.message); }
+      }
+    });
+
+    res.json({ message: 'Order marked as out for delivery. OTP sent to customer.', order });
+  } catch (error) {
+    console.error('markOutForDelivery error:', error);
+    res.status(500).json({ error: 'Failed to mark out for delivery.' });
+  }
+};
+
+// Courier confirms delivery by entering customer OTP — public endpoint
+exports.confirmDeliveryOtp = async (req, res) => {
+  try {
+    const { order_id, otp } = req.body;
+    if (!order_id || !otp) {
+      return res.status(400).json({ error: 'Order ID and OTP are required.' });
+    }
+
+    const result = await db.query(
+      `SELECT id, status, delivery_otp, delivery_otp_expires_at, order_number, user_id
+       FROM orders WHERE id = $1`,
+      [order_id]
+    );
+    if (!result.rows.length) return res.status(404).json({ error: 'Order not found.' });
+
+    const order = result.rows[0];
+    if (order.status === 'delivered') {
+      return res.status(400).json({ error: 'Order is already marked as delivered.' });
+    }
+    if (order.status !== 'out_for_delivery') {
+      return res.status(400).json({ error: 'Order is not out for delivery.' });
+    }
+    if (!order.delivery_otp || order.delivery_otp !== String(otp).trim()) {
+      return res.status(400).json({ error: 'Incorrect OTP. Please ask the customer again.' });
+    }
+    if (order.delivery_otp_expires_at && new Date(order.delivery_otp_expires_at) < new Date()) {
+      return res.status(400).json({ error: 'OTP has expired. Ask admin to resend.' });
+    }
+
+    // Mark as delivered, clear OTP
+    const updated = await db.query(
+      `UPDATE orders
+       SET status = 'delivered',
+           delivery_otp = NULL,
+           delivery_otp_expires_at = NULL,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = $1
+       RETURNING *`,
+      [order_id]
+    );
+
+    const delivered = updated.rows[0];
+
+    // Notify customer
+    Promise.resolve().then(async () => {
+      const { notifyOrderDelivered } = require('../utils/whatsappService');
+      const userResult = await db.query('SELECT full_name, phone FROM users WHERE id = $1', [order.user_id]);
+      const customer = userResult.rows[0] || {};
+      if (customer.phone) {
+        try { await notifyOrderDelivered(customer.phone, customer.full_name || 'Customer', order.order_number || order.id); }
+        catch (e) { console.error('[OTP-DELIVERED] WA notify failed:', e.message); }
+      }
+    });
+
+    res.json({ message: 'Delivery confirmed! Order marked as delivered.', order: delivered });
+  } catch (error) {
+    console.error('confirmDeliveryOtp error:', error);
+    res.status(500).json({ error: 'Failed to confirm delivery.' });
+  }
+};
+
 // Dashboard History (orders grouped by day, filterable by date range or year)
 exports.getDashboardHistory = async (req, res) => {
   try {

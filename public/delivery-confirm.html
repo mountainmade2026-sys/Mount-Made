@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirm Delivery — Mountain Made</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            min-height: 100dvh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 1.5rem;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 20px;
+            max-width: 420px;
+            width: 100%;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+            overflow: hidden;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #ea580c, #f97316);
+            padding: 2rem 2rem 1.5rem;
+            text-align: center;
+            color: #fff;
+        }
+
+        .header-icon {
+            width: 64px;
+            height: 64px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .card-header h1 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .card-header p {
+            font-size: 0.9rem;
+            opacity: 0.85;
+        }
+
+        .card-body {
+            padding: 1.75rem;
+        }
+
+        .order-info {
+            background: #f8fafc;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .order-info i {
+            font-size: 1.5rem;
+            color: #f97316;
+        }
+
+        .order-info-text {
+            flex: 1;
+        }
+
+        .order-info-text .label {
+            font-size: 0.76rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+        }
+
+        .order-info-text .value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .field-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #374151;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .otp-input-wrap {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .otp-input-wrap input {
+            flex: 1;
+            padding: 1rem 0.5rem;
+            border: 2.5px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 1.75rem;
+            font-weight: 700;
+            text-align: center;
+            letter-spacing: 0.4rem;
+            color: #1e293b;
+            transition: border-color 0.2s;
+            -moz-appearance: textfield;
+        }
+
+        .otp-input-wrap input::-webkit-outer-spin-button,
+        .otp-input-wrap input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+        }
+
+        .otp-input-wrap input:focus {
+            outline: none;
+            border-color: #f97316;
+        }
+
+        .btn-confirm {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, #ea580c, #f97316);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+        }
+
+        .btn-confirm:hover:not(:disabled) { opacity: 0.92; transform: translateY(-1px); }
+        .btn-confirm:active:not(:disabled) { transform: translateY(0); }
+        .btn-confirm:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .alert {
+            display: none;
+            padding: 0.85rem 1rem;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            font-weight: 500;
+            margin-top: 1rem;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .alert.show { display: flex; }
+
+        .alert-error {
+            background: #fef2f2;
+            border: 1.5px solid #fca5a5;
+            color: #b91c1c;
+        }
+
+        /* ── Success Screen ── */
+        .success-screen {
+            display: none;
+            text-align: center;
+            padding: 2rem 1.75rem;
+        }
+
+        .success-screen.show { display: block; }
+
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #34d399, #10b981);
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: #fff;
+            margin-bottom: 1.25rem;
+            animation: pop-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        @keyframes pop-in {
+            from { transform: scale(0); opacity: 0; }
+            to   { transform: scale(1); opacity: 1; }
+        }
+
+        .success-screen h2 {
+            font-size: 1.4rem;
+            color: #065f46;
+            margin-bottom: 0.5rem;
+        }
+
+        .success-screen p {
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+
+        .card-footer {
+            padding: 0.75rem 1.75rem 1.25rem;
+            text-align: center;
+            font-size: 0.78rem;
+            color: #94a3b8;
+        }
+
+        #confirm-form { }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="card-header">
+            <div class="header-icon"><i class="fas fa-box-open"></i></div>
+            <h1>Confirm Delivery</h1>
+            <p>Enter the OTP shared by the customer to confirm this delivery.</p>
+        </div>
+
+        <!-- Main form -->
+        <div id="confirm-form" class="card-body">
+            <div class="order-info">
+                <i class="fas fa-receipt"></i>
+                <div class="order-info-text">
+                    <div class="label">Order ID</div>
+                    <div class="value" id="display-order-id">—</div>
+                </div>
+            </div>
+
+            <label class="field-label" for="otp-input">Customer OTP (6 digits)</label>
+            <div class="otp-input-wrap">
+                <input id="otp-input" type="number" inputmode="numeric" maxlength="6"
+                       placeholder="••••••" autocomplete="one-time-code"
+                       oninput="this.value=this.value.slice(0,6)">
+            </div>
+
+            <button class="btn-confirm" id="confirm-btn" onclick="confirmDelivery()">
+                <i class="fas fa-check-circle"></i> Confirm Delivery
+            </button>
+
+            <div class="alert alert-error" id="error-box">
+                <i class="fas fa-exclamation-circle"></i>
+                <span id="error-msg">Incorrect or expired OTP.</span>
+            </div>
+        </div>
+
+        <!-- Success screen (hidden until confirmed) -->
+        <div class="success-screen" id="success-screen">
+            <div class="success-icon"><i class="fas fa-check"></i></div>
+            <h2>Delivery Confirmed!</h2>
+            <p>The order has been marked as <strong>Delivered</strong>. Thank you!</p>
+        </div>
+
+        <div class="card-footer">Mountain Made &mdash; Secure Delivery Confirmation</div>
+    </div>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const orderId = params.get('order');
+
+        if (!orderId) {
+            document.getElementById('display-order-id').textContent = 'Invalid link';
+            document.getElementById('confirm-btn').disabled = true;
+        } else {
+            document.getElementById('display-order-id').textContent = '#' + orderId;
+        }
+
+        async function confirmDelivery() {
+            const otp = document.getElementById('otp-input').value.trim();
+            const errorBox = document.getElementById('error-box');
+            const btn = document.getElementById('confirm-btn');
+
+            errorBox.classList.remove('show');
+
+            if (!otp || otp.length < 6) {
+                showError('Please enter the full 6-digit OTP.');
+                return;
+            }
+
+            if (!orderId) {
+                showError('Invalid delivery link. Please ask for a new link.');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
+
+            try {
+                const resp = await fetch('/api/delivery/confirm-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ order_id: orderId, otp })
+                });
+
+                const data = await resp.json();
+
+                if (!resp.ok) {
+                    showError(data.error || 'Verification failed. Please try again.');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-check-circle"></i> Confirm Delivery';
+                    return;
+                }
+
+                // Success
+                document.getElementById('confirm-form').style.display = 'none';
+                document.getElementById('success-screen').classList.add('show');
+
+            } catch (err) {
+                console.error(err);
+                showError('Network error. Please check your connection and try again.');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-check-circle"></i> Confirm Delivery';
+            }
+        }
+
+        function showError(msg) {
+            document.getElementById('error-msg').textContent = msg;
+            document.getElementById('error-box').classList.add('show');
+        }
+
+        // Allow Enter key to submit
+        document.getElementById('otp-input').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') confirmDelivery();
+        });
+    </script>
+</body>
+</html>

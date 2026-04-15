@@ -237,4 +237,40 @@ async function sendReturnNotificationToAdmin(returnRow, customer, items, orderNu
   });
 }
 
-module.exports = { sendOrderNotificationToAdmin, sendReturnNotificationToAdmin };
+module.exports = { sendOrderNotificationToAdmin, sendReturnNotificationToAdmin, sendDeliveryOtpEmail };
+
+async function sendDeliveryOtpEmail(toEmail, customerName, orderNumber, otp) {
+  const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:20px;background:#f0f0f0;font-family:Arial,sans-serif;">
+<div style="max-width:520px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.1);">
+  <div style="background:linear-gradient(135deg,#1a4731,#2d6a4f);padding:28px;text-align:center;">
+    <div style="font-size:2.5rem;margin-bottom:8px;">&#128666;</div>
+    <h1 style="color:#fff;margin:0;font-size:22px;">Your Order is Out for Delivery!</h1>
+    <p style="color:#a7f3d0;margin:6px 0 0;font-size:14px;">Mount Made &mdash; Order #${orderNumber}</p>
+  </div>
+  <div style="padding:28px;text-align:center;">
+    <p style="color:#374151;font-size:15px;margin:0 0 8px;">Hello <strong>${customerName}</strong>,</p>
+    <p style="color:#374151;font-size:15px;margin:0 0 24px;">Your order is on its way! When the delivery person arrives, please share this <strong>One-Time Password (OTP)</strong> with them to confirm receipt:</p>
+    <div style="background:#f0fdf4;border:2px dashed #10b981;border-radius:16px;padding:28px 24px;margin:0 auto 24px;max-width:280px;">
+      <div style="font-size:0.75rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;">Your Delivery OTP</div>
+      <div style="font-size:3rem;font-weight:900;letter-spacing:0.35em;color:#1a4731;font-family:monospace;">${otp}</div>
+      <div style="font-size:0.78rem;color:#059669;margin-top:10px;">&#9200; Valid for 2 hours</div>
+    </div>
+    <div style="background:#fffbeb;border-left:4px solid #f59e0b;border-radius:6px;padding:12px 16px;text-align:left;margin-bottom:20px;">
+      <strong style="color:#92400e;font-size:0.85rem;">&#9888; Important:</strong>
+      <p style="color:#78350f;font-size:0.85rem;margin:4px 0 0;">Share this OTP only with your delivery person. Do not share it with anyone else.</p>
+    </div>
+    <p style="color:#9ca3af;font-size:12px;">Thank you for shopping with Mount Made! &#127807;</p>
+  </div>
+</div>
+</body></html>`;
+
+  await sendEmail({
+    to: toEmail,
+    subject: `\u{1F4E6} Delivery OTP for Order #${orderNumber} \u2014 Mount Made`,
+    html,
+    fromLabel: 'Mount Made'
+  });
+}

@@ -503,6 +503,7 @@ app.use('/api/contact', require('./routes/contact'));
 app.use('/api/voice', require('./routes/voice'));
 app.use('/api/email-actions', require('./routes/emailActions'));
 app.use('/api/whatsapp', require('./routes/whatsapp'));
+app.use('/api/delivery', require('./routes/delivery'));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -781,6 +782,10 @@ app.get('/contact', (req, res) => {
 
 app.get('/about', (req, res) => {
   return sendHtmlPage(req, res, 'about.html');
+});
+
+app.get('/delivery-confirm', (req, res) => {
+  return sendHtmlPage(req, res, 'delivery-confirm.html');
 });
 
 // Error handling middleware
