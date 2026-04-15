@@ -9047,7 +9047,7 @@
                 const isFinal = effectiveStatus === 'delivered' || effectiveStatus === 'cancelled' || effectiveStatus === 'returned';
                 const isPending = effectiveStatus === 'pending';
                 const canTrack = effectiveStatus === 'processing' || effectiveStatus === 'shipped' || effectiveStatus === 'out_for_delivery';
-                const canOFD   = effectiveStatus === 'shipped' || effectiveStatus === 'processing';
+                const canOFD   = !['delivered','cancelled','out_for_delivery'].includes(effectiveStatus);
                 const trackingBtn = canTrack
                     ? `<button class="action-btn" style="background:#6366f1;color:#fff;margin-top:4px;" onclick="openTrackingModal(${o.id})" title="Add/Update Tracking Info"><i class="fas fa-truck"></i> Tracking</button>`
                     : '';

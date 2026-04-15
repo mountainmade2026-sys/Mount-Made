@@ -1024,13 +1024,13 @@ exports.markOutForDelivery = async (req, res) => {
            out_for_delivery_at     = CURRENT_TIMESTAMP,
            courier_phone           = $3,
            updated_at              = CURRENT_TIMESTAMP
-       WHERE id = $4 AND status IN ('shipped', 'processing')
+       WHERE id = $4 AND status NOT IN ('delivered', 'cancelled', 'out_for_delivery')
        RETURNING *`,
       [otp, otpExpiresAt, courier_phone || null, id]
     );
 
     if (!result.rows.length) {
-      return res.status(400).json({ error: 'Order not found or already delivered/cancelled.' });
+      return res.status(400).json({ error: 'Order not found, already delivered, or already out for delivery.' });
     }
 
     const order = result.rows[0];
