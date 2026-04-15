@@ -635,7 +635,7 @@
                 `;
 
                 // ── Tracking card ──
-                const hasTracking = order.tracking_number || order.courier_name;
+                const hasTracking = order.tracking_number;
                 const isShippedOrDelivered = order.status === 'shipped' || order.status === 'delivered';
                 let trackingHtml = '';
                 if (isShippedOrDelivered && hasTracking) {
@@ -643,7 +643,6 @@
                         ? new Date(order.estimated_delivery).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
                         : null;
                     const infoItems = [
-                        order.courier_name   ? `<div class="tracking-info-item"><span class="tracking-info-key">Carrier</span><span class="tracking-info-val">${order.courier_name}</span></div>` : '',
                         order.tracking_number ? `<div class="tracking-info-item"><span class="tracking-info-key">Tracking #</span><span class="tracking-info-val">${order.tracking_number}</span></div>` : '',
                         etaText              ? `<div class="tracking-info-item"><span class="tracking-info-key">Est. Delivery</span><span class="tracking-info-val">${etaText}</span></div>` : '',
                     ].filter(Boolean).join('');

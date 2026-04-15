@@ -9298,11 +9298,6 @@
                     <div style="padding:1.25rem 1.5rem;">
                         <div style="display:grid;gap:1rem;">
                             <div>
-                                <label style="font-size:0.85rem;font-weight:600;display:block;margin-bottom:0.35rem;">Courier / Carrier Name</label>
-                                <input id="trk-courier" type="text" placeholder="e.g. Delhivery, DTDC, India Post" value="${o.courier_name || ''}"
-                                    style="width:100%;padding:0.65rem 0.85rem;border:2px solid var(--border,#e5e7eb);border-radius:10px;font-size:0.92rem;box-sizing:border-box;">
-                            </div>
-                            <div>
                                 <label style="font-size:0.85rem;font-weight:600;display:block;margin-bottom:0.35rem;">Tracking Number</label>
                                 <input id="trk-number" type="text" placeholder="e.g. 1234567890" value="${o.tracking_number || ''}"
                                     style="width:100%;padding:0.65rem 0.85rem;border:2px solid var(--border,#e5e7eb);border-radius:10px;font-size:0.92rem;box-sizing:border-box;">
@@ -9339,21 +9334,20 @@
         };
 
         window.saveTrackingInfo = async function(orderId) {
-            const courier_name    = document.getElementById('trk-courier')?.value.trim() || '';
             const tracking_number = document.getElementById('trk-number')?.value.trim() || '';
             const tracking_url    = document.getElementById('trk-url')?.value.trim() || '';
             const estimated_delivery = document.getElementById('trk-eta')?.value || '';
             const markShippedEl   = document.getElementById('trk-mark-shipped');
             const mark_shipped    = markShippedEl ? markShippedEl.checked : false;
 
-            if (!courier_name && !tracking_number) {
-                showAlert('Please enter at least the courier name or tracking number.', 'warning');
+            if (!tracking_number) {
+                showAlert('Please enter a tracking number.', 'warning');
                 return;
             }
 
             try {
                 const resp = await api.put(`/admin/orders/${orderId}/tracking`, {
-                    courier_name, tracking_number, tracking_url, estimated_delivery, mark_shipped
+                    tracking_number, tracking_url, estimated_delivery, mark_shipped
                 });
                 showAlert(resp.message || 'Tracking info saved!', 'success');
                 document.getElementById('tracking-modal-overlay')?.remove();
