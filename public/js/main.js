@@ -138,7 +138,9 @@ const api = {
       }
 
       if (!response.ok) {
-        throw new Error((data && data.error) || 'Request failed');
+        const msg = (data && data.error) || 'Request failed';
+        const detail = data && data.detail;
+        throw new Error(detail ? `${msg} (${detail})` : msg);
       }
 
       return data;

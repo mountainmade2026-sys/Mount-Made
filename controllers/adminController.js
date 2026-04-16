@@ -1079,7 +1079,7 @@ exports.markOutForDelivery = async (req, res) => {
     res.json({ message: 'Order marked as out for delivery. OTP sent to customer.', order });
   } catch (error) {
     console.error('markOutForDelivery error:', error);
-    res.status(500).json({ error: 'Failed to mark out for delivery.' });
+    res.status(500).json({ error: 'Failed to mark out for delivery.', detail: error.message });
   }
 };
 
