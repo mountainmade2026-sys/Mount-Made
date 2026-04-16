@@ -9400,18 +9400,18 @@
                     </div>
                     <div style="padding:1.25rem 1.5rem;">
                         <p style="margin:0 0 1rem;font-size:0.88rem;color:var(--text-light);">
-                            <i class="fas fa-info-circle"></i> This will generate a 6-digit OTP and send it to the customer via <strong>Email + WhatsApp</strong>. The courier must enter it to confirm delivery.
+                            <i class="fas fa-info-circle"></i> This will generate a 6-digit OTP and send it to the customer via <strong>Email + SMS</strong>. The courier will receive the confirm-delivery link via <strong>SMS</strong>.
                         </p>
                         <div style="display:grid;gap:1rem;">
                             <div>
-                                <label style="font-size:0.85rem;font-weight:600;display:block;margin-bottom:0.35rem;">Courier Mobile Number <span style="font-weight:400;color:var(--text-light)">(for SMS delivery link)</span></label>
+                                <label style="font-size:0.85rem;font-weight:600;display:block;margin-bottom:0.35rem;">Courier Mobile Number <span style="font-weight:400;color:var(--text-light)">(optional — for sending delivery link)</span></label>
                                 <input id="ofd-courier-phone" type="tel" placeholder="e.g. 9876543210" value="${o.courier_phone || ''}"
                                     style="width:100%;padding:0.65rem 0.85rem;border:2px solid var(--border,#e5e7eb);border-radius:10px;font-size:0.92rem;box-sizing:border-box;">
                             </div>
                             <div style="background:#fff7ed;border:1.5px solid #fed7aa;border-radius:10px;padding:0.85rem 1rem;font-size:0.85rem;color:#92400e;">
                                 <strong><i class="fas fa-envelope"></i> Customer notification:</strong>
                                 <ul style="margin:0.4rem 0 0;padding-left:1.2rem;">
-                                    <li>OTP sent to customer email + WhatsApp</li>
+                                    <li>OTP sent to customer email + SMS</li>
                                     <li>Courier gets confirm-delivery link via SMS</li>
                                     <li>OTP is valid for 2 hours</li>
                                 </ul>
@@ -9435,8 +9435,46 @@
             const courier_phone = document.getElementById('ofd-courier-phone')?.value.trim() || '';
             try {
                 const resp = await api.post(`/admin/orders/${orderId}/out-for-delivery`, { courier_phone });
-                showAlert(resp.message || 'Order marked Out for Delivery! OTP sent to customer.', 'success');
                 document.getElementById('ofd-modal-overlay')?.remove();
+
+                // Show success modal with copyable delivery link for courier
+                const confirmUrl = resp.confirmUrl || '';
+                const overlay = document.createElement('div');
+                overlay.id = 'ofd-success-overlay';
+                overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1rem;';
+                overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+                overlay.innerHTML = `
+                    <div style="background:var(--bg-primary,#fff);border-radius:16px;max-width:500px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,0.2);">
+                        <div style="padding:1.25rem 1.5rem;background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-radius:16px 16px 0 0;display:flex;justify-content:space-between;align-items:center;">
+                            <h3 style="margin:0;font-size:1.05rem;color:#065f46;display:flex;align-items:center;gap:0.5rem;">
+                                <i class="fas fa-check-circle"></i> Dispatched Successfully!
+                            </h3>
+                            <button onclick="document.getElementById('ofd-success-overlay').remove()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--text-light)">&#10005;</button>
+                        </div>
+                        <div style="padding:1.25rem 1.5rem;">
+                            <p style="margin:0 0 1rem;font-size:0.9rem;color:var(--text-light);">OTP has been sent to the customer. Share the link below with the courier to confirm delivery:</p>
+                            <div style="display:flex;gap:0.5rem;align-items:center;">
+                                <input id="ofd-confirm-url" readonly value="${confirmUrl}" style="flex:1;padding:0.6rem 0.8rem;border:2px solid #d1d5db;border-radius:8px;font-size:0.85rem;background:#f9fafb;">
+                                <button onclick="navigator.clipboard.writeText(document.getElementById('ofd-confirm-url').value);this.innerHTML='<i class=\'fas fa-check\'></i> Copied';this.style.background='#059669';setTimeout(()=>{this.innerHTML='<i class=\'fas fa-copy\'></i> Copy';this.style.background='#2563eb';},2000)" style="padding:0.6rem 1rem;border:none;border-radius:8px;background:#2563eb;color:#fff;font-weight:600;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:0.3rem;">
+                                    <i class="fas fa-copy"></i> Copy
+                                </button>
+                            </div>
+                            <div style="margin-top:1rem;display:flex;gap:0.5rem;">
+                                <a href="https://wa.me/${courier_phone ? (courier_phone.length === 10 ? '91' + courier_phone : courier_phone) : ''}?text=${encodeURIComponent('Mount Made Delivery\n\nYou have been assigned a delivery.\n\n1. Deliver the package to the customer.\n2. Ask customer for the 6-digit OTP.\n3. Open this link and enter OTP:\n' + confirmUrl)}" target="_blank" style="padding:0.5rem 1rem;border:none;border-radius:8px;background:#25d366;color:#fff;font-weight:600;cursor:pointer;text-decoration:none;display:flex;align-items:center;gap:0.3rem;font-size:0.85rem;">
+                                    <i class="fab fa-whatsapp"></i> Send via WhatsApp
+                                </a>
+                                <a href="sms:${courier_phone ? (courier_phone.length === 10 ? '+91' + courier_phone : '+' + courier_phone) : ''}?body=${encodeURIComponent('Mount Made Delivery - Open this link and enter customer OTP to confirm: ' + confirmUrl)}" style="padding:0.5rem 1rem;border:none;border-radius:8px;background:#6366f1;color:#fff;font-weight:600;cursor:pointer;text-decoration:none;display:flex;align-items:center;gap:0.3rem;font-size:0.85rem;">
+                                    <i class="fas fa-sms"></i> Send via SMS
+                                </a>
+                            </div>
+                        </div>
+                        <div style="padding:0.75rem 1.5rem;border-top:1px solid var(--border,#e5e7eb);text-align:right;">
+                            <button onclick="document.getElementById('ofd-success-overlay').remove()" style="padding:0.5rem 1.2rem;border:2px solid var(--border,#e5e7eb);border-radius:8px;background:transparent;font-weight:600;cursor:pointer;">Close</button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(overlay);
+
                 if (window._currentSection === 'order-history') await loadOrders();
                 if (window._currentSection === 'customers-orders') await loadCustomerOrders();
             } catch (error) {

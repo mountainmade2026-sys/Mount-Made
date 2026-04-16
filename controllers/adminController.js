@@ -1071,43 +1071,64 @@ exports.markOutForDelivery = async (req, res) => {
     const baseUrl = String(process.env.APP_BASE_URL || `http://localhost:${process.env.PORT || 3000}`).replace(/\/$/, '');
     const confirmUrl = `${baseUrl}/delivery-confirm?order=${id}`;
 
-    // Fire-and-forget: notify customer (email + WhatsApp) and courier (SMS)
+    // Fire-and-forget: notify customer (email + SMS) and courier (SMS)
     Promise.resolve().then(async () => {
       const { sendDeliveryOtpEmail } = require('../utils/emailService');
-      const { notifyOutForDelivery } = require('../utils/whatsappService');
 
+      // Helper: format phone to E.164 for Twilio SMS
+      const toE164 = (ph) => {
+        const cleaned = String(ph || '').replace(/[\s()-]/g, '');
+        if (!cleaned) return '';
+        if (cleaned.startsWith('+')) return cleaned;
+        if (/^\d{10}$/.test(cleaned)) return `+91${cleaned}`;
+        if (/^\d{12}$/.test(cleaned) && cleaned.startsWith('91')) return `+${cleaned}`;
+        return `+${cleaned}`;
+      };
+
+      // 1. Email OTP to customer
       if (customer.email) {
         try {
           await sendDeliveryOtpEmail(customer.email, customer.full_name || 'Customer', order.order_number || order.id, otp);
         } catch (e) { console.error('[OFD] Email OTP failed:', e.message); }
       }
-      if (customer.phone) {
+
+      // 2. SMS OTP to customer
+      if (customer.phone && twilioClient && TWILIO_FROM_NUMBER) {
         try {
-          await notifyOutForDelivery(customer.phone, customer.full_name || 'Customer', order.order_number || order.id, otp);
-        } catch (e) { console.error('[OFD] WhatsApp OTP failed:', e.message); }
-      }
-      if (courier_phone && twilioClient && TWILIO_FROM_NUMBER) {
-        try {
-          const smsBody =
-            `Mount Made - Delivery Assignment\n\n` +
-            `You have been assigned delivery for order ${order.order_number || order.id}.\n\n` +
-            `Instructions:\n` +
-            `1. Deliver the package to the customer.\n` +
-            `2. Ask the customer for their 6-digit OTP.\n` +
-            `3. Open the link below, enter the OTP and press Confirm Delivery.\n\n` +
-            `Confirm Delivery Link:\n${confirmUrl}`;
-          const courierE164 = courier_phone.startsWith('+') ? courier_phone
-            : /^\d{10}$/.test(courier_phone) ? `+91${courier_phone}` : `+${courier_phone}`;
+          const customerSms =
+            `Mount Made - Your order ${order.order_number || order.id} is Out for Delivery!\n\n` +
+            `Your Delivery OTP: ${otp}\n\n` +
+            `Share this OTP with the delivery person to confirm receipt.\n` +
+            `Do NOT share with anyone else. Valid for 2 hours.`;
           await twilioClient.messages.create({
             from: TWILIO_FROM_NUMBER,
-            to: courierE164,
-            body: smsBody
+            to: toE164(customer.phone),
+            body: customerSms
+          });
+        } catch (e) { console.error('[OFD] Customer SMS failed:', e.message); }
+      }
+
+      // 3. SMS delivery link to courier
+      if (courier_phone && twilioClient && TWILIO_FROM_NUMBER) {
+        try {
+          const courierSms =
+            `Mount Made - Delivery Assignment\n\n` +
+            `Order: ${order.order_number || order.id}\n\n` +
+            `Instructions:\n` +
+            `1. Deliver the package to the customer.\n` +
+            `2. Ask customer for their 6-digit OTP.\n` +
+            `3. Open link below, enter OTP & press Confirm.\n\n` +
+            `${confirmUrl}`;
+          await twilioClient.messages.create({
+            from: TWILIO_FROM_NUMBER,
+            to: toE164(courier_phone),
+            body: courierSms
           });
         } catch (e) { console.error('[OFD] Courier SMS failed:', e.message); }
       }
     });
 
-    res.json({ message: 'Order marked as out for delivery. OTP sent to customer.', order });
+    res.json({ message: 'Order marked as out for delivery. OTP sent to customer.', order, confirmUrl });
   } catch (error) {
     console.error('markOutForDelivery error:', error);
     res.status(500).json({ error: 'Failed to mark out for delivery.', detail: error.message });
