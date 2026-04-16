@@ -6882,8 +6882,7 @@
             const roleEl = document.getElementById('customers-role-filter');
             if (searchEl) searchEl.value = '';
             if (roleEl) roleEl.value = '';
-            const allCustomers = window._customersCache || [];
-            renderCustomersList(allCustomers);
+            renderCustomersList(window._customersCache || []);
         };
 
         // ── Customer History Modal ──────────────────────────────────
@@ -6985,8 +6984,10 @@
 
         window.resetChFilters = function() {
             ['ch-search','ch-date-from','ch-date-to'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
-            document.getElementById('ch-year-filter').value = '';
-            document.getElementById('ch-status-filter').value = '';
+            const yearEl = document.getElementById('ch-year-filter');
+            const statusEl = document.getElementById('ch-status-filter');
+            if (yearEl) yearEl.value = '';
+            if (statusEl) statusEl.value = '';
             applyChFilters();
         };
 
