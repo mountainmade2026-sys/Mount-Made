@@ -1016,6 +1016,15 @@ exports.markOutForDelivery = async (req, res) => {
     const otp = String(Math.floor(100000 + Math.random() * 900000));
     const otpExpiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000); // 2 hours
 
+    // Check if order has an active (non-rejected) return request
+    const returnCheck = await db.query(
+      `SELECT id FROM returns WHERE order_id = $1 AND status != 'rejected' LIMIT 1`,
+      [id]
+    );
+    if (returnCheck.rows.length) {
+      return res.status(400).json({ error: 'Cannot dispatch — this order has an active return request.' });
+    }
+
     const result = await db.query(
       `UPDATE orders
        SET status                  = 'out_for_delivery',

@@ -9047,7 +9047,7 @@
                 const isFinal = effectiveStatus === 'delivered' || effectiveStatus === 'cancelled' || effectiveStatus === 'returned';
                 const isPending = effectiveStatus === 'pending';
                 const canTrack = effectiveStatus === 'processing' || effectiveStatus === 'shipped' || effectiveStatus === 'out_for_delivery';
-                const canOFD   = !['delivered','cancelled','out_for_delivery'].includes(effectiveStatus);
+                const canOFD   = !['delivered','cancelled','out_for_delivery','returned'].includes(effectiveStatus);
                 const trackingBtn = canTrack
                     ? `<button class="action-btn" style="background:#6366f1;color:#fff;margin-top:4px;" onclick="openTrackingModal(${o.id})" title="Add/Update Tracking Info"><i class="fas fa-truck"></i> Tracking</button>`
                     : '';
@@ -9441,7 +9441,7 @@
                 if (window._currentSection === 'customers-orders') await loadCustomerOrders();
             } catch (error) {
                 console.error('OFD error:', error);
-                showAlert(error?.error || 'Failed to mark out for delivery.', 'error');
+                showAlert(error?.message || error?.error || 'Failed to mark out for delivery.', 'error');
             }
         };
 
