@@ -1071,10 +1071,10 @@ exports.markOutForDelivery = async (req, res) => {
     const baseUrl = String(process.env.APP_BASE_URL || `http://localhost:${process.env.PORT || 3000}`).replace(/\/$/, '');
     const confirmUrl = `${baseUrl}/delivery-confirm?order=${id}`;
 
-    // Fire-and-forget: notify customer (email + WhatsApp) and courier (WhatsApp)
+    // Fire-and-forget: notify customer (email + WhatsApp) and courier (SMS)
     Promise.resolve().then(async () => {
       const { sendDeliveryOtpEmail } = require('../utils/emailService');
-      const { notifyOutForDelivery, notifyCourierDispatch } = require('../utils/whatsappService');
+      const { notifyOutForDelivery } = require('../utils/whatsappService');
 
       if (customer.email) {
         try {
@@ -1086,10 +1086,24 @@ exports.markOutForDelivery = async (req, res) => {
           await notifyOutForDelivery(customer.phone, customer.full_name || 'Customer', order.order_number || order.id, otp);
         } catch (e) { console.error('[OFD] WhatsApp OTP failed:', e.message); }
       }
-      if (courier_phone) {
+      if (courier_phone && twilioClient && TWILIO_FROM_NUMBER) {
         try {
-          await notifyCourierDispatch(courier_phone, order.order_number || order.id, confirmUrl);
-        } catch (e) { console.error('[OFD] Courier WhatsApp failed:', e.message); }
+          const smsBody =
+            `Mount Made - Delivery Assignment\n\n` +
+            `You have been assigned delivery for order ${order.order_number || order.id}.\n\n` +
+            `Instructions:\n` +
+            `1. Deliver the package to the customer.\n` +
+            `2. Ask the customer for their 6-digit OTP.\n` +
+            `3. Open the link below, enter the OTP and press Confirm Delivery.\n\n` +
+            `Confirm Delivery Link:\n${confirmUrl}`;
+          const courierE164 = courier_phone.startsWith('+') ? courier_phone
+            : /^\d{10}$/.test(courier_phone) ? `+91${courier_phone}` : `+${courier_phone}`;
+          await twilioClient.messages.create({
+            from: TWILIO_FROM_NUMBER,
+            to: courierE164,
+            body: smsBody
+          });
+        } catch (e) { console.error('[OFD] Courier SMS failed:', e.message); }
       }
     });
 
