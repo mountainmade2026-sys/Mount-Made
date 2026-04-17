@@ -15,7 +15,7 @@ async function sendActionResultEmail({ subject, icon, color, title, detail, acti
   const user  = String(process.env.SMTP_USER || '').trim();
   const pass  = String(process.env.SMTP_PASS || '').replace(/\s/g, '');
   const to    = String(process.env.ADMIN_NOTIFICATION_EMAIL || user).trim();
-  const from  = String(process.env.SMTP_FROM_EMAIL || user).trim();
+  const from  = 'hello@mountain-made.com';
 
   if (!host || !user || !pass || !to) return;
 
@@ -68,7 +68,7 @@ router.get('/test', async (req, res) => {
     await t.verify();
 
     const info = await t.sendMail({
-      from: `Mount Made <${user}>`,
+      from: `Mount Made <hello@mountain-made.com>`,
       to,
       subject: 'Mount Made - Live Server Email Test ' + new Date().toISOString(),
       html: `<h2>Email is working ✅</h2><p>Sent from live server at <b>${base}</b></p><p>${new Date().toISOString()}</p>`

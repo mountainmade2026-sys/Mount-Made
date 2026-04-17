@@ -1608,13 +1608,14 @@
                                             <option value="id">User ID</option>
                                         </select>
                                     </div>
-                                    <div style="flex:1; min-width: 220px;">
+                                    <div style="flex:1; min-width: 220px; position:relative;">
                                         <label class="form-label" for="admin-message-identifier">Customer Email / ID</label>
-                                        <input id="admin-message-identifier" class="form-input" placeholder="Type email or id" list="admin-user-suggestions" autocomplete="off">
-                                        <datalist id="admin-user-suggestions"></datalist>
+                                        <input id="admin-message-identifier" class="form-input" placeholder="Type to search customer..." autocomplete="off">
+                                        <input type="hidden" id="admin-message-identifier-value">
+                                        <div id="admin-user-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:100;background:var(--bg-primary,#fff);border:2px solid var(--primary,#2d6a4f);border-radius:8px;max-height:220px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.15);margin-top:2px;"></div>
                                     </div>
                                 </div>
-                                <div style="margin-top:0.35rem; color: var(--text-muted); font-size: 0.85rem;">Search includes wholesale users too.</div>
+                                <div id="admin-message-selected-user" style="margin-top:0.35rem; color: var(--text-muted); font-size: 0.85rem;">Search by name, email, or user ID.</div>
                             </div>
                         </div>
 
@@ -4441,13 +4442,16 @@
             const singleWrap = document.getElementById('admin-message-single-wrap');
             const identifierTypeEl = document.getElementById('admin-message-identifier-type');
             const identifierEl = document.getElementById('admin-message-identifier');
-            const suggestionsEl = document.getElementById('admin-user-suggestions');
+            const identifierValueEl = document.getElementById('admin-message-identifier-value');
+            const dropdownEl = document.getElementById('admin-user-dropdown');
+            const selectedUserEl = document.getElementById('admin-message-selected-user');
 
-            if (!audienceEl || !singleWrap || !identifierTypeEl || !identifierEl || !suggestionsEl) {
+            if (!audienceEl || !singleWrap || !identifierTypeEl || !identifierEl || !dropdownEl) {
                 return;
             }
 
             window._adminMessageSenderInitialized = true;
+            window._selectedMessageUser = null;
 
             function syncSingleVisibility() {
                 const mode = String(audienceEl.value || 'all');
@@ -4459,37 +4463,104 @@
 
             identifierTypeEl.addEventListener('change', () => {
                 identifierEl.value = '';
-                suggestionsEl.innerHTML = '';
+                if (identifierValueEl) identifierValueEl.value = '';
+                dropdownEl.style.display = 'none';
+                dropdownEl.innerHTML = '';
+                window._selectedMessageUser = null;
+                if (selectedUserEl) selectedUserEl.innerHTML = 'Search by name, email, or user ID.';
             });
+
+            function selectUser(user) {
+                const type = String(identifierTypeEl.value || 'email');
+                const value = type === 'id' ? String(user.id) : String(user.email || '');
+                identifierEl.value = value;
+                if (identifierValueEl) identifierValueEl.value = value;
+                window._selectedMessageUser = user;
+                dropdownEl.style.display = 'none';
+                dropdownEl.innerHTML = '';
+                if (selectedUserEl) {
+                    selectedUserEl.innerHTML = `<span style="color:var(--success);font-weight:600;"><i class="fas fa-check-circle"></i> Selected: ${escapeHtml(user.full_name || 'User')} — ${escapeHtml(user.email)} (ID: ${user.id}, ${user.role || 'customer'})</span>`;
+                }
+            }
 
             let searchTimer = null;
             identifierEl.addEventListener('input', () => {
                 const mode = String(audienceEl.value || 'all');
                 if (mode !== 'single') return;
 
+                // Clear previous selection if user is typing new value
+                window._selectedMessageUser = null;
+                if (identifierValueEl) identifierValueEl.value = '';
+                if (selectedUserEl) selectedUserEl.innerHTML = 'Searching...';
+
                 const q = String(identifierEl.value || '').trim();
                 if (searchTimer) clearTimeout(searchTimer);
+                if (q.length < 2) {
+                    dropdownEl.style.display = 'none';
+                    dropdownEl.innerHTML = '';
+                    if (selectedUserEl) selectedUserEl.innerHTML = 'Search by name, email, or user ID.';
+                    return;
+                }
+
                 searchTimer = setTimeout(async () => {
                     try {
-                        if (q.length < 2) {
-                            suggestionsEl.innerHTML = '';
+                        const data = await api.get(`/admin/users/search?query=${encodeURIComponent(q)}&limit=10`);
+                        const users = data?.users || [];
+
+                        if (!users.length) {
+                            dropdownEl.innerHTML = '<div style="padding:0.75rem 1rem;color:var(--text-muted);font-size:0.9rem;">No users found</div>';
+                            dropdownEl.style.display = 'block';
+                            if (selectedUserEl) selectedUserEl.innerHTML = 'No matching users found. Try a different search.';
                             return;
                         }
 
-                        const data = await api.get(`/admin/users/search?query=${encodeURIComponent(q)}&limit=10`);
-                        const users = data?.users || [];
-                        const type = String(identifierTypeEl.value || 'email');
+                        dropdownEl.innerHTML = users.map((u, idx) => `
+                            <div class="admin-user-option" data-idx="${idx}" style="padding:0.65rem 1rem;cursor:pointer;border-bottom:1px solid var(--border,#e5e7eb);display:flex;justify-content:space-between;align-items:center;transition:background 0.15s;"
+                                 onmouseover="this.style.background='var(--bg-light,#f0fdf4)'" onmouseout="this.style.background='transparent'">
+                                <div>
+                                    <div style="font-weight:600;font-size:0.9rem;">${escapeHtml(u.full_name || 'No Name')}</div>
+                                    <div style="color:var(--text-muted);font-size:0.82rem;">${escapeHtml(u.email || 'No email')} ${u.phone ? '• ' + escapeHtml(u.phone) : ''}</div>
+                                </div>
+                                <div style="text-align:right;">
+                                    <span class="badge badge-${u.role === 'wholesale' ? 'info' : 'success'}" style="font-size:0.7rem;">${escapeHtml(u.role || 'customer')}</span>
+                                    <div style="color:var(--text-muted);font-size:0.75rem;">ID: ${u.id}</div>
+                                </div>
+                            </div>
+                        `).join('');
+                        dropdownEl.style.display = 'block';
+                        if (selectedUserEl) selectedUserEl.innerHTML = `Found ${users.length} user(s). Click to select.`;
 
-                        suggestionsEl.innerHTML = users.map(u => {
-                            const value = type === 'id' ? String(u.id) : String(u.email || '');
-                            const label = `${u.full_name || ''} (${u.role || ''})`;
-                            return `<option value="${escapeHtml(value)}">${escapeHtml(label)}</option>`;
-                        }).join('');
+                        // Attach click handlers
+                        dropdownEl.querySelectorAll('.admin-user-option').forEach(el => {
+                            el.addEventListener('click', () => {
+                                const idx = parseInt(el.dataset.idx);
+                                if (users[idx]) selectUser(users[idx]);
+                            });
+                        });
                     } catch (e) {
-                        // Silent; do not spam alerts while typing
-                        suggestionsEl.innerHTML = '';
+                        dropdownEl.style.display = 'none';
+                        dropdownEl.innerHTML = '';
+                        if (selectedUserEl) selectedUserEl.innerHTML = 'Search failed. Try again.';
                     }
-                }, 250);
+                }, 300);
+            });
+
+            // Close dropdown on outside click
+            document.addEventListener('click', (e) => {
+                if (!singleWrap.contains(e.target)) {
+                    dropdownEl.style.display = 'none';
+                }
+            });
+
+            // Allow direct email/id entry (manual typing without selecting from dropdown)
+            identifierEl.addEventListener('blur', () => {
+                setTimeout(() => {
+                    const val = String(identifierEl.value || '').trim();
+                    if (val && !window._selectedMessageUser) {
+                        if (identifierValueEl) identifierValueEl.value = val;
+                        if (selectedUserEl) selectedUserEl.innerHTML = `<span style="color:var(--warning);"><i class="fas fa-exclamation-circle"></i> Using manually entered value: ${escapeHtml(val)}</span>`;
+                    }
+                }, 300);
             });
         }
 
@@ -4580,7 +4651,9 @@
 
             const audience = String(audienceEl.value || 'all');
             const identifierType = String(identifierTypeEl?.value || 'email');
-            const identifier = String(identifierEl?.value || '').trim();
+            const identifierRaw = String(identifierEl?.value || '').trim();
+            const identifierHidden = String(document.getElementById('admin-message-identifier-value')?.value || '').trim();
+            const identifier = identifierHidden || identifierRaw;
             const subject = String(subjectEl.value || '').trim();
             const message = String(bodyEl.value || '').trim();
             const channels = { email: !!emailEl.checked, sms: !!smsEl.checked, whatsapp: !!whatsappEl.checked };

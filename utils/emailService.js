@@ -9,7 +9,7 @@ function canUseResend() {
 
 async function sendViaResend({ to, subject, html }) {
   const key  = String(process.env.RESEND_API_KEY || '').trim();
-  const from = String(process.env.RESEND_FROM_EMAIL || '').trim();
+  const from = 'Mount Made <hello@mountain-made.com>';
   const payload = JSON.stringify({ from, to, subject, html });
   return new Promise((resolve, reject) => {
     const req = https.request({
@@ -49,9 +49,8 @@ function createTransporter() {
 
 // ── Send via SMTP, fall back to Resend if SMTP fails ──
 async function sendEmail({ to, subject, html, fromLabel }) {
-  const user      = String(process.env.SMTP_USER || '').trim();
-  const fromEmail = String(process.env.SMTP_FROM_EMAIL || user).trim();
-  const from      = fromLabel ? `${fromLabel} <${fromEmail}>` : fromEmail;
+  const fromEmail = 'hello@mountain-made.com';
+  const from      = fromLabel ? `${fromLabel} <${fromEmail}>` : `Mount Made <${fromEmail}>`;
   let lastErr = null;
 
   // Try SMTP first

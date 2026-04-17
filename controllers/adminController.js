@@ -62,12 +62,14 @@ function toWhatsappAddress(value) {
   return '';
 }
 
+const ADMIN_FROM_EMAIL = 'hello@mountain-made.com';
+
 function getSmtpConfig() {
   const smtpHost = String(process.env.SMTP_HOST || '').trim();
   const smtpPort = parseInt(process.env.SMTP_PORT || '587', 10);
   const smtpUser = String(process.env.SMTP_USER || '').trim();
   const smtpPass = String(process.env.SMTP_PASS || '').trim();
-  const fromEmail = String(process.env.SMTP_FROM_EMAIL || '').trim() || smtpUser;
+  const fromEmail = ADMIN_FROM_EMAIL;
 
   return {
     smtpHost,
@@ -146,7 +148,7 @@ async function sendViaResend({ toList, subject, message }) {
       Authorization: `Bearer ${String(process.env.RESEND_API_KEY || '').trim()}`
     },
     body: {
-      from: String(process.env.RESEND_FROM_EMAIL || '').trim(),
+      from: ADMIN_FROM_EMAIL,
       to: recipients,
       subject: subject || 'Message from Mount Made',
       text: message
@@ -207,29 +209,26 @@ async function getMessageRecipients({ audience, identifierType, identifier }) {
       throw new Error('Please provide a user email or id.');
     }
 
-    if (safeIdentifierType === 'id') {
-      const parsedId = parseInt(safeIdentifier, 10);
-      if (Number.isFinite(parsedId)) {
-        const result = await db.query(
-          `
-            SELECT id, email, full_name, phone, role, is_blocked
-            FROM users
-            WHERE id = $1
-              AND role IN ('customer', 'wholesale')
-            LIMIT 1
-          `,
-          [parsedId]
-        );
-        return result.rows;
-      }
+    // Try by ID first if identifier looks numeric
+    const parsedId = parseInt(safeIdentifier, 10);
+    if (Number.isFinite(parsedId) && String(parsedId) === safeIdentifier) {
+      const result = await db.query(
+        `
+          SELECT id, email, full_name, phone, role, is_blocked
+          FROM users
+          WHERE id = $1
+            AND role IN ('customer', 'wholesale')
+          LIMIT 1
+        `,
+        [parsedId]
+      );
+      if (result.rows.length) return result.rows;
+    }
 
-      // Fallback: allow pasted email/value even when "id" is selected
-      const fallbackEmail = normalizeEmail(safeIdentifier);
-      if (!fallbackEmail) {
-        throw new Error('Invalid user id.');
-      }
-
-      const fallbackResult = await db.query(
+    // Try by email
+    const email = normalizeEmail(safeIdentifier);
+    if (email) {
+      const result = await db.query(
         `
           SELECT id, email, full_name, phone, role, is_blocked
           FROM users
@@ -237,28 +236,27 @@ async function getMessageRecipients({ audience, identifierType, identifier }) {
             AND role IN ('customer', 'wholesale')
           LIMIT 1
         `,
-        [fallbackEmail]
+        [email]
       );
-      return fallbackResult.rows;
+      if (result.rows.length) return result.rows;
     }
 
-    // default to email
-    const email = normalizeEmail(safeIdentifier);
-    if (!email) {
-      throw new Error('Invalid email.');
-    }
-
-    const result = await db.query(
+    // Fallback: try fuzzy match by name or email pattern
+    const like = `%${safeIdentifier}%`;
+    const fallback = await db.query(
       `
         SELECT id, email, full_name, phone, role, is_blocked
         FROM users
-        WHERE LOWER(email) = LOWER($1)
-          AND role IN ('customer', 'wholesale')
+        WHERE role IN ('customer', 'wholesale')
+          AND (email ILIKE $1 OR full_name ILIKE $1)
+        ORDER BY id ASC
         LIMIT 1
       `,
-      [email]
+      [like]
     );
-    return result.rows;
+    if (fallback.rows.length) return fallback.rows;
+
+    throw new Error('No user found with that email or ID. Please check and try again.');
   }
 
   const whereRole = (() => {
