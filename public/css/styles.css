@@ -778,6 +778,10 @@ html[data-theme="dark"] .price-discount {
   transition: border-color var(--transition-fast), background var(--transition-fast);
   width: 42px;
   height: 42px;
+  position: relative;
+  z-index: 5;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .mobile-menu-toggle:hover {
@@ -1772,7 +1776,7 @@ body.auth-ready #auth-buttons { visibility: visible; }
     transform: translateX(-50%);
     font-size: 0.88rem;
     /* Prevent overlap with hamburger / actions */
-    max-width: calc(100% - 120px);
+    max-width: calc(100% - 130px);
     pointer-events: auto;
     z-index: 3;
   }
