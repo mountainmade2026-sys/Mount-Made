@@ -1716,7 +1716,7 @@
                         <h3><i class="fas fa-box-open"></i> Product Upload Options</h3>
                     </div>
                     <div style="padding: 2rem;">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+                        <div style="max-width: 500px; margin: 0 auto;">
                             <div>
                                 <h4 style="margin-bottom: 1rem;">Single Product Upload</h4>
                                 <div class="upload-area" onclick="showAddSingleProductModal()">
@@ -1728,23 +1728,6 @@
                                     <i class="fas fa-plus"></i> Open Single Product Form
                                 </button>
                             </div>
-                            <div>
-                                <h4 style="margin-bottom: 1rem;">Wholesale Product Upload</h4>
-                                <div class="upload-area" onclick="document.getElementById('wholesale-image-input').click()">
-                                    <i class="fas fa-image"></i>
-                                    <p>Click to select wholesale images</p>
-                                    <span class="hint">Formats: JPG, PNG (Max 5MB each, up to 5)</span>
-                                </div>
-                                <input type="file" id="wholesale-image-input" accept=".jpg,.jpeg,.png" multiple style="display: none;" onchange="handleWholesaleImageUpload(event)">
-                                <button class="btn btn-secondary" style="margin-top: 0.75rem; width: 100%;" onclick="showAddWholesaleProductModal()">
-                                    <i class="fas fa-building"></i> Open Wholesale Product Form
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <div id="wholesale-upload-preview" style="margin-top: 2rem; display: none;">
-                            <h4 style="margin-bottom: 1rem;">Wholesale Image Selection</h4>
-                            <div id="wholesale-upload-preview-table"></div>
                         </div>
                     </div>
                 </div>

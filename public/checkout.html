@@ -1973,6 +1973,180 @@
             }
         });
 
+        // ── Verification overlay for missing phone/email ──────────────
+        function needsVerification(user) {
+            if (!user) return null;
+            if (!user.phone) return 'phone';
+            if (!user.email) return 'email';
+            return null;
+        }
+
+        function showVerificationOverlay(type) {
+            let existing = document.getElementById('verification-overlay');
+            if (existing) existing.remove();
+
+            const overlay = document.createElement('div');
+            overlay.id = 'verification-overlay';
+            overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(10,20,15,0.72);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:1rem;';
+
+            if (type === 'phone') {
+                overlay.innerHTML = `
+                    <div style="background:#fff;border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,0.35);padding:2rem;max-width:420px;width:100%;">
+                        <div style="text-align:center;margin-bottom:1.5rem;">
+                            <div style="width:50px;height:50px;background:linear-gradient(135deg,#065f46,#059669);border-radius:12px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:0.75rem;">
+                                <i class="fas fa-phone" style="color:#fff;font-size:1.2rem;"></i>
+                            </div>
+                            <h3 style="margin:0 0 0.3rem;font-size:1.15rem;color:#111;">Phone Verification Required</h3>
+                            <p style="margin:0;color:#6b7280;font-size:0.88rem;">Please verify your phone number to continue shopping</p>
+                        </div>
+                        <div id="verify-phone-step1">
+                            <div style="margin-bottom:0.75rem;">
+                                <label style="font-size:0.85rem;font-weight:600;color:#374151;display:block;margin-bottom:0.3rem;">Phone Number</label>
+                                <input type="text" id="verify-phone-input" placeholder="e.g. +91XXXXXXXXXX or 10-digit" style="width:100%;padding:0.65rem 0.85rem;border:2px solid #d1d5db;border-radius:8px;font-size:1rem;outline:none;box-sizing:border-box;">
+                            </div>
+                            <button id="verify-phone-send-btn" type="button" style="width:100%;padding:0.7rem;background:linear-gradient(135deg,#065f46,#059669);color:#fff;border:none;border-radius:10px;font-size:0.95rem;font-weight:700;cursor:pointer;">
+                                <i class="fas fa-paper-plane"></i> Send OTP
+                            </button>
+                        </div>
+                        <div id="verify-phone-step2" style="display:none;">
+                            <div style="margin-bottom:0.75rem;">
+                                <label style="font-size:0.85rem;font-weight:600;color:#374151;display:block;margin-bottom:0.3rem;">Enter OTP</label>
+                                <input type="text" id="verify-phone-otp" placeholder="Enter OTP code" inputmode="numeric" maxlength="8" style="width:100%;padding:0.65rem 0.85rem;border:2px solid #d1d5db;border-radius:8px;font-size:1rem;outline:none;box-sizing:border-box;">
+                            </div>
+                            <small id="verify-phone-countdown" style="display:block;margin-bottom:0.5rem;color:#92400e;"></small>
+                            <button id="verify-phone-verify-btn" type="button" style="width:100%;padding:0.7rem;background:linear-gradient(135deg,#065f46,#059669);color:#fff;border:none;border-radius:10px;font-size:0.95rem;font-weight:700;cursor:pointer;">
+                                <i class="fas fa-check-circle"></i> Verify & Continue
+                            </button>
+                        </div>
+                        <p id="verify-phone-status" style="margin-top:0.5rem;font-size:0.85rem;text-align:center;color:#374151;"></p>
+                    </div>
+                `;
+            } else {
+                overlay.innerHTML = `
+                    <div style="background:#fff;border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,0.35);padding:2rem;max-width:420px;width:100%;">
+                        <div style="text-align:center;margin-bottom:1.5rem;">
+                            <div style="width:50px;height:50px;background:linear-gradient(135deg,#065f46,#059669);border-radius:12px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:0.75rem;">
+                                <i class="fas fa-envelope" style="color:#fff;font-size:1.2rem;"></i>
+                            </div>
+                            <h3 style="margin:0 0 0.3rem;font-size:1.15rem;color:#111;">Email Verification Required</h3>
+                            <p style="margin:0;color:#6b7280;font-size:0.88rem;">Please add your Gmail address to continue shopping</p>
+                        </div>
+                        <div style="margin-bottom:0.75rem;">
+                            <label style="font-size:0.85rem;font-weight:600;color:#374151;display:block;margin-bottom:0.3rem;">Gmail Address</label>
+                            <input type="email" id="verify-email-input" placeholder="yourname@gmail.com" style="width:100%;padding:0.65rem 0.85rem;border:2px solid #d1d5db;border-radius:8px;font-size:1rem;outline:none;box-sizing:border-box;">
+                        </div>
+                        <button id="verify-email-save-btn" type="button" style="width:100%;padding:0.7rem;background:linear-gradient(135deg,#065f46,#059669);color:#fff;border:none;border-radius:10px;font-size:0.95rem;font-weight:700;cursor:pointer;">
+                            <i class="fas fa-check-circle"></i> Save & Continue
+                        </button>
+                        <p id="verify-email-status" style="margin-top:0.5rem;font-size:0.85rem;text-align:center;color:#374151;"></p>
+                    </div>
+                `;
+            }
+
+            document.body.appendChild(overlay);
+            document.body.style.overflow = 'hidden';
+
+            if (type === 'phone') {
+                initPhoneVerification(overlay);
+            } else {
+                initEmailVerification(overlay);
+            }
+        }
+
+        function initPhoneVerification(overlay) {
+            const sendBtn = overlay.querySelector('#verify-phone-send-btn');
+            const phoneInput = overlay.querySelector('#verify-phone-input');
+            const step1 = overlay.querySelector('#verify-phone-step1');
+            const step2 = overlay.querySelector('#verify-phone-step2');
+            const otpInput = overlay.querySelector('#verify-phone-otp');
+            const verifyBtn = overlay.querySelector('#verify-phone-verify-btn');
+            const statusEl = overlay.querySelector('#verify-phone-status');
+            const countdownEl = overlay.querySelector('#verify-phone-countdown');
+            let verifiedPhone = '';
+            let countdownTimer = null;
+
+            sendBtn.addEventListener('click', async () => {
+                const phone = (phoneInput.value || '').trim();
+                if (!phone) { statusEl.textContent = 'Please enter your phone number.'; statusEl.style.color = '#b91c1c'; return; }
+                sendBtn.disabled = true;
+                sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+                try {
+                    const resp = await window.api.post('/auth/phone/send-otp', { phone });
+                    verifiedPhone = resp.phone || phone;
+                    step1.style.display = 'none';
+                    step2.style.display = 'block';
+                    statusEl.textContent = 'OTP sent to ' + verifiedPhone;
+                    statusEl.style.color = '#166534';
+                    let sec = 60;
+                    countdownEl.textContent = 'Type OTP within ' + sec + 's';
+                    countdownTimer = setInterval(() => {
+                        sec--;
+                        countdownEl.textContent = sec > 0 ? 'Type OTP within ' + sec + 's' : 'OTP expired. Go back and resend.';
+                        if (sec <= 0) clearInterval(countdownTimer);
+                    }, 1000);
+                } catch (err) {
+                    statusEl.textContent = err.message || 'Failed to send OTP';
+                    statusEl.style.color = '#b91c1c';
+                } finally {
+                    sendBtn.disabled = false;
+                    sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send OTP';
+                }
+            });
+
+            verifyBtn.addEventListener('click', async () => {
+                const code = (otpInput.value || '').trim();
+                if (!code) { statusEl.textContent = 'Please enter the OTP.'; statusEl.style.color = '#b91c1c'; return; }
+                verifyBtn.disabled = true;
+                verifyBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
+                try {
+                    const resp = await window.api.post('/auth/phone/verify-otp', { phone: verifiedPhone, code });
+                    const token = resp.phone_verification_token;
+                    await window.api.post('/auth/update-phone', { phone: verifiedPhone, phone_verification_token: token });
+                    if (countdownTimer) clearInterval(countdownTimer);
+                    overlay.remove();
+                    document.body.style.overflow = '';
+                    showAlert('Phone verified successfully!', 'success');
+                    await auth.checkAuth();
+                    await loadCheckout();
+                    await loadCheckoutSettings();
+                } catch (err) {
+                    statusEl.textContent = err.message || 'Verification failed';
+                    statusEl.style.color = '#b91c1c';
+                } finally {
+                    verifyBtn.disabled = false;
+                    verifyBtn.innerHTML = '<i class="fas fa-check-circle"></i> Verify & Continue';
+                }
+            });
+        }
+
+        function initEmailVerification(overlay) {
+            const saveBtn = overlay.querySelector('#verify-email-save-btn');
+            const emailInput = overlay.querySelector('#verify-email-input');
+            const statusEl = overlay.querySelector('#verify-email-status');
+
+            saveBtn.addEventListener('click', async () => {
+                const email = (emailInput.value || '').trim().toLowerCase();
+                if (!email || !email.includes('@')) { statusEl.textContent = 'Please enter a valid email.'; statusEl.style.color = '#b91c1c'; return; }
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+                try {
+                    await window.api.put('/auth/profile', { full_name: auth.currentUser.full_name, email });
+                    overlay.remove();
+                    document.body.style.overflow = '';
+                    showAlert('Email saved successfully!', 'success');
+                    await auth.checkAuth();
+                    await loadCheckout();
+                    await loadCheckoutSettings();
+                } catch (err) {
+                    statusEl.textContent = err.message || 'Failed to save email';
+                    statusEl.style.color = '#b91c1c';
+                } finally {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = '<i class="fas fa-check-circle"></i> Save & Continue';
+                }
+            });
+        }
+
         // Ensure we check authentication asynchronously before loading checkout
 
         (async () => {
@@ -1983,6 +2157,11 @@
                 const redirect = encodeURIComponent('/checkout');
                 window.location.href = `/login?redirect=${redirect}`;
             } else {
+                const missing = needsVerification(user);
+                if (missing) {
+                    showVerificationOverlay(missing);
+                    return;
+                }
                 await loadCheckout();
                 await loadCheckoutSettings();
             }

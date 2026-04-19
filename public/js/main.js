@@ -686,6 +686,13 @@ const cart = {
         return false;
       }
 
+      // Check if user has both email and phone verified
+      if (!auth.currentUser.phone) {
+        showAlert('Please verify your phone number before shopping. You will be prompted at checkout.', 'warning');
+      } else if (!auth.currentUser.email) {
+        showAlert('Please verify your email before shopping. You will be prompted at checkout.', 'warning');
+      }
+
       console.log('Adding product to cart:', productId);
       const response = await api.post('/cart/add', { product_id: productId, quantity });
       console.log('Cart add response:', response);
@@ -2042,10 +2049,18 @@ async function initApp() {
   if (mobileToggle && navbarMenu) {
     const closeMobileMenu = () => {
       navbarMenu.classList.remove('mobile-active');
+      const icon = mobileToggle.querySelector('i');
+      if (icon) icon.className = 'fas fa-bars';
+      mobileToggle.setAttribute('aria-expanded', 'false');
     };
 
-    mobileToggle.addEventListener('click', () => {
-      navbarMenu.classList.toggle('mobile-active');
+    mobileToggle.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const isOpen = navbarMenu.classList.toggle('mobile-active');
+      const icon = mobileToggle.querySelector('i');
+      if (icon) icon.className = isOpen ? 'fas fa-times' : 'fas fa-bars';
+      mobileToggle.setAttribute('aria-expanded', String(isOpen));
     });
 
     document.addEventListener('click', (event) => {
