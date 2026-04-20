@@ -53,7 +53,18 @@ async function sendEmail({ to, subject, html, fromLabel }) {
   const from      = fromLabel ? `${fromLabel} <${fromEmail}>` : `Mount Made <${fromEmail}>`;
   let lastErr = null;
 
-  // Try SMTP first
+  // Try Resend first (sends correctly from hello@mountain-made.com)
+  if (canUseResend()) {
+    try {
+      await sendViaResend({ to, subject, html });
+      return; // success
+    } catch (err) {
+      lastErr = err;
+      console.error('[EMAIL] Resend failed, trying SMTP fallback:', err.message);
+    }
+  }
+
+  // Fallback: Gmail SMTP
   const transporter = createTransporter();
   if (transporter) {
     try {
@@ -61,14 +72,8 @@ async function sendEmail({ to, subject, html, fromLabel }) {
       return; // success
     } catch (err) {
       lastErr = err;
-      console.error('[EMAIL] SMTP failed, trying Resend fallback:', err.message);
+      console.error('[EMAIL] SMTP also failed:', err.message);
     }
-  }
-
-  // Fallback: Resend via HTTPS (never blocked by Render)
-  if (canUseResend()) {
-    await sendViaResend({ to, subject, html });
-    return; // success via Resend
   }
 
   // Both failed
