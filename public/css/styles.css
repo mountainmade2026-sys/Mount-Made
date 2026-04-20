@@ -764,14 +764,14 @@ html[data-theme="dark"] .price-discount {
 
 /* Hamburger — always visible on all screen sizes in the new ornate design */
 .mobile-menu-toggle {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--space-2);
-  border: 1px solid rgba(212,175,55,0.35);
-  background: rgba(255,255,255,0.07);
+  padding: 0;
+  border: 1px solid rgba(212,175,55,0.45);
+  background: rgba(255,255,255,0.10);
   color: #ffffff;
-  font-size: var(--text-xl);
+  font-size: 1.2rem;
   cursor: pointer;
   flex-shrink: 0;
   border-radius: var(--radius-sm);
@@ -782,6 +782,20 @@ html[data-theme="dark"] .price-discount {
   z-index: 5;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
+  -webkit-appearance: none;
+  appearance: none;
+  outline: none;
+}
+
+.mobile-menu-toggle i {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: inherit;
+  color: inherit;
+  pointer-events: none;
 }
 
 .mobile-menu-toggle:hover {
@@ -1797,7 +1811,7 @@ body.auth-ready #auth-buttons { visibility: visible; }
   .deliver-bar-label { font-size: 0.6rem; }
   .deliver-bar-value { font-size: 0.78rem; max-width: 100%; }
   .navbar-brand .logo-icon { font-size: 1.4rem; }
-  .mobile-menu-toggle { width: 38px; height: 38px; font-size: var(--text-base); }
+  .mobile-menu-toggle { width: 40px; height: 40px; font-size: 1.1rem; }
 
   .navbar-actions { gap: var(--space-1); }
   #auth-buttons { gap: var(--space-1); flex-wrap: nowrap; }
