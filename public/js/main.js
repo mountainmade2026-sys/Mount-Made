@@ -1667,6 +1667,10 @@ function ensureProfileModal() {
         <label class="form-label" for="profile-phone">Phone Number</label>
         <input type="text" id="profile-phone" class="form-input" placeholder="10-digit phone">
       </div>
+      <div class="form-group">
+        <label class="form-label" for="profile-email">Email / Gmail</label>
+        <input type="email" id="profile-email" class="form-input" readonly style="background:var(--bg-secondary,#f1f5f9);cursor:default;opacity:0.8;" placeholder="No email on account">
+      </div>
       <div class="profile-modal-actions">
         <button type="button" class="btn btn-secondary" onclick="closeModal('${PROFILE_MODAL_ID}')">Cancel</button>
         <button type="button" id="profile-save" class="btn btn-primary">Save Profile</button>
@@ -1881,11 +1885,13 @@ async function openProfileModal() {
   const profile = await api.get('/auth/profile').catch(() => null);
   const user = profile?.user || auth.currentUser || {};
 
-  const nameInput = document.getElementById('profile-name');
-  const phoneInput = document.getElementById('profile-phone');
+  const nameInput  = document.getElementById('profile-name');
+  const phoneInput  = document.getElementById('profile-phone');
+  const emailInput  = document.getElementById('profile-email');
 
-  if (nameInput) nameInput.value = user.full_name || '';
+  if (nameInput)  nameInput.value  = user.full_name || '';
   if (phoneInput) phoneInput.value = user.phone || '';
+  if (emailInput) emailInput.value = user.email || '';
 
   applyProfilePhoto(user.profile_photo || '');
   openModal(PROFILE_MODAL_ID);
