@@ -898,7 +898,6 @@ html[data-theme="dark"] .price-discount {
   .navbar-menu li.mobile-menu-close {
     display: none !important;
   }
-  }
 
   .navbar-menu a {
     padding: 0 var(--space-4);
