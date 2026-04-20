@@ -83,24 +83,40 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 1000;
+            z-index: 11000;
             padding: 1rem;
-            overflow-y: auto;
+            overflow: hidden;
         }
         
         .modal-content {
             background: var(--bg-primary);
-            padding: 1.25rem 1.25rem 1rem;
             border-radius: 12px;
             width: 100%;
             max-width: 560px;
             max-height: calc(100dvh - 2rem);
-            overflow-y: auto;
             box-shadow: 0 20px 40px rgba(0,0,0,0.25);
             border: 1px solid rgba(148, 163, 184, 0.4);
             display: flex;
             flex-direction: column;
             flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .modal-header-outer {
+            padding: 1.25rem 1.25rem 0;
+        }
+
+        .modal-form-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.75rem 1.25rem;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .modal-actions-outer {
+            padding: 0.75rem 1.25rem 1.25rem;
+            border-top: 1px solid var(--border-primary);
+            background: var(--bg-primary);
         }
 
         .modal-header-row {
@@ -108,12 +124,8 @@
             align-items: center;
             justify-content: space-between;
             gap: 1rem;
-            margin-bottom: 0.75rem;
-            position: sticky;
-            top: 0;
-            z-index: 2;
-            background: var(--bg-primary);
-            padding-bottom: 0.5rem;
+            margin-bottom: 0;
+            padding-bottom: 0.75rem;
             border-bottom: 1px solid var(--border-primary);
         }
 
@@ -190,14 +202,6 @@
             display: flex;
             gap: 0.75rem;
             justify-content: flex-end;
-            margin-top: 0.75rem;
-            padding-top: 0.75rem;
-            border-top: 1px solid var(--border-primary);
-            grid-column: 1 / -1;
-            position: sticky;
-            bottom: 0;
-            background: var(--bg-primary);
-            z-index: 2;
         }
 
         @media (max-width: 600px) {
@@ -208,9 +212,20 @@
 
             .modal-content {
                 max-width: 100%;
-                max-height: calc(100dvh - 1rem);
-                border-radius: 16px 16px 8px 8px;
-                padding: 1rem;
+                max-height: calc(100svh - 1rem);
+                border-radius: 16px 16px 4px 4px;
+            }
+
+            .modal-header-outer {
+                padding: 1rem 1rem 0;
+            }
+
+            .modal-form-body {
+                padding: 0.75rem 1rem;
+            }
+
+            .modal-actions-outer {
+                padding: 0.75rem 1rem 1rem;
             }
 
             #address-form {
@@ -222,13 +237,14 @@
             }
 
             .address-form-actions {
-                flex-direction: column-reverse;
+                flex-direction: column;
                 gap: 0.5rem;
             }
 
             .address-form-actions .btn {
                 width: 100%;
                 justify-content: center;
+                text-align: center;
             }
         }
 
@@ -412,13 +428,15 @@
             
             modal.innerHTML = `
                 <div class="modal-content">
-                    <div class="modal-header-row">
-                        <h3>${address ? 'Edit Address' : 'Add New Address'}</h3>
-                        <button type="button" class="modal-close-btn" onclick="closeAddressModal()" aria-label="Close">
-                            <i class="fas fa-times"></i>
-                        </button>
+                    <div class="modal-header-outer">
+                        <div class="modal-header-row">
+                            <h3>${address ? 'Edit Address' : 'Add New Address'}</h3>
+                            <button type="button" class="modal-close-btn" onclick="closeAddressModal()" aria-label="Close">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
                     </div>
-                    
+                    <div class="modal-form-body">
                     <form id="address-form" onsubmit="handleSubmitAddress(event)">
                         <div class="form-group">
                             <label>Address Label *</label>
@@ -488,16 +506,18 @@
                                    ${address?.is_default ? 'checked' : ''}>
                             <label for="is_default">Set as default address</label>
                         </div>
-                        
+                    </form>
+                    </div>
+                    <div class="modal-actions-outer">
                         <div class="address-form-actions">
+                            <button type="submit" form="address-form" class="btn btn-primary">
+                                ${address ? 'Update' : 'Add'} Address
+                            </button>
                             <button type="button" class="btn btn-secondary" onclick="closeAddressModal()">
                                 Cancel
                             </button>
-                            <button type="submit" class="btn btn-primary">
-                                ${address ? 'Update' : 'Add'} Address
-                            </button>
                         </div>
-                    </form>
+                    </div>
                 </div>
             `;
             
