@@ -323,6 +323,15 @@
         let addresses = [];
         let editingAddressId = null;
 
+        function escHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        }
+
         function closeAddressModal() {
             const modal = document.querySelector('.modal-overlay');
             if (modal) {
@@ -428,26 +437,26 @@
                         <div class="form-group">
                             <label>Full Name *</label>
                             <input type="text" class="form-input" name="full_name" 
-                                   value="${address?.full_name || ''}" required>
+                                   value="${escHtml(address?.full_name)}" required>
                         </div>
                         
                         <div class="form-group">
                             <label>Phone Number *</label>
                             <input type="tel" class="form-input" name="phone" 
-                                   value="${address?.phone || ''}" required>
+                                   value="${escHtml(address?.phone)}" required>
                         </div>
                         
                         <div class="form-group">
                             <label>Address Line 1 *</label>
                             <input type="text" class="form-input" name="address_line1" 
-                                   value="${address?.address_line1 || ''}" 
+                                   value="${escHtml(address?.address_line1)}" 
                                    placeholder="Street address, P.O. box" required>
                         </div>
                         
-                        <div class="form-group">
+                        <div class="form-group full-width">
                             <label>Address Line 2</label>
                             <input type="text" class="form-input" name="address_line2" 
-                                   value="${address?.address_line2 || ''}" 
+                                   value="${escHtml(address?.address_line2)}" 
                                    placeholder="Apartment, suite, unit, building, floor, etc.">
                         </div>
                         
@@ -455,13 +464,13 @@
                             <div class="form-group">
                                 <label>City *</label>
                                 <input type="text" class="form-input" name="city" 
-                                       value="${address?.city || ''}" required>
+                                       value="${escHtml(address?.city)}" required>
                             </div>
                             
                             <div class="form-group">
                                 <label>State *</label>
                                 <input type="text" class="form-input" name="state" 
-                                       value="${address?.state || ''}" required>
+                                       value="${escHtml(address?.state)}" required>
                             </div>
                         </div>
                         
@@ -469,13 +478,13 @@
                             <div class="form-group">
                                 <label>Postal Code *</label>
                                 <input type="text" class="form-input" name="postal_code" 
-                                       value="${address?.postal_code || ''}" required>
+                                       value="${escHtml(address?.postal_code)}" required>
                             </div>
                             
                             <div class="form-group">
                                 <label>Country *</label>
                                 <input type="text" class="form-input" name="country" 
-                                       value="${address?.country || 'USA'}" required>
+                                       value="${escHtml(address?.country) || 'India'}" required>
                             </div>
                         </div>
                         
