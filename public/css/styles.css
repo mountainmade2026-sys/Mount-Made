@@ -690,11 +690,6 @@ html[data-theme="dark"] .price-discount {
   z-index: 10000;
 }
 
-/* Close button inside menu (injected by JS) */
-.mobile-menu-close {
-  display: none;
-}
-
 .navbar-menu.mobile-active li { width: 100%; }
 
 .navbar-actions {
@@ -893,10 +888,6 @@ html[data-theme="dark"] .price-discount {
     width: auto;
     display: flex;
     align-items: stretch;
-  }
-
-  .navbar-menu li.mobile-menu-close {
-    display: none !important;
   }
 
   .navbar-menu a {

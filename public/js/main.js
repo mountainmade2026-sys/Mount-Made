@@ -2047,12 +2047,6 @@ async function initApp() {
   const navbarMenu = document.querySelector('.navbar-menu');
   
   if (mobileToggle && navbarMenu) {
-    // Inject close button at top of menu
-    const closeLi = document.createElement('li');
-    closeLi.className = 'mobile-menu-close';
-    closeLi.innerHTML = '<button aria-label="Close menu"><i class="fas fa-times"></i></button>';
-    navbarMenu.insertBefore(closeLi, navbarMenu.firstChild);
-
     const navbar = document.querySelector('.navbar');
 
     const closeMobileMenu = () => {
@@ -2079,12 +2073,6 @@ async function initApp() {
       } else {
         openMobileMenuNav();
       }
-    });
-
-    closeLi.querySelector('button').addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      closeMobileMenu();
     });
 
     document.addEventListener('click', (event) => {
