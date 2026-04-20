@@ -2053,8 +2053,11 @@ async function initApp() {
     closeLi.innerHTML = '<button aria-label="Close menu"><i class="fas fa-times"></i></button>';
     navbarMenu.insertBefore(closeLi, navbarMenu.firstChild);
 
+    const navbar = document.querySelector('.navbar');
+
     const closeMobileMenu = () => {
       navbarMenu.classList.remove('mobile-active');
+      if (navbar) navbar.classList.remove('menu-open');
       const icon = mobileToggle.querySelector('i');
       if (icon) icon.className = 'fas fa-bars';
       mobileToggle.setAttribute('aria-expanded', 'false');
@@ -2063,6 +2066,7 @@ async function initApp() {
 
     const openMobileMenuNav = () => {
       navbarMenu.classList.add('mobile-active');
+      if (navbar) navbar.classList.add('menu-open');
       const icon = mobileToggle.querySelector('i');
       if (icon) icon.className = 'fas fa-times';
       mobileToggle.setAttribute('aria-expanded', 'true');
