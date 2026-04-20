@@ -1053,12 +1053,20 @@ exports.markOutForDelivery = async (req, res) => {
 
     const order = result.rows[0];
 
-    // Get customer info
-    const userResult = await db.query(
-      'SELECT full_name, email, phone FROM users WHERE id = $1',
-      [order.user_id]
-    );
-    const customer = userResult.rows[0] || {};
+    // Get customer info — try order row first (has email/phone denormalised), fall back to users table
+    let customer = { full_name: order.full_name || '', email: order.email || '', phone: order.phone || '' };
+    if ((!customer.email || !customer.full_name) && order.user_id) {
+      try {
+        const userResult = await db.query(
+          'SELECT full_name, email, phone FROM users WHERE id = $1',
+          [order.user_id]
+        );
+        const u = userResult.rows[0] || {};
+        if (!customer.email) customer.email = u.email || '';
+        if (!customer.full_name) customer.full_name = u.full_name || '';
+        if (!customer.phone) customer.phone = u.phone || '';
+      } catch (e) { console.warn('[OFD] user lookup failed:', e.message); }
+    }
 
     const baseUrl = String(process.env.APP_BASE_URL || `http://localhost:${process.env.PORT || 3000}`).replace(/\/$/, '');
     const confirmUrl = `${baseUrl}/delivery-confirm?order=${id}`;
@@ -1072,10 +1080,21 @@ exports.markOutForDelivery = async (req, res) => {
     );
     const notReceivedUrl = `${baseUrl}/api/email-actions/delivery/${order.id}/not-received?token=${notReceivedToken}`;
 
-    // Fire-and-forget: notify customer (email + SMS) and courier (SMS)
-    Promise.resolve().then(async () => {
-      const { sendDeliveryNotificationEmail } = require('../utils/emailService');
+    // Send notifications (email first, then SMS fire-and-forget)
+    const { sendDeliveryNotificationEmail } = require('../utils/emailService');
 
+    // 1. Email notification to customer — awaited so errors are visible
+    if (customer.email) {
+      try {
+        await sendDeliveryNotificationEmail(customer.email, customer.full_name || 'Customer', order.order_number || order.id, notReceivedUrl);
+        console.log(`[OFD] Email sent to ${customer.email} for order ${order.order_number || order.id}`);
+      } catch (e) { console.error('[OFD] Email notification failed:', e.message); }
+    } else {
+      console.warn(`[OFD] No email found for order ${order.order_number || order.id} (user_id: ${order.user_id})`);
+    }
+
+    // 2. SMS + courier — fire-and-forget
+    Promise.resolve().then(async () => {
       // Helper: format phone to E.164 for Twilio SMS
       const toE164 = (ph) => {
         const cleaned = String(ph || '').replace(/[\s()-]/g, '');
@@ -1085,15 +1104,6 @@ exports.markOutForDelivery = async (req, res) => {
         if (/^\d{12}$/.test(cleaned) && cleaned.startsWith('91')) return `+${cleaned}`;
         return `+${cleaned}`;
       };
-
-      // 1. Email notification to customer with "Not Received" button
-      if (customer.email) {
-        try {
-          await sendDeliveryNotificationEmail(customer.email, customer.full_name || 'Customer', order.order_number || order.id, notReceivedUrl);
-        } catch (e) { console.error('[OFD] Email notification failed:', e.message); }
-      }
-
-      // 2. SMS notification to customer
       if (customer.phone && twilioClient && TWILIO_FROM_NUMBER) {
         try {
           const customerSms =
