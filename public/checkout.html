@@ -143,17 +143,61 @@
                 </div>
                 <div class="card checkout-card">
                     <div class="card-content">
-                        <h3 style="margin-bottom: 1.5rem;">Payment Method</h3>
-                        <div class="form-group">
-                            <label class="form-label" for="payment_method">Select Payment</label>
-                            <select id="payment_method" class="form-select" required data-validate data-label="Payment Method">
-                                <option value="gpay">Google Pay (UPI)</option>
-                                <option value="cash_on_delivery">Cash on Delivery</option>
-                            </select>
+                        <h3 style="margin-bottom: 1.25rem;">Payment Method</h3>
+                        <!-- Hidden input carries the real value for form submit -->
+                        <input type="hidden" id="payment_method" name="payment_method" value="gpay">
+
+                        <div class="pm-grid" id="pm-grid">
+                            <!-- UPI / Google Pay -->
+                            <button type="button" class="pm-tile pm-tile-selected" data-method="gpay">
+                                <span class="pm-tile-icon pm-upi-bg">
+                                    <svg viewBox="0 0 48 48" width="28" height="28" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="48" rx="10" fill="#fff"/><text x="50%" y="62%" dominant-baseline="middle" text-anchor="middle" font-size="11" font-family="Arial,sans-serif" font-weight="700" fill="#5C6BC0">UPI</text></svg>
+                                </span>
+                                <span class="pm-tile-label">UPI / GPay<br><small>PhonePe, Paytm, BHIM</small></span>
+                                <span class="pm-tile-check"><i class="fas fa-check-circle"></i></span>
+                            </button>
+
+                            <!-- Debit Card -->
+                            <button type="button" class="pm-tile" data-method="debit_card">
+                                <span class="pm-tile-icon pm-card-bg">
+                                    <i class="fas fa-credit-card" style="font-size:1.5rem;color:#1976d2;"></i>
+                                </span>
+                                <span class="pm-tile-label">Debit Card<br><small>Visa, Mastercard, RuPay</small></span>
+                                <span class="pm-tile-check"><i class="fas fa-check-circle"></i></span>
+                            </button>
+
+                            <!-- Credit Card -->
+                            <button type="button" class="pm-tile" data-method="credit_card">
+                                <span class="pm-tile-icon pm-cc-bg">
+                                    <i class="fas fa-credit-card" style="font-size:1.5rem;color:#c62828;"></i>
+                                </span>
+                                <span class="pm-tile-label">Credit Card<br><small>Visa, Mastercard, Amex</small></span>
+                                <span class="pm-tile-check"><i class="fas fa-check-circle"></i></span>
+                            </button>
+
+                            <!-- Net Banking -->
+                            <button type="button" class="pm-tile" data-method="net_banking">
+                                <span class="pm-tile-icon pm-net-bg">
+                                    <i class="fas fa-university" style="font-size:1.4rem;color:#2e7d32;"></i>
+                                </span>
+                                <span class="pm-tile-label">Net Banking<br><small>SBI, HDFC, ICICI…</small></span>
+                                <span class="pm-tile-check"><i class="fas fa-check-circle"></i></span>
+                            </button>
+
+                            <!-- Cash on Delivery -->
+                            <button type="button" class="pm-tile" data-method="cash_on_delivery">
+                                <span class="pm-tile-icon pm-cod-bg">
+                                    <i class="fas fa-money-bill-wave" style="font-size:1.4rem;color:#f57f17;"></i>
+                                </span>
+                                <span class="pm-tile-label">Cash on Delivery<br><small>Pay when you receive</small></span>
+                                <span class="pm-tile-check"><i class="fas fa-check-circle"></i></span>
+                            </button>
                         </div>
-                        <div id="gpay-details" class="gpay-details hidden">
+
+                        <!-- UPI / GPay details panel -->
+                        <div id="gpay-details" class="pm-detail-panel">
                             <div class="form-group">
-                                <label class="form-label">Choose GPay Payment Option</label>
+                                <label class="form-label">Choose Payment Option</label>
                                 <select id="gpay-detail-type" class="form-select">
                                     <option value="upi">UPI ID</option>
                                     <option value="phone">Phone Number</option>
@@ -166,13 +210,22 @@
                                 <div class="form-help" id="gpay-bank-display">Bank: -</div>
                             </div>
                             <div id="gpay-qr-wrap" class="form-group hidden">
-                                <label class="form-label">Business GPay QR</label>
-                                <img id="gpay-qr-image" alt="GPay QR" style="max-width: 240px; width: 100%; border: 1px solid var(--border-primary); border-radius: 8px; background: #fff;">
+                                <label class="form-label">Business QR Code</label>
+                                <img id="gpay-qr-image" alt="GPay QR" style="max-width: 200px; width: 100%; border: 1px solid var(--border-primary); border-radius: 8px; background: #fff;">
                             </div>
                             <div class="form-help" id="gpay-prefill-hint">Prefilled from your Billing Management details.</div>
                         </div>
-                        <!-- COD details shown when Cash on Delivery is selected -->
-                        <div id="cod-details" class="hidden" style="margin-bottom: 1rem;">
+
+                        <!-- Card / Net Banking info panel -->
+                        <div id="card-info-panel" class="pm-detail-panel hidden">
+                            <div class="pm-info-box">
+                                <i class="fas fa-info-circle" style="color:var(--primary);margin-right:0.5rem;"></i>
+                                Payment will be collected securely at the time of delivery confirmation. Your card details are never stored on our servers.
+                            </div>
+                        </div>
+
+                        <!-- COD details panel -->
+                        <div id="cod-details" class="pm-detail-panel hidden">
                             <div id="cod-pincode-info" style="padding: 0.9rem 1rem; border-radius: 8px; border: 1px solid var(--border-primary); background: var(--bg-secondary); font-size: 0.92rem;">
                                 <div style="display: flex; align-items: center; gap: 0.55rem; margin-bottom: 0.35rem;">
                                     <i class="fas fa-map-marker-alt" style="color: var(--primary);"></i>
@@ -182,7 +235,8 @@
                                 <div id="cod-pincode-status"></div>
                             </div>
                         </div>
-                        <div class="form-group">
+
+                        <div class="form-group" style="margin-top:1rem;">
                             <label class="form-label">Order Notes (Optional)</label>
                             <textarea id="notes" class="form-textarea"></textarea>
                         </div>
@@ -543,12 +597,93 @@
             color: var(--text-light);
         }
 
-        #payment_method.payment-method-gpay {
-            background-image: url('/images/google_logo.svg');
-            background-repeat: no-repeat;
-            background-size: 22px 22px;
-            background-position: 14px center;
-            padding-left: 48px;
+        /* Payment Method Tiles */
+        .pm-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 0.65rem;
+            margin-bottom: 1.1rem;
+        }
+
+        .pm-tile {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.85rem 0.5rem 0.75rem;
+            border: 2px solid var(--border-primary);
+            border-radius: 12px;
+            background: var(--bg-primary);
+            cursor: pointer;
+            transition: border-color 0.18s, box-shadow 0.18s, background 0.18s;
+            text-align: center;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .pm-tile:hover {
+            border-color: var(--primary-400, #4caf50);
+            box-shadow: 0 2px 10px rgba(44,95,45,0.10);
+        }
+
+        .pm-tile-selected {
+            border-color: var(--primary-600, #2c5f2d) !important;
+            background: var(--primary-50, #f0fdf4);
+            box-shadow: 0 0 0 1px rgba(44,95,45,0.18);
+        }
+
+        .pm-tile-icon {
+            width: 46px;
+            height: 46px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pm-upi-bg  { background: #ede7f6; }
+        .pm-card-bg { background: #e3f2fd; }
+        .pm-cc-bg   { background: #ffebee; }
+        .pm-net-bg  { background: #e8f5e9; }
+        .pm-cod-bg  { background: #fff8e1; }
+
+        .pm-tile-label { line-height: 1.3; }
+        .pm-tile-label small { font-weight: 400; font-size: 0.73rem; color: var(--text-secondary); }
+
+        .pm-tile-check {
+            position: absolute;
+            top: 0.35rem;
+            right: 0.4rem;
+            font-size: 0.9rem;
+            color: var(--primary-600, #2c5f2d);
+            opacity: 0;
+            transition: opacity 0.15s;
+        }
+
+        .pm-tile-selected .pm-tile-check { opacity: 1; }
+
+        .pm-detail-panel {
+            border: 1px solid var(--border-primary);
+            border-radius: 10px;
+            padding: 1rem;
+            background: var(--bg-secondary, #f8fafc);
+            margin-bottom: 1rem;
+        }
+
+        .pm-detail-panel.hidden { display: none; }
+
+        .pm-info-box {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        @media (max-width: 480px) {
+            .pm-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
 
         /* Billing Modal */
@@ -1478,22 +1613,32 @@
             }
         }
 
-        function toggleGpayDetails() {
-            const paymentSelect = document.getElementById('payment_method');
+        function selectPaymentMethod(method) {
+            // Update hidden input
+            const hidden = document.getElementById('payment_method');
+            if (hidden) hidden.value = method;
+
+            // Update tile selection
+            document.querySelectorAll('.pm-tile').forEach(t => {
+                t.classList.toggle('pm-tile-selected', t.dataset.method === method);
+            });
+
+            // Show/hide detail panels
             const gpaySection = document.getElementById('gpay-details');
             const codSection = document.getElementById('cod-details');
-            if (!paymentSelect || !gpaySection) return;
-            const isGpay = paymentSelect.value === 'gpay';
-            const isCod = paymentSelect.value === 'cash_on_delivery';
-            paymentSelect.classList.toggle('payment-method-gpay', isGpay);
-            gpaySection.classList.toggle('hidden', !isGpay);
-            if (codSection) codSection.classList.toggle('hidden', !isCod);
-            if (isGpay) {
-                updateGpayLabelAndPrefill();
-            }
-            if (isCod) {
-                updateCodPincodeCheck();
-            }
+            const cardPanel = document.getElementById('card-info-panel');
+
+            if (gpaySection) gpaySection.classList.toggle('hidden', method !== 'gpay');
+            if (codSection)  codSection.classList.toggle('hidden',  method !== 'cash_on_delivery');
+            if (cardPanel)   cardPanel.classList.toggle('hidden',   method !== 'debit_card' && method !== 'credit_card' && method !== 'net_banking');
+
+            if (method === 'gpay') updateGpayLabelAndPrefill();
+            if (method === 'cash_on_delivery') updateCodPincodeCheck();
+        }
+
+        function toggleGpayDetails() {
+            const hidden = document.getElementById('payment_method');
+            if (hidden) selectPaymentMethod(hidden.value);
         }
 
         function getSelectedPincode() {
@@ -1551,6 +1696,14 @@
         }
 
         function wireBillingUI() {
+            // Wire payment method tiles
+            document.querySelectorAll('.pm-tile').forEach(tile => {
+                tile.addEventListener('click', () => selectPaymentMethod(tile.dataset.method));
+            });
+
+            // Initialize the default selected tile panels
+            selectPaymentMethod(document.getElementById('payment_method')?.value || 'gpay');
+
             const paymentSelect = document.getElementById('payment_method');
             const typeSelect = document.getElementById('gpay-detail-type');
             const manageBtn = document.getElementById('manage-billing-btn');
@@ -1562,10 +1715,7 @@
                 updateGpayLabelAndPrefill();
             }
 
-            if (paymentSelect) {
-                paymentSelect.addEventListener('change', toggleGpayDetails);
-                toggleGpayDetails();
-            }
+            // paymentSelect is now a hidden input — no change listener needed (tiles handle it)
 
             // Refresh COD check when zip is manually typed
             const zipInput = document.getElementById('zip');
