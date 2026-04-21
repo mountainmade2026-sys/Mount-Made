@@ -33,7 +33,7 @@ exports.getCart = async (req, res) => {
 
     res.json({
       cartItems,
-      total: total.toFixed(2),
+      total: Math.round(total * 100) / 100,
       itemCount: cartItems.length
     });
   } catch (error) {

@@ -278,8 +278,12 @@ class Order {
     query += ` GROUP BY o.id ORDER BY o.created_at DESC`;
 
     if (filters.limit) {
+      const cap = Math.min(Math.max(1, parseInt(filters.limit, 10) || 50), 500);
       query += ` LIMIT $${values.length + 1}`;
-      values.push(filters.limit);
+      values.push(cap);
+    } else {
+      // Hard cap to prevent unbounded queries
+      query += ` LIMIT 500`;
     }
 
     const result = await db.query(query, values);
@@ -321,9 +325,13 @@ class Order {
     query += ` GROUP BY o.id, u.full_name, u.email, u.phone ORDER BY o.created_at DESC`;
 
     if (filters.limit) {
+      const cap = Math.min(Math.max(1, parseInt(filters.limit, 10) || 100), 1000);
       query += ` LIMIT $${paramCount}`;
-      values.push(filters.limit);
+      values.push(cap);
       paramCount++;
+    } else {
+      // Hard cap to prevent unbounded admin queries
+      query += ` LIMIT 1000`;
     }
 
     if (filters.offset) {

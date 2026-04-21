@@ -20,6 +20,14 @@ const twilioClient = (TWILIO_ACCOUNT_SID && TWILIO_AUTH_TOKEN)
 const forgotPasswordOtpStore = new Map();
 const FORGOT_OTP_EXPIRY_MS = 10 * 60 * 1000;
 
+// Periodically purge expired OTP entries to prevent slow memory leak
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of forgotPasswordOtpStore) {
+    if (entry.expiresAt < now) forgotPasswordOtpStore.delete(key);
+  }
+}, FORGOT_OTP_EXPIRY_MS).unref(); // .unref() so it doesn't keep the process alive
+
 const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
 
 const canUseResendForAuth = () => {

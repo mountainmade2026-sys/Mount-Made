@@ -5,6 +5,8 @@ const db = require('../config/database');
 const Order = require('../models/Order');
 const { authenticateToken } = require('../middleware/auth');
 const { blockAdminCommerce } = require('../middleware/commerceAccess');
+const { sendOrderNotificationToAdmin } = require('../utils/emailService');
+const { notifyOrderPlaced } = require('../utils/whatsappService');
 
 const router = express.Router();
 
@@ -162,6 +164,9 @@ router.post('/razorpay/verify', async (req, res) => {
       delivery_charge = 0
     } = req.body || {};
 
+    // Clamp to prevent negative delivery charges distorting the amount check
+    const safeDeliveryCharge = Math.max(0, Number(delivery_charge) || 0);
+
     if (!razorpay_payment_id || !razorpay_order_id || !razorpay_signature) {
       return res.status(400).json({ error: 'Missing payment verification fields.' });
     }
@@ -185,7 +190,7 @@ router.post('/razorpay/verify', async (req, res) => {
       return res.status(400).json({ error: 'Your cart is empty. Please contact support with your payment ID.' });
     }
 
-    const serverTotalAmount = (Number(total) || 0) + (Number(delivery_charge) || 0);
+    const serverTotalAmount = (Number(total) || 0) + safeDeliveryCharge;
     const serverAmountPaise = Math.round(serverTotalAmount * 100);
 
     if (Number(rpOrder.amount) !== serverAmountPaise) {
@@ -219,11 +224,29 @@ router.post('/razorpay/verify', async (req, res) => {
       paid_at: new Date(),
       notes: String(notes || '').trim(),
       delivery_speed: String(delivery_speed || 'standard'),
-      delivery_charge: Number(delivery_charge) || 0,
+      delivery_charge: safeDeliveryCharge,
       items
     };
 
     const order = await Order.create(orderData);
+
+    // Fire-and-forget admin notification — does NOT block the payment response
+    const capturedUserId = req.user.id;
+    const capturedOrderId = order.id;
+    Promise.resolve().then(async () => {
+      try {
+        const [userResult, itemsResult] = await Promise.all([
+          db.query('SELECT full_name, phone FROM users WHERE id = $1', [capturedUserId]),
+          db.query('SELECT product_name, quantity, price FROM order_items WHERE order_id = $1', [capturedOrderId])
+        ]);
+        const customer = userResult.rows[0] || {};
+        const notifItems = itemsResult.rows || [];
+        await sendOrderNotificationToAdmin(order, customer, notifItems);
+        await notifyOrderPlaced(customer.phone, customer.full_name || 'Customer', order.order_number, order.total_amount);
+      } catch (notifErr) {
+        console.error('[EMAIL] Razorpay order notification failed:', notifErr.message);
+      }
+    }).catch(err => console.error('[EMAIL] Unhandled razorpay notification error:', err.message));
 
     return res.status(201).json({
       message: 'Payment verified and order placed successfully.',

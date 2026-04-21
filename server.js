@@ -18,6 +18,14 @@ if (!process.env.JWT_SECRET || String(process.env.JWT_SECRET).trim().length < 16
   process.exit(1);
 }
 
+// ── Global error guards — prevent silent crashes ─────────────────────────
+process.on('uncaughtException', (err) => {
+  console.error('[FATAL] Uncaught exception — server will NOT exit:', err.message || err, err.stack || '');
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[WARN] Unhandled promise rejection:', reason instanceof Error ? reason.message : reason);
+});
+
 // Cache-bust version: changes on every deploy so browsers never serve stale
 // immutable-cached upload images from a previous data set.
 global.ASSET_VERSION = Date.now().toString(36);
