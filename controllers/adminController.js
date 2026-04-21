@@ -2620,28 +2620,14 @@ exports.sendContactMessageToBusinessEmail = async (req, res) => {
 
     const messageRow = messageResult.rows[0];
 
-    const smtpHost = String(process.env.SMTP_HOST || '').trim();
-    const smtpPort = parseInt(process.env.SMTP_PORT || '587', 10);
-    const smtpUser = String(process.env.SMTP_USER || '').trim();
-    const smtpPass = String(process.env.SMTP_PASS || '').trim();
-    const businessEmail = String(process.env.BUSINESS_SUPPORT_EMAIL || '').trim() || smtpUser;
-    const fromEmail = String(process.env.SMTP_FROM_EMAIL || '').trim() || smtpUser;
+    const businessEmail = String(process.env.BUSINESS_SUPPORT_EMAIL || '').trim()
+      || String(process.env.SMTP_USER || '').trim();
 
-    if (!smtpHost || !smtpUser || !smtpPass || !businessEmail || !fromEmail) {
+    if (!businessEmail) {
       return res.status(503).json({
-        error: 'Business email integration is not configured. Set SMTP_HOST, SMTP_USER, SMTP_PASS, SMTP_FROM_EMAIL, BUSINESS_SUPPORT_EMAIL.'
+        error: 'Business email not configured. Set BUSINESS_SUPPORT_EMAIL.'
       });
     }
-
-    const transporter = nodemailer.createTransport({
-      host: smtpHost,
-      port: Number.isFinite(smtpPort) ? smtpPort : 587,
-      secure: Number(smtpPort) === 465,
-      auth: {
-        user: smtpUser,
-        pass: smtpPass
-      }
-    });
 
     const subjectLine = `Customer Message #${messageRow.id} - ${messageRow.subject || 'No Subject'}`;
     const textBody = [
@@ -2656,13 +2642,30 @@ exports.sendContactMessageToBusinessEmail = async (req, res) => {
       messageRow.message || '-'
     ].join('\n');
 
-    await transporter.sendMail({
-      from: fromEmail,
-      to: businessEmail,
-      replyTo: messageRow.email || undefined,
-      subject: subjectLine,
-      text: textBody
-    });
+    // Try Resend first (sends from hello@mountain-made.com), fall back to SMTP
+    if (canUseResendForAdmin()) {
+      await sendViaResend({ toList: [businessEmail], subject: subjectLine, message: textBody });
+    } else {
+      const { smtpHost, smtpPort, smtpUser, smtpPass, fromEmail } = getSmtpConfig();
+      if (!smtpHost || !smtpUser || !smtpPass) {
+        return res.status(503).json({
+          error: 'Email is not configured. Set RESEND_API_KEY or SMTP_HOST/SMTP_USER/SMTP_PASS.'
+        });
+      }
+      const transporter = nodemailer.createTransport({
+        host: smtpHost,
+        port: Number.isFinite(smtpPort) ? smtpPort : 587,
+        secure: Number(smtpPort) === 465,
+        auth: { user: smtpUser, pass: smtpPass }
+      });
+      await transporter.sendMail({
+        from: fromEmail,
+        to: businessEmail,
+        replyTo: messageRow.email || undefined,
+        subject: subjectLine,
+        text: textBody
+      });
+    }
 
     return res.json({
       message: 'Message forwarded to business email successfully.',
@@ -2802,13 +2805,14 @@ exports.sendAdminMessage = async (req, res) => {
     let fromEmail = '';
     const resendAvailable = canUseResendForAdmin();
     let firstEmailError = '';
-    if (sendEmail) {
+    if (sendEmail && !resendAvailable) {
+      // Only set up SMTP when Resend is not available; Resend sends from hello@mountain-made.com correctly
       try {
         transporter = createSmtpTransporterOrThrow();
         fromEmail = getSmtpConfig().fromEmail;
       } catch (e) {
-        // Only fail if email is the only requested channel and Resend is unavailable
-        if (!sendSms && !sendWhatsapp && !resendAvailable) {
+        // Only fail if email is the only requested channel
+        if (!sendSms && !sendWhatsapp) {
           return res.status(503).json({ error: e.message || 'Email is not configured.' });
         }
       }
