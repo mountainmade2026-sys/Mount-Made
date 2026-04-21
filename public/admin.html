@@ -582,6 +582,32 @@
         .data-table-scroll::-webkit-scrollbar-track { background: var(--bg); }
         .data-table-scroll::-webkit-scrollbar-thumb { background: var(--border-dark); border-radius: 4px; }
 
+        /* Mirror scrollbar shown above the table */
+        .data-table-top-scroll {
+            overflow-x: auto;
+            overflow-y: hidden;
+            width: 100%;
+            height: 10px;
+            margin-bottom: 2px;
+        }
+        .data-table-top-scroll::-webkit-scrollbar { height: 6px; }
+        .data-table-top-scroll::-webkit-scrollbar-track { background: var(--bg-secondary, #f1f5f9); border-radius: 4px; }
+        .data-table-top-scroll::-webkit-scrollbar-thumb { background: var(--border-dark); border-radius: 4px; }
+        .data-table-top-scroll-inner { height: 1px; }
+
+        /* Mirror scrollbar shown above the table */
+        .data-table-top-scroll {
+            overflow-x: auto;
+            overflow-y: hidden;
+            width: 100%;
+            height: 10px;
+            margin-bottom: 2px;
+        }
+        .data-table-top-scroll::-webkit-scrollbar { height: 6px; }
+        .data-table-top-scroll::-webkit-scrollbar-track { background: var(--bg-secondary, #f1f5f9); border-radius: 4px; }
+        .data-table-top-scroll::-webkit-scrollbar-thumb { background: var(--border-dark); border-radius: 4px; }
+        .data-table-top-scroll-inner { height: 1px; }
+
         .table-header {
             display: flex;
             justify-content: space-between;
@@ -13404,6 +13430,58 @@ ${docHtml.outerHTML}
         const _origShowSectionForDoc = window.showSection;
         window.showSection = function(sectionId) {
             if (typeof _origShowSectionForDoc === 'function') {
+
+        /* ── Mirror top scrollbar for all .data-table-scroll containers ── */
+        (function initTopScrollMirrors() {
+            function attach(scrollEl) {
+                if (scrollEl._topScrollAttached) return;
+                scrollEl._topScrollAttached = true;
+
+                // Build mirror above the scroll container
+                const mirror = document.createElement('div');
+                mirror.className = 'data-table-top-scroll';
+                const inner = document.createElement('div');
+                inner.className = 'data-table-top-scroll-inner';
+                mirror.appendChild(inner);
+                scrollEl.parentNode.insertBefore(mirror, scrollEl);
+
+                function syncWidth() {
+                    inner.style.width = scrollEl.scrollWidth + 'px';
+                    // Only show mirror if the table actually overflows
+                    mirror.style.display = scrollEl.scrollWidth > scrollEl.clientWidth ? 'block' : 'none';
+                }
+
+                let syncing = false;
+                mirror.addEventListener('scroll', () => {
+                    if (syncing) return;
+                    syncing = true;
+                    scrollEl.scrollLeft = mirror.scrollLeft;
+                    syncing = false;
+                });
+                scrollEl.addEventListener('scroll', () => {
+                    if (syncing) return;
+                    syncing = true;
+                    mirror.scrollLeft = scrollEl.scrollLeft;
+                    syncing = false;
+                });
+
+                // Keep inner width in sync when table content changes
+                syncWidth();
+                const ro = new ResizeObserver(syncWidth);
+                ro.observe(scrollEl);
+            }
+
+            function scanAndAttach() {
+                document.querySelectorAll('.data-table-scroll').forEach(attach);
+            }
+
+            // Attach to tables already in DOM
+            scanAndAttach();
+
+            // Watch for dynamically rendered tables (order lists, etc.)
+            const mo = new MutationObserver(scanAndAttach);
+            mo.observe(document.body, { childList: true, subtree: true });
+        })();
                 _origShowSectionForDoc(sectionId);
             }
             if (sectionId === 'ownership-document') {
@@ -13417,6 +13495,58 @@ ${docHtml.outerHTML}
         // ==================== END OWNERSHIP DOCUMENT ====================
 
         document.addEventListener('DOMContentLoaded', initializeAdmin);
+
+        /* ── Mirror top scrollbar for all .data-table-scroll containers ── */
+        (function initTopScrollMirrors() {
+            function attach(scrollEl) {
+                if (scrollEl._topScrollAttached) return;
+                scrollEl._topScrollAttached = true;
+
+                // Build mirror above the scroll container
+                const mirror = document.createElement('div');
+                mirror.className = 'data-table-top-scroll';
+                const inner = document.createElement('div');
+                inner.className = 'data-table-top-scroll-inner';
+                mirror.appendChild(inner);
+                scrollEl.parentNode.insertBefore(mirror, scrollEl);
+
+                function syncWidth() {
+                    inner.style.width = scrollEl.scrollWidth + 'px';
+                    // Only show mirror if the table actually overflows
+                    mirror.style.display = scrollEl.scrollWidth > scrollEl.clientWidth ? 'block' : 'none';
+                }
+
+                let syncing = false;
+                mirror.addEventListener('scroll', () => {
+                    if (syncing) return;
+                    syncing = true;
+                    scrollEl.scrollLeft = mirror.scrollLeft;
+                    syncing = false;
+                });
+                scrollEl.addEventListener('scroll', () => {
+                    if (syncing) return;
+                    syncing = true;
+                    mirror.scrollLeft = scrollEl.scrollLeft;
+                    syncing = false;
+                });
+
+                // Keep inner width in sync when table content changes
+                syncWidth();
+                const ro = new ResizeObserver(syncWidth);
+                ro.observe(scrollEl);
+            }
+
+            function scanAndAttach() {
+                document.querySelectorAll('.data-table-scroll').forEach(attach);
+            }
+
+            // Attach to tables already in DOM
+            scanAndAttach();
+
+            // Watch for dynamically rendered tables (order lists, etc.)
+            const mo = new MutationObserver(scanAndAttach);
+            mo.observe(document.body, { childList: true, subtree: true });
+        })();
     })();
     </script>
 </body>
