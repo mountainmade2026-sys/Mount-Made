@@ -256,7 +256,25 @@ router.post('/quick-buy', async (req, res) => {
     };
 
     const order = await Order.create(orderData);
-    
+
+    // Fire-and-forget notifications (same as main order route)
+    const capturedUserId = req.user.id;
+    const capturedOrderId = order.id;
+    Promise.resolve().then(async () => {
+      try {
+        const [userResult, itemsResult] = await Promise.all([
+          db.query('SELECT full_name, phone FROM users WHERE id = $1', [capturedUserId]),
+          db.query('SELECT product_name, quantity, price FROM order_items WHERE order_id = $1', [capturedOrderId])
+        ]);
+        const customer = userResult.rows[0] || {};
+        const items = itemsResult.rows || [];
+        await sendOrderNotificationToAdmin(order, customer, items);
+        await notifyOrderPlaced(customer.phone, customer.full_name || 'Customer', order.order_number, order.total_amount);
+      } catch (notifyErr) {
+        console.error('[EMAIL] Quick-buy notification failed:', notifyErr.message);
+      }
+    }).catch(err => console.error('[EMAIL] Unhandled quick-buy notification error:', err.message));
+
     res.status(201).json({ 
       message: 'Order placed successfully!',
       order 

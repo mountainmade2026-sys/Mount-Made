@@ -19,7 +19,7 @@ const poolConfig = hasDatabaseUrl
       connectionString: DATABASE_URL,
       max: 20,
       idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 2000,
+      connectionTimeoutMillis: 10000,
     }
   : {
       host: process.env.DB_HOST || 'localhost',
@@ -28,7 +28,7 @@ const poolConfig = hasDatabaseUrl
       database: dbName,
       max: 20,
       idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 2000,
+      connectionTimeoutMillis: 10000,
     };
 
 // Add password if provided
@@ -131,8 +131,9 @@ pool.on('connect', () => {
 });
 
 pool.on('error', (err) => {
-  console.error('Unexpected database error:', err);
-  process.exit(-1);
+  // Log but do NOT exit — a single idle-connection error should not kill the server.
+  // pg will automatically remove the broken connection from the pool.
+  console.error('[DB] Unexpected pool error (connection will be removed):', err.message || err);
 });
 
 // Create database if it doesn't exist

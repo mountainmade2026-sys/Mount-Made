@@ -53,6 +53,26 @@ class Order {
   }
 
   static async create(orderData) {
+    // Retry loop: handles PostgreSQL serialization failures (code 40001) that can
+    // occur when two concurrent orders race on the same product rows.
+    const MAX_SERIALIZATION_RETRIES = 3;
+    let lastError;
+    for (let attempt = 0; attempt < MAX_SERIALIZATION_RETRIES; attempt++) {
+      try {
+        return await this._createOnce(orderData);
+      } catch (err) {
+        if (err.code === '40001' && attempt < MAX_SERIALIZATION_RETRIES - 1) {
+          // Serialization failure — safe to retry from scratch
+          lastError = err;
+          continue;
+        }
+        throw err;
+      }
+    }
+    throw lastError;
+  }
+
+  static async _createOnce(orderData) {
     const client = await db.pool.connect();
     
     try {
@@ -203,7 +223,7 @@ class Order {
     } finally {
       client.release();
     }
-  }
+  }  // end _createOnce
 
   static async findById(id) {
     const query = `
