@@ -1890,7 +1890,12 @@ async function openProfileModal() {
   const emailInput  = document.getElementById('profile-email');
 
   if (nameInput)  nameInput.value  = user.full_name || '';
-  if (phoneInput) phoneInput.value = user.phone || '';
+  if (phoneInput) {
+    let phone = user.phone || '';
+    // Remove +91 prefix if present and keep only last 10 digits
+    if (phone.startsWith('+91') && phone.length > 10) phone = phone.slice(-10);
+    phoneInput.value = phone;
+  }
   if (emailInput) emailInput.value = user.email || '';
 
   applyProfilePhoto(user.profile_photo || '');
