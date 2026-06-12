@@ -9,7 +9,6 @@ const jwt = require('jsonwebtoken');
 const { minify } = require('terser');
 const { minify: minifyHtml } = require('html-minifier-terser');
 const JavaScriptObfuscator = require('javascript-obfuscator');
-const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 // ── Startup validation ───────────────────────────────────────────────────
@@ -141,16 +140,6 @@ const upload = multer({
     limits: {
         fileSize: 5 * 1024 * 1024 // 5MB limit
     }
-});
-
-// ── Rate limiter ─────────────────────────────────────────────────────────
-// Auth route limiter — brute-force protection on login/register/OTP
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 20,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: 'Too many attempts. Please try again in 15 minutes.' }
 });
 
 // Middleware
@@ -496,7 +485,7 @@ app.use((error, req, res, next) => {
 });
 
 // API Routes
-app.use('/api/auth', authLimiter, require('./routes/auth'));
+app.use('/api/auth', require('./routes/auth'));
 app.use('/api/products', require('./routes/products'));
 app.use('/api/cart', require('./routes/cart'));
 app.use('/api/orders', require('./routes/orders'));
