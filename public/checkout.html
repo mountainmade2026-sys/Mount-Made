@@ -100,45 +100,7 @@
                         </div>
                         
                         <div id="saved-addresses" style="margin-bottom: 1.5rem;"></div>
-                        
-                        <div id="address-form" style="display: none;">
-                            <div class="form-group">
-                                <label class="form-label">Full Name</label>
-                                <input type="text" id="name" class="form-input" required data-validate data-label="Full Name">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Address Line 1</label>
-                                <input type="text" id="address" class="form-input" required data-validate data-label="Address Line 1">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Address Line 2</label>
-                                <input type="text" id="address2" class="form-input">
-                            </div>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                                <div class="form-group">
-                                    <label class="form-label">City</label>
-                                    <input type="text" id="city" class="form-input" required data-validate data-label="City">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">State</label>
-                                    <input type="text" id="state" class="form-input" required data-validate data-label="State">
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Zip Code</label>
-                                <input type="text" id="zip" class="form-input" required data-validate data-label="Zip Code">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Phone</label>
-                                <input type="tel" id="phone" class="form-input" required data-validate data-label="Phone">
-                            </div>
-                            <div class="form-group" style="margin-top: 0.75rem;">
-                                <label class="form-label" style="display: flex; align-items: center; gap: 0.5rem; font-weight: 500;">
-                                    <input type="checkbox" id="save_address" style="width: auto;">
-                                    Save this address to my delivery addresses
-                                </label>
-                            </div>
-                        </div>
+                        <p style="margin-top: -0.25rem; color: var(--text-secondary); font-size: 0.92rem;">Choose a saved address or use the popup to enter a different delivery address.</p>
                     </div>
                 </div>
                 <div class="card checkout-card">
@@ -284,6 +246,63 @@
             </div>
         </div>
     </section>
+
+    <!-- Delivery Address Modal -->
+    <div id="address-modal" class="billing-modal hidden" aria-hidden="true">
+        <div class="billing-modal-dialog" style="max-width: 680px;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap: 1rem; margin-bottom: 0.75rem;">
+                <div>
+                    <h3 style="margin: 0 0 0.25rem;">Add or Change Delivery Address</h3>
+                    <p style="margin: 0; color: var(--text-light);">Use this popup when you want a different delivery location for this order.</p>
+                </div>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="closeModal('address-modal')" aria-label="Close address popup">
+                    <i class="fas fa-times"></i> Close
+                </button>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Full Name</label>
+                <input type="text" id="name" class="form-input" required data-validate data-label="Full Name">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Address Line 1</label>
+                <input type="text" id="address" class="form-input" required data-validate data-label="Address Line 1">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Address Line 2</label>
+                <input type="text" id="address2" class="form-input">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label class="form-label">City</label>
+                    <input type="text" id="city" class="form-input" required data-validate data-label="City">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">State</label>
+                    <input type="text" id="state" class="form-input" required data-validate data-label="State">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Zip Code</label>
+                <input type="text" id="zip" class="form-input" required data-validate data-label="Zip Code">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Phone</label>
+                <input type="tel" id="phone" class="form-input" required data-validate data-label="Phone">
+            </div>
+            <div class="form-group" style="margin-top: 0.75rem;">
+                <label class="form-label" style="display: flex; align-items: center; gap: 0.5rem; font-weight: 500;">
+                    <input type="checkbox" id="save_address" style="width: auto;">
+                    Save this address to my delivery addresses
+                </label>
+            </div>
+
+            <div class="billing-modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('address-modal')">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="closeModal('address-modal')">Use This Address</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Billing Management Modal -->
     <div id="billing-modal" class="billing-modal hidden" aria-hidden="true">
@@ -1178,7 +1197,7 @@
             } catch (error) {
                 console.error('Failed to load addresses:', error);
                 // Show manual form if no addresses
-                document.getElementById('address-form').style.display = 'block';
+                openModal('address-modal');
                 setManualAddressRequired(true);
 
                 try {
@@ -1202,7 +1221,7 @@
                         <i class="fas fa-map-marker-alt" style="font-size: 2rem; color: var(--text-secondary); margin-bottom: 1rem;"></i>
                         <p style="color: var(--text-secondary); margin-bottom: 1rem;">No saved addresses</p>
                         <button type="button" class="btn btn-primary btn-sm" onclick="showManualAddressForm()">
-                            <i class="fas fa-plus"></i> Add Address Manually
+                            <i class="fas fa-plus"></i> Use Different Address
                         </button>
                     </div>
                 `;
@@ -1269,7 +1288,7 @@
             }
             
             // Hide manual form
-            document.getElementById('address-form').style.display = 'none';
+            closeModal('address-modal');
             setManualAddressRequired(false);
 
             // Refresh COD pincode check when address changes
@@ -1280,7 +1299,7 @@
 
         async function showManualAddressForm() {
             selectedAddressId = null;
-            document.getElementById('address-form').style.display = 'block';
+            openModal('address-modal');
             setManualAddressRequired(true);
             await populateCheckoutCustomerProfile(auth?.currentUser || null);
 
