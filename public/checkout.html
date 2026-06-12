@@ -968,7 +968,40 @@
             };
         }
 
+        async function populateCheckoutCustomerProfile(profileUser) {
+            const nameInput = document.getElementById('name');
+            const phoneInput = document.getElementById('phone');
+
+            let safeUser = profileUser || auth?.currentUser || null;
+
+            if (!safeUser && typeof api?.get === 'function') {
+                try {
+                    const response = await api.get('/auth/profile');
+                    safeUser = response?.user || null;
+                } catch (error) {
+                    console.warn('Unable to load profile for checkout fields:', error);
+                }
+            }
+
+            if (nameInput && safeUser?.full_name) {
+                nameInput.value = safeUser.full_name;
+            }
+
+            if (phoneInput) {
+                const phoneValue = (safeUser?.phone || '').toString().trim();
+                phoneInput.value = phoneValue;
+            }
+        }
+
         async function loadCheckout() {
+            try {
+                if (typeof auth?.checkAuth === 'function') {
+                    await auth.checkAuth();
+                }
+            } catch (authError) {
+                console.warn('Unable to refresh auth state on checkout load:', authError);
+            }
+
             // Check for direct buy (Buy Now from product page)
             const urlParams = new URLSearchParams(window.location.search);
             const isDirectBuy = urlParams.get('directbuy') === '1';
@@ -1130,16 +1163,33 @@
         async function loadUserAddresses() {
             try {
                 const data = await api.get('/addresses');
-                userAddresses = data.addresses;
+                userAddresses = Array.isArray(data?.addresses) ? data.addresses : [];
                 renderAddresses();
+
+                try {
+                    const profileResponse = await api.get('/auth/profile');
+                    const profileUser = profileResponse?.user || auth?.currentUser || null;
+                    if (profileUser) {
+                        populateCheckoutCustomerProfile(profileUser);
+                    }
+                } catch (profileError) {
+                    console.warn('Failed to fetch profile for checkout prefill:', profileError);
+                }
             } catch (error) {
                 console.error('Failed to load addresses:', error);
                 // Show manual form if no addresses
                 document.getElementById('address-form').style.display = 'block';
                 setManualAddressRequired(true);
-                const user = await api.get('/auth/profile');
-                document.getElementById('name').value = user.user.full_name;
-                document.getElementById('phone').value = user.user.phone || '';
+
+                try {
+                    const profileResponse = await api.get('/auth/profile');
+                    const profileUser = profileResponse?.user || auth?.currentUser || null;
+                    if (profileUser) {
+                        populateCheckoutCustomerProfile(profileUser);
+                    }
+                } catch (profileError) {
+                    console.warn('Failed to fetch profile after address load error:', profileError);
+                }
             }
         }
 
@@ -1228,11 +1278,18 @@
             }
         }
 
-        function showManualAddressForm() {
+        async function showManualAddressForm() {
             selectedAddressId = null;
             document.getElementById('address-form').style.display = 'block';
             setManualAddressRequired(true);
-            
+            await populateCheckoutCustomerProfile(auth?.currentUser || null);
+
+            const saveCheckbox = document.getElementById('save_address');
+            if (saveCheckbox) {
+                saveCheckbox.checked = true;
+                saveCheckbox.title = 'This address will be saved for future orders';
+            }
+
             // Uncheck all address radios
             document.querySelectorAll('input[name="address"]').forEach(radio => {
                 radio.checked = false;
@@ -1965,7 +2022,8 @@
                 }))
             };
 
-            const shouldSaveAddress = !selectedAddressId && !!document.getElementById('save_address')?.checked;
+            const manualAddressUsed = !selectedAddressId;
+            const shouldSaveAddress = manualAddressUsed || !!document.getElementById('save_address')?.checked;
 
             if (paymentMethod === 'gpay') {
                 // Preferred: Razorpay (auto-detect success/cancel). Fallback: UPI deep-link + UTR prompt.
