@@ -32,6 +32,8 @@
             margin: 0 auto 2.5rem;
             display: grid;
             gap: 1rem;
+            font-family: var(--about-us-font-family, 'Segoe UI', Arial, sans-serif);
+            text-align: var(--about-us-text-align, left);
         }
 
         .about-panel {
@@ -40,6 +42,8 @@
             border-radius: 10px;
             box-shadow: var(--shadow-sm);
             padding: 1rem;
+            font-family: var(--about-us-font-family, 'Segoe UI', Arial, sans-serif);
+            text-align: var(--about-us-text-align, left);
         }
 
         .about-panel-title {
@@ -308,6 +312,36 @@
             return lines.map((line) => `<p>${escapeHtml(line)}</p>`).join('');
         }
 
+        function applyAboutUsStyles(settings) {
+            const fontFamily = String(settings.about_us_font_family || 'Segoe UI').trim() || 'Segoe UI';
+            const textAlign = String(settings.about_us_text_align || 'left').trim().toLowerCase() || 'left';
+
+            document.documentElement.style.setProperty('--about-us-font-family', fontFamily);
+            document.documentElement.style.setProperty('--about-us-text-align', textAlign);
+
+            const aboutPageWrap = document.querySelector('.about-page-wrap');
+            const aboutPanel = document.querySelector('.about-panel');
+            const introContent = document.getElementById('about-intro-content');
+            const gridEl = document.getElementById('about-grid');
+
+            if (aboutPageWrap) {
+                aboutPageWrap.style.fontFamily = fontFamily;
+                aboutPageWrap.style.textAlign = textAlign;
+            }
+            if (aboutPanel) {
+                aboutPanel.style.fontFamily = fontFamily;
+                aboutPanel.style.textAlign = textAlign;
+            }
+            if (introContent) {
+                introContent.style.fontFamily = fontFamily;
+                introContent.style.textAlign = textAlign;
+            }
+            if (gridEl) {
+                gridEl.style.fontFamily = fontFamily;
+                gridEl.style.textAlign = textAlign;
+            }
+        }
+
         async function loadAboutUsContent() {
             const pageTitleEl = document.getElementById('about-page-title');
             const descEl = document.getElementById('about-description');
@@ -320,6 +354,8 @@
             try {
                 const response = await api.get('/products/settings');
                 const settings = response?.settings || {};
+
+                applyAboutUsStyles(settings);
 
                 const aboutPageTitle = (settings.about_page_title || '').trim();
                 const aboutIntroTitle = (settings.about_intro_title || '').trim();

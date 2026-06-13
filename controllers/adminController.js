@@ -2032,6 +2032,8 @@ exports.updateSiteSettings = async (req, res) => {
       homepage_hero_image_url,
       homepage_hero_section_id,
       about_us_description,
+      about_us_font_family,
+      about_us_text_align,
       about_page_title,
       about_intro_title,
       about_mission_vision_title,
@@ -2128,6 +2130,17 @@ exports.updateSiteSettings = async (req, res) => {
     }
     if (about_us_description !== undefined) {
       updates.push({ key: 'about_us_description', value: String(about_us_description || '').trim() });
+    }
+    if (about_us_font_family !== undefined) {
+      const fontFamily = String(about_us_font_family || '').trim() || 'Segoe UI';
+      updates.push({ key: 'about_us_font_family', value: fontFamily });
+    }
+    if (about_us_text_align !== undefined) {
+      const textAlign = String(about_us_text_align || 'left').trim().toLowerCase();
+      if (!['left', 'center', 'right', 'justify'].includes(textAlign)) {
+        return res.status(400).json({ error: 'About Us text alignment must be one of left, center, right, or justify.' });
+      }
+      updates.push({ key: 'about_us_text_align', value: textAlign });
     }
     if (about_page_title !== undefined) {
       updates.push({ key: 'about_page_title', value: String(about_page_title || '').trim() });
