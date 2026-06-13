@@ -451,13 +451,21 @@
         }
         
         .quantity-controls input {
-            width: 60px;
+            width: 62px;
             text-align: center;
             border: none;
             padding: 0.5rem;
             font-size: 1rem;
             background: var(--bg-primary);
             color: var(--text-primary);
+            -moz-appearance: textfield;
+            appearance: textfield;
+        }
+
+        .quantity-controls input::-webkit-outer-spin-button,
+        .quantity-controls input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
         }
         
         @media (max-width: 480px) {
@@ -1105,10 +1113,10 @@
                                 <div class="quantity-selector">
                                     <label>Quantity:</label>
                                     <div class="quantity-controls">
-                                        <button onclick="decrementQuantity()">-</button>
-                                        <input type="number" id="quantity" value="${selectedQuantity}" min="${qtyStep}" step="${qtyStep}" max="${product.stock_quantity}" 
-                                                   onchange="updateQuantity(this.value)" oninput="updateQuantity(this.value)">
-                                        <button onclick="incrementQuantity()">+</button>
+                                        <button type="button" onclick="decrementQuantity()" aria-label="Decrease quantity">−</button>
+                                        <input type="text" inputmode="numeric" id="quantity" value="${selectedQuantity}" min="${qtyStep}" step="${qtyStep}" max="${product.stock_quantity}" 
+                                               onchange="updateQuantity(this.value)" oninput="updateQuantity(this.value)">
+                                        <button type="button" onclick="incrementQuantity()" aria-label="Increase quantity">+</button>
                                     </div>
                                 </div>
                                 
