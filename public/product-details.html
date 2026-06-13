@@ -895,6 +895,22 @@
             return { basePrice, salePrice, showDiscount, isWholesale };
         }
 
+        function showAddToCartSuccess() {
+            const successEl = document.getElementById('add-to-cart-success');
+            if (successEl) {
+                successEl.style.display = 'flex';
+                successEl.classList.remove('hidden');
+            }
+        }
+
+        function hideAddToCartSuccess() {
+            const successEl = document.getElementById('add-to-cart-success');
+            if (successEl) {
+                successEl.style.display = 'none';
+                successEl.classList.add('hidden');
+            }
+        }
+
         function updateDisplayedPrice() {
             const pricing = getCurrentPricing();
             const qty = Number(selectedQuantity) > 0 ? Number(selectedQuantity) : 1;
@@ -1103,6 +1119,13 @@
                                     <button class="btn btn-success" onclick="handleBuyNow()">
                                         <i class="fas fa-bolt"></i> Buy Now
                                     </button>
+                                </div>
+                                <div id="add-to-cart-success" class="hidden" style="margin-top: 0.75rem; padding: 0.75rem 0.9rem; border-radius: 12px; background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; display: none; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap;">
+                                    <span><strong>Added to cart.</strong> You can keep shopping or view your cart.</span>
+                                    <div style="display:flex; gap: 0.5rem; flex-wrap: wrap;">
+                                        <button type="button" class="btn btn-secondary" onclick="hideAddToCartSuccess()" style="padding: 0.45rem 0.75rem; font-size: 0.92rem;">Continue Shopping</button>
+                                        <a href="/cart" class="btn btn-primary" style="padding: 0.45rem 0.75rem; font-size: 0.92rem; text-decoration: none;">View Cart</a>
+                                    </div>
                                 </div>
                             ` : `
                                 <div class="product-actions" style="margin-top:1rem;">
@@ -1396,6 +1419,8 @@
             }
             try {
                 await cart.add(product.id, selectedQuantity);
+                showAddToCartSuccess();
+                showAlert('Added to cart successfully!', 'success');
             } catch (error) {
                 console.error('Add to cart error:', error);
                 showAlert(error.message || 'Failed to add to cart', 'error');
