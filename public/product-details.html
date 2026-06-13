@@ -881,7 +881,7 @@
         let product = null;
         let selectedQuantity = 1;
         let userAddresses = [];
-        let quickCodPincodes = []; // loaded from admin settings on first Buy Now click
+        let quickCodPincodes = []; // loaded from site settings for delivery/COD availability checks
 
         function getQuantityStep() {
             const isWholesaleUser = !!(auth && typeof auth.isWholesale === 'function' && auth.isWholesale());
@@ -981,8 +981,64 @@
             try {
                 const data = await api.get('/addresses');
                 userAddresses = data.addresses;
+
+                const defaultAddress = userAddresses.find(a => a.is_default) || userAddresses[0];
+                const pinInput = document.getElementById('product-pincode-input');
+                if (defaultAddress && pinInput && !pinInput.value) {
+                    pinInput.value = String(defaultAddress.postal_code || '').trim();
+                    checkProductPincodeAvailability(pinInput.value);
+                }
             } catch (error) {
                 console.error('Failed to load addresses:', error);
+            }
+        }
+
+        async function loadProductDeliverySettings() {
+            try {
+                const resp = await api.get('/products/settings');
+                const settings = resp?.settings || {};
+                const rawCodPincodes = String(settings.cod_available_pincodes || '').trim();
+                quickCodPincodes = rawCodPincodes
+                    ? rawCodPincodes.split(',').map(pin => pin.trim()).filter(Boolean)
+                    : [];
+            } catch (error) {
+                console.error('Failed to load delivery settings for PIN check:', error);
+                quickCodPincodes = [];
+            }
+        }
+
+        function checkProductPincodeAvailability(inputPin) {
+            const pinInput = document.getElementById('product-pincode-input');
+            const rawPin = inputPin ?? (pinInput ? pinInput.value : '');
+            const pin = String(rawPin || '').trim();
+            const statusEl = document.getElementById('product-pincode-status');
+
+            if (!statusEl) return;
+
+            if (!pin) {
+                statusEl.innerHTML = '<span style="color: var(--text-secondary); font-size: 0.9rem;">Enter a 6-digit PIN code to check delivery availability.</span>';
+                return;
+            }
+
+            const normalizedPin = pin.replace(/\D/g, '').slice(0, 6);
+            if (normalizedPin.length !== 6) {
+                statusEl.innerHTML = '<span style="color: #ef4444; font-size: 0.9rem;"><i class="fas fa-times-circle"></i> Please enter a valid 6-digit PIN code.</span>';
+                if (pinInput) pinInput.value = normalizedPin;
+                return;
+            }
+
+            if (pinInput) pinInput.value = normalizedPin;
+
+            if (!quickCodPincodes.length) {
+                statusEl.innerHTML = '<span style="color: #22c55e; font-size: 0.9rem;"><i class="fas fa-check-circle"></i> Delivery / COD is available for PIN ' + normalizedPin + '.</span>';
+                return;
+            }
+
+            const available = quickCodPincodes.includes(normalizedPin);
+            if (available) {
+                statusEl.innerHTML = '<span style="color: #22c55e; font-size: 0.9rem;"><i class="fas fa-check-circle"></i> Delivery / COD is available for PIN ' + normalizedPin + '.</span>';
+            } else {
+                statusEl.innerHTML = '<span style="color: #ef4444; font-size: 0.9rem;"><i class="fas fa-times-circle"></i> Delivery / COD is not available for PIN ' + normalizedPin + '. Please choose GPay.</span>';
             }
         }
 
@@ -1153,6 +1209,17 @@
                             <div class="delivery-option">
                                 <i class="fas fa-check-circle"></i>
                                 <span>Express delivery available</span>
+                            </div>
+                            <div style="margin-top: 1rem; padding: 0.9rem; border: 1px solid var(--border-primary); border-radius: 12px; background: var(--bg-secondary);">
+                                <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom: 0.35rem; font-weight: 600; color: var(--text-primary);">
+                                    <i class="fas fa-map-marker-alt" style="color: var(--primary-600);"></i>
+                                    Check delivery / COD at your PIN code
+                                </div>
+                                <div style="display:flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.45rem;">
+                                    <input id="product-pincode-input" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="Enter 6-digit PIN" style="flex: 1 1 180px; min-width: 140px; border: 1px solid var(--border-primary); border-radius: 10px; padding: 0.65rem 0.75rem; background: var(--bg-primary); color: var(--text-primary);">
+                                    <button type="button" class="btn btn-primary" onclick="checkProductPincodeAvailability()" style="white-space: nowrap;">Check</button>
+                                </div>
+                                <div id="product-pincode-status" style="font-size: 0.9rem; color: var(--text-secondary);">Enter a PIN code to see if delivery / COD is available before ordering.</div>
                             </div>
                         </div>
                         
@@ -1670,6 +1737,7 @@
         document.addEventListener('DOMContentLoaded', async () => {
             await auth.checkAuth();
             await cart.fetch();
+            await loadProductDeliverySettings();
             await loadProduct();
             await loadUserAddresses();
 
