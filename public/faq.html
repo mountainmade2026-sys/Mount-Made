@@ -10,6 +10,234 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+        :root {
+            color-scheme: light;
+        }
+
+        .faq-page-shell {
+            padding: 2rem 1rem 4rem;
+        }
+
+        .faq-page-layout {
+            display: grid;
+            grid-template-columns: 1.35fr 0.85fr;
+            gap: 1.5rem;
+            align-items: start;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .faq-hero-card,
+        .faq-sidebar-card {
+            background: linear-gradient(145deg, rgba(255,255,255,0.98), rgba(248,250,252,0.96));
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            border-radius: 24px;
+            box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+            padding: 1.5rem;
+        }
+
+        .faq-hero-card {
+            overflow: hidden;
+        }
+
+        .faq-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            text-transform: uppercase;
+            letter-spacing: 0.18em;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #8b5cf6;
+            margin-bottom: 0.75rem;
+        }
+
+        .faq-hero-card h1 {
+            margin: 0 0 0.75rem;
+            font-size: clamp(2rem, 5vw, 2.8rem);
+            line-height: 1.1;
+            color: #0f172a;
+        }
+
+        .faq-hero-card .lead-text {
+            color: #475569;
+            font-size: 1.02rem;
+            max-width: 48rem;
+            margin-bottom: 1rem;
+        }
+
+        .faq-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.65rem;
+            margin-bottom: 1.2rem;
+        }
+
+        .faq-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.45rem 0.7rem;
+            border-radius: 999px;
+            background: #eef2ff;
+            color: #4338ca;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border: 1px solid #c7d2fe;
+        }
+
+        .faq-list {
+            display: grid;
+            gap: 0.9rem;
+        }
+
+        .faq-accordion-item {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 18px;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+            overflow: hidden;
+        }
+
+        .faq-accordion-item summary {
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            padding: 1rem 1rem 1rem 0.95rem;
+            cursor: pointer;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .faq-accordion-item summary::-webkit-details-marker { display: none; }
+
+        .faq-item-number {
+            flex: 0 0 auto;
+            width: 2rem;
+            height: 2rem;
+            border-radius: 999px;
+            display: grid;
+            place-items: center;
+            background: linear-gradient(135deg, #8b5cf6, #6366f1);
+            color: #fff;
+            font-size: 0.82rem;
+            box-shadow: 0 8px 18px rgba(124, 58, 237, 0.25);
+        }
+
+        .faq-question-text {
+            flex: 1;
+            font-size: 1rem;
+            line-height: 1.35;
+        }
+
+        .faq-toggle-icon {
+            color: #6366f1;
+            font-size: 0.95rem;
+            transition: transform 0.2s ease;
+        }
+
+        .faq-accordion-item[open] .faq-toggle-icon {
+            transform: rotate(180deg);
+        }
+
+        .faq-answer {
+            padding: 0 0.95rem 1rem 3.85rem;
+            color: #475569;
+            line-height: 1.6;
+            font-size: 0.98rem;
+        }
+
+        .faq-sidebar {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .faq-sidebar-card h2,
+        .faq-sidebar-card h3 {
+            margin-top: 0;
+            color: #111827;
+        }
+
+        .faq-sidebar-card p,
+        .faq-sidebar-card li {
+            color: #475569;
+            line-height: 1.6;
+        }
+
+        .faq-contact-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.45rem;
+            width: 100%;
+            padding: 0.85rem 1rem;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #111827, #1f2937);
+            color: #fff;
+            text-decoration: none;
+            font-weight: 700;
+            margin-top: 0.75rem;
+        }
+
+        .faq-support-grid {
+            display: grid;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .faq-support-item {
+            display: flex;
+            align-items: start;
+            gap: 0.7rem;
+            padding: 0.75rem;
+            border-radius: 14px;
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+        }
+
+        .faq-support-item i {
+            color: #6366f1;
+            font-size: 1rem;
+            margin-top: 0.15rem;
+        }
+
+        .faq-empty-card {
+            background: linear-gradient(135deg, rgba(248,250,252,0.98), rgba(255,255,255,0.98));
+            border: 1px dashed #cbd5e1;
+            border-radius: 18px;
+            padding: 1rem;
+            color: #475569;
+            text-align: center;
+        }
+
+        @media (max-width: 980px) {
+            .faq-page-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .faq-page-shell {
+                padding: 1rem 0.75rem 2rem;
+            }
+
+            .faq-hero-card,
+            .faq-sidebar-card {
+                padding: 1rem;
+                border-radius: 18px;
+            }
+
+            .faq-accordion-item summary {
+                padding: 0.9rem;
+            }
+
+            .faq-answer {
+                padding: 0 0.9rem 0.95rem 3.35rem;
+            }
+        }
+    </style>
 </head>
 <body>
     <header class="site-header">
@@ -30,11 +258,35 @@
     </header>
 
     <main class="page-shell faq-page-shell">
-        <section class="content-panel faq-page-panel">
-            <p class="eyebrow">Support</p>
-            <h1 id="faq-page-title">Frequently Asked Questions</h1>
-            <p id="faq-intro-text" class="lead-text">Browse common questions about orders, payments, delivery, and returns.</p>
-            <div id="faq-list" class="faq-list"></div>
+        <section class="faq-page-layout">
+            <article class="faq-hero-card">
+                <p class="faq-eyebrow"><i class="fas fa-circle-question"></i> Support Center</p>
+                <h1 id="faq-page-title">Frequently Asked Questions</h1>
+                <p id="faq-intro-text" class="lead-text">Browse common questions about orders, payment options, delivery, and returns in one place.</p>
+                <div class="faq-badges">
+                    <span class="faq-badge"><i class="fas fa-bolt"></i> Quick answers</span>
+                    <span class="faq-badge"><i class="fas fa-truck-fast"></i> Delivery help</span>
+                    <span class="faq-badge"><i class="fas fa-shield-halved"></i> Secure support</span>
+                </div>
+                <div id="faq-list" class="faq-list"></div>
+            </article>
+
+            <aside class="faq-sidebar">
+                <article class="faq-sidebar-card">
+                    <h2>Need more help?</h2>
+                    <p>Our support team is here to help with orders, returns, payments, and delivery updates.</p>
+                    <a class="faq-contact-btn" href="/contact"><i class="fas fa-paper-plane"></i> Contact Support</a>
+                </article>
+
+                <article class="faq-sidebar-card">
+                    <h3>Why this FAQ works well</h3>
+                    <div class="faq-support-grid">
+                        <div class="faq-support-item"><i class="fas fa-clock"></i><div>Fast, simple answers for common shopping questions.</div></div>
+                        <div class="faq-support-item"><i class="fas fa-user-check"></i><div>Clear, customer-focused content with a clean support layout.</div></div>
+                        <div class="faq-support-item"><i class="fas fa-store"></i><div>Built to match the tone of the rest of the storefront.</div></div>
+                    </div>
+                </article>
+            </aside>
         </section>
     </main>
 
@@ -90,16 +342,20 @@
             if (!faqListEl) return;
 
             if (!items.length) {
-                faqListEl.innerHTML = '<div class="empty-state">FAQ content is not added yet. Update it from Admin &gt; Site Settings to see answers here.</div>';
+                faqListEl.innerHTML = '<div class="faq-empty-card">FAQ content is not added yet. Update it from Admin &gt; Site Settings to see answers here.</div>';
                 return;
             }
 
             faqListEl.innerHTML = items
-                .map((item) => `
-                    <article class="faq-card">
-                        <h2>${escapeHtml(item.question || `Question ${item.index}`)}</h2>
-                        <p>${escapeHtml(item.answer || 'Answer will appear here after it is added in the admin section.')}</p>
-                    </article>
+                .map((item, index) => `
+                    <details class="faq-accordion-item" ${index === 0 ? 'open' : ''}>
+                        <summary>
+                            <span class="faq-item-number">0${index + 1}</span>
+                            <span class="faq-question-text">${escapeHtml(item.question || `Question ${item.index}`)}</span>
+                            <i class="fas fa-chevron-down faq-toggle-icon"></i>
+                        </summary>
+                        <div class="faq-answer">${escapeHtml(item.answer || 'Answer will appear here after it is added in the admin section.')}</div>
+                    </details>
                 `)
                 .join('');
         }
