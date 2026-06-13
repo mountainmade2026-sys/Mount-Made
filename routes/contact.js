@@ -286,6 +286,10 @@ router.post('/', contactLimiter, optionalAuth, async (req, res) => {
       return res.status(400).json({ error: 'Email is required.' });
     }
 
+    if (!safePhone) {
+      return res.status(400).json({ error: 'Phone number is required.' });
+    }
+
     if (!safeMessage) {
       return res.status(400).json({ error: 'Message is required.' });
     }

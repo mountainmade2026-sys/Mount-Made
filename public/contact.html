@@ -109,8 +109,8 @@
                             <input id="contact-name" type="text" class="form-input" required>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Phone (optional)</label>
-                            <input id="contact-phone" type="tel" class="form-input">
+                            <label class="form-label">Phone <span style="color: var(--accent-red, #ef4444);">*</span></label>
+                            <input id="contact-phone" type="tel" class="form-input" data-required="true" data-required-message="Phone number is required before submitting the contact form." required>
                         </div>
                     </div>
 
@@ -185,6 +185,25 @@
 
     <script src="/js/main.js"></script>
     <script>
+        function getDynamicRequiredMessage(field) {
+            if (field?.dataset?.requiredMessage) return field.dataset.requiredMessage;
+            const label = field?.closest('.form-group')?.querySelector('.form-label')?.textContent || 'This field';
+            return `${label.replace(/\*\s*$/, '').trim()} is required.`;
+        }
+
+        function validateDynamicRequiredFields(form) {
+            const requiredFields = form?.querySelectorAll('[data-required="true"]') || [];
+            for (const field of requiredFields) {
+                const value = String(field.value || '').trim();
+                if (!value) {
+                    showAlert(getDynamicRequiredMessage(field), 'error');
+                    field.focus();
+                    return false;
+                }
+            }
+            return true;
+        }
+
         function initContactForm() {
             const form = document.getElementById('contact-form');
             if (!form) return;
@@ -193,10 +212,20 @@
                 e.preventDefault();
                 const submitBtn = document.getElementById('contact-submit');
 
+                if (!validateDynamicRequiredFields(form)) {
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send';
+                    }
+                    return;
+                }
+
+                const phone = (document.getElementById('contact-phone')?.value || '').trim();
+
                 const payload = {
                     type: 'message',
                     full_name: (document.getElementById('contact-name')?.value || '').trim(),
-                    phone: (document.getElementById('contact-phone')?.value || '').trim() || null,
+                    phone,
                     email: (document.getElementById('contact-email')?.value || '').trim(),
                     subject: (document.getElementById('contact-subject')?.value || '').trim() || null,
                     message: (document.getElementById('contact-message')?.value || '').trim(),
