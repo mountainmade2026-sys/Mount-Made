@@ -241,6 +241,8 @@ app.use((req, res, next) => {
       '/index.html',
       '/about',
       '/about.html',
+      '/faq',
+      '/faq.html',
       '/products',
       '/products.html',
       '/orders',
@@ -781,6 +783,10 @@ app.get('/contact', (req, res) => {
 
 app.get('/about', (req, res) => {
   return sendHtmlPage(req, res, 'about.html');
+});
+
+app.get('/faq', (req, res) => {
+  return sendHtmlPage(req, res, 'faq.html');
 });
 
 app.get('/delivery-confirm', (req, res) => {
