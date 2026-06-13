@@ -2041,6 +2041,18 @@ exports.updateSiteSettings = async (req, res) => {
       about_us_description,
       about_us_font_family,
       about_us_text_align,
+      faq_page_title,
+      faq_intro_text,
+      faq_question_1,
+      faq_answer_1,
+      faq_question_2,
+      faq_answer_2,
+      faq_question_3,
+      faq_answer_3,
+      faq_question_4,
+      faq_answer_4,
+      faq_question_5,
+      faq_answer_5,
       about_page_title,
       about_intro_title,
       about_mission_vision_title,
@@ -2137,6 +2149,22 @@ exports.updateSiteSettings = async (req, res) => {
     }
     if (about_us_description !== undefined) {
       updates.push({ key: 'about_us_description', value: String(about_us_description || '').trim() });
+    }
+    if (faq_page_title !== undefined) {
+      updates.push({ key: 'faq_page_title', value: String(faq_page_title || '').trim() });
+    }
+    if (faq_intro_text !== undefined) {
+      updates.push({ key: 'faq_intro_text', value: String(faq_intro_text || '').trim() });
+    }
+    for (let i = 1; i <= 5; i += 1) {
+      const question = req.body?.[`faq_question_${i}`];
+      const answer = req.body?.[`faq_answer_${i}`];
+      if (question !== undefined) {
+        updates.push({ key: `faq_question_${i}`, value: String(question || '').trim() });
+      }
+      if (answer !== undefined) {
+        updates.push({ key: `faq_answer_${i}`, value: String(answer || '').trim() });
+      }
     }
     if (about_us_font_family !== undefined) {
       const fontFamily = String(about_us_font_family || '').trim() || 'Segoe UI';

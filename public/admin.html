@@ -2634,6 +2634,61 @@
                     </div>
                 </div>
 
+                <div id="ss-sub-faq" class="data-table-container" style="margin-top: 1.5rem;">
+                    <div class="table-header">
+                        <h3>FAQ Content</h3>
+                    </div>
+                    <div style="padding: 2rem;">
+                        <p style="color: var(--text-muted); margin-bottom: 1.5rem;">
+                            Manage the public FAQ page in this section. Add a page title, intro text, and up to five questions and answers.
+                        </p>
+
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <label class="form-label" for="faq-page-title">FAQ Page Title</label>
+                            <input type="text" id="faq-page-title" class="form-input" placeholder="e.g., Frequently Asked Questions">
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <label class="form-label" for="faq-intro-text">FAQ Intro</label>
+                            <textarea id="faq-intro-text" class="form-input" rows="3" placeholder="Short intro text for the FAQ page"></textarea>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <label class="form-label" for="faq-question-1">Question 1</label>
+                            <input type="text" id="faq-question-1" class="form-input" placeholder="Question 1" style="margin-bottom:0.5rem;">
+                            <textarea id="faq-answer-1" class="form-input" rows="3" placeholder="Answer 1"></textarea>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <label class="form-label" for="faq-question-2">Question 2</label>
+                            <input type="text" id="faq-question-2" class="form-input" placeholder="Question 2" style="margin-bottom:0.5rem;">
+                            <textarea id="faq-answer-2" class="form-input" rows="3" placeholder="Answer 2"></textarea>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <label class="form-label" for="faq-question-3">Question 3</label>
+                            <input type="text" id="faq-question-3" class="form-input" placeholder="Question 3" style="margin-bottom:0.5rem;">
+                            <textarea id="faq-answer-3" class="form-input" rows="3" placeholder="Answer 3"></textarea>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <label class="form-label" for="faq-question-4">Question 4</label>
+                            <input type="text" id="faq-question-4" class="form-input" placeholder="Question 4" style="margin-bottom:0.5rem;">
+                            <textarea id="faq-answer-4" class="form-input" rows="3" placeholder="Answer 4"></textarea>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <label class="form-label" for="faq-question-5">Question 5</label>
+                            <input type="text" id="faq-question-5" class="form-input" placeholder="Question 5" style="margin-bottom:0.5rem;">
+                            <textarea id="faq-answer-5" class="form-input" rows="3" placeholder="Answer 5"></textarea>
+                        </div>
+
+                        <button class="btn btn-primary" onclick="saveFaqSettings()">
+                            <i class="fas fa-save"></i> Save FAQ Content
+                        </button>
+                    </div>
+                </div>
+
                 <div id="ss-sub-contact" class="data-table-container" style="margin-top: 1.5rem;">
                     <div class="table-header">
                         <h3>Footer Contact Info</h3>
@@ -7807,6 +7862,8 @@
 
                 const aboutDescriptionEl = document.getElementById('about-us-description');
                 const aboutPageTitleEl = document.getElementById('about-page-title');
+                const faqPageTitleEl = document.getElementById('faq-page-title');
+                const faqIntroTextEl = document.getElementById('faq-intro-text');
                 const aboutIntroTitleEl = document.getElementById('about-intro-title');
                 const aboutMissionVisionTitleEl = document.getElementById('about-mission-vision-title');
                 const aboutFontFamilyEl = document.getElementById('about-us-font-family');
@@ -7821,9 +7878,21 @@
                 const aboutParagraph3El = document.getElementById('about-us-paragraph-3');
                 const aboutParagraph4El = document.getElementById('about-us-paragraph-4');
                 const aboutParagraph5El = document.getElementById('about-us-paragraph-5');
+                const faqQuestion1El = document.getElementById('faq-question-1');
+                const faqQuestion2El = document.getElementById('faq-question-2');
+                const faqQuestion3El = document.getElementById('faq-question-3');
+                const faqQuestion4El = document.getElementById('faq-question-4');
+                const faqQuestion5El = document.getElementById('faq-question-5');
+                const faqAnswer1El = document.getElementById('faq-answer-1');
+                const faqAnswer2El = document.getElementById('faq-answer-2');
+                const faqAnswer3El = document.getElementById('faq-answer-3');
+                const faqAnswer4El = document.getElementById('faq-answer-4');
+                const faqAnswer5El = document.getElementById('faq-answer-5');
 
                 if (aboutDescriptionEl) aboutDescriptionEl.value = settings.about_us_description || '';
                 if (aboutPageTitleEl) aboutPageTitleEl.value = settings.about_page_title || '';
+                if (faqPageTitleEl) faqPageTitleEl.value = settings.faq_page_title || 'Frequently Asked Questions';
+                if (faqIntroTextEl) faqIntroTextEl.value = settings.faq_intro_text || '';
                 if (aboutIntroTitleEl) aboutIntroTitleEl.value = settings.about_intro_title || '';
                 if (aboutMissionVisionTitleEl) aboutMissionVisionTitleEl.value = settings.about_mission_vision_title || '';
                 if (aboutFontFamilyEl) aboutFontFamilyEl.value = settings.about_us_font_family || 'Segoe UI';
@@ -7838,6 +7907,16 @@
                 if (aboutParagraph3El) aboutParagraph3El.value = settings.about_us_paragraph_3 || '';
                 if (aboutParagraph4El) aboutParagraph4El.value = settings.about_us_paragraph_4 || '';
                 if (aboutParagraph5El) aboutParagraph5El.value = settings.about_us_paragraph_5 || '';
+                if (faqQuestion1El) faqQuestion1El.value = settings.faq_question_1 || '';
+                if (faqQuestion2El) faqQuestion2El.value = settings.faq_question_2 || '';
+                if (faqQuestion3El) faqQuestion3El.value = settings.faq_question_3 || '';
+                if (faqQuestion4El) faqQuestion4El.value = settings.faq_question_4 || '';
+                if (faqQuestion5El) faqQuestion5El.value = settings.faq_question_5 || '';
+                if (faqAnswer1El) faqAnswer1El.value = settings.faq_answer_1 || '';
+                if (faqAnswer2El) faqAnswer2El.value = settings.faq_answer_2 || '';
+                if (faqAnswer3El) faqAnswer3El.value = settings.faq_answer_3 || '';
+                if (faqAnswer4El) faqAnswer4El.value = settings.faq_answer_4 || '';
+                if (faqAnswer5El) faqAnswer5El.value = settings.faq_answer_5 || '';
 
                 // Populate contact info settings
                 const contactEmailEl = document.getElementById('contact-email');
@@ -8486,6 +8565,49 @@
             } catch (error) {
                 console.error('Save admin account settings error:', error);
                 showAlert(error.message || 'Failed to update admin account settings', 'error');
+            }
+        };
+
+        window.saveFaqSettings = async function() {
+            try {
+                const faq_page_title = (document.getElementById('faq-page-title')?.value || '').trim();
+                const faq_intro_text = (document.getElementById('faq-intro-text')?.value || '').trim();
+                const faq_question_1 = (document.getElementById('faq-question-1')?.value || '').trim();
+                const faq_answer_1 = (document.getElementById('faq-answer-1')?.value || '').trim();
+                const faq_question_2 = (document.getElementById('faq-question-2')?.value || '').trim();
+                const faq_answer_2 = (document.getElementById('faq-answer-2')?.value || '').trim();
+                const faq_question_3 = (document.getElementById('faq-question-3')?.value || '').trim();
+                const faq_answer_3 = (document.getElementById('faq-answer-3')?.value || '').trim();
+                const faq_question_4 = (document.getElementById('faq-question-4')?.value || '').trim();
+                const faq_answer_4 = (document.getElementById('faq-answer-4')?.value || '').trim();
+                const faq_question_5 = (document.getElementById('faq-question-5')?.value || '').trim();
+                const faq_answer_5 = (document.getElementById('faq-answer-5')?.value || '').trim();
+
+                showAlert('Saving FAQ content...', 'info');
+                const response = await api.post('/admin/settings', {
+                    faq_page_title,
+                    faq_intro_text,
+                    faq_question_1,
+                    faq_answer_1,
+                    faq_question_2,
+                    faq_answer_2,
+                    faq_question_3,
+                    faq_answer_3,
+                    faq_question_4,
+                    faq_answer_4,
+                    faq_question_5,
+                    faq_answer_5
+                });
+
+                if (response && (response.success || response.message)) {
+                    showAlert('FAQ content saved successfully!', 'success');
+                    await loadSiteSettings();
+                } else {
+                    throw new Error(response?.error || 'Failed to save FAQ content');
+                }
+            } catch (error) {
+                console.error('Save FAQ settings error:', error);
+                showAlert(error.message || 'Failed to save FAQ content', 'error');
             }
         };
 

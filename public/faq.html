@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAQ - Mount Made</title>
+    <meta name="description" content="Browse answers to common questions about ordering, delivery, returns, and support.">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+</head>
+<body>
+    <header class="site-header">
+        <nav class="nav-container">
+            <a href="/" class="brand-logo">Mount Made</a>
+            <div class="nav-links">
+                <a href="/products">Products</a>
+                <a href="/about">About</a>
+                <a href="/contact">Contact</a>
+                <a href="/faq" class="active">FAQ</a>
+            </div>
+            <div class="nav-actions">
+                <a href="/cart" class="nav-icon-btn" aria-label="Shopping Cart"><i class="fas fa-shopping-cart"></i></a>
+                <a href="/orders" class="nav-icon-btn" aria-label="Orders"><i class="fas fa-box"></i></a>
+                <button id="account-toggle" class="nav-icon-btn" aria-label="Account"><i class="fas fa-user"></i></button>
+            </div>
+        </nav>
+    </header>
+
+    <main class="page-shell faq-page-shell">
+        <section class="content-panel faq-page-panel">
+            <p class="eyebrow">Support</p>
+            <h1 id="faq-page-title">Frequently Asked Questions</h1>
+            <p id="faq-intro-text" class="lead-text">Browse common questions about orders, payments, delivery, and returns.</p>
+            <div id="faq-list" class="faq-list"></div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>Mount Made</h3>
+                <p>Premium organic food products from mountain farms to your table.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Quick Links</h3>
+                <ul>
+                    <li><a href="/products">Products</a></li>
+                    <li><a href="/about">About Us</a></li>
+                    <li><a href="/faq">FAQ</a></li>
+                    <li><a href="/contact">Contact</a></li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+
+    <script src="/js/main.js"></script>
+    <script>
+        function escapeHtml(value) {
+            return String(value || '')
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#39;');
+        }
+
+        function renderFaqItems(settings) {
+            const faqTitleEl = document.getElementById('faq-page-title');
+            const faqIntroEl = document.getElementById('faq-intro-text');
+            const faqListEl = document.getElementById('faq-list');
+
+            if (faqTitleEl) {
+                faqTitleEl.textContent = (settings.faq_page_title || '').trim() || 'Frequently Asked Questions';
+            }
+            if (faqIntroEl) {
+                faqIntroEl.textContent = (settings.faq_intro_text || '').trim() || 'Browse common questions about our products, delivery, and support.';
+            }
+
+            const items = [1, 2, 3, 4, 5]
+                .map((index) => ({
+                    question: String(settings[`faq_question_${index}`] || '').trim(),
+                    answer: String(settings[`faq_answer_${index}`] || '').trim(),
+                    index
+                }))
+                .filter((item) => item.question || item.answer);
+
+            if (!faqListEl) return;
+
+            if (!items.length) {
+                faqListEl.innerHTML = '<div class="empty-state">FAQ content is not added yet. Update it from Admin &gt; Site Settings to see answers here.</div>';
+                return;
+            }
+
+            faqListEl.innerHTML = items
+                .map((item) => `
+                    <article class="faq-card">
+                        <h2>${escapeHtml(item.question || `Question ${item.index}`)}</h2>
+                        <p>${escapeHtml(item.answer || 'Answer will appear here after it is added in the admin section.')}</p>
+                    </article>
+                `)
+                .join('');
+        }
+
+        async function loadFaqContent() {
+            try {
+                const response = await api.get('/products/settings');
+                renderFaqItems(response?.settings || {});
+            } catch (error) {
+                console.error('Failed to load FAQ content:', error);
+                const faqListEl = document.getElementById('faq-list');
+                if (faqListEl) {
+                    faqListEl.innerHTML = '<div class="empty-state">Unable to load FAQ content right now. Please try again later.</div>';
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadFaqContent);
+    </script>
+</body>
+</html>
