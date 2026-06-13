@@ -240,9 +240,14 @@
                         <h4 style="margin-bottom: 0.5rem;">${item.name}</h4>
                         <p style="color: var(--text-light); margin-bottom: 0.5rem;">${priceBlock} each</p>
                         <div class="cart-item-actions">
-                            <input type="number" value="${item.quantity}" min="${minQty}" step="${minQty}" max="${item.stock_quantity}" 
-                                   onchange="updateQuantity(${item.id}, this.value, ${minQty}, ${item.stock_quantity})" 
-                                   style="width: 70px; padding: 0.4rem; border: 2px solid var(--border); border-radius: 6px;">
+                            <div class="quantity-controls" style="display:flex; align-items:center; border:1px solid var(--border); border-radius:8px; overflow:hidden; background: var(--bg-primary);">
+                                <button type="button" class="qty-btn" onclick="changeCartQuantity(${item.id}, -${minQty}, ${minQty}, ${item.stock_quantity}, this.closest('.cart-item-actions').querySelector('input'))" aria-label="Decrease quantity" style="border:none; background:transparent; padding:0.45rem 0.65rem; font-size:1rem; cursor:pointer; color:var(--text-primary);">−</button>
+                                <input type="text" inputmode="numeric" value="${item.quantity}" min="${minQty}" step="${minQty}" max="${item.stock_quantity}" 
+                                       oninput="changeCartQuantity(${item.id}, 0, ${minQty}, ${item.stock_quantity}, this)"
+                                       onchange="changeCartQuantity(${item.id}, 0, ${minQty}, ${item.stock_quantity}, this)"
+                                       style="width: 56px; padding: 0.35rem 0.2rem; border: none; text-align:center; background:transparent; color:var(--text-primary); -moz-appearance:textfield; appearance:textfield;">
+                                <button type="button" class="qty-btn" onclick="changeCartQuantity(${item.id}, ${minQty}, ${minQty}, ${item.stock_quantity}, this.closest('.cart-item-actions').querySelector('input'))" aria-label="Increase quantity" style="border:none; background:transparent; padding:0.45rem 0.65rem; font-size:1rem; cursor:pointer; color:var(--text-primary);">+</button>
+                            </div>
                             <button onclick="cart.remove(${item.id}); loadCart();" class="btn btn-danger btn-sm">
                                 <i class="fas fa-trash"></i> Remove
                             </button>
@@ -262,6 +267,56 @@
         document.querySelectorAll('#continue-shopping-link, [data-continue-shopping]').forEach(link => {
             link.setAttribute('href', target);
         });
+    }
+
+    async function changeCartQuantity(itemId, delta, minQty = 1, maxQty = Infinity, inputEl) {
+        const parsedMin = parseInt(minQty, 10);
+        const step = Number.isFinite(parsedMin) && parsedMin > 0 ? parsedMin : 1;
+
+        let q;
+        if (inputEl && typeof inputEl === 'object' && 'value' in inputEl) {
+            q = parseInt(inputEl.value, 10);
+            if (!Number.isFinite(q) || q <= 0) {
+                q = step;
+            }
+            if (delta !== 0) {
+                q += delta;
+            }
+        } else {
+            q = parseInt(inputEl, 10);
+            if (!Number.isFinite(q) || q <= 0) {
+                q = step;
+            }
+        }
+
+        if (!Number.isFinite(q) || q <= 0) {
+            q = step;
+        }
+
+        q = Math.max(step, q);
+
+        const maxParsed = parseInt(maxQty, 10);
+        const hasMax = Number.isFinite(maxParsed) && maxParsed > 0;
+        if (hasMax) {
+            q = Math.min(q, maxParsed);
+        }
+
+        if (hasMax && maxParsed < step) {
+            await cart.update(itemId, maxParsed);
+            loadCart();
+            return;
+        }
+
+        if (step > 1) {
+            q = Math.ceil(q / step) * step;
+            if (hasMax && q > maxParsed) {
+                q = Math.floor(maxParsed / step) * step;
+            }
+            q = Math.max(step, q);
+        }
+
+        await cart.update(itemId, q);
+        loadCart();
     }
 
     async function updateQuantity(itemId, quantity, minQty = 1, maxQty = Infinity) {
