@@ -999,7 +999,7 @@
                 const settings = resp?.settings || {};
                 const rawCodPincodes = String(settings.cod_available_pincodes || '').trim();
                 quickCodPincodes = rawCodPincodes
-                    ? rawCodPincodes.split(',').map(pin => pin.trim()).filter(Boolean)
+                    ? rawCodPincodes.split(/[\n,]+/).map(pin => String(pin || '').trim()).filter(Boolean)
                     : [];
             } catch (error) {
                 console.error('Failed to load delivery settings for PIN check:', error);
@@ -1042,6 +1042,118 @@
             }
         }
 
+        function normalizeWeightUnit(unit) {
+            const normalized = (unit || '').toString().trim().toLowerCase();
+            if (['g', 'grams', 'gm', 'gram'].includes(normalized)) return 'g';
+            if (['kg', 'kilogram', 'kilograms', 'kilo', 'kilo gram'].includes(normalized)) return 'kg';
+            return normalized || 'pcs';
+        }
+
+        function formatWeightLabel(value, unit) {
+            const amount = Number(value);
+            if (!Number.isFinite(amount) || amount <= 0) return '0';
+
+            const normalizedUnit = normalizeWeightUnit(unit);
+            if (normalizedUnit === 'kg') {
+                const kg = amount / 1000;
+                return kg % 1 === 0 ? `${kg} kg` : `${kg.toFixed(2).replace(/\.00$/, '').replace(/0$/, '').replace(/\.$/, '')} kg`;
+            }
+
+            return amount >= 1000 ? `${(amount / 1000).toFixed(2).replace(/\.00$/, '').replace(/0$/, '').replace(/\.$/, '')} kg` : `${amount} g`;
+        }
+
+        function parseWeightOptions(productData) {
+            const rawWeightOptions = productData?.weight_options || productData?.size_options || productData?.pack_sizes;
+
+            if (Array.isArray(rawWeightOptions)) {
+                return rawWeightOptions
+                    .map(option => {
+                        if (typeof option === 'string') {
+                            const parts = option.split(':');
+                            const value = parseFloat(parts[0]);
+                            const label = parts[1] ? parts[1].trim() : '';
+                            return Number.isFinite(value) ? { value, label: label || formatWeightLabel(value, productData?.unit) } : null;
+                        }
+
+                        if (option && typeof option === 'object') {
+                            const value = parseFloat(option.value ?? option.size ?? option.weight ?? option.amount);
+                            const label = String(option.label || option.name || option.title || '').trim();
+                            return Number.isFinite(value) ? { value, label: label || formatWeightLabel(value, option.unit || productData?.unit) } : null;
+                        }
+
+                        return null;
+                    })
+                    .filter(Boolean);
+            }
+
+            if (typeof rawWeightOptions === 'string' && rawWeightOptions.trim()) {
+                return rawWeightOptions
+                    .split(/\n|,/)
+                    .map(entry => entry.trim())
+                    .filter(Boolean)
+                    .map(entry => {
+                        const parts = entry.split(':');
+                        const value = parseFloat(parts[0]);
+                        return Number.isFinite(value) ? { value, label: parts[1] ? parts[1].trim() : formatWeightLabel(value, productData?.unit) } : null;
+                    })
+                    .filter(Boolean);
+            }
+
+            return [];
+        }
+
+        function getWeightOptions(productData) {
+            const explicitOptions = parseWeightOptions(productData);
+            if (explicitOptions.length) return explicitOptions;
+
+            const unit = normalizeWeightUnit(productData?.unit);
+            const isWeightProduct = unit === 'g' || unit === 'kg';
+
+            if (!isWeightProduct) {
+                return [];
+            }
+
+            const rawWeight = parseFloat(productData?.weight ?? 0);
+            if (!Number.isFinite(rawWeight) || rawWeight <= 0) {
+                return [];
+            }
+
+            const baseWeightInGrams = unit === 'kg' ? rawWeight * 1000 : rawWeight;
+            const candidateValues = [1, 2, 5]
+                .map(multiplier => baseWeightInGrams * multiplier)
+                .filter(value => value > 0)
+                .map(value => ({ value, label: formatWeightLabel(value, unit) }));
+
+            const seen = new Set();
+            return candidateValues.filter(option => {
+                const key = Number(option.value);
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            });
+        }
+
+        function getDeliveryMessage(productData) {
+            const explicitMessage = [
+                productData?.delivery_message,
+                productData?.delivery_time_text,
+                productData?.delivery_note,
+                productData?.delivery_label
+            ]
+                .map(value => String(value || '').trim())
+                .find(Boolean);
+
+            if (explicitMessage) return explicitMessage;
+
+            const unitInfo = getUnitInfo(productData);
+            const weightValue = parseFloat(productData?.weight || 0);
+            if (Number.isFinite(weightValue) && weightValue > 0) {
+                return `Delivery available for ${weightValue} ${unitInfo.unit}`;
+            }
+
+            return 'Fast delivery available for this item';
+        }
+
         function getUnitInfo(p) {
             const rawUnit = (p && typeof p.unit === 'string') ? p.unit.trim() : '';
             if (rawUnit) return { unit: rawUnit, per: rawUnit };
@@ -1065,6 +1177,8 @@
             const showDiscount = !isWholesale && discount != null && discount < basePrice;
             const inStock = product.stock_quantity > 0;
             const lowStock = product.stock_quantity > 0 && product.stock_quantity < 10;
+            const weightOptions = getWeightOptions(product);
+            const deliveryMessage = getDeliveryMessage(product);
             const fallbackImage = '/images/placeholder.jpg';
 
             let productImages = [];
@@ -1159,11 +1273,23 @@
                             <div id="product-price-hint" style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.25rem;">Per item: ${formatCurrency(salePrice)}</div>
                             
                             <div class="product-stock ${lowStock ? 'low' : ''} ${!inStock ? 'out' : ''}" style="margin-top: 1rem;">
-                                ${inStock ? 
-                                    (lowStock ? `⚠️ Only ${product.stock_quantity} left in stock` : '✓ In Stock') : 
-                                    '✗ Out of Stock'
-                                }
+                                ${inStock ? '✓ In stock' : '✗ Out of stock'}
                             </div>
+                            <div style="margin-top: 0.75rem; padding: 0.7rem 0.85rem; border-radius: 10px; border: 1px solid #f59e0b; background: #fff8e1; color: #92400e; font-size: 0.92rem; font-weight: 600;">
+                                <i class="fas fa-clock"></i> ${deliveryMessage}
+                            </div>
+                            ${weightOptions.length ? `
+                                <div style="margin-top: 0.9rem;">
+                                    <div style="font-size: 0.92rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.45rem;">Choose size</div>
+                                    <div style="display:flex; flex-wrap:wrap; gap:0.5rem;">
+                                        ${weightOptions.map((option, index) => `
+                                            <button type="button" class="btn btn-secondary btn-sm" data-weight-option="${option.value}" data-weight-label="${option.label}" onclick="selectProductWeight(${option.value}, this)" style="border-radius: 999px; padding: 0.45rem 0.7rem; ${index === 0 ? 'background: var(--primary); color: #fff; border-color: var(--primary);' : ''}">
+                                                ${option.label}
+                                            </button>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            ` : ''}
                             
                             ${inStock ? `
                                 <div class="quantity-selector">
@@ -1243,10 +1369,6 @@
                                     <span>${product.weight} ${unitInfo.unit}</span>
                                 </div>
                             ` : ''}
-                            <div class="spec-item">
-                                <span class="spec-label">Stock:</span>
-                                <span>${product.stock_quantity} available</span>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -1374,6 +1496,27 @@
                     showAlert(ok ? 'Link copied. Paste it in Instagram.' : 'Open Instagram and paste the link.', ok ? 'success' : 'info');
                 }
                 return;
+            }
+        }
+
+        function selectProductWeight(value, buttonEl) {
+            document.querySelectorAll('[data-weight-option]').forEach((btn) => {
+                btn.style.background = 'var(--bg-primary)';
+                btn.style.color = 'var(--text-primary)';
+                btn.style.borderColor = 'var(--border-primary)';
+            });
+
+            if (buttonEl) {
+                buttonEl.style.background = 'var(--primary)';
+                buttonEl.style.color = '#fff';
+                buttonEl.style.borderColor = 'var(--primary)';
+            }
+
+            const label = (buttonEl && buttonEl.getAttribute('data-weight-label'))
+                || formatWeightLabel(value, product?.unit || 'g');
+
+            if (typeof showAlert === 'function') {
+                showAlert(`Selected ${label} for this product.`, 'info');
             }
         }
 
@@ -1660,9 +1803,9 @@
                 statusEl.innerHTML = '<span style="color:var(--text-secondary);font-size:0.82rem;">No pincode found for selected address.</span>';
                 return;
             }
-            // If no pincodes configured → COD is available everywhere
+            // If no COD PIN restrictions are configured, the availability list is open.
             if (!quickCodPincodes.length) {
-                statusEl.innerHTML = '<span style="color:#22c55e;font-size:0.82rem;"><i class="fas fa-check-circle"></i> Cash on Delivery is available at your pincode.</span>';
+                statusEl.innerHTML = '<span style="color:#22c55e;font-size:0.82rem;"><i class="fas fa-check-circle"></i> No COD PIN restrictions are configured in admin, so COD is available for this PIN.</span>';
                 return;
             }
             const available = quickCodPincodes.includes(pin);

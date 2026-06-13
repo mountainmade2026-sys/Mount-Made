@@ -2082,6 +2082,7 @@ exports.updateSiteSettings = async (req, res) => {
       gpay_phone_number,
       gpay_bank_name,
       gpay_qr_image_url,
+      cod_available_pincodes,
       slider_image_1,
       slider_image_2,
       slider_image_3,
@@ -2337,6 +2338,15 @@ exports.updateSiteSettings = async (req, res) => {
         return res.status(400).json({ error: 'GPay QR image must be an uploaded image path or a valid http/https URL.' });
       }
       updates.push({ key: 'gpay_qr_image_url', value: qrImageUrl });
+    }
+
+    if (cod_available_pincodes !== undefined) {
+      const normalizedPincodes = String(cod_available_pincodes || '')
+        .split(/[\n,]+/)
+        .map(pin => String(pin || '').trim())
+        .filter(Boolean)
+        .join(',');
+      updates.push({ key: 'cod_available_pincodes', value: normalizedPincodes });
     }
 
     // Homepage hero slider images (1–5)
