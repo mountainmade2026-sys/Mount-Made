@@ -193,6 +193,10 @@
                                     <i class="fas fa-map-marker-alt" style="color: var(--primary);"></i>
                                     <strong>Delivery Pincode</strong>
                                 </div>
+                                <div style="display:flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
+                                    <input id="checkout-pincode-input" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="Enter 6-digit PIN" style="flex: 1 1 150px; min-width: 140px; border: 1px solid var(--border-primary); border-radius: 10px; padding: 0.55rem 0.65rem; background: var(--bg-primary); color: var(--text-primary);">
+                                    <button type="button" class="btn btn-primary btn-sm" onclick="checkCheckoutPincodeAvailability()">Check</button>
+                                </div>
                                 <div id="cod-pincode-display" style="font-size: 1rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.4rem;">—</div>
                                 <div id="cod-pincode-status"></div>
                             </div>
@@ -1747,14 +1751,47 @@
         }
 
         function getSelectedPincode() {
+            // Prefer the explicit checkout PIN input when available.
+            const manualPinEl = document.getElementById('checkout-pincode-input');
+            if (manualPinEl) {
+                const manualPin = String(manualPinEl.value || '').trim().replace(/\D/g, '');
+                if (manualPin) return manualPin;
+            }
+
             // Try to get pincode from selected address
             if (selectedAddressId) {
                 const addr = userAddresses.find(a => a.id === selectedAddressId);
                 if (addr && addr.postal_code) return String(addr.postal_code).trim();
             }
+
             // Fall back to manual zip input
             const zipEl = document.getElementById('zip');
             return zipEl ? String(zipEl.value || '').trim() : '';
+        }
+
+        function checkCheckoutPincodeAvailability() {
+            const manualPinEl = document.getElementById('checkout-pincode-input');
+            const statusEl = document.getElementById('cod-pincode-status');
+            const displayEl = document.getElementById('cod-pincode-display');
+
+            if (!manualPinEl || !statusEl || !displayEl) return;
+
+            const rawPin = String(manualPinEl.value || '').trim().replace(/\D/g, '');
+            if (!rawPin) {
+                statusEl.innerHTML = '<span style="color: var(--text-secondary); font-size: 0.85rem;">Enter a 6-digit PIN code to check COD availability.</span>';
+                displayEl.textContent = '—';
+                return;
+            }
+
+            if (rawPin.length !== 6) {
+                statusEl.innerHTML = '<span style="color: #ef4444; font-size: 0.85rem;"><i class="fas fa-times-circle"></i> Please enter a valid 6-digit PIN code.</span>';
+                displayEl.textContent = rawPin || '—';
+                manualPinEl.value = rawPin;
+                return;
+            }
+
+            manualPinEl.value = rawPin;
+            updateCodPincodeCheck();
         }
 
         function updateCodPincodeCheck() {
@@ -1763,13 +1800,15 @@
             const statusEl = document.getElementById('cod-pincode-status');
             if (!displayEl || !statusEl) return;
 
-            if (!pincode) {
+            const normalizedPincode = String(pincode || '').trim().replace(/\D/g, '');
+
+            if (!normalizedPincode) {
                 displayEl.textContent = '—';
-                statusEl.innerHTML = '<span style="color: var(--text-secondary); font-size: 0.85rem;">Enter your delivery address to check COD availability.</span>';
+                statusEl.innerHTML = '<span style="color: var(--text-secondary); font-size: 0.85rem;">Enter your delivery address or a PIN code to check COD availability.</span>';
                 return;
             }
 
-            displayEl.textContent = pincode;
+            displayEl.textContent = normalizedPincode;
 
             // If no pincodes configured → COD is available everywhere
             if (!checkoutCodPincodes.length) {
@@ -1777,7 +1816,7 @@
                 return;
             }
 
-            const available = checkoutCodPincodes.includes(pincode);
+            const available = checkoutCodPincodes.includes(normalizedPincode);
             if (available) {
                 statusEl.innerHTML = '<span style="color: #22c55e; font-size: 0.85rem;"><i class="fas fa-check-circle"></i> Cash on Delivery is available at your pincode.</span>';
             } else {
@@ -1826,6 +1865,17 @@
             const zipInput = document.getElementById('zip');
             if (zipInput) {
                 zipInput.addEventListener('input', () => {
+                    if (document.getElementById('payment_method')?.value === 'cash_on_delivery') {
+                        updateCodPincodeCheck();
+                    }
+                });
+            }
+
+            const pinInput = document.getElementById('checkout-pincode-input');
+            if (pinInput) {
+                pinInput.addEventListener('input', () => {
+                    const value = pinInput.value.replace(/\D/g, '').slice(0, 6);
+                    pinInput.value = value;
                     if (document.getElementById('payment_method')?.value === 'cash_on_delivery') {
                         updateCodPincodeCheck();
                     }
