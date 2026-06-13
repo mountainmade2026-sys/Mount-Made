@@ -1053,13 +1053,18 @@
                         <div>${item.name}</div>
                         <div style="display:flex; align-items:center; gap:0.4rem; color: var(--text-secondary); font-size: 0.9rem; margin-top:0.2rem;">
                             <label for="checkout-qty-${item.id}" style="font-size:0.8rem;">Qty</label>
-                            <input type="number"
-                                   id="checkout-qty-${item.id}"
-                                   value="${item.quantity}"
-                                   min="1"
-                                   max="${item.stock_quantity || ''}"
-                                   style="width:60px; padding:0.2rem 0.35rem; font-size:0.85rem; border:1px solid var(--border); border-radius:4px;"
-                                   onchange="updateCheckoutQuantity(${item.id}, this.value)">
+                            <div style="display:flex; align-items:center; border:1px solid var(--border); border-radius:6px; overflow:hidden; background: var(--bg-primary);">
+                                <button type="button" aria-label="Decrease quantity" onclick="changeCheckoutQuantity(${item.id}, -1, this.closest('div[style*="display:flex"]'))" style="border:none; background:transparent; padding:0.2rem 0.35rem; cursor:pointer; color:var(--text-primary);">−</button>
+                                <input type="text" inputmode="numeric"
+                                       id="checkout-qty-${item.id}"
+                                       value="${item.quantity}"
+                                       min="1"
+                                       max="${item.stock_quantity || ''}"
+                                       style="width:42px; padding:0.2rem 0.15rem; font-size:0.85rem; border:none; text-align:center; background:transparent; color:var(--text-primary); -moz-appearance:textfield; appearance:textfield;"
+                                       oninput="changeCheckoutQuantity(${item.id}, 0, this)"
+                                       onchange="changeCheckoutQuantity(${item.id}, 0, this)">
+                                <button type="button" aria-label="Increase quantity" onclick="changeCheckoutQuantity(${item.id}, 1, this.closest('div[style*="display:flex"]'))" style="border:none; background:transparent; padding:0.2rem 0.35rem; cursor:pointer; color:var(--text-primary);">+</button>
+                            </div>
                             <span>× ${priceBlock}</span>
                         </div>
                     </span>
@@ -1099,13 +1104,18 @@
                         <div>${item.name}</div>
                         <div style="display:flex; align-items:center; gap:0.4rem; color: var(--text-secondary); font-size: 0.9rem; margin-top:0.2rem;">
                             <label for="checkout-qty-${item.id}" style="font-size:0.8rem;">Qty</label>
-                            <input type="number"
-                                   id="checkout-qty-${item.id}"
-                                   value="${toNumber(item.quantity || item.qty || 1)}"
-                                   min="1"
-                                   max="${item.stock_quantity || ''}"
-                                   style="width:60px; padding:0.2rem 0.35rem; font-size:0.85rem; border:1px solid var(--border); border-radius:4px;"
-                                   onchange="updateCheckoutQuantity(${item.id}, this.value)">
+                            <div style="display:flex; align-items:center; border:1px solid var(--border); border-radius:6px; overflow:hidden; background: var(--bg-primary);">
+                                <button type="button" aria-label="Decrease quantity" onclick="changeCheckoutQuantity(${item.id}, -1, this.closest('div[style*="display:flex"]'))" style="border:none; background:transparent; padding:0.2rem 0.35rem; cursor:pointer; color:var(--text-primary);">−</button>
+                                <input type="text" inputmode="numeric"
+                                       id="checkout-qty-${item.id}"
+                                       value="${toNumber(item.quantity || item.qty || 1)}"
+                                       min="1"
+                                       max="${item.stock_quantity || ''}"
+                                       style="width:42px; padding:0.2rem 0.15rem; font-size:0.85rem; border:none; text-align:center; background:transparent; color:var(--text-primary); -moz-appearance:textfield; appearance:textfield;"
+                                       oninput="changeCheckoutQuantity(${item.id}, 0, this)"
+                                       onchange="changeCheckoutQuantity(${item.id}, 0, this)">
+                                <button type="button" aria-label="Increase quantity" onclick="changeCheckoutQuantity(${item.id}, 1, this.closest('div[style*="display:flex"]'))" style="border:none; background:transparent; padding:0.2rem 0.35rem; cursor:pointer; color:var(--text-primary);">+</button>
+                            </div>
                             <span>× ${priceBlock}</span>
                         </div>
                     </span>
@@ -1143,6 +1153,16 @@
                 }
             }
             if (totalEl) totalEl.textContent = formatCurrency(total);
+        }
+
+        async function changeCheckoutQuantity(itemId, delta, inputEl) {
+            const currentInput = inputEl && inputEl.tagName === 'INPUT' ? inputEl : document.getElementById(`checkout-qty-${itemId}`);
+            const currentValue = currentInput ? parseInt(currentInput.value, 10) : NaN;
+            const nextQty = Number.isFinite(currentValue) && currentValue > 0
+                ? currentValue + delta
+                : 1 + delta;
+            const safeQty = Math.max(1, nextQty);
+            await updateCheckoutQuantity(itemId, safeQty);
         }
 
         async function updateCheckoutQuantity(itemId, quantity) {
