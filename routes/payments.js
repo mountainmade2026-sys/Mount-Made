@@ -86,6 +86,11 @@ function verifyRazorpaySignature({ orderId, paymentId, signature, keySecret }) {
   return expected === signature;
 }
 
+function getDeliveryChargeForSubtotal(subtotal) {
+  const amount = Number(subtotal) || 0;
+  return amount >= 1999 ? 0 : 99;
+}
+
 // Create a Razorpay order based on SERVER cart total.
 router.post('/razorpay/create', async (req, res) => {
   try {
@@ -97,19 +102,15 @@ router.post('/razorpay/create', async (req, res) => {
 
     const { delivery_speed = 'standard' } = req.body || {};
 
-    const settings = await getSiteSettings();
-    const stdEnabled = parseBool(settings.standard_delivery_enabled || settings.fast_delivery_enabled);
-    const stdCharge = parseNonNegativeNumber(settings.standard_delivery_charge || settings.fast_delivery_charge);
-
     const deliverySpeed = 'standard';
-    const deliveryCharge = stdEnabled ? stdCharge : 0;
 
     const { cartItems, total } = await fetchServerCart(req.user.id, req.user.role);
     if (!cartItems.length) {
       return res.status(400).json({ error: 'Your cart is empty.' });
     }
 
-    const totalAmount = (Number(total) || 0) + (Number(deliveryCharge) || 0);
+    const deliveryCharge = getDeliveryChargeForSubtotal(total);
+    const totalAmount = (Number(total) || 0) + deliveryCharge;
     if (!Number.isFinite(totalAmount) || totalAmount <= 0) {
       return res.status(400).json({ error: 'Invalid cart total.' });
     }
@@ -190,7 +191,8 @@ router.post('/razorpay/verify', async (req, res) => {
       return res.status(400).json({ error: 'Your cart is empty. Please contact support with your payment ID.' });
     }
 
-    const serverTotalAmount = (Number(total) || 0) + safeDeliveryCharge;
+    const serverDeliveryCharge = getDeliveryChargeForSubtotal(total);
+    const serverTotalAmount = (Number(total) || 0) + serverDeliveryCharge;
     const serverAmountPaise = Math.round(serverTotalAmount * 100);
 
     if (Number(rpOrder.amount) !== serverAmountPaise) {
@@ -224,7 +226,7 @@ router.post('/razorpay/verify', async (req, res) => {
       paid_at: new Date(),
       notes: String(notes || '').trim(),
       delivery_speed: String(delivery_speed || 'standard'),
-      delivery_charge: safeDeliveryCharge,
+      delivery_charge: serverDeliveryCharge,
       items
     };
 

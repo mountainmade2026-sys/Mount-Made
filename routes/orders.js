@@ -18,12 +18,28 @@ function getRequiredEnv(name) {
   return String(value).trim();
 }
 
+function getDeliveryChargeForSubtotal(subtotal) {
+  const amount = Number(subtotal) || 0;
+  return amount >= 1999 ? 0 : 99;
+}
+
 // Create order
 router.post('/', async (req, res) => {
   try {
+    const items = Array.isArray(req.body?.items) ? req.body.items : [];
+    const itemSubtotal = items.reduce((sum, item) => {
+      const quantity = Math.max(1, parseInt(item.quantity || item.qty || 1, 10) || 1);
+      const price = Number(item.price || 0);
+      return sum + (price * quantity);
+    }, 0);
+    const deliveryCharge = getDeliveryChargeForSubtotal(itemSubtotal);
+    const totalAmount = itemSubtotal + deliveryCharge;
+
     const orderData = {
       ...req.body,
-      user_id: req.user.id
+      user_id: req.user.id,
+      delivery_charge: deliveryCharge,
+      total_amount: totalAmount
     };
 
     const order = await Order.create(orderData);
@@ -222,6 +238,7 @@ router.post('/quick-buy', async (req, res) => {
 
     const product = productResult.rows[0];
     const retailPrice = product.discount_price != null ? product.discount_price : product.price;
+    const deliveryCharge = getDeliveryChargeForSubtotal(subtotal);
 
     // Determine price based on user type
     const isWholesale = req.user.role === 'wholesale' && req.user.is_approved;
@@ -242,7 +259,8 @@ router.post('/quick-buy', async (req, res) => {
     // Create order
     const orderData = {
       user_id: req.user.id,
-      total_amount: subtotal,
+      total_amount: subtotal + deliveryCharge,
+      delivery_charge: deliveryCharge,
       shipping_address: shipping_address || {},
       payment_method: normalizedPaymentMethod,
       notes: normalizedNotes,

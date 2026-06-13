@@ -1117,16 +1117,21 @@
             await loadUserAddresses();
         }
 
+        const FREE_DELIVERY_THRESHOLD = 1999;
+        const DELIVERY_FEE = 99;
+
+        function getDeliveryChargeForSubtotal(subtotal) {
+            const amount = Number(subtotal) || 0;
+            return amount >= FREE_DELIVERY_THRESHOLD ? 0 : DELIVERY_FEE;
+        }
+
         function updateOrderSummaryTotals() {
             const subtotalEl = document.getElementById('order-subtotal');
             const deliveryEl = document.getElementById('order-delivery');
             const totalEl = document.getElementById('order-total');
 
-            const deliveryCharge = checkoutSettings.standardDeliveryEnabled
-                ? (checkoutSettings.standardDeliveryCharge || 0)
-                : 0;
-
             const subtotal = checkoutCartSubtotal || 0;
+            const deliveryCharge = getDeliveryChargeForSubtotal(subtotal);
             const total = subtotal + deliveryCharge;
 
             if (subtotalEl) subtotalEl.textContent = formatCurrency(subtotal);
@@ -1862,7 +1867,7 @@
                 const chargeLabel = document.getElementById('standard-delivery-charge-label');
 
                 if (chargeLabel) {
-                    chargeLabel.textContent = enabled && charge > 0 ? formatCurrency(charge) : 'Free';
+                    chargeLabel.textContent = '₹99 below ₹1,999 • Free at ₹1,999+';
                 }
 
                 updateOrderSummaryTotals();
@@ -2018,10 +2023,8 @@
                 ? `GPay via ${formatGpayLabel(gpayDetailType)}: ${gpayDetailValue}${userNotes ? ' | ' + userNotes : ''}`
                 : userNotes;
 
-            const delivery_charge = checkoutSettings.standardDeliveryEnabled
-                ? (checkoutSettings.standardDeliveryCharge || 0)
-                : 0;
             const currentSubtotal = computeCartSubtotal(cartData) || checkoutCartSubtotal || 0;
+            const delivery_charge = getDeliveryChargeForSubtotal(currentSubtotal);
             const totalAmount = currentSubtotal + delivery_charge;
 
             const orderData = {
