@@ -9559,7 +9559,29 @@
             const o = orders.find(x => x.id == orderId);
             if (!o) { showAlert('Order not found', 'error'); return; }
             const items = Array.isArray(o.items) ? o.items : [];
-            const deliveryAddress = String(o.delivery_address || o.shipping_address || o.address || '').trim();
+
+            function formatAddressValue(value) {
+                if (!value) return '';
+                if (typeof value === 'string') {
+                    const trimmed = value.trim();
+                    if (trimmed) return trimmed;
+                    return '';
+                }
+                if (typeof value === 'object') {
+                    const parts = [
+                        value.address || value.street || value.line1 || value.line_1,
+                        value.area || value.locality || value.landmark,
+                        value.city || value.town,
+                        value.state,
+                        value.pincode || value.postal_code || value.zip,
+                        value.country
+                    ].filter(Boolean);
+                    return parts.join(', ');
+                }
+                return String(value).trim();
+            }
+
+            const deliveryAddress = formatAddressValue(o.delivery_address || o.shipping_address || o.address);
             const deliveryAddressHtml = deliveryAddress
                 ? `<br><strong>Delivery Address:</strong><br>${escapeHtml(deliveryAddress).replace(/\n/g, '<br>')}`
                 : '';
