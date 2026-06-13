@@ -9559,6 +9559,10 @@
             const o = orders.find(x => x.id == orderId);
             if (!o) { showAlert('Order not found', 'error'); return; }
             const items = Array.isArray(o.items) ? o.items : [];
+            const deliveryAddress = String(o.delivery_address || o.shipping_address || o.address || '').trim();
+            const deliveryAddressHtml = deliveryAddress
+                ? `<br><strong>Delivery Address:</strong><br>${escapeHtml(deliveryAddress).replace(/\n/g, '<br>')}`
+                : '';
             const rows = items.map(it => `
                 <tr>
                     <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;">${escapeHtml(it.product_name || 'Item')}</td>
@@ -9585,6 +9589,7 @@
                 <strong>Customer:</strong> ${escapeHtml(o.full_name||'N/A')}<br>
                 <strong>Email:</strong> ${escapeHtml(o.email||'N/A')}
                 ${o.phone ? `<br><strong>Phone:</strong> ${escapeHtml(o.phone)}` : ''}
+                ${deliveryAddressHtml}
             </div>
             <table><thead><tr><th>Product</th><th>Qty</th><th>Unit Price</th><th>Subtotal</th></tr></thead>
             <tbody>${rows}</tbody>
