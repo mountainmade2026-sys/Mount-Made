@@ -988,6 +988,13 @@ exports.updateOrderStatus = async (req, res) => {
       const wasCancelled = existingOrder.status === 'cancelled';
       const willBeCancelled = status === 'cancelled';
 
+      if (wasCancelled && !willBeCancelled) {
+        await client.query('ROLLBACK');
+        return res.status(409).json({
+          error: 'This order is already cancelled and its final status cannot be changed.'
+        });
+      }
+
       const updateResult = await client.query(
         `UPDATE orders 
          SET status = $1, updated_at = CURRENT_TIMESTAMP 
