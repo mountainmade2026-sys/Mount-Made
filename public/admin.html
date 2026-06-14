@@ -2581,6 +2581,11 @@
                                     <option value="Arial">Arial</option>
                                     <option value="Times New Roman">Times New Roman</option>
                                     <option value="Poppins">Poppins</option>
+                                    <option value="Montserrat">Montserrat</option>
+                                    <option value="Merriweather">Merriweather</option>
+                                    <option value="Lora">Lora</option>
+                                    <option value="Inter">Inter</option>
+                                    <option value="Roboto">Roboto</option>
                                 </select>
                             </div>
                             <div style="flex: 1; min-width: 260px;">
@@ -2594,8 +2599,15 @@
                             </div>
                         </div>
 
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <label class="form-label">Live About Us Style Preview</label>
+                            <div id="about-style-preview" style="border:1px solid var(--border-primary); border-radius:14px; background:linear-gradient(135deg,#f8fff9 0%,#ffffff 100%); padding:1rem; box-shadow:0 10px 24px rgba(15,23,42,0.06); font-family:Segoe UI, Arial, sans-serif; text-align:left; color:var(--text-primary);">
+                                <strong>Preview:</strong> This sample text shows how your About Us section will look on the public page after you save the font and alignment settings.
+                            </div>
+                        </div>
+
                         <p style="color: var(--text-muted); margin-bottom: 1rem; font-size: 0.92rem;">
-                            These controls update the public About page font and paragraph alignment in real time.
+                            These controls update the public About page font and paragraph alignment. Save the section and refresh the public page to see the changes live.
                         </p>
 
                         <div class="form-group" style="margin-bottom: 1rem;">
@@ -7868,6 +7880,7 @@
                 const aboutMissionVisionTitleEl = document.getElementById('about-mission-vision-title');
                 const aboutFontFamilyEl = document.getElementById('about-us-font-family');
                 const aboutTextAlignEl = document.getElementById('about-us-text-align');
+                const aboutStylePreviewEl = document.getElementById('about-style-preview');
                 const aboutHeading1El = document.getElementById('about-us-heading-1');
                 const aboutHeading2El = document.getElementById('about-us-heading-2');
                 const aboutHeading3El = document.getElementById('about-us-heading-3');
@@ -7907,6 +7920,24 @@
                 if (aboutParagraph3El) aboutParagraph3El.value = settings.about_us_paragraph_3 || '';
                 if (aboutParagraph4El) aboutParagraph4El.value = settings.about_us_paragraph_4 || '';
                 if (aboutParagraph5El) aboutParagraph5El.value = settings.about_us_paragraph_5 || '';
+
+                function updateAboutStylePreview() {
+                    if (!aboutStylePreviewEl) return;
+                    const fontFamily = (aboutFontFamilyEl?.value || 'Segoe UI').trim() || 'Segoe UI';
+                    const textAlign = (aboutTextAlignEl?.value || 'left').trim().toLowerCase() || 'left';
+                    aboutStylePreviewEl.style.fontFamily = fontFamily;
+                    aboutStylePreviewEl.style.textAlign = textAlign;
+                }
+
+                updateAboutStylePreview();
+
+                if (aboutFontFamilyEl) {
+                    aboutFontFamilyEl.addEventListener('change', updateAboutStylePreview);
+                }
+                if (aboutTextAlignEl) {
+                    aboutTextAlignEl.addEventListener('change', updateAboutStylePreview);
+                }
+
                 if (faqQuestion1El) faqQuestion1El.value = settings.faq_question_1 || '';
                 if (faqQuestion2El) faqQuestion2El.value = settings.faq_question_2 || '';
                 if (faqQuestion3El) faqQuestion3El.value = settings.faq_question_3 || '';
