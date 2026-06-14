@@ -722,10 +722,11 @@ const cart = {
 
   async update(itemId, quantity) {
     try {
-      await api.put(`/cart/${itemId}`, { quantity });
-      await this.fetch();
+      const response = await api.put(`/cart/${itemId}`, { quantity });
+      return response;
     } catch (error) {
       showAlert(error.message || 'Failed to update cart', 'error');
+      return null;
     }
   },
 
