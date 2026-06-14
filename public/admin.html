@@ -2554,6 +2554,13 @@
                         <div class="form-group" style="margin-bottom: 1rem;">
                             <label class="form-label" for="about-us-description">About Us Description</label>
                             <textarea id="about-us-description" class="form-input" rows="3" placeholder="Short intro for About Us section"></textarea>
+                            <div style="margin-top: 0.45rem;">
+                                <label class="form-label" for="about-us-description-box-shape" style="font-size: 0.88rem;">Description Box Shape</label>
+                                <select id="about-us-description-box-shape" class="form-input">
+                                    <option value="rectangle">Rectangle</option>
+                                    <option value="square">Square</option>
+                                </select>
+                            </div>
                         </div>
 
                         <div class="form-row" style="margin-bottom: 1rem;">
@@ -2613,30 +2620,50 @@
                         <div class="form-group" style="margin-bottom: 1rem;">
                             <label class="form-label" for="about-us-paragraph-1">Paragraph 1</label>
                             <input type="text" id="about-us-heading-1" class="form-input" placeholder="Heading for paragraph 1" style="margin-bottom:0.5rem;">
+                            <select id="about-us-paragraph-1-box-shape" class="form-input" style="margin-bottom:0.5rem;">
+                                <option value="rectangle">Rectangle</option>
+                                <option value="square">Square</option>
+                            </select>
                             <textarea id="about-us-paragraph-1" class="form-input" rows="4" placeholder="Paragraph 1 content"></textarea>
                         </div>
 
                         <div class="form-group" style="margin-bottom: 1rem;">
                             <label class="form-label" for="about-us-paragraph-2">Paragraph 2</label>
                             <input type="text" id="about-us-heading-2" class="form-input" placeholder="Heading for paragraph 2" style="margin-bottom:0.5rem;">
+                            <select id="about-us-paragraph-2-box-shape" class="form-input" style="margin-bottom:0.5rem;">
+                                <option value="rectangle">Rectangle</option>
+                                <option value="square">Square</option>
+                            </select>
                             <textarea id="about-us-paragraph-2" class="form-input" rows="4" placeholder="Paragraph 2 content"></textarea>
                         </div>
 
                         <div class="form-group" style="margin-bottom: 1rem;">
                             <label class="form-label" for="about-us-paragraph-3">Paragraph 3</label>
                             <input type="text" id="about-us-heading-3" class="form-input" placeholder="Heading for paragraph 3" style="margin-bottom:0.5rem;">
+                            <select id="about-us-paragraph-3-box-shape" class="form-input" style="margin-bottom:0.5rem;">
+                                <option value="rectangle">Rectangle</option>
+                                <option value="square">Square</option>
+                            </select>
                             <textarea id="about-us-paragraph-3" class="form-input" rows="4" placeholder="Paragraph 3 content"></textarea>
                         </div>
 
                         <div class="form-group" style="margin-bottom: 1rem;">
                             <label class="form-label" for="about-us-paragraph-4">Paragraph 4</label>
                             <input type="text" id="about-us-heading-4" class="form-input" placeholder="Heading for paragraph 4" style="margin-bottom:0.5rem;">
+                            <select id="about-us-paragraph-4-box-shape" class="form-input" style="margin-bottom:0.5rem;">
+                                <option value="rectangle">Rectangle</option>
+                                <option value="square">Square</option>
+                            </select>
                             <textarea id="about-us-paragraph-4" class="form-input" rows="4" placeholder="Paragraph 4 content"></textarea>
                         </div>
 
                         <div class="form-group" style="margin-bottom: 1rem;">
                             <label class="form-label" for="about-us-paragraph-5">Paragraph 5</label>
                             <input type="text" id="about-us-heading-5" class="form-input" placeholder="Heading for paragraph 5" style="margin-bottom:0.5rem;">
+                            <select id="about-us-paragraph-5-box-shape" class="form-input" style="margin-bottom:0.5rem;">
+                                <option value="rectangle">Rectangle</option>
+                                <option value="square">Square</option>
+                            </select>
                             <textarea id="about-us-paragraph-5" class="form-input" rows="4" placeholder="Paragraph 5 content"></textarea>
                         </div>
 
@@ -7880,6 +7907,12 @@
                 const aboutMissionVisionTitleEl = document.getElementById('about-mission-vision-title');
                 const aboutFontFamilyEl = document.getElementById('about-us-font-family');
                 const aboutTextAlignEl = document.getElementById('about-us-text-align');
+                const aboutDescriptionBoxShapeEl = document.getElementById('about-us-description-box-shape');
+                const aboutParagraph1BoxShapeEl = document.getElementById('about-us-paragraph-1-box-shape');
+                const aboutParagraph2BoxShapeEl = document.getElementById('about-us-paragraph-2-box-shape');
+                const aboutParagraph3BoxShapeEl = document.getElementById('about-us-paragraph-3-box-shape');
+                const aboutParagraph4BoxShapeEl = document.getElementById('about-us-paragraph-4-box-shape');
+                const aboutParagraph5BoxShapeEl = document.getElementById('about-us-paragraph-5-box-shape');
                 const aboutStylePreviewEl = document.getElementById('about-style-preview');
                 const aboutHeading1El = document.getElementById('about-us-heading-1');
                 const aboutHeading2El = document.getElementById('about-us-heading-2');
@@ -7910,6 +7943,12 @@
                 if (aboutMissionVisionTitleEl) aboutMissionVisionTitleEl.value = settings.about_mission_vision_title || '';
                 if (aboutFontFamilyEl) aboutFontFamilyEl.value = settings.about_us_font_family || 'Segoe UI';
                 if (aboutTextAlignEl) aboutTextAlignEl.value = settings.about_us_text_align || 'left';
+                if (aboutDescriptionBoxShapeEl) aboutDescriptionBoxShapeEl.value = settings.about_us_description_box_shape || 'rectangle';
+                if (aboutParagraph1BoxShapeEl) aboutParagraph1BoxShapeEl.value = settings.about_us_paragraph_1_box_shape || 'rectangle';
+                if (aboutParagraph2BoxShapeEl) aboutParagraph2BoxShapeEl.value = settings.about_us_paragraph_2_box_shape || 'rectangle';
+                if (aboutParagraph3BoxShapeEl) aboutParagraph3BoxShapeEl.value = settings.about_us_paragraph_3_box_shape || 'rectangle';
+                if (aboutParagraph4BoxShapeEl) aboutParagraph4BoxShapeEl.value = settings.about_us_paragraph_4_box_shape || 'rectangle';
+                if (aboutParagraph5BoxShapeEl) aboutParagraph5BoxShapeEl.value = settings.about_us_paragraph_5_box_shape || 'rectangle';
                 if (aboutHeading1El) aboutHeading1El.value = settings.about_us_heading_1 || '';
                 if (aboutHeading2El) aboutHeading2El.value = settings.about_us_heading_2 || '';
                 if (aboutHeading3El) aboutHeading3El.value = settings.about_us_heading_3 || '';
@@ -7921,22 +7960,114 @@
                 if (aboutParagraph4El) aboutParagraph4El.value = settings.about_us_paragraph_4 || '';
                 if (aboutParagraph5El) aboutParagraph5El.value = settings.about_us_paragraph_5 || '';
 
+                function escapeHtml(value) {
+                    return String(value || '')
+                        .replace(/&/g, '&amp;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;')
+                        .replace(/"/g, '&quot;')
+                        .replace(/'/g, '&#39;');
+                }
+
+                function getShapeValue(element) {
+                    return (element?.value || 'rectangle').trim().toLowerCase() === 'square' ? 'square' : 'rectangle';
+                }
+
+                function getRadius(shape) {
+                    return shape === 'square' ? 0 : 14;
+                }
+
+                function getAboutPreviewText() {
+                    const heading1 = document.getElementById('about-us-heading-1')?.value || '';
+                    const heading2 = document.getElementById('about-us-heading-2')?.value || '';
+                    const heading3 = document.getElementById('about-us-heading-3')?.value || '';
+                    const heading4 = document.getElementById('about-us-heading-4')?.value || '';
+                    const heading5 = document.getElementById('about-us-heading-5')?.value || '';
+                    const paragraph1 = document.getElementById('about-us-paragraph-1')?.value || '';
+                    const paragraph2 = document.getElementById('about-us-paragraph-2')?.value || '';
+                    const paragraph3 = document.getElementById('about-us-paragraph-3')?.value || '';
+                    const paragraph4 = document.getElementById('about-us-paragraph-4')?.value || '';
+                    const paragraph5 = document.getElementById('about-us-paragraph-5')?.value || '';
+                    const description = document.getElementById('about-us-description')?.value || '';
+
+                    return {
+                        description,
+                        blocks: [
+                            { heading: heading1, paragraph: paragraph1 },
+                            { heading: heading2, paragraph: paragraph2 },
+                            { heading: heading3, paragraph: paragraph3 },
+                            { heading: heading4, paragraph: paragraph4 },
+                            { heading: heading5, paragraph: paragraph5 }
+                        ]
+                    };
+                }
+
                 function updateAboutStylePreview() {
                     if (!aboutStylePreviewEl) return;
+
                     const fontFamily = (aboutFontFamilyEl?.value || 'Segoe UI').trim() || 'Segoe UI';
                     const textAlign = (aboutTextAlignEl?.value || 'left').trim().toLowerCase() || 'left';
+                    const descriptionShape = getShapeValue(aboutDescriptionBoxShapeEl);
+                    const paragraphShapes = [
+                        aboutParagraph1BoxShapeEl,
+                        aboutParagraph2BoxShapeEl,
+                        aboutParagraph3BoxShapeEl,
+                        aboutParagraph4BoxShapeEl,
+                        aboutParagraph5BoxShapeEl
+                    ].map((el) => getShapeValue(el));
+                    const preview = getAboutPreviewText();
+
                     aboutStylePreviewEl.style.fontFamily = fontFamily;
                     aboutStylePreviewEl.style.textAlign = textAlign;
+                    aboutStylePreviewEl.innerHTML = `
+                        <div style="display:grid; gap:0.75rem;">
+                            <div style="border:1px solid rgba(34,197,94,0.18); border-radius:${getRadius(descriptionShape)}px; background:linear-gradient(135deg,#fff,#f7fff9); padding:0.9rem; box-shadow:0 8px 18px rgba(15,23,42,0.06);">
+                                <div style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.18em; color:#16a34a; margin-bottom:0.35rem;">Description preview</div>
+                                <div style="font-size:0.95rem; color:#14532d; font-weight:700; margin-bottom:0.2rem;">${escapeHtml(document.getElementById('about-page-title')?.value || 'About Us')}</div>
+                                <div style="color:#374151; line-height:1.5;">${escapeHtml(preview.description || 'Type your About Us description here to see it appear in this preview.')}</div>
+                            </div>
+                            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:0.65rem;">
+                                ${preview.blocks.map((block, idx) => {
+                                    const shape = paragraphShapes[idx] || 'rectangle';
+                                    const heading = block.heading || `Paragraph ${idx + 1}`;
+                                    const text = block.paragraph || 'Start typing to preview this card.';
+                                    return `
+                                        <article style="border:1px solid rgba(34,197,94,0.18); border-radius:${getRadius(shape)}px; background:#fff; padding:0.75rem; box-shadow:0 8px 18px rgba(15,23,42,0.06);">
+                                            <div style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.18em; color:#16a34a; margin-bottom:0.2rem;">Card ${idx + 1}</div>
+                                            <div style="font-weight:700; color:#14532d; font-size:0.92rem; margin-bottom:0.15rem;">${escapeHtml(heading)}</div>
+                                            <div style="color:#374151; line-height:1.45; font-size:0.85rem;">${escapeHtml(text)}</div>
+                                        </article>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    `;
                 }
 
                 updateAboutStylePreview();
 
-                if (aboutFontFamilyEl) {
-                    aboutFontFamilyEl.addEventListener('change', updateAboutStylePreview);
-                }
-                if (aboutTextAlignEl) {
-                    aboutTextAlignEl.addEventListener('change', updateAboutStylePreview);
-                }
+                [aboutFontFamilyEl, aboutTextAlignEl, aboutDescriptionBoxShapeEl, aboutParagraph1BoxShapeEl, aboutParagraph2BoxShapeEl, aboutParagraph3BoxShapeEl, aboutParagraph4BoxShapeEl, aboutParagraph5BoxShapeEl]
+                    .filter(Boolean)
+                    .forEach((el) => {
+                        el.addEventListener('change', updateAboutStylePreview);
+                    });
+
+                [
+                    document.getElementById('about-us-description'),
+                    document.getElementById('about-us-heading-1'),
+                    document.getElementById('about-us-heading-2'),
+                    document.getElementById('about-us-heading-3'),
+                    document.getElementById('about-us-heading-4'),
+                    document.getElementById('about-us-heading-5'),
+                    document.getElementById('about-us-paragraph-1'),
+                    document.getElementById('about-us-paragraph-2'),
+                    document.getElementById('about-us-paragraph-3'),
+                    document.getElementById('about-us-paragraph-4'),
+                    document.getElementById('about-us-paragraph-5'),
+                    document.getElementById('about-page-title')
+                ].filter(Boolean).forEach((el) => {
+                    el.addEventListener('input', updateAboutStylePreview);
+                });
 
                 if (faqQuestion1El) faqQuestion1El.value = settings.faq_question_1 || '';
                 if (faqQuestion2El) faqQuestion2El.value = settings.faq_question_2 || '';
@@ -8645,16 +8776,22 @@
         window.saveAboutUsSettings = async function() {
             try {
                 const about_us_description = (document.getElementById('about-us-description')?.value || '').trim();
+                const about_us_description_box_shape = (document.getElementById('about-us-description-box-shape')?.value || 'rectangle').trim().toLowerCase();
                 const about_us_font_family = (document.getElementById('about-us-font-family')?.value || 'Segoe UI').trim();
                 const about_us_text_align = (document.getElementById('about-us-text-align')?.value || 'left').trim().toLowerCase();
                 const about_page_title = (document.getElementById('about-page-title')?.value || '').trim();
                 const about_intro_title = (document.getElementById('about-intro-title')?.value || '').trim();
                 const about_mission_vision_title = (document.getElementById('about-mission-vision-title')?.value || '').trim();
                 const about_us_heading_1 = (document.getElementById('about-us-heading-1')?.value || '').trim();
+                const about_us_paragraph_1_box_shape = (document.getElementById('about-us-paragraph-1-box-shape')?.value || 'rectangle').trim().toLowerCase();
                 const about_us_heading_2 = (document.getElementById('about-us-heading-2')?.value || '').trim();
+                const about_us_paragraph_2_box_shape = (document.getElementById('about-us-paragraph-2-box-shape')?.value || 'rectangle').trim().toLowerCase();
                 const about_us_heading_3 = (document.getElementById('about-us-heading-3')?.value || '').trim();
+                const about_us_paragraph_3_box_shape = (document.getElementById('about-us-paragraph-3-box-shape')?.value || 'rectangle').trim().toLowerCase();
                 const about_us_heading_4 = (document.getElementById('about-us-heading-4')?.value || '').trim();
+                const about_us_paragraph_4_box_shape = (document.getElementById('about-us-paragraph-4-box-shape')?.value || 'rectangle').trim().toLowerCase();
                 const about_us_heading_5 = (document.getElementById('about-us-heading-5')?.value || '').trim();
+                const about_us_paragraph_5_box_shape = (document.getElementById('about-us-paragraph-5-box-shape')?.value || 'rectangle').trim().toLowerCase();
                 const about_us_paragraph_1 = (document.getElementById('about-us-paragraph-1')?.value || '').trim();
                 const about_us_paragraph_2 = (document.getElementById('about-us-paragraph-2')?.value || '').trim();
                 const about_us_paragraph_3 = (document.getElementById('about-us-paragraph-3')?.value || '').trim();
@@ -8664,16 +8801,22 @@
                 showAlert('Saving About Us content...', 'info');
                 const response = await api.post('/admin/settings', {
                     about_us_description,
+                    about_us_description_box_shape,
                     about_us_font_family,
                     about_us_text_align,
                     about_page_title,
                     about_intro_title,
                     about_mission_vision_title,
                     about_us_heading_1,
+                    about_us_paragraph_1_box_shape,
                     about_us_heading_2,
+                    about_us_paragraph_2_box_shape,
                     about_us_heading_3,
+                    about_us_paragraph_3_box_shape,
                     about_us_heading_4,
+                    about_us_paragraph_4_box_shape,
                     about_us_heading_5,
+                    about_us_paragraph_5_box_shape,
                     about_us_paragraph_1,
                     about_us_paragraph_2,
                     about_us_paragraph_3,
