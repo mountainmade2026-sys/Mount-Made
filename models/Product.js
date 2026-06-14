@@ -150,9 +150,21 @@ class Product {
     await this.ensureDiscountColumns();
 
     let query = `
-      SELECT p.*, c.name as category_name 
+      SELECT
+        p.*,
+        c.name as category_name,
+        COALESCE(pr.average_rating, 0)::numeric(3, 2) AS average_rating,
+        COALESCE(pr.rating_count, 0)::int AS rating_count
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.id
+      LEFT JOIN (
+        SELECT
+          product_id,
+          AVG(rating)::numeric(3, 2) AS average_rating,
+          COUNT(*)::int AS rating_count
+        FROM product_ratings
+        GROUP BY product_id
+      ) pr ON pr.product_id = p.id
       WHERE COALESCE(p.is_active, true) = true
     `;
 
@@ -212,9 +224,21 @@ class Product {
   static async findById(id) {
     await this.ensureDiscountColumns();
     const query = `
-      SELECT p.*, c.name as category_name 
+      SELECT
+        p.*,
+        c.name as category_name,
+        COALESCE(pr.average_rating, 0)::numeric(3, 2) AS average_rating,
+        COALESCE(pr.rating_count, 0)::int AS rating_count
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.id
+      LEFT JOIN (
+        SELECT
+          product_id,
+          AVG(rating)::numeric(3, 2) AS average_rating,
+          COUNT(*)::int AS rating_count
+        FROM product_ratings
+        GROUP BY product_id
+      ) pr ON pr.product_id = p.id
       WHERE p.id = $1
     `;
     try {

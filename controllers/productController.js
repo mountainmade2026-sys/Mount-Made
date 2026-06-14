@@ -148,6 +148,99 @@ exports.getProductById = async (req, res) => {
   }
 };
 
+exports.getProductRatings = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const product = await Product.findById(id);
+
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found.' });
+    }
+
+    const result = await db.query(`
+      SELECT
+        pr.id,
+        pr.rating,
+        pr.review,
+        pr.created_at,
+        u.id AS user_id,
+        u.full_name AS user_name
+      FROM product_ratings pr
+      JOIN users u ON u.id = pr.user_id
+      WHERE pr.product_id = $1
+      ORDER BY pr.created_at DESC
+      LIMIT 20
+    `, [id]);
+
+    res.json({
+      product_id: Number(id),
+      summary: {
+        average_rating: Number(product.average_rating || 0),
+        rating_count: Number(product.rating_count || 0)
+      },
+      ratings: result.rows || []
+    });
+  } catch (error) {
+    console.error('Get product ratings error:', error);
+    res.status(500).json({ error: 'Failed to fetch ratings.' });
+  }
+};
+
+exports.submitProductRating = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user?.id;
+    const rawRating = Number(req.body?.rating);
+    const review = typeof req.body?.review === 'string' ? req.body.review.trim().slice(0, 500) : null;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required to rate products.' });
+    }
+
+    if (!Number.isFinite(rawRating) || rawRating < 1 || rawRating > 5) {
+      return res.status(400).json({ error: 'Rating must be between 1 and 5.' });
+    }
+
+    const product = await Product.findById(id);
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found.' });
+    }
+
+    const normalizedRating = Math.round(rawRating);
+
+    await db.query(`
+      INSERT INTO product_ratings (product_id, user_id, rating, review, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      ON CONFLICT (product_id, user_id)
+      DO UPDATE SET rating = EXCLUDED.rating,
+                    review = EXCLUDED.review,
+                    updated_at = CURRENT_TIMESTAMP
+    `, [id, userId, normalizedRating, review || null]);
+
+    const summaryResult = await db.query(`
+      SELECT
+        COALESCE(ROUND(AVG(rating)::numeric, 2), 0) AS average_rating,
+        COUNT(*)::int AS rating_count
+      FROM product_ratings
+      WHERE product_id = $1
+    `, [id]);
+
+    const summary = summaryResult.rows[0] || {};
+
+    res.json({
+      success: true,
+      product_id: Number(id),
+      rating: normalizedRating,
+      review: review || null,
+      average_rating: Number(summary.average_rating || 0),
+      rating_count: Number(summary.rating_count || 0)
+    });
+  } catch (error) {
+    console.error('Submit product rating error:', error);
+    res.status(500).json({ error: 'Failed to save rating.' });
+  }
+};
+
 exports.getAllCategories = async (req, res) => {
   try {
     const categories = await Product.getAllCategories();

@@ -1151,18 +1151,50 @@
                 return `Delivery available for ${weightValue} ${unitInfo.unit}`;
             }
 
-            return 'Fast delivery available for this item';
+            return 'Delivery information is available during checkout.';
         }
 
         function getUnitInfo(p) {
             const rawUnit = (p && typeof p.unit === 'string') ? p.unit.trim() : '';
+            const normalizedUnit = rawUnit.toLowerCase();
+            if (['pcs', 'pc', 'piece', 'pieces', 'item', 'items'].includes(normalizedUnit)) {
+                const friendlyUnit = normalizedUnit === 'pcs' || normalizedUnit === 'pc' ? 'piece' : normalizedUnit;
+                return { unit: friendlyUnit, per: friendlyUnit };
+            }
+
             if (rawUnit) return { unit: rawUnit, per: rawUnit };
 
             const weightNum = p && p.weight != null ? parseFloat(p.weight) : NaN;
             if (Number.isFinite(weightNum) && weightNum > 0) return { unit: 'kg', per: 'kg' };
 
-            // Friendly fallback so we never show "Unit: unit"
-            return { unit: 'pcs', per: 'piece' };
+            return { unit: 'item', per: 'item' };
+        }
+
+        function renderStars(value, size = '1rem') {
+            const safeValue = Math.max(0, Math.min(5, Number(value) || 0));
+            const full = Math.floor(safeValue);
+            const hasHalf = safeValue - full >= 0.5;
+            const stars = [];
+
+            for (let i = 0; i < 5; i += 1) {
+                if (i < full) {
+                    stars.push(`<span style="color:#f59e0b;font-size:${size};">★</span>`);
+                } else if (i === full && hasHalf) {
+                    stars.push(`<span style="color:#f59e0b;font-size:${size};">★</span>`);
+                } else {
+                    stars.push(`<span style="color:#cbd5e1;font-size:${size};">☆</span>`);
+                }
+            }
+
+            return stars.join('');
+        }
+
+        function getRatingSummaryText(averageRating, ratingCount) {
+            const safeAverage = Math.max(0, Math.min(5, Number(averageRating) || 0));
+            const safeCount = Number.isFinite(Number(ratingCount)) ? Math.max(0, Number(ratingCount)) : 0;
+
+            if (!safeCount) return 'No ratings yet';
+            return `${safeAverage.toFixed(1)}/5 • ${safeCount} rating${safeCount === 1 ? '' : 's'}`;
         }
 
         function renderProduct() {
@@ -1179,6 +1211,8 @@
             const lowStock = product.stock_quantity > 0 && product.stock_quantity < 10;
             const weightOptions = getWeightOptions(product);
             const deliveryMessage = getDeliveryMessage(product);
+            const averageRating = Number(product.average_rating || 0);
+            const ratingCount = Number(product.rating_count || 0);
             const fallbackImage = '/images/placeholder.jpg';
 
             let productImages = [];
@@ -1260,6 +1294,14 @@
                             </div>
                         </div>
                         
+                        <div class="product-rating" style="margin-bottom: 0.75rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-primary);">
+                            <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                                <span style="display:flex; align-items:center; gap:0.15rem;">${renderStars(averageRating, '1.05rem')}</span>
+                                <strong style="color: var(--text-primary);">${averageRating.toFixed(1)}</strong>
+                                <span style="color: var(--text-secondary);">• ${getRatingSummaryText(averageRating, ratingCount)}</span>
+                            </div>
+                        </div>
+
                         <div class="product-price-section">
                             <div class="product-price">
                                 <span id="product-base-price" style="text-decoration: line-through; color: var(--error); font-size: 0.9em; margin-right: 8px; ${showDiscount ? '' : 'display:none;'}">${formatCurrency(basePrice)}</span>
@@ -1268,9 +1310,9 @@
                             </div>
                             ${isWholesale && product.wholesale_price ? 
                                 `<small style="color: var(--text-secondary);">Wholesale Price • Min Order: ${product.min_wholesale_qty} units</small>` : 
-                                `<small style="color: var(--text-secondary);">Per ${unitInfo.per}</small>`
+                                `<small style="color: var(--text-secondary);">Price shown for the selected quantity</small>`
                             }
-                            <div id="product-price-hint" style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.25rem;">Per item: ${formatCurrency(salePrice)}</div>
+                            <div id="product-price-hint" style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.25rem;">${formatCurrency(salePrice)} each</div>
                             
                             <div class="product-stock ${lowStock ? 'low' : ''} ${!inStock ? 'out' : ''}" style="margin-top: 1rem;">
                                 ${inStock ? '✓ In stock' : '✗ Out of stock'}
@@ -1328,14 +1370,6 @@
                         
                         <div class="delivery-info">
                             <h4><i class="fas fa-truck"></i> Delivery Information</h4>
-                            <div class="delivery-option">
-                                <i class="fas fa-check-circle"></i>
-                                <span>Standard delivery: 3-5 days</span>
-                            </div>
-                            <div class="delivery-option">
-                                <i class="fas fa-check-circle"></i>
-                                <span>Express delivery available</span>
-                            </div>
                             <div style="margin-top: 1rem; padding: 0.9rem; border: 1px solid var(--border-primary); border-radius: 12px; background: var(--bg-secondary);">
                                 <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom: 0.35rem; font-weight: 600; color: var(--text-primary);">
                                     <i class="fas fa-map-marker-alt" style="color: var(--primary-600);"></i>
@@ -1353,16 +1387,21 @@
                             <h3>About this product</h3>
                             <p>${product.description || 'No description available.'}</p>
                         </div>
+
+                        <section class="product-description" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-primary);">
+                            <h3>Rate this product</h3>
+                            <p style="color: var(--text-secondary); margin-bottom: 0.75rem;">Share your experience with real star ratings for this item.</p>
+                            <div id="product-rating-stars" style="display:flex; gap:0.35rem; align-items:center; margin-bottom:0.75rem;">
+                                ${[1,2,3,4,5].map(value => `<button type="button" class="rating-option" data-rating="${value}" onclick="selectProductRating(${value})" aria-label="Rate ${value} stars" style="background:transparent;border:0;padding:0;font-size:1.45rem;color:#cbd5e1;cursor:pointer;">★</button>`).join('')}
+                            </div>
+                            <textarea id="product-review-input" rows="3" placeholder="Optional feedback about the quality, freshness, or delivery experience" style="width:100%; border:1px solid var(--border-primary); border-radius:10px; padding:0.75rem; background: var(--bg-primary); color: var(--text-primary); resize:vertical;"></textarea>
+                            <div style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem; flex-wrap:wrap; margin-top:0.75rem;">
+                                <button type="button" class="btn btn-primary btn-sm" onclick="submitProductRating()">Submit Rating</button>
+                                <span id="product-rating-status" style="color: var(--text-secondary); font-size: 0.92rem;">Select a star rating to begin.</span>
+                            </div>
+                        </section>
                         
                         <div class="product-specs">
-                            <div class="spec-item">
-                                <span class="spec-label">Category:</span>
-                                <span>${product.category_name || 'N/A'}</span>
-                            </div>
-                            <div class="spec-item">
-                                <span class="spec-label">Unit:</span>
-                                <span>${unitInfo.unit}</span>
-                            </div>
                             ${product.weight ? `
                                 <div class="spec-item">
                                     <span class="spec-label">Weight:</span>
@@ -1376,6 +1415,50 @@
             
             document.getElementById('product-content').innerHTML = content;
             updateDisplayedPrice();
+        }
+
+        let selectedProductRating = 0;
+
+        function selectProductRating(value) {
+            selectedProductRating = value;
+            const buttons = document.querySelectorAll('.rating-option');
+            buttons.forEach((button) => {
+                const isSelected = Number(button.dataset.rating) <= value;
+                button.style.color = isSelected ? '#f59e0b' : '#cbd5e1';
+                button.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+            });
+
+            const statusEl = document.getElementById('product-rating-status');
+            if (statusEl) {
+                statusEl.textContent = `You selected ${value} star${value === 1 ? '' : 's'}.`;
+            }
+        }
+
+        async function submitProductRating() {
+            if (!auth.isAuthenticated()) {
+                showAlert('Please login to rate this product.', 'error');
+                setTimeout(() => { window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname + window.location.search); }, 1200);
+                return;
+            }
+
+            if (!selectedProductRating || selectedProductRating < 1 || selectedProductRating > 5) {
+                showAlert('Please select a star rating before submitting.', 'error');
+                return;
+            }
+
+            try {
+                const review = document.getElementById('product-review-input')?.value || '';
+                await api.post(`/products/${product.id}/rating`, { rating: selectedProductRating, review });
+                const statusEl = document.getElementById('product-rating-status');
+                if (statusEl) statusEl.textContent = 'Thanks for your rating!';
+                showAlert('Your rating has been saved.', 'success');
+                const refreshed = await api.get(`/products/${product.id}`);
+                product = refreshed.product;
+                renderProduct();
+            } catch (error) {
+                console.error('Submit product rating failed:', error);
+                showAlert(error?.message || 'Failed to submit your rating.', 'error');
+            }
         }
 
         function getShareUrl() {

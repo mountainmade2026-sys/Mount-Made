@@ -892,6 +892,30 @@ const initializeDatabase = async () => {
       ADD COLUMN IF NOT EXISTS email_forward_error TEXT;
     `);
 
+    // Create Product Ratings table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS product_ratings (
+        id SERIAL PRIMARY KEY,
+        product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        rating INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
+        review TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(product_id, user_id)
+      );
+    `);
+
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_product_ratings_product_id
+      ON product_ratings (product_id);
+    `);
+
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_product_ratings_user_id
+      ON product_ratings (user_id);
+    `);
+
     // Create Offline Sales table
     await client.query(`
       CREATE TABLE IF NOT EXISTS offline_sales (

@@ -120,6 +120,44 @@
             transform: scale(1.04);
         }
 
+        .product-card .card-image-wrap {
+            position: relative;
+        }
+
+        .product-card .rating-badge {
+            position: absolute;
+            left: 0.65rem;
+            right: 0.65rem;
+            bottom: 0.65rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.45rem;
+            background: rgba(15, 23, 42, 0.86);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 999px;
+            padding: 0.35rem 0.5rem;
+            box-shadow: 0 10px 18px rgba(15, 23, 42, 0.22);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            font-size: 0.82rem;
+            z-index: 1;
+        }
+
+        .product-card .rating-stars {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.08rem;
+            color: #fbbf24;
+        }
+
+        .product-card .rating-count {
+            color: #e5eefb;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
         .product-card .card-footer {
             display: flex;
             flex-direction: column;
@@ -901,6 +939,32 @@
             }
         }
 
+        function renderStars(value, size = '0.95rem') {
+            const safeValue = Math.max(0, Math.min(5, Number(value) || 0));
+            const full = Math.floor(safeValue);
+            const hasHalf = safeValue - full >= 0.5;
+            const stars = [];
+
+            for (let i = 0; i < 5; i += 1) {
+                if (i < full) {
+                    stars.push(`<span style="color:#f59e0b;font-size:${size};">★</span>`);
+                } else if (i === full && hasHalf) {
+                    stars.push(`<span style="color:#f59e0b;font-size:${size};">★</span>`);
+                } else {
+                    stars.push(`<span style="color:#cbd5e1;font-size:${size};">☆</span>`);
+                }
+            }
+
+            return stars.join('');
+        }
+
+        function getRatingText(averageRating, ratingCount) {
+            const safeAverage = Math.max(0, Math.min(5, Number(averageRating) || 0));
+            const safeCount = Number.isFinite(Number(ratingCount)) ? Math.max(0, Number(ratingCount)) : 0;
+            if (!safeCount) return 'No ratings yet';
+            return `${safeAverage.toFixed(1)}/5 • ${safeCount} rating${safeCount === 1 ? '' : 's'}`;
+        }
+
         function renderProducts() {
             const grid = document.getElementById('products-grid');
             if (products.length === 0) {
@@ -915,6 +979,10 @@
                         <div class="card-content">
                             <h3 class="card-title">${p.name}</h3>
                             <p class="card-description">${p.description || ''}</p>
+                            <div style="display:flex; align-items:center; gap:0.35rem; flex-wrap:wrap; margin-top:0.35rem; color:var(--text-secondary); font-size:0.88rem;">
+                                <span style="display:flex; align-items:center; gap:0.1rem;">${renderStars(p.average_rating || 0, '0.9rem')}</span>
+                                <span>${getRatingText(p.average_rating || 0, p.rating_count || 0)}</span>
+                            </div>
                             ${(() => {
                                 const useWholesale = auth.isWholesale() && p.wholesale_price;
                                 const base = parseFloat(p.price || 0);
