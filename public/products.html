@@ -998,23 +998,7 @@
                         </div>
                     </a>
                     <div class="card-footer" style="display:flex; align-items:center; gap:0.25rem; flex-wrap:wrap;">
-                        <div class="product-qty-row" style="display:flex; align-items:center; gap:0.25rem;">
-                            <label for="product-qty-${p.id}" style="font-size:0.8rem; color:var(--text-light);">Qty</label>
-                            <div class="product-qty-stepper" role="group" aria-label="Quantity selector for ${p.name}">
-                                <button type="button" class="product-qty-btn" aria-label="Decrease quantity" onclick="updateProductQuantity(${p.id}, -1)">−</button>
-                                <input type="number"
-                                       id="product-qty-${p.id}"
-                                       class="product-qty-input"
-                                       value="1"
-                                       min="1"
-                                       max="${p.stock_quantity || 99}"
-                                       inputmode="numeric"
-                                       onchange="normalizeProductQuantity(${p.id}, this.value)"
-                                       oninput="normalizeProductQuantity(${p.id}, this.value)">
-                                <button type="button" class="product-qty-btn" aria-label="Increase quantity" onclick="updateProductQuantity(${p.id}, 1)">+</button>
-                            </div>
-                        </div>
-                        <div class="product-action-row">
+                        <div class="product-action-row" style="width:100%;">
                             <button class="btn btn-primary btn-sm add-cart-cta" onclick="addToCart(${p.id})" ${(p.stock_quantity || 0) <= 0 ? 'disabled' : ''}>
                                 <i class="fas fa-cart-plus"></i> ${(p.stock_quantity || 0) <= 0 ? 'Out of Stock' : 'Add to Cart'}
                             </button>
