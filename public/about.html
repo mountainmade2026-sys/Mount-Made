@@ -10,99 +10,116 @@
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
     <style>
         .about-page-hero {
-            padding: 1.25rem 1rem 0.6rem;
+            padding: 1.1rem 1rem 0.75rem;
             text-align: center;
+            background: linear-gradient(180deg, #f6fff8 0%, #ffffff 100%);
+            border-bottom: 1px solid rgba(34, 197, 94, 0.12);
         }
 
         .about-page-hero h1 {
             margin: 0;
-            font-size: clamp(1.8rem, 3.8vw, 2.45rem);
-            color: var(--text-primary);
+            font-size: clamp(2rem, 4vw, 2.75rem);
+            color: #14532d;
+            letter-spacing: -0.02em;
         }
 
         .about-page-hero p {
             margin: 0.45rem auto 0;
             max-width: 900px;
-            color: var(--text-secondary);
+            color: #4b5563;
             line-height: 1.6;
-            font-size: 0.98rem;
+            font-size: 1rem;
         }
 
         .about-page-wrap {
-            margin: 0 auto 2.5rem;
+            width: min(100% - 1rem, 1180px);
+            margin: 0 auto 1.5rem;
             display: grid;
-            gap: 1rem;
+            gap: 0.9rem;
+            align-items: start;
+            align-content: start;
             font-family: var(--about-us-font-family, 'Segoe UI', Arial, sans-serif);
             text-align: var(--about-us-text-align, left);
+            padding-bottom: 0;
         }
 
         .about-panel {
-            background: var(--surface);
+            background: #ffffff;
             border: 1px solid var(--border-primary);
-            border-radius: 10px;
-            box-shadow: var(--shadow-sm);
+            border-radius: 14px;
+            box-shadow: none;
             padding: 1rem;
             font-family: var(--about-us-font-family, 'Segoe UI', Arial, sans-serif);
             text-align: var(--about-us-text-align, left);
+            overflow: hidden;
+            height: auto;
+            min-height: 0;
+            align-self: start;
         }
 
         .about-panel-title {
             margin: 0;
-            color: #166534;
-            font-size: 1.26rem;
+            color: #14532d;
+            font-size: 1.15rem;
             font-weight: 800;
-            border-bottom: 2px solid #22c55e;
+            border-bottom: 1px solid rgba(34, 197, 94, 0.25);
             padding-bottom: 0.55rem;
+            letter-spacing: -0.015em;
         }
 
         .about-intro-subtitle {
-            margin: 0.85rem 0 0.45rem;
+            margin: 0.8rem 0 0.45rem;
             color: var(--text-primary);
             font-weight: 700;
+            line-height: 1.5;
         }
 
-        .about-intro-content p {
+        .about-intro-content p,
+        .about-card p {
             margin: 0;
             color: var(--text-secondary);
             line-height: 1.72;
+            font-size: 0.98rem;
         }
 
-        .about-intro-content p + p {
-            margin-top: 0.52rem;
+        .about-intro-content p + p,
+        .about-card p + p {
+            margin-top: 0.5rem;
         }
 
         .about-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
             gap: 0.9rem;
-            margin-top: 0.65rem;
+            margin-top: 0.75rem;
+            align-items: start;
+            align-content: start;
+            height: auto;
+            min-height: 0;
         }
 
         .about-card {
-            background: linear-gradient(160deg, #166534, #22c55e);
-            border: 1px solid rgba(255,255,255,0.28);
-            border-radius: 10px;
+            background: linear-gradient(180deg, #ffffff, #f7fff9);
+            border: 1px solid rgba(34, 197, 94, 0.18);
+            border-radius: 14px;
             padding: 1rem 1rem 1.05rem;
-            color: #fff;
-            box-shadow: var(--shadow-md);
+            color: var(--text-primary);
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+            height: auto;
+            min-height: 0;
+            align-self: start;
         }
 
         .about-card-title {
-            margin: 0 0 0.6rem;
-            font-size: 1.65rem;
+            margin: 0 0 0.45rem;
+            font-size: 1.02rem;
             font-weight: 800;
-            color: #fff;
+            color: #14532d;
             letter-spacing: -0.01em;
         }
 
         .about-card p {
-            margin: 0;
-            color: rgba(255,255,255,0.95);
-            line-height: 1.68;
-        }
-
-        .about-card p + p {
-            margin-top: 0.55rem;
+            color: var(--text-secondary);
         }
 
         .about-list {
@@ -115,7 +132,7 @@
             color: rgba(255,255,255,0.97);
             line-height: 1.68;
             display: flex;
-            gap: 0.5rem;
+            gap: 0.45rem;
             align-items: flex-start;
         }
 
@@ -123,20 +140,29 @@
             content: '✔';
             font-weight: 700;
             margin-top: 0.02rem;
+            color: #fef08a;
         }
 
         .about-list li + li {
-            margin-top: 0.4rem;
+            margin-top: 0.35rem;
         }
 
         .about-empty {
             text-align: center;
             color: var(--text-secondary);
-            border: 1px dashed var(--border-primary);
-            border-radius: 10px;
-            background: var(--surface);
-            padding: 1.1rem;
+            border: 1px dashed rgba(34, 197, 94, 0.35);
+            border-radius: 14px;
+            background: linear-gradient(135deg, rgba(247,255,248,0.92), rgba(255,255,255,0.98));
+            padding: 1rem;
             margin-top: 0.7rem;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
+        }
+
+        @media (max-width: 768px) {
+            .about-page-hero { padding: 1.15rem 0.75rem 0.9rem; }
+            .about-page-hero h1 { font-size: 1.7rem; }
+            .about-page-wrap { width: min(100% - 0.75rem, 1180px); gap: 0.9rem; }
+            .about-panel { border-radius: 14px; padding: 0.85rem; }
         }
     </style>
 </head>
@@ -220,14 +246,14 @@
 
     <section class="about-page-hero">
         <h1 id="about-page-title">About Us</h1>
-        <p id="about-description">Loading About Us content...</p>
+        <p id="about-description">Discover Mount Made’s story, values, and commitment to fresh, trustworthy grocery experiences.</p>
     </section>
 
     <main class="container about-page-wrap">
         <section class="about-panel">
             <h2 id="about-intro-title" class="about-panel-title">Welcome to Mount Made</h2>
-            <p id="about-intro-subtitle" class="about-intro-subtitle"></p>
-            <div id="about-intro-content" class="about-intro-content"></div>
+            <p id="about-intro-subtitle" class="about-intro-subtitle">Fresh essentials, quality you can trust, and a shopping experience built for everyday convenience.</p>
+            <div id="about-intro-content" class="about-intro-content"><p>Mount Made brings premium, carefully sourced groceries and household staples to your doorstep with a simple, reliable experience.</p></div>
         </section>
 
         <section class="about-panel">
@@ -376,32 +402,29 @@
                 if (missionVisionTitleEl) {
                     missionVisionTitleEl.textContent = missionVisionTitle || 'Our Mission & Vision';
                 }
-
                 if (descEl) {
-                    descEl.textContent = description || 'Learn more about our mission, quality promise, and mountain-fresh sourcing approach.';
+                    descEl.textContent = description || '';
                 }
-
-                if (!gridEl) return;
 
                 if (!introTitleEl || !introSubtitleEl || !introContentEl) return;
 
-                if (blocks.length === 0) {
-                    introTitleEl.textContent = aboutIntroTitle || 'Welcome to Mount Made';
-                    introSubtitleEl.textContent = description || 'Learn about our mission and quality commitment.';
-                    introContentEl.innerHTML = '<p>About content is not added yet. Please update it from Admin &gt; Site Settings.</p>';
-                    gridEl.innerHTML = '<div class="about-empty">Mission and vision content will appear here after update.</div>';
+                const introBlock = blocks[0] || { heading: '', paragraph: '' };
+                const cards = blocks.slice(1);
+
+                introTitleEl.textContent = aboutIntroTitle || introBlock.heading || '';
+                introSubtitleEl.textContent = description || '';
+
+                const introParagraph = (introBlock.paragraph || '').trim();
+                introContentEl.innerHTML = introParagraph
+                    ? renderBlock(introParagraph)
+                    : (description ? `<p>${escapeHtml(description)}</p>` : '');
+
+                if (!gridEl) {
                     return;
                 }
 
-                const introBlock = blocks[0];
-                const cards = blocks.slice(1);
-
-                introTitleEl.textContent = aboutIntroTitle || introBlock.heading || 'Welcome to Mount Made';
-                introSubtitleEl.textContent = description || 'Learn about our mission to preserve quality and deliver with trust.';
-                introContentEl.innerHTML = renderBlock(introBlock.paragraph);
-
                 if (cards.length === 0) {
-                    gridEl.innerHTML = '<div class="about-empty">Add more paragraph sections in Admin to display Mission &amp; Vision cards.</div>';
+                    gridEl.innerHTML = '';
                     return;
                 }
 
@@ -413,13 +436,11 @@
                         </article>
                     `)
                     .join('');
+
             } catch (error) {
                 console.error('Failed to load About Us content:', error);
                 if (descEl) {
                     descEl.textContent = 'Unable to load About Us content right now.';
-                }
-                if (gridEl) {
-                    gridEl.innerHTML = '<div class="about-empty">Please try again later.</div>';
                 }
             }
         }
