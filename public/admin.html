@@ -1887,6 +1887,40 @@
                     </div>
                 </div>
 
+                <div class="data-table-container" style="margin: 0 0 1rem 0; padding: 1rem; border: 1px solid var(--border); box-shadow: var(--shadow-sm); background: linear-gradient(135deg, rgba(255,255,255,0.98), rgba(240,244,242,0.98));">
+                    <div class="table-header" style="margin-bottom: 0.85rem; padding-bottom: 0.45rem; border-bottom: 1px solid var(--border);">
+                        <h3 style="margin: 0; display: flex; align-items: center; gap: 0.45rem;"><i class="fas fa-store"></i> Record Offline Sale</h3>
+                        <p style="margin: 0.2rem 0 0; color: var(--text-muted); font-size: 0.9rem; line-height: 1.35;">Offline sales deduct stock immediately and appear in reports and dashboard totals.</p>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.85rem; align-items: end;">
+                        <div>
+                            <label class="form-label" for="offline-sale-product">Product</label>
+                            <select id="offline-sale-product" class="form-input"></select>
+                        </div>
+                        <div>
+                            <label class="form-label" for="offline-sale-quantity">Quantity</label>
+                            <input id="offline-sale-quantity" class="form-input" type="number" min="1" value="1" />
+                        </div>
+                        <div>
+                            <label class="form-label" for="offline-sale-amount">Amount Paid</label>
+                            <input id="offline-sale-amount" class="form-input" type="number" min="0" step="0.01" placeholder="0.00" />
+                        </div>
+                        <div>
+                            <label class="form-label" for="offline-sale-date">Sale Date</label>
+                            <input id="offline-sale-date" class="form-input" type="date" />
+                        </div>
+                        <div style="grid-column: 1 / -1;">
+                            <label class="form-label" for="offline-sale-notes">Notes (optional)</label>
+                            <input id="offline-sale-notes" class="form-input" type="text" placeholder="Cash sale / walk-in / manual invoice" />
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 0.95rem; flex-wrap: wrap;">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="loadOfflineSales()"><i class="fas fa-rotate-right"></i> Refresh</button>
+                        <button type="button" class="btn btn-primary" onclick="submitOfflineSale()"><i class="fas fa-plus"></i> Save Offline Sale</button>
+                    </div>
+                </div>
+
+                <div id="offline-sales-list" style="margin-bottom: 1rem;"></div>
                 <div id="stock-reports-list"></div>
             </div>
 
@@ -6012,6 +6046,8 @@
                 const response = await api.get('/admin/stock-reports');
                 const stockReports = response.stockReports || [];
                 window._stockReportsCache = stockReports;
+                await populateOfflineSaleProducts();
+                await loadOfflineSales();
 
                 // Load categories for filter if not already loaded
                 if (!window._categoriesCache || window._categoriesCache.length === 0) {
@@ -6041,6 +6077,114 @@
                 document.getElementById('stock-reports-list').innerHTML = '<div class="empty-state"><p>Error loading stock reports</p></div>';
             }
         }
+
+        async function populateOfflineSaleProducts() {
+            try {
+                const response = await api.get('/admin/products');
+                const products = (response.products || []).filter(p => p.is_active !== false);
+                window._productsCache = products;
+
+                const select = document.getElementById('offline-sale-product');
+                if (!select) return;
+
+                select.innerHTML = '<option value="">Select a product</option>' +
+                    products.map(p => `<option value="${p.id}" ${p.stock_quantity <= 0 ? 'disabled' : ''}>#${p.id} — ${escapeHtml(p.name || 'Unnamed')} (${parseInt(p.stock_quantity || 0, 10)} in stock)</option>`).join('');
+            } catch (error) {
+                console.error('Load offline sale products error:', error);
+            }
+        }
+
+        async function loadOfflineSales() {
+            const container = document.getElementById('offline-sales-list');
+            if (!container) return;
+
+            try {
+                const response = await api.get('/admin/offline-sales');
+                const sales = response.offlineSales || [];
+
+                if (!sales.length) {
+                    container.innerHTML = '<div class="empty-state" style="padding: 0.9rem 1rem; border-radius: 12px;">No offline sales recorded yet.</div>';
+                    return;
+                }
+
+                let html = '<div class="data-table-container" style="box-shadow: var(--shadow-sm); margin-bottom: 0; padding: 0.5rem 0; border: 1px solid var(--border);">';
+                html += '<div class="table-header"><h3>Recent Offline Sales</h3></div>';
+                html += '<div class="data-table-scroll"><table class="data-table"><thead><tr>' +
+                    '<th>Product</th><th>Qty</th><th>Amount</th><th>Date</th><th>Notes</th>' +
+                    '</tr></thead><tbody>';
+
+                sales.forEach(item => {
+                    html += `<tr>
+                        <td><strong>#${item.product_id}</strong> ${escapeHtml(item.product_name || 'Product')}</td>
+                        <td>${item.quantity}</td>
+                        <td>${formatCurrency(item.amount_paid || 0)}</td>
+                        <td>${formatDate(item.sale_date || item.created_at)}</td>
+                        <td>${escapeHtml(item.notes || '—')}</td>
+                    </tr>`;
+                });
+
+                html += '</tbody></table></div></div>';
+                container.innerHTML = html;
+            } catch (error) {
+                console.error('Load offline sales error:', error);
+                const message = String(error?.message || '');
+                const isAuthIssue = /401|403|unauthorized|access denied|token/i.test(message);
+
+                container.innerHTML = isAuthIssue
+                    ? '<div class="empty-state" style="padding: 0.9rem 1rem; border-radius: 12px;">Offline sales will load once you are signed in as an admin.</div>'
+                    : '<div class="empty-state" style="padding: 0.9rem 1rem; border-radius: 12px;">No offline sales recorded yet.</div>';
+            }
+        }
+
+        window.submitOfflineSale = async function() {
+            const productId = document.getElementById('offline-sale-product')?.value;
+            const quantity = parseInt(document.getElementById('offline-sale-quantity')?.value || '0', 10);
+            const amountPaid = parseFloat(document.getElementById('offline-sale-amount')?.value || '0');
+            const saleDate = document.getElementById('offline-sale-date')?.value;
+            const notes = document.getElementById('offline-sale-notes')?.value.trim() || null;
+
+            if (!productId) {
+                showAlert('Please select a product before recording an offline sale.', 'warning');
+                return;
+            }
+
+            if (!Number.isFinite(quantity) || quantity <= 0) {
+                showAlert('Quantity must be at least 1.', 'warning');
+                return;
+            }
+
+            if (!Number.isFinite(amountPaid) || amountPaid < 0) {
+                showAlert('Amount paid must be a valid non-negative number.', 'warning');
+                return;
+            }
+
+            try {
+                showAlert('Recording offline sale...', 'info');
+                const response = await api.post('/admin/offline-sales', {
+                    product_id: parseInt(productId, 10),
+                    quantity,
+                    amount_paid: amountPaid,
+                    sale_date: saleDate || null,
+                    notes
+                });
+
+                showAlert(response?.message || 'Offline sale recorded successfully.', 'success');
+                document.getElementById('offline-sale-product').value = '';
+                document.getElementById('offline-sale-quantity').value = '1';
+                document.getElementById('offline-sale-amount').value = '';
+                document.getElementById('offline-sale-date').value = '';
+                document.getElementById('offline-sale-notes').value = '';
+
+                await populateOfflineSaleProducts();
+                await loadOfflineSales();
+                await loadStockReports();
+                await loadProducts();
+                await loadDashboardSilent();
+            } catch (error) {
+                console.error('Submit offline sale error:', error);
+                showAlert(error?.message || error?.error || 'Failed to record offline sale.', 'error');
+            }
+        };
 
         function updateStockStatistics(stockReports) {
             const totalProducts = stockReports.length;
@@ -6284,29 +6428,36 @@
 
                     let rowsHtml = '';
                     rows.forEach(({ t, qty, stockBefore, stockAfter, isReturn, isCancelled }) => {
-                        const qtyColor = isReturn ? 'color:#22c55e;' : 'color:var(--danger);';
+                        const isOfflineSale = t.type === 'offline_sale';
+                        const qtyColor = isReturn ? 'color:#22c55e;' : isOfflineSale ? 'color:var(--warning);' : 'color:var(--danger);';
                         const qtyPrefix = isReturn ? '+' : '-';
-                        const rowBg = isReturn ? 'style="background:rgba(34,197,94,0.06);"' : '';
+                        const rowBg = isReturn ? 'style="background:rgba(34,197,94,0.06);"' : isOfflineSale ? 'style="background:rgba(245,158,11,0.08);"' : '';
                         const refBadge = isReturn
                             ? ` <span class="badge badge-success" style="font-size:0.7rem;vertical-align:middle;">RETURN</span>`
-                            : '';
+                            : isOfflineSale
+                                ? ` <span class="badge badge-warning" style="font-size:0.7rem;vertical-align:middle;">OFFLINE</span>`
+                                : '';
                         const statusBadge = isReturn
                             ? `<span class="badge badge-success">refunded</span>`
-                            : `<span class="badge badge-${t.status === 'delivered' ? 'success' : t.status === 'cancelled' ? 'danger' : 'warning'}">${t.status}</span>`;
+                            : isOfflineSale
+                                ? `<span class="badge badge-warning">offline sale</span>`
+                                : `<span class="badge badge-${t.status === 'delivered' ? 'success' : t.status === 'cancelled' ? 'danger' : 'warning'}">${t.status}</span>`;
                         const deliveryCharge = parseFloat(t.item_delivery_charge) || 0;
-                        const deliveryCell = isReturn
+                        const deliveryCell = isReturn || isOfflineSale
                             ? `<span style="color:var(--text-muted);">—</span>`
                             : deliveryCharge > 0
                                 ? `<span style="color:var(--warning);font-weight:600;">${formatCurrency(deliveryCharge)}</span>`
                                 : `<span style="color:var(--text-muted);">—</span>`;
-                        const totalWithDelivery = isReturn ? parseFloat(t.subtotal) : parseFloat(t.subtotal) + deliveryCharge;
+                        const totalWithDelivery = isReturn || isOfflineSale ? parseFloat(t.subtotal) : parseFloat(t.subtotal) + deliveryCharge;
+                        const customerLabel = isOfflineSale ? 'Offline sale' : (t.customer_name || 'No account');
+                        const customerEmail = isOfflineSale ? 'Manual / cash / walk-in' : (t.customer_email || '');
                         rowsHtml += `
                             <tr ${rowBg}>
                                 <td>${formatDate(t.order_date)}</td>
                                 <td><strong>${escapeHtml(t.order_number)}</strong>${refBadge}</td>
                                 <td>
-                                    <div>${escapeHtml(t.customer_name || 'No account')}</div>
-                                    ${t.customer_email ? `<div style="font-size: 0.85rem; color: var(--text-muted);">${escapeHtml(t.customer_email)}</div>` : ''}
+                                    <div>${escapeHtml(customerLabel)}</div>
+                                    ${customerEmail ? `<div style="font-size: 0.85rem; color: var(--text-muted);">${escapeHtml(customerEmail)}</div>` : ''}
                                 </td>
                                 <td><strong style="${qtyColor}">${qtyPrefix}${qty}</strong></td>
                                 <td>${stockBefore}</td>

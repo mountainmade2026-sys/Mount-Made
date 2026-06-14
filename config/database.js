@@ -892,6 +892,58 @@ const initializeDatabase = async () => {
       ADD COLUMN IF NOT EXISTS email_forward_error TEXT;
     `);
 
+    // Create Offline Sales table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS offline_sales (
+        id SERIAL PRIMARY KEY,
+        product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+        quantity INTEGER NOT NULL CHECK (quantity > 0),
+        amount_paid DECIMAL(10, 2) NOT NULL DEFAULT 0,
+        sale_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        notes TEXT,
+        created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await client.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'offline_sales' AND column_name = 'product_id') THEN
+          ALTER TABLE offline_sales ADD COLUMN product_id INTEGER;
+        END IF;
+
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'offline_sales' AND column_name = 'quantity') THEN
+          ALTER TABLE offline_sales ADD COLUMN quantity INTEGER DEFAULT 1;
+        END IF;
+
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'offline_sales' AND column_name = 'amount_paid') THEN
+          ALTER TABLE offline_sales ADD COLUMN amount_paid DECIMAL(10, 2) DEFAULT 0;
+        END IF;
+
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'offline_sales' AND column_name = 'sale_date') THEN
+          ALTER TABLE offline_sales ADD COLUMN sale_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+        END IF;
+
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'offline_sales' AND column_name = 'notes') THEN
+          ALTER TABLE offline_sales ADD COLUMN notes TEXT;
+        END IF;
+
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'offline_sales' AND column_name = 'created_by') THEN
+          ALTER TABLE offline_sales ADD COLUMN created_by INTEGER;
+        END IF;
+
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'offline_sales' AND column_name = 'created_at') THEN
+          ALTER TABLE offline_sales ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+        END IF;
+
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'offline_sales' AND column_name = 'updated_at') THEN
+          ALTER TABLE offline_sales ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+        END IF;
+      END $$;
+    `);
+
     // Create Returns table
     await client.query(`
       CREATE TABLE IF NOT EXISTS returns (

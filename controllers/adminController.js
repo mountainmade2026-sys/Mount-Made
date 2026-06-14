@@ -773,6 +773,107 @@ exports.updateStock = async (req, res) => {
   }
 };
 
+exports.getOfflineSales = async (req, res) => {
+  try {
+    const result = await db.query(`
+      SELECT
+        os.id,
+        os.product_id,
+        os.quantity,
+        os.amount_paid,
+        os.sale_date,
+        os.notes,
+        os.created_at,
+        p.name AS product_name,
+        p.price,
+        p.wholesale_price,
+        u.full_name AS created_by_name
+      FROM offline_sales os
+      JOIN products p ON p.id = os.product_id
+      LEFT JOIN users u ON u.id = os.created_by
+      ORDER BY os.sale_date DESC, os.created_at DESC
+    `);
+
+    res.json({ offlineSales: result.rows });
+  } catch (error) {
+    console.error('Get offline sales error:', error);
+    res.status(500).json({ error: 'Failed to fetch offline sales.' });
+  }
+};
+
+exports.createOfflineSale = async (req, res) => {
+  try {
+    const { product_id, quantity, amount_paid, sale_date, notes } = req.body;
+
+    const parsedProductId = parseInt(product_id, 10);
+    const parsedQuantity = parseInt(quantity, 10);
+    const parsedAmountPaid = amount_paid === '' || amount_paid === null || amount_paid === undefined
+      ? 0
+      : parseFloat(amount_paid);
+
+    if (!Number.isFinite(parsedProductId) || parsedProductId <= 0) {
+      return res.status(400).json({ error: 'A valid product is required.' });
+    }
+
+    if (!Number.isFinite(parsedQuantity) || parsedQuantity <= 0) {
+      return res.status(400).json({ error: 'Quantity must be at least 1.' });
+    }
+
+    if (!Number.isFinite(parsedAmountPaid) || parsedAmountPaid < 0) {
+      return res.status(400).json({ error: 'Amount paid must be a valid non-negative number.' });
+    }
+
+    const client = await db.pool.connect();
+
+    try {
+      await client.query('BEGIN');
+
+      const productResult = await client.query(
+        'SELECT id, name, stock_quantity, wholesale_price FROM products WHERE id = $1 FOR UPDATE',
+        [parsedProductId]
+      );
+
+      const product = productResult.rows[0];
+      if (!product) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ error: 'Product not found.' });
+      }
+
+      if ((product.stock_quantity || 0) < parsedQuantity) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ error: 'Not enough stock to record this offline sale.' });
+      }
+
+      const inserted = await client.query(
+        `INSERT INTO offline_sales (product_id, quantity, amount_paid, sale_date, notes, created_by)
+         VALUES ($1, $2, $3, COALESCE($4::timestamp, CURRENT_TIMESTAMP), $5, $6)
+         RETURNING *`,
+        [parsedProductId, parsedQuantity, parsedAmountPaid, sale_date || null, notes || null, req.user?.id || null]
+      );
+
+      await client.query(
+        'UPDATE products SET stock_quantity = stock_quantity - $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+        [parsedQuantity, parsedProductId]
+      );
+
+      await client.query('COMMIT');
+
+      res.status(201).json({
+        message: 'Offline sale recorded successfully.',
+        sale: inserted.rows[0]
+      });
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error('Create offline sale error:', error);
+    res.status(500).json({ error: error.message || 'Failed to record offline sale.' });
+  }
+};
+
 // Bulk Product Upload
 exports.bulkUploadProducts = async (req, res) => {
   try {
@@ -1388,9 +1489,10 @@ exports.getDashboardHistory = async (req, res) => {
 exports.getDashboardStats = async (req, res) => {
   try {
     const orderCountQuery = await db.query('SELECT COUNT(*) as total_orders FROM orders');
+    const offlineSaleCountQuery = await db.query('SELECT COUNT(*) as total_offline_sales FROM offline_sales');
 
     // Revenue = only delivered orders (customer actually received the product)
-    // Subtract refunded return amounts
+    // plus offline sales, then subtract refunded return amounts.
     const revenueQuery = await db.query(`
       SELECT
         COALESCE(SUM(o.total_amount), 0)
@@ -1399,12 +1501,14 @@ exports.getDashboardStats = async (req, res) => {
               FROM returns r
               WHERE r.status = 'refunded' AND r.refund_amount IS NOT NULL
             ), 0)
+        + COALESCE((SELECT SUM(amount_paid) FROM offline_sales), 0)
         AS total_revenue
       FROM orders o
       WHERE o.status = 'delivered'
     `);
 
-    // Cost (spent) = wholesale cost of delivered items only, minus returned items
+    // Cost (spent) = wholesale cost of delivered items only, minus returned items,
+    // plus the wholesale cost of offline sales.
     const spentQuery = await db.query(`
       SELECT
         COALESCE(SUM(oi.quantity * COALESCE(p.wholesale_price, 0)), 0)
@@ -1414,6 +1518,11 @@ exports.getDashboardStats = async (req, res) => {
               JOIN returns r ON r.id = ri.return_id
               LEFT JOIN products p2 ON p2.id = ri.product_id
               WHERE r.status = 'refunded'
+            ), 0)
+        + COALESCE((
+              SELECT SUM(os.quantity * COALESCE(p3.wholesale_price, 0))
+              FROM offline_sales os
+              LEFT JOIN products p3 ON p3.id = os.product_id
             ), 0)
         AS total_spent
       FROM order_items oi
@@ -1536,13 +1645,15 @@ exports.getStockReports = async (req, res) => {
         p.images,
         p.is_active,
         p.created_at,
-        -- total_sold: all non-cancelled (for stock tracking purposes)
-        COALESCE(SUM(CASE WHEN o.status != 'cancelled' THEN oi.quantity ELSE 0 END), 0) as total_sold,
-        (p.stock_quantity + COALESCE(SUM(CASE WHEN o.status != 'cancelled' THEN oi.quantity ELSE 0 END), 0)) as initial_stock,
-        -- revenue: only delivered orders (customer actually received & paid)
-        COALESCE(SUM(CASE WHEN o.status = 'delivered' THEN oi.subtotal ELSE 0 END), 0) as total_revenue,
-        -- cost: wholesale price of delivered items
-        COALESCE(SUM(CASE WHEN o.status = 'delivered' THEN oi.quantity * COALESCE(p.wholesale_price, 0) ELSE 0 END), 0) as total_cost
+        COALESCE(SUM(CASE WHEN o.status != 'cancelled' THEN oi.quantity ELSE 0 END), 0)
+          + COALESCE((SELECT SUM(quantity) FROM offline_sales os WHERE os.product_id = p.id), 0) AS total_sold,
+        p.stock_quantity
+          + COALESCE(SUM(CASE WHEN o.status != 'cancelled' THEN oi.quantity ELSE 0 END), 0)
+          + COALESCE((SELECT SUM(quantity) FROM offline_sales os WHERE os.product_id = p.id), 0) AS initial_stock,
+        COALESCE(SUM(CASE WHEN o.status = 'delivered' THEN oi.subtotal ELSE 0 END), 0)
+          + COALESCE((SELECT SUM(amount_paid) FROM offline_sales os WHERE os.product_id = p.id), 0) AS total_revenue,
+        COALESCE(SUM(CASE WHEN o.status = 'delivered' THEN oi.quantity * COALESCE(p.wholesale_price, 0) ELSE 0 END), 0)
+          + COALESCE((SELECT SUM(os.quantity * COALESCE(p2.wholesale_price, 0)) FROM offline_sales os JOIN products p2 ON p2.id = os.product_id WHERE os.product_id = p.id), 0) AS total_cost
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.id
       LEFT JOIN order_items oi ON p.id = oi.product_id
@@ -1573,7 +1684,6 @@ exports.getStockReports = async (req, res) => {
           oi.quantity,
           oi.price,
           oi.subtotal,
-          -- pro-rate delivery charge: this item's share of the order's delivery fee
           CASE
             WHEN COALESCE(o.delivery_charge, 0) > 0
             THEN ROUND(
@@ -1587,6 +1697,28 @@ exports.getStockReports = async (req, res) => {
         LEFT JOIN users u ON o.user_id = u.id
         LEFT JOIN order_items oi2 ON oi2.order_id = o.id
         WHERE oi.product_id = $1
+
+        UNION ALL
+
+        SELECT
+          'offline_sale'                                   AS type,
+          os.id                                            AS order_id,
+          'OFFLINE-' || os.id::text                        AS order_number,
+          os.sale_date                                     AS order_date,
+          'offline'                                        AS status,
+          NULL                                             AS delivery_speed,
+          0                                                AS delivery_charge,
+          NULL                                             AS customer_name,
+          NULL                                             AS customer_email,
+          os.quantity,
+          CASE
+            WHEN os.quantity > 0 THEN ROUND((os.amount_paid / os.quantity)::numeric, 2)
+            ELSE 0
+          END                                              AS price,
+          os.amount_paid                                   AS subtotal,
+          0                                                AS item_delivery_charge
+        FROM offline_sales os
+        WHERE os.product_id = $1
 
         UNION ALL
 
@@ -1689,8 +1821,11 @@ exports.getStockStatements = async (req, res) => {
         p.images,
         p.is_active,
         p.created_at,
-        COALESCE(SUM(CASE WHEN o.status != 'cancelled' THEN oi.quantity ELSE 0 END), 0) as total_sold,
-        (p.stock_quantity + COALESCE(SUM(CASE WHEN o.status != 'cancelled' THEN oi.quantity ELSE 0 END), 0)) as initial_stock
+        COALESCE(SUM(CASE WHEN o.status != 'cancelled' THEN oi.quantity ELSE 0 END), 0)
+          + COALESCE((SELECT SUM(quantity) FROM offline_sales os WHERE os.product_id = p.id), 0) AS total_sold,
+        p.stock_quantity
+          + COALESCE(SUM(CASE WHEN o.status != 'cancelled' THEN oi.quantity ELSE 0 END), 0)
+          + COALESCE((SELECT SUM(quantity) FROM offline_sales os WHERE os.product_id = p.id), 0) AS initial_stock
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.id
       LEFT JOIN order_items oi ON p.id = oi.product_id
@@ -2039,6 +2174,7 @@ exports.updateSiteSettings = async (req, res) => {
       homepage_hero_image_url,
       homepage_hero_section_id,
       about_us_description,
+      about_us_description_box_shape,
       about_us_font_family,
       about_us_text_align,
       faq_page_title,
@@ -2061,6 +2197,11 @@ exports.updateSiteSettings = async (req, res) => {
       about_us_heading_3,
       about_us_heading_4,
       about_us_heading_5,
+      about_us_paragraph_1_box_shape,
+      about_us_paragraph_2_box_shape,
+      about_us_paragraph_3_box_shape,
+      about_us_paragraph_4_box_shape,
+      about_us_paragraph_5_box_shape,
       about_us_paragraph_1,
       about_us_paragraph_2,
       about_us_paragraph_3,
@@ -2151,6 +2292,10 @@ exports.updateSiteSettings = async (req, res) => {
     if (about_us_description !== undefined) {
       updates.push({ key: 'about_us_description', value: String(about_us_description || '').trim() });
     }
+    if (about_us_description_box_shape !== undefined) {
+      const shape = String(about_us_description_box_shape || 'rectangle').trim().toLowerCase();
+      updates.push({ key: 'about_us_description_box_shape', value: shape === 'square' ? 'square' : 'rectangle' });
+    }
     if (faq_page_title !== undefined) {
       updates.push({ key: 'faq_page_title', value: String(faq_page_title || '').trim() });
     }
@@ -2201,6 +2346,26 @@ exports.updateSiteSettings = async (req, res) => {
     }
     if (about_us_heading_5 !== undefined) {
       updates.push({ key: 'about_us_heading_5', value: String(about_us_heading_5 || '').trim() });
+    }
+    if (about_us_paragraph_1_box_shape !== undefined) {
+      const shape = String(about_us_paragraph_1_box_shape || 'rectangle').trim().toLowerCase();
+      updates.push({ key: 'about_us_paragraph_1_box_shape', value: shape === 'square' ? 'square' : 'rectangle' });
+    }
+    if (about_us_paragraph_2_box_shape !== undefined) {
+      const shape = String(about_us_paragraph_2_box_shape || 'rectangle').trim().toLowerCase();
+      updates.push({ key: 'about_us_paragraph_2_box_shape', value: shape === 'square' ? 'square' : 'rectangle' });
+    }
+    if (about_us_paragraph_3_box_shape !== undefined) {
+      const shape = String(about_us_paragraph_3_box_shape || 'rectangle').trim().toLowerCase();
+      updates.push({ key: 'about_us_paragraph_3_box_shape', value: shape === 'square' ? 'square' : 'rectangle' });
+    }
+    if (about_us_paragraph_4_box_shape !== undefined) {
+      const shape = String(about_us_paragraph_4_box_shape || 'rectangle').trim().toLowerCase();
+      updates.push({ key: 'about_us_paragraph_4_box_shape', value: shape === 'square' ? 'square' : 'rectangle' });
+    }
+    if (about_us_paragraph_5_box_shape !== undefined) {
+      const shape = String(about_us_paragraph_5_box_shape || 'rectangle').trim().toLowerCase();
+      updates.push({ key: 'about_us_paragraph_5_box_shape', value: shape === 'square' ? 'square' : 'rectangle' });
     }
     if (about_us_paragraph_1 !== undefined) {
       updates.push({ key: 'about_us_paragraph_1', value: String(about_us_paragraph_1 || '').trim() });

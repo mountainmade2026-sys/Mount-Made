@@ -25,6 +25,8 @@ router.get('/dashboard/history', adminController.getDashboardHistory);
 // Stock Reports
 router.get('/stock-reports', adminController.getStockReports);
 router.get('/stock-statements', adminController.getStockStatements);
+router.get('/offline-sales', adminController.getOfflineSales);
+router.post('/offline-sales', adminController.createOfflineSale);
 
 // User Management
 router.get('/users', adminController.getAllUsers);
