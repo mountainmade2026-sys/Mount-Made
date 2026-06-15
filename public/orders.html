@@ -603,6 +603,119 @@
             }
         }
 
+        function printOrderReceipt(orderId) {
+            const order = _ordersCache.find(item => Number(item.id) === Number(orderId));
+            if (!order) {
+                showAlert('Order not found.', 'error');
+                return;
+            }
+
+            const items = Array.isArray(order.items) ? order.items : [];
+            const rows = items.map(item => {
+                const barcode = String(item.barcode || '').trim();
+                const barcodeMarkup = barcode
+                    ? `<div style="margin-top:0.35rem;display:inline-block;padding:0.35rem 0.4rem;border:1px dashed #cbd5e1;border-radius:8px;background:#fff;">
+                        <svg class="invoice-barcode" data-value="${barcode}" style="width:180px;height:42px;display:block;"></svg>
+                      </div>`
+                    : '';
+
+                return `
+                    <tr>
+                        <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;vertical-align:top;">
+                            <div style="font-weight:700;">${item.product_name || 'Item'}</div>
+                            ${barcodeMarkup}
+                        </td>
+                        <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:center;">${item.quantity}</td>
+                        <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;">${formatCurrency(item.price || 0)}</td>
+                        <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;">${formatCurrency(item.subtotal || (item.price || 0) * (item.quantity || 1))}</td>
+                    </tr>`;
+            }).join('');
+
+            const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Receipt ${order.order_number || order.id}</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 760px; margin: 28px auto; color: #111827; font-size: 14px; }
+    .hdr { display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; padding-bottom:1rem; border-bottom:2px solid #1a4731; margin-bottom:1.1rem; }
+    .brand { font-size:1.5rem; font-weight:800; color:#1a4731; }
+    table { width:100%; border-collapse:collapse; margin-top:1rem; }
+    th { background:#f0fdf4; padding:0.5rem 0.75rem; border:1px solid #ddd; font-weight:700; text-align:left; }
+    td { border:1px solid #ddd; padding:0.5rem 0.75rem; }
+    .total-row td { font-weight:700; }
+    .muted { color:#6b7280; }
+    @media print { body { margin:18px; } .no-print { display:none; } }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
+  <script>
+    window.addEventListener('load', function () {
+      const nodes = document.querySelectorAll('.invoice-barcode[data-value]');
+      nodes.forEach(function (node) {
+        const value = String(node.getAttribute('data-value') || '').trim();
+        if (!value) return;
+        try {
+          JsBarcode(node, value, { format: 'CODE128', displayValue: false, width: 2, height: 42, margin: 0, background: '#ffffff' });
+        } catch (error) {
+          node.textContent = value;
+        }
+      });
+    });
+  <\/script>
+</head>
+<body>
+  <div class="hdr">
+    <div>
+      <div class="brand">Mount Made</div>
+      <div class="muted">Order Receipt</div>
+    </div>
+    <div style="text-align:right;">
+      <div><strong>Receipt:</strong> ${order.order_number || order.id}</div>
+      <div><strong>Date:</strong> ${formatDate(order.created_at)}</div>
+    </div>
+  </div>
+
+  <div style="margin-bottom:1.1rem;">
+    <strong>Customer:</strong> ${order.full_name || 'Customer'}<br>
+    <strong>Email:</strong> ${order.email || 'N/A'}
+    ${order.phone ? `<br><strong>Phone:</strong> ${order.phone}` : ''}
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Item</th>
+        <th>Qty</th>
+        <th>Unit Price</th>
+        <th>Subtotal</th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+    <tfoot>
+      <tr class="total-row">
+        <td colspan="3" style="text-align:right;">Order Total</td>
+        <td>${formatCurrency(order.total_amount || 0)}</td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <div style="margin-top:1.35rem;color:#6b7280;font-size:0.88rem;">Thank you for shopping with Mount Made.</div>
+  <div class="no-print" style="margin-top:1rem;">
+    <button onclick="window.print()" style="padding:0.5rem 0.9rem;background:#1a4731;color:#fff;border:none;border-radius:6px;cursor:pointer;">Print Receipt</button>
+  </div>
+</body>
+</html>`;
+
+            const popup = window.open('', '_blank', 'width=780,height=980');
+            if (!popup) {
+                showAlert('Pop-up blocked. Please allow pop-ups for this site.', 'error');
+                return;
+            }
+            popup.document.write(html);
+            popup.document.close();
+            popup.focus();
+        }
+
         async function loadOrders() {
             const data = await api.get('/orders');
             _ordersCache = data.orders || [];
@@ -614,89 +727,96 @@
             }
             
             container.innerHTML = data.orders.map(order => {
-                // ── Delivery stepper ──
                 const statusOrder = ['pending', 'processing', 'shipped', 'out_for_delivery', 'delivered'];
                 const steps = [
-                    { key: 'pending',           icon: 'fa-box',           label: 'Order Placed' },
-                    { key: 'processing',        icon: 'fa-check-circle',  label: 'Confirmed' },
-                    { key: 'shipped',           icon: 'fa-shipping-fast', label: 'Shipped' },
-                    { key: 'out_for_delivery',  icon: 'fa-truck',         label: 'Out for Delivery' },
-                    { key: 'delivered',         icon: 'fa-home',          label: 'Delivered' },
+                    { key: 'pending', icon: 'fa-box', label: 'Order Placed' },
+                    { key: 'processing', icon: 'fa-check-circle', label: 'Confirmed' },
+                    { key: 'shipped', icon: 'fa-shipping-fast', label: 'Shipped' },
+                    { key: 'out_for_delivery', icon: 'fa-truck', label: 'Out for Delivery' },
+                    { key: 'delivered', icon: 'fa-home', label: 'Delivered' }
                 ];
                 const isCancelled = order.status === 'cancelled';
                 const currentIdx = statusOrder.indexOf(order.status);
-
                 const progressWidth = isCancelled ? '0px' : `calc((100% - 40px) * ${currentIdx} / ${steps.length - 1})`;
-                const stepperHtml = isCancelled ? '' : `
-                    <div class="delivery-stepper-wrap">
-                        <div class="delivery-stepper-title"><i class="fas fa-route" style="margin-right:0.3rem;"></i>Order Progress</div>
-                        <div class="delivery-stepper">
-                            <div class="ds-progress" style="width:${progressWidth};"></div>
-                            ${steps.map((s, i) => {
-                                const isDone   = currentIdx > i;
-                                const isActive = currentIdx === i;
-                                const cls = isDone ? 'done' : isActive ? 'active' : '';
-                                const iconHtml = isDone
-                                    ? '<i class="fas fa-check"></i>'
-                                    : `<i class="fas ${s.icon}"></i>`;
-                                return `<div class="ds-step ${cls}">
-                                    <div class="ds-step-icon">${iconHtml}</div>
-                                    <span class="ds-step-label">${s.label}</span>
-                                </div>`;
-                            }).join('')}
-                        </div>
-                    </div>
-                `;
 
-                return `
-                <div class="card">
-                    <div class="card-content">
-                        <div class="order-header" style="margin-bottom: 1rem;">
-                            <div class="order-header-left">
-                                <strong>Order #${order.order_number}</strong>
-                                <p style="color: var(--text-light); margin-top: 0.25rem;">${formatDate(order.created_at)}</p>
-                            </div>
-                            <div class="order-header-right">
-                                <span class="${getCustomerOrderStatusClass(order.status)}">${getCustomerOrderStatusText(order.status)}</span>
-                                <p style="margin-top: 0.5rem; font-size: 1.25rem; font-weight: 700; color: var(--primary);">${formatCurrency(order.total_amount)}</p>
-                            </div>
-                        </div>
+                const stepperHtml = isCancelled ? '' : [
+                    '<div class="delivery-stepper-wrap">',
+                    '<div class="delivery-stepper-title"><i class="fas fa-route" style="margin-right:0.3rem;"></i>Order Progress</div>',
+                    '<div class="delivery-stepper">',
+                    `<div class="ds-progress" style="width:${progressWidth};"></div>`,
+                    steps.map((s, i) => {
+                        const isDone = currentIdx > i;
+                        const isActive = currentIdx === i;
+                        const cls = isDone ? 'done' : isActive ? 'active' : '';
+                        const iconHtml = isDone
+                            ? '<i class="fas fa-check"></i>'
+                            : `<i class="fas ${s.icon}"></i>`;
+                        return `<div class="ds-step ${cls}"><div class="ds-step-icon">${iconHtml}</div><span class="ds-step-label">${s.label}</span></div>`;
+                    }).join(''),
+                    '</div>',
+                    '</div>'
+                ].join('');
 
-                        ${stepperHtml}
+                const itemsHtml = (order.items || []).map(item => 
+                    `<div style="display:flex;justify-content:space-between;padding:0.5rem 0;gap:0.75rem;"><span>${item.product_name} x ${item.quantity}</span><span>${formatCurrency(item.subtotal)}</span></div>`
+                ).join('');
 
-                        <div style="border-top: 1px solid var(--border); padding-top: 1rem; margin-top:1rem;">
-                            ${getRefundDisplay(order) ? `
-                                <p style="margin: 0 0 0.75rem; color: var(--text-light);">
-                                    Payment/Refund: ${getRefundDisplay(order)}
-                                </p>
-                            ` : ''}
-                            <strong style="display: block; margin-bottom: 0.5rem;">Items:</strong>
-                            ${order.items.map(item => `<div style="display: flex; justify-content: space-between; padding: 0.5rem 0;"><span>${item.product_name} x ${item.quantity}</span><span>${formatCurrency(item.subtotal)}</span></div>`).join('')}
+                const refundHtml = getRefundDisplay(order)
+                    ? `<p style="margin:0 0 0.75rem;color:var(--text-light);">Payment/Refund: ${getRefundDisplay(order)}</p>`
+                    : '';
 
-                            ${(canCustomerCancel(order) || order.status === 'delivered') ? `
-                                <div style="margin-top: 1rem; display:flex; justify-content:flex-end; gap:0.5rem; flex-wrap:wrap;">
-                                    ${canCustomerCancel(order) ? `
-                                        <button class="btn btn-danger btn-sm" onclick="cancelOrder(${order.id})">
-                                            <i class="fas fa-times"></i> Cancel Order
-                                        </button>
-                                    ` : ''}
-                                    ${order.status === 'delivered' ? `
-                                        ${order.return_status ? `
-                                            <span style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.35rem 0.75rem;border-radius:4px;font-size:0.85rem;font-weight:600;background:${order.return_status === 'refunded' ? 'var(--success, #28a745)' : order.return_status === 'rejected' ? 'var(--danger, #dc3545)' : 'var(--warning, #ffc107)'};color:${order.return_status === 'requested' || order.return_status === 'approved' ? '#212529' : '#fff'};">
-                                                <i class="fas fa-undo-alt"></i> Return ${order.return_status.charAt(0).toUpperCase() + order.return_status.slice(1)}
-                                            </span>
-                                        ` : `
-                                            <button class="btn btn-secondary btn-sm" onclick="openReturnModal(${order.id})" style="border-color:var(--warning);color:var(--warning);">
-                                                <i class="fas fa-undo-alt"></i> Return
-                                            </button>
-                                        `}
-                                    ` : ''}
-                                </div>
-                            ` : ''}
-                        </div>
-                    </div>
-                </div>
-            `}).join('');
+                const cancelBtn = canCustomerCancel(order)
+                    ? `<button class="btn btn-danger btn-sm" onclick="cancelOrder(${order.id})"><i class="fas fa-times"></i> Cancel Order</button>`
+                    : '';
+
+                const invoiceBtn = '<button class="btn btn-secondary btn-sm" onclick="printOrderReceipt(' + order.id + ')"><i class="fas fa-file-invoice"></i> Invoice</button>';
+
+                let returnHtml = '';
+                if (order.status === 'delivered') {
+                    if (order.return_status) {
+                        const returnLabel = order.return_status.charAt(0).toUpperCase() + order.return_status.slice(1);
+                        const returnColor = order.return_status === 'refunded'
+                            ? 'var(--success, #28a745)'
+                            : order.return_status === 'rejected'
+                                ? 'var(--danger, #dc3545)'
+                                : 'var(--warning, #ffc107)';
+                        const returnTextColor = order.return_status === 'requested' || order.return_status === 'approved'
+                            ? '#212529'
+                            : '#fff';
+                        returnHtml = `<span style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.35rem 0.75rem;border-radius:4px;font-size:0.85rem;font-weight:600;background:${returnColor};color:${returnTextColor};"><i class="fas fa-undo-alt"></i> Return ${returnLabel}</span>`;
+                    } else {
+                        returnHtml = `<button class="btn btn-secondary btn-sm" onclick="openReturnModal(${order.id})" style="border-color:var(--warning);color:var(--warning);"><i class="fas fa-undo-alt"></i> Return</button>`;
+                    }
+                }
+
+                const actionsHtml = (canCustomerCancel(order) || order.status === 'delivered')
+                    ? `<div style="margin-top:1rem;display:flex;justify-content:flex-end;gap:0.5rem;flex-wrap:wrap;">${invoiceBtn}${cancelBtn}${returnHtml}</div>`
+                    : '';
+
+                return [
+                    '<div class="card">',
+                    '  <div class="card-content">',
+                    '    <div class="order-header" style="margin-bottom:1rem;">',
+                    '      <div class="order-header-left">',
+                    `        <strong>Order #${order.order_number}</strong>`,
+                    `        <p style="color:var(--text-light);margin-top:0.25rem;">${formatDate(order.created_at)}</p>`,
+                    '      </div>',
+                    '      <div class="order-header-right">',
+                    `        <span class="${getCustomerOrderStatusClass(order.status)}">${getCustomerOrderStatusText(order.status)}</span>`,
+                    `        <p style="margin-top:0.5rem;font-size:1.25rem;font-weight:700;color:var(--primary);">${formatCurrency(order.total_amount)}</p>`,
+                    '      </div>',
+                    '    </div>',
+                    stepperHtml,
+                    '    <div style="border-top:1px solid var(--border);padding-top:1rem;margin-top:1rem;">',
+                    refundHtml,
+                    '      <strong style="display:block;margin-bottom:0.5rem;">Items:</strong>',
+                    itemsHtml,
+                    actionsHtml,
+                    '    </div>',
+                    '  </div>',
+                    '</div>'
+                ].join('');
+            }).join('');
         }
 
         // ── Return Products — Multi-Step Modal ──────────────────

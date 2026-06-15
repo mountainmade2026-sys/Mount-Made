@@ -669,7 +669,7 @@ const cart = {
     }
   },
 
-  async add(productId, quantity = 1) {
+  async add(productId, quantity = 1, options = {}) {
     try {
       console.log('Cart add called, auth status:', auth.isAuthenticated(), 'currentUser:', auth.currentUser);
       
@@ -697,8 +697,12 @@ const cart = {
         showAlert('Please verify your email before shopping. You will be prompted at checkout.', 'warning');
       }
 
-      console.log('Adding product to cart:', productId);
-      const response = await api.post('/cart/add', { product_id: productId, quantity });
+      console.log('Adding product to cart:', productId, options);
+      const response = await api.post('/cart/add', {
+        product_id: productId,
+        quantity,
+        ...options
+      });
       console.log('Cart add response:', response);
       
       if (response && response.success !== false) {

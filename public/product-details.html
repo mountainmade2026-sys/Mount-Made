@@ -1427,6 +1427,7 @@
         }
 
         let selectedProductRating = 0;
+        let selectedWeightOption = null;
 
         function selectProductRating(value) {
             selectedProductRating = value;
@@ -1592,6 +1593,12 @@
         }
 
         function selectProductWeight(value, buttonEl) {
+            selectedWeightOption = {
+                value,
+                label: (buttonEl && buttonEl.getAttribute('data-weight-label')) || formatWeightLabel(value, product?.unit || 'g'),
+                unit: product?.weight_unit || product?.unit || 'g'
+            };
+
             document.querySelectorAll('[data-weight-option]').forEach((btn) => {
                 btn.style.background = 'var(--bg-primary)';
                 btn.style.color = 'var(--text-primary)';
@@ -1728,7 +1735,11 @@
                 return;
             }
             try {
-                await cart.add(product.id, selectedQuantity);
+                await cart.add(product.id, selectedQuantity, {
+                    weight_label: selectedWeightOption?.label || null,
+                    weight_value: selectedWeightOption?.value ?? null,
+                    weight_unit: selectedWeightOption?.unit || null
+                });
                 showAddToCartSuccess();
                 showAlert('Added to cart successfully!', 'success');
             } catch (error) {
@@ -1759,7 +1770,10 @@
                 price: sellingPrice,
                 original_price: (discountPrice !== null && discountPrice < basePrice) ? basePrice : null,
                 quantity: selectedQuantity,
-                stock_quantity: product.stock_quantity
+                stock_quantity: product.stock_quantity,
+                weight_label: selectedWeightOption?.label || null,
+                weight_value: selectedWeightOption?.value ?? null,
+                weight_unit: selectedWeightOption?.unit || null
             };
 
             sessionStorage.setItem('directBuyItem', JSON.stringify(directBuyItem));

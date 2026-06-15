@@ -239,11 +239,13 @@ class Order {
                  'product_name', oi.product_name,
                  'quantity', oi.quantity,
                  'price', oi.price,
-                 'subtotal', oi.subtotal
+                 'subtotal', oi.subtotal,
+                 'barcode', p.barcode
                )
              ) as items
       FROM orders o
       LEFT JOIN order_items oi ON o.id = oi.order_id
+      LEFT JOIN products p ON oi.product_id = p.id
       WHERE o.id = $1
       GROUP BY o.id
     `;
@@ -263,11 +265,13 @@ class Order {
                  'product_name', oi.product_name,
                  'quantity', oi.quantity,
                  'price', oi.price,
-                 'subtotal', oi.subtotal
+                 'subtotal', oi.subtotal,
+                 'barcode', p.barcode
                )
              ) as items
       FROM orders o
       LEFT JOIN order_items oi ON o.id = oi.order_id
+      LEFT JOIN products p ON oi.product_id = p.id
       WHERE o.user_id = $1
     `;
 
@@ -305,7 +309,8 @@ class Order {
                    'product_name', oi.product_name,
                    'quantity', oi.quantity,
                    'price', oi.price,
-                   'subtotal', oi.subtotal
+                   'subtotal', oi.subtotal,
+                   'barcode', p.barcode
                  )
                ) FILTER (WHERE oi.id IS NOT NULL),
                '[]'
@@ -313,6 +318,7 @@ class Order {
       FROM orders o
       LEFT JOIN users u ON o.user_id = u.id
       LEFT JOIN order_items oi ON o.id = oi.order_id
+      LEFT JOIN products p ON oi.product_id = p.id
       WHERE 1=1
     `;
 

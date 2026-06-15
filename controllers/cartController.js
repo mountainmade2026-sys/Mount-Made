@@ -3,8 +3,12 @@ const Product = require('../models/Product');
 
 exports.getCart = async (req, res) => {
   try {
+    await db.query('ALTER TABLE cart ADD COLUMN IF NOT EXISTS weight_label TEXT');
+    await db.query('ALTER TABLE cart ADD COLUMN IF NOT EXISTS weight_value TEXT');
+    await db.query('ALTER TABLE cart ADD COLUMN IF NOT EXISTS weight_unit TEXT');
+
     const query = `
-      SELECT c.id, c.quantity, c.product_id,
+      SELECT c.id, c.quantity, c.product_id, c.weight_label, c.weight_value, c.weight_unit,
              p.name, 
              p.price as original_price,
              COALESCE(p.discount_price, p.price) as retail_price,
@@ -44,8 +48,15 @@ exports.getCart = async (req, res) => {
 
 exports.addToCart = async (req, res) => {
   try {
+    await db.query('ALTER TABLE cart ADD COLUMN IF NOT EXISTS weight_label TEXT');
+    await db.query('ALTER TABLE cart ADD COLUMN IF NOT EXISTS weight_value TEXT');
+    await db.query('ALTER TABLE cart ADD COLUMN IF NOT EXISTS weight_unit TEXT');
+
     const product_id = parseInt(req.body.product_id, 10);
     const quantity = parseInt(req.body.quantity, 10);
+    const weightLabel = String(req.body.weight_label || req.body.selected_weight_label || req.body.variant_label || '').trim() || null;
+    const weightValue = String(req.body.weight_value || req.body.selected_weight || '').trim() || null;
+    const weightUnit = String(req.body.weight_unit || '').trim() || null;
 
     if (!product_id || isNaN(product_id) || isNaN(quantity) || quantity < 1) {
       return res.status(400).json({ error: 'Valid product ID and quantity are required.' });
@@ -79,14 +90,14 @@ exports.addToCart = async (req, res) => {
       }
 
       await db.query(
-        'UPDATE cart SET quantity = $1, updated_at = CURRENT_TIMESTAMP WHERE user_id = $2 AND product_id = $3',
-        [newQuantity, req.user.id, product_id]
+        'UPDATE cart SET quantity = $1, weight_label = COALESCE($4, weight_label), weight_value = COALESCE($5, weight_value), weight_unit = COALESCE($6, weight_unit), updated_at = CURRENT_TIMESTAMP WHERE user_id = $2 AND product_id = $3',
+        [newQuantity, req.user.id, product_id, weightLabel, weightValue, weightUnit]
       );
     } else {
       // Add new item
       await db.query(
-        'INSERT INTO cart (user_id, product_id, quantity) VALUES ($1, $2, $3)',
-        [req.user.id, product_id, quantity]
+        'INSERT INTO cart (user_id, product_id, quantity, weight_label, weight_value, weight_unit) VALUES ($1, $2, $3, $4, $5, $6)',
+        [req.user.id, product_id, quantity, weightLabel, weightValue, weightUnit]
       );
     }
 

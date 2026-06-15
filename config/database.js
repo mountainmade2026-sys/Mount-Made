@@ -395,6 +395,10 @@ const initializeDatabase = async () => {
         is_active BOOLEAN DEFAULT true,
         weight DECIMAL(10, 2),
         unit VARCHAR(50),
+        is_weight_based BOOLEAN DEFAULT false,
+        weight_unit VARCHAR(20) DEFAULT 'g',
+        weight_options JSONB DEFAULT '[]',
+        barcode VARCHAR(50),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
@@ -455,6 +459,26 @@ const initializeDatabase = async () => {
         END IF;
 
         IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                      WHERE table_name='products' AND column_name='is_weight_based') THEN
+          ALTER TABLE products ADD COLUMN is_weight_based BOOLEAN DEFAULT false;
+        END IF;
+
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                      WHERE table_name='products' AND column_name='weight_unit') THEN
+          ALTER TABLE products ADD COLUMN weight_unit VARCHAR(20) DEFAULT 'g';
+        END IF;
+
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                      WHERE table_name='products' AND column_name='weight_options') THEN
+          ALTER TABLE products ADD COLUMN weight_options JSONB DEFAULT '[]'::jsonb;
+        END IF;
+
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                      WHERE table_name='products' AND column_name='barcode') THEN
+          ALTER TABLE products ADD COLUMN barcode VARCHAR(50);
+        END IF;
+
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
                       WHERE table_name='products' AND column_name='updated_at') THEN
           ALTER TABLE products ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
         END IF;
@@ -476,10 +500,28 @@ const initializeDatabase = async () => {
         user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
         product_id INTEGER REFERENCES products(id) ON DELETE CASCADE,
         quantity INTEGER NOT NULL DEFAULT 1,
+        weight_label TEXT,
+        weight_value TEXT,
+        weight_unit TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(user_id, product_id)
       );
+    `);
+
+    await client.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='cart' AND column_name='weight_label') THEN
+          ALTER TABLE cart ADD COLUMN weight_label TEXT;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='cart' AND column_name='weight_value') THEN
+          ALTER TABLE cart ADD COLUMN weight_value TEXT;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='cart' AND column_name='weight_unit') THEN
+          ALTER TABLE cart ADD COLUMN weight_unit TEXT;
+        END IF;
+      END $$;
     `);
 
     // Create Orders table

@@ -915,6 +915,39 @@
             return Number.isFinite(parsed) ? parsed : 0;
         }
 
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#39;');
+        }
+
+        function getItemWeightLabel(item) {
+            const directLabel = [
+                item.weight_label,
+                item.selected_weight_label,
+                item.variant_label,
+                item.pack_size_label,
+                item.size_label
+            ].find(value => String(value || '').trim());
+
+            if (directLabel) {
+                return String(directLabel).trim();
+            }
+
+            const value = item.weight_value ?? item.selected_weight ?? item.weight ?? item.pack_size ?? item.variant_weight;
+            const amount = toNumber(value);
+            if (Number.isFinite(amount) && amount > 0) {
+                const rawUnit = (item.weight_unit || item.unit || 'g').toString().trim().toLowerCase();
+                const unit = rawUnit === 'kg' || rawUnit === 'kilogram' || rawUnit === 'kilograms' ? 'kg' : 'g';
+                return `${amount} ${unit}`;
+            }
+
+            return '';
+        }
+
         function resolveItemUnitPrice(item) {
             if (!item || typeof item !== 'object') return 0;
 
@@ -1056,6 +1089,10 @@
                     <span>
                         <div>${item.name}</div>
                         <div style="display:flex; align-items:center; gap:0.4rem; color: var(--text-secondary); font-size: 0.9rem; margin-top:0.2rem;">
+                            ${(() => {
+                                const weightLabel = getItemWeightLabel(item);
+                                return weightLabel ? `<div style="color: var(--text-secondary); font-size: 0.82rem;">Size: ${escapeHtml(weightLabel)}</div>` : '';
+                            })()}
                             <label for="checkout-qty-${item.id}" style="font-size:0.8rem;">Qty</label>
                             <div style="display:flex; align-items:center; border:1px solid var(--border); border-radius:6px; overflow:hidden; background: var(--bg-primary);">
                                 <button type="button" aria-label="Decrease quantity" onclick="event.preventDefault(); changeCheckoutQuantity(${item.id}, -1, document.getElementById('checkout-qty-${item.id}'))" style="border:none; background:transparent; padding:0.2rem 0.35rem; cursor:pointer; color:var(--text-primary);">−</button>
@@ -1107,6 +1144,10 @@
                     <span>
                         <div>${item.name}</div>
                         <div style="display:flex; align-items:center; gap:0.4rem; color: var(--text-secondary); font-size: 0.9rem; margin-top:0.2rem;">
+                            ${(() => {
+                                const weightLabel = getItemWeightLabel(item);
+                                return weightLabel ? `<div style="color: var(--text-secondary); font-size: 0.82rem;">Size: ${escapeHtml(weightLabel)}</div>` : '';
+                            })()}
                             <label for="checkout-qty-${item.id}" style="font-size:0.8rem;">Qty</label>
                             <div style="display:flex; align-items:center; border:1px solid var(--border); border-radius:6px; overflow:hidden; background: var(--bg-primary);">
                                 <button type="button" aria-label="Decrease quantity" onclick="event.preventDefault(); changeCheckoutQuantity(${item.id}, -1, document.getElementById('checkout-qty-${item.id}'))" style="border:none; background:transparent; padding:0.2rem 0.35rem; cursor:pointer; color:var(--text-primary);">−</button>

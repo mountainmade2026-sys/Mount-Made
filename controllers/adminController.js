@@ -9,6 +9,7 @@ const https = require('https');
 const db = require('../config/database');
 const { getLicenseState, LICENSE_EXPIRED_MESSAGE } = require('../middleware/adminLicense');
 const { notifyOrderConfirmed, notifyOrderShipped, notifyOutForDelivery } = require('../utils/whatsappService');
+const { normalizeWeightProductData } = require('../utils/productWeightOptions');
 
 const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID || '';
 const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN || '';
@@ -618,7 +619,7 @@ exports.getAllProducts = async (req, res) => {
 
 exports.createProduct = async (req, res) => {
   try {
-    const productData = req.body;
+    const productData = normalizeWeightProductData(req.body || {});
     
     // Validate required fields
     if (!productData.name || !productData.price) {
@@ -672,7 +673,7 @@ exports.updateProduct = async (req, res) => {
       return res.status(404).json({ error: 'Product not found.' });
     }
     
-    const incoming = req.body || {};
+    const incoming = normalizeWeightProductData(req.body || {});
 
     const productData = {
       name: incoming.name ?? existing.name,
@@ -695,7 +696,10 @@ exports.updateProduct = async (req, res) => {
       images: incoming.images ?? existing.images ?? [],
       is_active: incoming.is_active ?? existing.is_active ?? true,
       weight: incoming.weight !== undefined ? incoming.weight : existing.weight,
-      unit: incoming.unit ?? existing.unit
+      unit: incoming.unit ?? existing.unit,
+      is_weight_based: incoming.is_weight_based !== undefined ? incoming.is_weight_based : existing.is_weight_based,
+      weight_unit: incoming.weight_unit ?? existing.weight_unit ?? 'g',
+      weight_options: incoming.weight_options !== undefined ? incoming.weight_options : existing.weight_options || []
     };
     
     const product = await Product.update(id, productData);

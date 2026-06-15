@@ -1,4 +1,5 @@
 const db = require('../config/database');
+const { generateProductBarcode } = require('../utils/productBarcode');
 
 class Product {
   static async ensureSchemaCompatibility() {
@@ -23,6 +24,10 @@ class Product {
           is_active BOOLEAN DEFAULT true,
           weight DECIMAL(10, 2),
           unit VARCHAR(50),
+          is_weight_based BOOLEAN DEFAULT false,
+          weight_unit VARCHAR(20) DEFAULT 'g',
+          weight_options JSONB DEFAULT '[]'::jsonb,
+          barcode VARCHAR(50),
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
@@ -59,6 +64,10 @@ class Product {
       await db.pool.query("ALTER TABLE products ADD COLUMN IF NOT EXISTS images JSONB DEFAULT '[]'::jsonb");
       await db.pool.query('ALTER TABLE products ADD COLUMN IF NOT EXISTS weight NUMERIC');
       await db.pool.query('ALTER TABLE products ADD COLUMN IF NOT EXISTS unit VARCHAR(50)');
+      await db.pool.query('ALTER TABLE products ADD COLUMN IF NOT EXISTS is_weight_based BOOLEAN DEFAULT false');
+      await db.pool.query("ALTER TABLE products ADD COLUMN IF NOT EXISTS weight_unit VARCHAR(20) DEFAULT 'g'");
+      await db.pool.query("ALTER TABLE products ADD COLUMN IF NOT EXISTS weight_options JSONB DEFAULT '[]'::jsonb");
+      await db.pool.query('ALTER TABLE products ADD COLUMN IF NOT EXISTS barcode VARCHAR(50)');
       await db.pool.query('ALTER TABLE products ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP');
 
       await db.pool.query(`
@@ -112,15 +121,18 @@ class Product {
       images,
       is_active,
       weight,
-      unit
+      unit,
+      is_weight_based,
+      weight_unit,
+      weight_options
     } = productData;
 
     const query = `
       INSERT INTO products (
         name, description, category_id, homepage_section_id, price, wholesale_price, discount_price, discount_adjust,
-        stock_quantity, min_wholesale_qty, image_url, images, is_active, weight, unit
+        stock_quantity, min_wholesale_qty, image_url, images, is_active, weight, unit, is_weight_based, weight_unit, weight_options
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
       RETURNING *
     `;
 
@@ -139,11 +151,24 @@ class Product {
       JSON.stringify(images || []),
       is_active !== undefined && is_active !== null ? !!is_active : true,
       weight,
-      unit
+      unit,
+      is_weight_based !== undefined && is_weight_based !== null ? !!is_weight_based : false,
+      weight_unit || 'g',
+      JSON.stringify(weight_options || [])
     ];
 
     const result = await db.query(query, values);
-    return result.rows[0];
+    const createdProduct = result.rows[0];
+
+    if (createdProduct?.id) {
+      const barcode = createdProduct.barcode || generateProductBarcode(createdProduct.id);
+      if (!createdProduct.barcode) {
+        await db.query('UPDATE products SET barcode = $1 WHERE id = $2', [barcode, createdProduct.id]);
+        createdProduct.barcode = barcode;
+      }
+    }
+
+    return createdProduct;
   }
 
   static async findAll(filters = {}) {
@@ -210,7 +235,12 @@ class Product {
 
     try {
       const result = await db.query(query, values);
-      return result.rows;
+      return result.rows.map((row) => {
+        if (!row.barcode && row.id) {
+          return { ...row, barcode: generateProductBarcode(row.id) };
+        }
+        return row;
+      });
     } catch (error) {
       const code = error?.code;
       if (code === '42703' || code === '42P01') {
@@ -243,7 +273,11 @@ class Product {
     `;
     try {
       const result = await db.query(query, [id]);
-      return result.rows[0];
+      const product = result.rows[0];
+      if (product && !product.barcode) {
+        product.barcode = generateProductBarcode(product.id);
+      }
+      return product;
     } catch (error) {
       const code = error?.code;
       if (code === '42703' || code === '42P01') {
@@ -271,7 +305,10 @@ class Product {
       images,
       is_active,
       weight,
-      unit
+      unit,
+      is_weight_based,
+      weight_unit,
+      weight_options
     } = productData;
 
     const query = `
@@ -291,8 +328,11 @@ class Product {
           is_active = COALESCE($13, is_active),
           weight = COALESCE($14, weight),
           unit = COALESCE($15, unit),
+          is_weight_based = COALESCE($16, is_weight_based),
+          weight_unit = COALESCE($17, weight_unit),
+          weight_options = COALESCE($18, weight_options),
           updated_at = CURRENT_TIMESTAMP
-        WHERE id = $16
+        WHERE id = $19
       RETURNING *
     `;
 
@@ -312,11 +352,22 @@ class Product {
       is_active,
       weight,
       unit,
+      is_weight_based,
+      weight_unit,
+      weight_options !== undefined ? JSON.stringify(weight_options || []) : null,
       id
     ];
 
     const result = await db.query(query, values);
-    return result.rows[0];
+    const updatedProduct = result.rows[0];
+
+    if (updatedProduct?.id && !updatedProduct.barcode) {
+      const barcode = generateProductBarcode(updatedProduct.id);
+      await db.query('UPDATE products SET barcode = $1 WHERE id = $2', [barcode, updatedProduct.id]);
+      updatedProduct.barcode = barcode;
+    }
+
+    return updatedProduct;
   }
 
   static async delete(id) {

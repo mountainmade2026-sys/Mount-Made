@@ -3569,6 +3569,37 @@
 
                             <div class="form-row">
                                 <div>
+                                    <label class="form-label">Weight / Size Product</label>
+                                    <label style="display:flex; align-items:center; gap:0.5rem; font-weight:500; color:var(--text-primary); padding:0.65rem 0.75rem; border:1px solid var(--border); border-radius:10px; background: var(--bg-primary);">
+                                        <input type="checkbox" id="product-is-weight-based" style="accent-color: var(--primary); width: 1rem; height: 1rem;">
+                                        Enable gram / kg / size options
+                                    </label>
+                                    <small style="color: var(--text-muted); display:block; margin-top:0.35rem;">Turn this on for products sold in grams, kilograms, or custom size packs.</small>
+                                </div>
+                                <div>
+                                    <label class="form-label">Weight Unit</label>
+                                    <select id="product-weight-unit" class="form-select">
+                                        <option value="g">g</option>
+                                        <option value="kg">kg</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div>
+                                    <label class="form-label">Base Weight / Pack Size</label>
+                                    <input type="number" id="product-weight" class="form-input" placeholder="250" step="0.01">
+                                    <small style="color: var(--text-muted); display:block; margin-top:0.35rem;">Use the main pack size here (for example 250 or 1000).</small>
+                                </div>
+                                <div>
+                                    <label class="form-label">Weight Options</label>
+                                    <input type="text" id="product-weight-options" class="form-input" placeholder="250, 500, 1000">
+                                    <small style="color: var(--text-muted); display:block; margin-top:0.35rem;">Comma-separated values like 250, 500, 1000. These will be shown on the product detail page.</small>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div>
                                     <label class="form-label">Homepage Section (Optional)</label>
                                     <select id="product-homepage-section" class="form-select">
                                         <option value="">None - Show only in Products page</option>
@@ -3801,6 +3832,35 @@
                                 <div>
                                     <label class="form-label">Min Wholesale Quantity</label>
                                     <input type="number" id="edit-product-min-wholesale" class="form-input" placeholder="10">
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div>
+                                    <label class="form-label">Weight / Size Product</label>
+                                    <label style="display:flex; align-items:center; gap:0.5rem; font-weight:500; color:var(--text-primary); padding:0.65rem 0.75rem; border:1px solid var(--border); border-radius:10px; background: var(--bg-primary);">
+                                        <input type="checkbox" id="edit-product-is-weight-based" style="accent-color: var(--primary); width: 1rem; height: 1rem;">
+                                        Enable gram / kg / size options
+                                    </label>
+                                </div>
+                                <div>
+                                    <label class="form-label">Weight Unit</label>
+                                    <select id="edit-product-weight-unit" class="form-select">
+                                        <option value="g">g</option>
+                                        <option value="kg">kg</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div>
+                                    <label class="form-label">Base Weight / Pack Size</label>
+                                    <input type="number" id="edit-product-weight" class="form-input" placeholder="250" step="0.01">
+                                </div>
+                                <div>
+                                    <label class="form-label">Weight Options</label>
+                                    <input type="text" id="edit-product-weight-options" class="form-input" placeholder="250, 500, 1000">
+                                    <small style="color: var(--text-muted); display:block; margin-top:0.35rem;">Comma-separated options shown on the product page.</small>
                                 </div>
                             </div>
 
@@ -9897,7 +9957,7 @@
                 return;
             }
 
-            let html = '<div class="data-table-container"><div class="data-table-scroll"><table class="data-table"><thead><tr><th>ID</th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Actions</th></tr></thead><tbody>';
+            let html = '<div class="data-table-container"><div class="data-table-scroll"><table class="data-table"><thead><tr><th>ID</th><th>Name</th><th>Category</th><th>Barcode</th><th>Price</th><th>Stock</th><th>Actions</th></tr></thead><tbody>';
             
             filtered.forEach(p => {
                 html += `
@@ -9905,6 +9965,7 @@
                         <td>#${p.id}</td>
                         <td>${p.name}</td>
                             <td>${p.category_name || 'N/A'}</td>
+                            <td>${escapeHtml(p.barcode || '—')}</td>
                             <td>
                                 ${p.discount_price && parseFloat(p.discount_price) < parseFloat(p.price || 0)
                                     ? `<span class="price-original">₹${parseFloat(p.price || 0).toFixed(2)}</span> <strong class="price-discount">₹${parseFloat(p.discount_price).toFixed(2)}</strong>`
@@ -10066,13 +10127,25 @@
             const deliveryAddressHtml = deliveryAddress
                 ? `<br><strong>Delivery Address:</strong><br>${escapeHtml(deliveryAddress).replace(/\n/g, '<br>')}`
                 : '';
-            const rows = items.map(it => `
+            const rows = items.map(it => {
+                const barcodeValue = String(it.barcode || '').trim();
+                const barcodeMarkup = barcodeValue
+                    ? `<div style="margin-top:0.45rem;display:inline-block;padding:0.35rem 0.45rem;border:1px dashed #cbd5e1;border-radius:8px;background:#fff;">
+                        <svg class="invoice-barcode" data-value="${escapeHtml(barcodeValue)}" style="width:180px;height:42px;display:block;"></svg>
+                      </div>`
+                    : '';
+
+                return `
                 <tr>
-                    <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;">${escapeHtml(it.product_name || 'Item')}</td>
+                    <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;">
+                        <div style="font-weight:600;">${escapeHtml(it.product_name || 'Item')}</div>
+                        ${barcodeMarkup}
+                    </td>
                     <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:center;">${it.quantity}</td>
                     <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;">&#8377;${parseFloat(it.price||0).toFixed(2)}</td>
                     <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;">&#8377;${(parseFloat(it.price||0)*parseInt(it.quantity||1)).toFixed(2)}</td>
-                </tr>`).join('');
+                </tr>`;
+            }).join('');
             const html = `<!DOCTYPE html><html><head><title>Invoice ${escapeHtml(o.order_number||'')}</title>
             <style>body{font-family:Arial,sans-serif;max-width:700px;margin:40px auto;color:#222;font-size:14px;}
             .hdr{display:flex;justify-content:space-between;padding-bottom:1rem;border-bottom:2px solid #1a4731;margin-bottom:1.5rem;}
@@ -10080,7 +10153,29 @@
             table{width:100%;border-collapse:collapse;margin-top:1rem;}
             th{background:#f0fdf4;padding:0.5rem 0.75rem;border:1px solid #ddd;font-weight:700;text-align:left;}
             .total-row td{font-weight:700;}
-            @media print{body{margin:20px;}.no-print{display:none}}</style></head><body>
+            @media print{body{margin:20px;}.no-print{display:none}}</style>
+            <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
+            <script>
+              window.addEventListener('load', function () {
+                const nodes = document.querySelectorAll('.invoice-barcode[data-value]');
+                nodes.forEach(function (node) {
+                  const value = String(node.getAttribute('data-value') || '').trim();
+                  if (!value) return;
+                  try {
+                    JsBarcode(node, value, {
+                      format: 'CODE128',
+                      displayValue: false,
+                      width: 2,
+                      height: 42,
+                      margin: 0,
+                      background: '#ffffff'
+                    });
+                  } catch (error) {
+                    node.textContent = value;
+                  }
+                });
+              });
+            <\/script></head><body>
             <div class="hdr">
                 <div><div class="brand">Mount Made</div><div style="color:#666;">Tax Invoice</div></div>
                 <div style="text-align:right;">
@@ -10830,6 +10925,10 @@
                 const description = document.getElementById('product-description').value;
                 const wholesale_price = document.getElementById('product-wholesale-price').value || null;
                 const min_wholesale_qty = document.getElementById('product-min-wholesale').value || 10;
+                const weight = document.getElementById('product-weight').value;
+                const weight_unit = document.getElementById('product-weight-unit').value || 'g';
+                const is_weight_based = document.getElementById('product-is-weight-based').checked;
+                const weight_options = document.getElementById('product-weight-options').value;
                 const imageFiles = addProductSelectedImages;
 
                 // Validate required fields
@@ -11165,6 +11264,16 @@
             }
             document.getElementById('edit-product-min-wholesale').value = product.min_wholesale_qty || 10;
             document.getElementById('edit-product-description').value = product.description || '';
+            document.getElementById('edit-product-weight').value = product.weight ?? '';
+            document.getElementById('edit-product-weight-unit').value = product.weight_unit || 'g';
+            document.getElementById('edit-product-is-weight-based').checked = Boolean(product.is_weight_based);
+            const weightOptionsText = Array.isArray(product.weight_options)
+                ? product.weight_options
+                    .map(option => typeof option === 'string' ? option : (option.label || option.value || option.name || ''))
+                    .filter(Boolean)
+                    .join(', ')
+                : '';
+            document.getElementById('edit-product-weight-options').value = weightOptionsText;
             
             // Show current product images
             const currentImagesContainer = document.getElementById('edit-current-images');
@@ -11449,6 +11558,10 @@
                 }
                 const description = document.getElementById('edit-product-description').value;
                 const wholesale_price = document.getElementById('edit-product-wholesale-price').value || null;
+                const weight = document.getElementById('edit-product-weight').value;
+                const weight_unit = document.getElementById('edit-product-weight-unit').value || 'g';
+                const is_weight_based = document.getElementById('edit-product-is-weight-based').checked;
+                const weight_options = document.getElementById('edit-product-weight-options').value;
                 const discountAmt = parseFloat(document.getElementById('edit-product-discount-percent')?.value || '');
                 const parsedPrice = parseFloat(price);
                 const parsedDiscountPrice = (Number.isFinite(discountAmt) && discountAmt > 0 && discountAmt < parsedPrice)
@@ -11486,7 +11599,12 @@
                     discount_price: discountToSave,
                     discount_adjust: null,
                     stock_quantity: parseInt(stock),
-                    min_wholesale_qty: parseInt(min_wholesale_qty)
+                    min_wholesale_qty: parseInt(min_wholesale_qty),
+                    weight: weight ? parseFloat(weight) : null,
+                    unit: weight_unit,
+                    is_weight_based,
+                    weight_unit,
+                    weight_options
                 };
 
                 // Upload new images if provided
