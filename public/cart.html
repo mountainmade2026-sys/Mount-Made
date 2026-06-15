@@ -257,8 +257,7 @@
             window.location.href = homeUrl;
         }
 
-        async function loadCart() {
-        const data = await cart.fetch();
+        function renderCartData(data) {
         const container = document.getElementById('cart-items');
         if (!data || !data.cartItems || data.cartItems.length === 0) {
             container.innerHTML = '<div class="card"><div class="card-content text-center"><p>Your cart is empty</p><a href="/products" class="btn btn-primary mt-2" data-continue-shopping>Start Shopping</a></div></div>';
@@ -315,6 +314,11 @@
         document.getElementById('cart-total').textContent = formatCurrency(data.total);
     }
 
+    async function loadCart() {
+        const data = await cart.fetch();
+        renderCartData(data);
+    }
+
     function updateCartShoppingLinks() {
         const target = auth.isWholesale && auth.isWholesale() ? '/wholesale#catalog' : '/products';
         document.querySelectorAll('#continue-shopping-link, [data-continue-shopping]').forEach(link => {
@@ -363,9 +367,12 @@
             }
 
             if (hasMax && maxParsed < step) {
-                await cart.update(itemId, maxParsed);
-                await cart.fetch();
-                loadCart();
+                const response = await cart.update(itemId, maxParsed);
+                if (response && Array.isArray(response.cartItems)) {
+                    renderCartData(response);
+                } else {
+                    await loadCart();
+                }
                 return;
             }
 
@@ -378,9 +385,12 @@
             }
 
             input.disabled = true;
-            await cart.update(itemId, q);
-            await cart.fetch();
-            loadCart();
+            const response = await cart.update(itemId, q);
+            if (response && Array.isArray(response.cartItems)) {
+                renderCartData(response);
+            } else {
+                await loadCart();
+            }
         } finally {
             if (input && typeof input.disabled === 'boolean') {
                 input.disabled = false;

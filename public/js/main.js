@@ -727,6 +727,12 @@ const cart = {
   async update(itemId, quantity) {
     try {
       const response = await api.put(`/cart/${itemId}`, { quantity });
+      if (response && typeof response === 'object' && 'cartItems' in response) {
+        this.items = response.cartItems || [];
+        this.total = parseFloat(response.total || 0);
+        this.itemCount = response.itemCount || this.items.length;
+        this.updateBadge();
+      }
       return response;
     } catch (error) {
       showAlert(error.message || 'Failed to update cart', 'error');

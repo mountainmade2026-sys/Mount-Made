@@ -1,41 +1,54 @@
 const db = require('../config/database');
 const Product = require('../models/Product');
 
+async function buildCartSummary(userId, role) {
+  const query = `
+    SELECT c.id, c.quantity, c.product_id, c.weight_label, c.weight_value, c.weight_unit,
+           p.name,
+           p.price as original_price,
+           COALESCE(p.discount_price, p.price) as retail_price,
+           p.wholesale_price, p.image_url, p.stock_quantity,
+           p.min_wholesale_qty,
+           (CASE
+             WHEN $2 = 'wholesale' AND c.quantity >= p.min_wholesale_qty
+             THEN p.wholesale_price * c.quantity
+             ELSE COALESCE(p.discount_price, p.price) * c.quantity
+           END) as subtotal,
+           (CASE
+             WHEN $2 = 'wholesale' AND c.quantity >= p.min_wholesale_qty
+             THEN p.wholesale_price
+             ELSE COALESCE(p.discount_price, p.price)
+           END) as price
+    FROM cart c
+    JOIN products p ON c.product_id = p.id
+    WHERE c.user_id = $1 AND p.is_active = true
+    ORDER BY c.created_at DESC
+  `;
+
+  const result = await db.query(query, [userId, role]);
+  const cartItems = result.rows;
+  const total = cartItems.reduce((sum, item) => sum + parseFloat(item.subtotal || 0), 0);
+
+  return {
+    cartItems,
+    total: Math.round(total * 100) / 100,
+    itemCount: cartItems.length
+  };
+}
+
+async function ensureCartIndexes() {
+  await db.query('CREATE INDEX IF NOT EXISTS idx_cart_user_id ON cart (user_id)');
+  await db.query('CREATE INDEX IF NOT EXISTS idx_cart_user_product ON cart (user_id, product_id)');
+  await db.query('CREATE INDEX IF NOT EXISTS idx_cart_id_user_id ON cart (id, user_id)');
+}
+
 exports.getCart = async (req, res) => {
   try {
-    const query = `
-      SELECT c.id, c.quantity, c.product_id, c.weight_label, c.weight_value, c.weight_unit,
-             p.name, 
-             p.price as original_price,
-             COALESCE(p.discount_price, p.price) as retail_price,
-             p.wholesale_price, p.image_url, p.stock_quantity,
-             p.min_wholesale_qty,
-             (CASE 
-               WHEN $2 = 'wholesale' AND c.quantity >= p.min_wholesale_qty 
-               THEN p.wholesale_price * c.quantity
-               ELSE COALESCE(p.discount_price, p.price) * c.quantity
-             END) as subtotal,
-             (CASE 
-               WHEN $2 = 'wholesale' AND c.quantity >= p.min_wholesale_qty 
-               THEN p.wholesale_price
-               ELSE COALESCE(p.discount_price, p.price)
-             END) as price
-      FROM cart c
-      JOIN products p ON c.product_id = p.id
-      WHERE c.user_id = $1 AND p.is_active = true
-      ORDER BY c.created_at DESC
-    `;
+    await ensureCartIndexes();
 
-    const result = await db.query(query, [req.user.id, req.user.role]);
-    const cartItems = result.rows;
+    const summary = await buildCartSummary(req.user.id, req.user.role);
 
-    const total = cartItems.reduce((sum, item) => sum + parseFloat(item.subtotal), 0);
-
-    res.json({
-      cartItems,
-      total: Math.round(total * 100) / 100,
-      itemCount: cartItems.length
-    });
+    res.json(summary);
   } catch (error) {
     console.error('Get cart error:', error);
     res.status(500).json({ error: 'Failed to fetch cart.' });
@@ -44,6 +57,8 @@ exports.getCart = async (req, res) => {
 
 exports.addToCart = async (req, res) => {
   try {
+    await ensureCartIndexes();
+
     const product_id = parseInt(req.body.product_id, 10);
     const quantity = parseInt(req.body.quantity, 10);
     const weightLabel = String(req.body.weight_label || req.body.selected_weight_label || req.body.variant_label || '').trim() || null;
@@ -102,6 +117,8 @@ exports.addToCart = async (req, res) => {
 
 exports.updateCartItem = async (req, res) => {
   try {
+    await ensureCartIndexes();
+
     const { id } = req.params;
     const quantity = parseInt(req.body.quantity, 10);
 
@@ -128,7 +145,12 @@ exports.updateCartItem = async (req, res) => {
       [quantity, id]
     );
 
-    res.json({ message: 'Cart updated successfully.' });
+    const summary = await buildCartSummary(req.user.id, req.user.role);
+
+    res.json({
+      message: 'Cart updated successfully.',
+      ...summary
+    });
   } catch (error) {
     console.error('Update cart error:', error);
     res.status(500).json({ error: 'Failed to update cart.' });
@@ -137,6 +159,8 @@ exports.updateCartItem = async (req, res) => {
 
 exports.removeFromCart = async (req, res) => {
   try {
+    await ensureCartIndexes();
+
     const { id } = req.params;
 
     const result = await db.query(
@@ -157,6 +181,8 @@ exports.removeFromCart = async (req, res) => {
 
 exports.clearCart = async (req, res) => {
   try {
+    await ensureCartIndexes();
+
     await db.query('DELETE FROM cart WHERE user_id = $1', [req.user.id]);
     res.json({ message: 'Cart cleared successfully.' });
   } catch (error) {
