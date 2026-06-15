@@ -397,10 +397,14 @@
             grid-template-columns: 1fr 400px;
             gap: 2rem;
             align-items: flex-start;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .checkout-card {
             border-radius: 14px;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .checkout-summary-wrapper {
@@ -415,6 +419,8 @@
             margin-bottom: 1.5rem;
             gap: 1rem;
             flex-wrap: wrap;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         /* Saved delivery addresses styling */
@@ -514,14 +520,43 @@
             }
         }
 
-        @media (max-width: 600px) {
+        @media (max-width: 768px) {
             .checkout-layout {
-                gap: 1.5rem;
+                gap: 1.25rem;
             }
 
-            .checkout-header-row a.btn {
+            .checkout-summary-wrapper {
+                width: 100%;
+            }
+
+            .checkout-card {
+                border-radius: 12px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .checkout-layout {
+                gap: 1rem;
+            }
+
+            .checkout-header-row {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .checkout-header-row a.btn,
+            .checkout-header-row button.btn {
                 width: 100%;
                 text-align: center;
+            }
+
+            .saved-addresses-header {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .saved-addresses-grid {
+                grid-template-columns: 1fr;
             }
         }
 
@@ -704,8 +739,76 @@
         }
 
         @media (max-width: 480px) {
+            .checkout-steps {
+                gap: 0.35rem;
+                margin-bottom: 1rem;
+            }
+
+            .checkout-step {
+                padding: 0.5rem 0.45rem;
+                font-size: 0.75rem;
+                border-radius: 8px;
+            }
+
+            .checkout-step .step-index {
+                width: 20px;
+                height: 20px;
+                font-size: 0.68rem;
+            }
+
+            .checkout-layout {
+                gap: 0.9rem;
+            }
+
+            .checkout-card {
+                border-radius: 10px;
+            }
+
+            .checkout-header-row {
+                margin-bottom: 1rem;
+            }
+
             .pm-grid {
-                grid-template-columns: repeat(2, 1fr);
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+
+            .pm-tile {
+                padding: 0.75rem 0.55rem;
+                font-size: 0.78rem;
+            }
+
+            .pm-detail-panel {
+                padding: 0.85rem;
+            }
+
+            .billing-modal-dialog {
+                width: 94%;
+                padding: 1rem;
+                border-radius: 10px;
+            }
+
+            .order-modal {
+                width: 96%;
+                padding: 1.1rem 0.9rem;
+                border-radius: 10px;
+            }
+
+            .order-modal-title {
+                font-size: 1.15rem;
+            }
+
+            .order-modal-text {
+                font-size: 0.88rem;
+            }
+
+            .order-modal-actions {
+                gap: 0.5rem;
+            }
+
+            .order-modal-actions .btn {
+                width: 100%;
+                min-width: 0;
             }
         }
 
