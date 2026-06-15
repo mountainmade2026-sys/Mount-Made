@@ -654,11 +654,38 @@
       nodes.forEach(function (node) {
         const value = String(node.getAttribute('data-value') || '').trim();
         if (!value) return;
+
         try {
-          JsBarcode(node, value, { format: 'CODE128', displayValue: false, width: 2, height: 42, margin: 0, background: '#ffffff' });
+          if (typeof JsBarcode === 'function') {
+            JsBarcode(node, value, {
+              format: 'CODE128',
+              displayValue: false,
+              width: 2,
+              height: 42,
+              margin: 0,
+              background: '#ffffff'
+            });
+            return;
+          }
         } catch (error) {
-          node.textContent = value;
+          // Fall through to the visual barcode fallback below.
         }
+
+        const safeValue = value.replace(/[^A-Za-z0-9]/g, '') || '000000';
+        let x = 0;
+        const barParts = [];
+
+        for (let i = 0; i < safeValue.length; i += 1) {
+          const charCode = safeValue.charCodeAt(i);
+          const barWidth = 1 + ((charCode + i) % 4);
+          const isWide = (charCode + i) % 3 === 0;
+          barParts.push('<rect x="' + x + '" y="0" width="' + barWidth + '" height="' + (isWide ? 42 : 28) + '" fill="#111827"></rect>');
+          x += barWidth + 1;
+        }
+
+        node.innerHTML = '<rect x="0" y="0" width="' + Math.max(180, x + 4) + '" height="42" fill="#ffffff"></rect>' + barParts.join('');
+        node.setAttribute('viewBox', '0 0 ' + (Math.max(180, x + 4)) + ' 42');
+        node.setAttribute('preserveAspectRatio', 'none');
       });
     });
   <\/script>
