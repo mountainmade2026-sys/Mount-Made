@@ -791,6 +791,9 @@
                 const refundHtml = getRefundDisplay(order)
                     ? `<p style="margin:0 0 0.75rem;color:var(--text-light);">Payment/Refund: ${getRefundDisplay(order)}</p>`
                     : '';
+                const deliveryNoteHtml = order.status === 'out_for_delivery'
+                    ? '<p style="margin:0.35rem 0 0;color:var(--warning,#f59e0b);font-size:0.92rem;font-weight:700;">Delivery within 4 hours</p>'
+                    : '';
 
                 const cancelBtn = canCustomerCancel(order)
                     ? `<button class="btn btn-danger btn-sm" onclick="cancelOrder(${order.id})"><i class="fas fa-times"></i> Cancel Order</button>`
@@ -828,6 +831,7 @@
                     '      </div>',
                     '      <div class="order-header-right">',
                     `        <span class="${getCustomerOrderStatusClass(order.status)}">${getCustomerOrderStatusText(order.status)}</span>`,
+                    `        ${deliveryNoteHtml}`,
                     `        <p style="margin-top:0.5rem;font-size:1.25rem;font-weight:700;color:var(--primary);">${formatCurrency(order.total_amount)}</p>`,
                     '      </div>',
                     '    </div>',

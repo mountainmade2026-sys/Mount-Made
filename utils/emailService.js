@@ -1,6 +1,7 @@
 const nodemailer = require('nodemailer');
 const jwt = require('jsonwebtoken');
 const https = require('https');
+const { getDeliveryStatusMessage } = require('./orderStatusMessages');
 
 // ── Resend (HTTPS) ── works on Render since it uses port 443, not SMTP ──
 function canUseResend() {
@@ -244,6 +245,7 @@ async function sendReturnNotificationToAdmin(returnRow, customer, items, orderNu
 module.exports = { sendOrderNotificationToAdmin, sendReturnNotificationToAdmin, sendDeliveryNotificationEmail };
 
 async function sendDeliveryNotificationEmail(toEmail, customerName, orderNumber, notReceivedUrl) {
+  const deliveryMessage = getDeliveryStatusMessage('out_for_delivery');
   const html = `<!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"></head>
@@ -256,7 +258,8 @@ async function sendDeliveryNotificationEmail(toEmail, customerName, orderNumber,
   </div>
   <div style="padding:28px;text-align:center;">
     <p style="color:#374151;font-size:15px;margin:0 0 8px;">Hello <strong>${customerName}</strong>,</p>
-    <p style="color:#374151;font-size:16px;margin:0 0 20px;">Your product is <strong>Out for Delivery</strong>. Your products will be received shortly.</p>
+    <p style="color:#374151;font-size:16px;margin:0 0 8px;">Your product is <strong>Out for Delivery</strong>. Your products will be received shortly.</p>
+    <p style="color:#065f46;font-size:15px;font-weight:700;margin:0 0 18px;">${deliveryMessage}</p>
     <div style="background:#f0fdf4;border:2px solid #10b981;border-radius:16px;padding:24px;margin:0 auto 24px;max-width:360px;">
       <div style="font-size:3rem;margin-bottom:12px;">&#128230;</div>
       <p style="color:#065f46;font-size:15px;font-weight:600;margin:0 0 8px;">Order #${orderNumber} is on its way!</p>
