@@ -26,8 +26,19 @@ function getWeightMultiplier(product, selected) {
   return selectedWeightInGrams / baseWeightInGrams;
 }
 
+function clampWeightAmountToMaximum(value, unit, maxGrams = 50000) {
+  const amountInGrams = getWeightInGrams(value, unit);
+  if (!Number.isFinite(amountInGrams) || amountInGrams <= 0) return 0;
+
+  const max = Number.parseFloat(maxGrams);
+  if (!Number.isFinite(max) || max <= 0) return amountInGrams;
+
+  return Math.min(amountInGrams, max);
+}
+
 module.exports = {
   normalizeWeightUnit,
   getWeightInGrams,
   getWeightMultiplier,
+  clampWeightAmountToMaximum,
 };

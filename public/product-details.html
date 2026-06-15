@@ -1191,11 +1191,66 @@
             const baseWeightInGrams = getBaseWeightInGrams(productData);
             if (baseWeightInGrams <= 0) return 1;
 
-            const selectedWeight = selection?.value != null
-                ? getWeightInGrams(selection.value, selection.unit || productData?.weight_unit || productData?.unit || 'g')
-                : getBaseWeightInGrams(productData);
+            if (!selection || selection?.value == null) {
+                return 1;
+            }
 
+            const selectedWeight = getWeightInGrams(selection.value, selection.unit || productData?.weight_unit || productData?.unit || 'g');
             return selectedWeight > 0 ? selectedWeight / baseWeightInGrams : 1;
+        }
+
+        function getSelectedWeightInGrams(selection, fallbackProduct = product) {
+            if (!selection || selection.value == null) {
+                return 0;
+            }
+
+            return getWeightInGrams(selection.value, selection.unit || fallbackProduct?.weight_unit || fallbackProduct?.unit || 'g');
+        }
+
+        function getMaxWeightAmount(productData) {
+            const baseWeightInGrams = getBaseWeightInGrams(productData);
+            const rawStock = Number.parseFloat(productData?.stock_quantity || 0);
+            if (!Number.isFinite(rawStock) || rawStock <= 0 || baseWeightInGrams <= 0) return 0;
+
+            return baseWeightInGrams * rawStock;
+        }
+
+        function getMaxAllowedWeightPerItem(productData, quantity = selectedQuantity) {
+            const totalAvailableWeight = getMaxWeightAmount(productData);
+            const qty = Number(quantity) > 0 ? Number(quantity) : 1;
+            if (totalAvailableWeight <= 0 || !Number.isFinite(qty) || qty <= 0) return 0;
+
+            const perItemWeight = totalAvailableWeight / qty;
+            const maxSupportedWeight = 50000;
+            return Math.min(perItemWeight, maxSupportedWeight);
+        }
+
+        function clampManualWeightSelectionForCurrentQuantity() {
+            const manualSelection = getManualWeightSelection();
+            if (!manualSelection) return false;
+
+            const maxAllowedWeight = getMaxAllowedWeightPerItem(product, selectedQuantity);
+            if (maxAllowedWeight <= 0) return false;
+
+            const selectedGrams = getWeightInGrams(manualSelection.value, manualSelection.unit || product?.weight_unit || product?.unit || 'g');
+            if (selectedGrams <= maxAllowedWeight) return false;
+
+            const unit = normalizeWeightUnit(manualSelection.unit || product?.weight_unit || product?.unit || 'g');
+            const safeValue = unit === 'kg' ? maxAllowedWeight / 1000 : maxAllowedWeight;
+            const weightInput = document.getElementById('custom-weight-value');
+            if (weightInput) weightInput.value = safeValue;
+
+            selectedWeightOption = {
+                value: safeValue,
+                label: formatWeightLabel(maxAllowedWeight, manualSelection.unit || product?.weight_unit || product?.unit || 'g'),
+                unit: manualSelection.unit || product?.weight_unit || product?.unit || 'g'
+            };
+
+            if (typeof showAlert === 'function') {
+                showAlert('The entered weight was reduced to the amount available for this quantity.', 'info');
+            }
+
+            return true;
         }
 
         function showAddToCartSuccess() {
@@ -1218,7 +1273,7 @@
             const pricing = getCurrentPricing();
             const qty = Number(selectedQuantity) > 0 ? Number(selectedQuantity) : 1;
             const selectedWeight = getSelectedWeightForOrder();
-            const weightMultiplier = getWeightMultiplierForSelection(product, selectedWeight);
+            const weightMultiplier = selectedWeight ? getWeightMultiplierForSelection(product, selectedWeight) : 1;
             const effectiveSalePrice = pricing.salePrice * weightMultiplier;
             const effectiveBasePrice = pricing.basePrice * weightMultiplier;
 
@@ -1598,6 +1653,12 @@
             const weightOptions = getWeightOptions(product);
             const deliveryMessage = getDeliveryMessage(product);
             const defaultWeightValue = weightOptions[0]?.value || (product?.weight ? parseFloat(product.weight) : '');
+            const maxWeightAmount = getMaxWeightAmount(product);
+            const selectedWeight = getSelectedWeightForOrder();
+            const selectedWeightGrams = getSelectedWeightInGrams(selectedWeight, product);
+            const requestedWeightGrams = selectedWeightGrams * Math.max(1, Number(selectedQuantity) || 1);
+            const remainingWeightGrams = Math.max(0, maxWeightAmount - requestedWeightGrams);
+            const remainingWeightLabel = remainingWeightGrams > 0 ? formatWeightLabel(remainingWeightGrams, product?.weight_unit || product?.unit || 'g') : '0 g';
 
             if (product?.is_weight_based || weightOptions.length) {
                 if (!selectedWeightOption) {
@@ -1736,6 +1797,7 @@
                                         <button type="button" class="btn btn-secondary btn-sm" onclick="applyCustomWeightFromInput()" style="white-space: nowrap;">Use this amount</button>
                                     </div>
                                     <small style="display:block; color: var(--text-secondary); font-size: 0.82rem; margin-top: 0.35rem;">Type your own gram/kg amount here. This custom selection will appear in the cart and checkout.</small>
+                                    ${maxWeightAmount > 0 ? `<small style="display:block; color: var(--text-secondary); font-size: 0.82rem; margin-top: 0.25rem;">Available stock: ${formatWeightLabel(maxWeightAmount, product?.weight_unit || product?.unit || 'g')}. Remaining after this order: ${remainingWeightLabel}.</small>` : ''}
                                 </div>
                             ` : ''}
                             ${weightOptions.length ? `
@@ -2017,9 +2079,47 @@
 
         function syncManualWeightSelection() {
             const manualSelection = getManualWeightSelection();
-            if (!manualSelection) return;
+            const amountInput = document.getElementById('custom-weight-value');
+            const maxAllowedWeight = getMaxAllowedWeightPerItem(product, selectedQuantity);
 
-            selectedWeightOption = manualSelection;
+            if (!manualSelection) {
+                selectedWeightOption = null;
+                if (amountInput) {
+                    amountInput.value = '';
+                }
+                document.querySelectorAll('[data-weight-option]').forEach((btn) => {
+                    btn.style.background = 'var(--bg-primary)';
+                    btn.style.color = 'var(--text-primary)';
+                    btn.style.borderColor = 'var(--border-primary)';
+                });
+                if (typeof updateDisplayedPrice === 'function') {
+                    updateDisplayedPrice();
+                }
+                return;
+            }
+
+            const selectedGrams = getWeightInGrams(manualSelection.value, manualSelection.unit || product?.weight_unit || product?.unit || 'g');
+            const effectiveMaxGrams = maxAllowedWeight > 0 ? Math.min(maxAllowedWeight, 50000) : 50000;
+
+            if (selectedGrams > effectiveMaxGrams) {
+                const clampedGrams = Math.min(selectedGrams, effectiveMaxGrams);
+                const clampedUnit = normalizeWeightUnit(manualSelection.unit || product?.weight_unit || product?.unit || 'g');
+                const safeValue = clampedUnit === 'kg' ? clampedGrams / 1000 : clampedGrams;
+                if (amountInput) {
+                    amountInput.value = safeValue;
+                }
+                selectedWeightOption = {
+                    value: safeValue,
+                    label: formatWeightLabel(clampedGrams, manualSelection.unit || product?.weight_unit || product?.unit || 'g'),
+                    unit: manualSelection.unit || product?.weight_unit || product?.unit || 'g'
+                };
+                if (typeof showAlert === 'function') {
+                    showAlert('Weight adjusted to the maximum amount available for this purchase.', 'info');
+                }
+            } else {
+                selectedWeightOption = manualSelection;
+            }
+
             document.querySelectorAll('[data-weight-option]').forEach((btn) => {
                 btn.style.background = 'var(--bg-primary)';
                 btn.style.color = 'var(--text-primary)';
@@ -2033,8 +2133,14 @@
         function applyCustomWeightFromInput() {
             const manualSelection = getManualWeightSelection();
             if (!manualSelection) {
-                if (typeof showAlert === 'function') {
-                    showAlert('Enter a valid gram or kilogram amount first.', 'info');
+                selectedWeightOption = null;
+                document.querySelectorAll('[data-weight-option]').forEach((btn) => {
+                    btn.style.background = 'var(--bg-primary)';
+                    btn.style.color = 'var(--text-primary)';
+                    btn.style.borderColor = 'var(--border-primary)';
+                });
+                if (typeof updateDisplayedPrice === 'function') {
+                    updateDisplayedPrice();
                 }
                 return;
             }
@@ -2056,7 +2162,17 @@
         }
 
         function getSelectedWeightForOrder() {
-            return getManualWeightSelection() || selectedWeightOption || null;
+            const manualSelection = getManualWeightSelection();
+            if (manualSelection) {
+                return manualSelection;
+            }
+
+            const amountInput = document.getElementById('custom-weight-value');
+            if (amountInput && String(amountInput.value || '').trim() === '') {
+                return null;
+            }
+
+            return selectedWeightOption || null;
         }
 
         function selectProductWeight(value, buttonEl) {
@@ -2163,6 +2279,7 @@
 
             selectedQuantity = qty;
             document.getElementById('quantity').value = selectedQuantity;
+            clampManualWeightSelectionForCurrentQuantity();
             updateDisplayedPrice();
         }
 
@@ -2182,6 +2299,7 @@
             if (!hasMax || next <= maxQty) {
                 selectedQuantity = next;
                 document.getElementById('quantity').value = selectedQuantity;
+                clampManualWeightSelectionForCurrentQuantity();
                 updateDisplayedPrice();
             }
         }
@@ -2192,6 +2310,7 @@
             if (next !== selectedQuantity) {
                 selectedQuantity = next;
                 document.getElementById('quantity').value = selectedQuantity;
+                clampManualWeightSelectionForCurrentQuantity();
                 updateDisplayedPrice();
             }
         }
