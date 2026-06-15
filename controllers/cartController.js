@@ -3,10 +3,6 @@ const Product = require('../models/Product');
 
 exports.getCart = async (req, res) => {
   try {
-    await db.query('ALTER TABLE cart ADD COLUMN IF NOT EXISTS weight_label TEXT');
-    await db.query('ALTER TABLE cart ADD COLUMN IF NOT EXISTS weight_value TEXT');
-    await db.query('ALTER TABLE cart ADD COLUMN IF NOT EXISTS weight_unit TEXT');
-
     const query = `
       SELECT c.id, c.quantity, c.product_id, c.weight_label, c.weight_value, c.weight_unit,
              p.name, 
@@ -48,10 +44,6 @@ exports.getCart = async (req, res) => {
 
 exports.addToCart = async (req, res) => {
   try {
-    await db.query('ALTER TABLE cart ADD COLUMN IF NOT EXISTS weight_label TEXT');
-    await db.query('ALTER TABLE cart ADD COLUMN IF NOT EXISTS weight_value TEXT');
-    await db.query('ALTER TABLE cart ADD COLUMN IF NOT EXISTS weight_unit TEXT');
-
     const product_id = parseInt(req.body.product_id, 10);
     const quantity = parseInt(req.body.quantity, 10);
     const weightLabel = String(req.body.weight_label || req.body.selected_weight_label || req.body.variant_label || '').trim() || null;
