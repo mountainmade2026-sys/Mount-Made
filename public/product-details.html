@@ -1167,6 +1167,37 @@
             return { basePrice, salePrice, showDiscount, isWholesale };
         }
 
+        function normalizeWeightUnit(unit) {
+            const normalized = String(unit || '').trim().toLowerCase();
+            if (['g', 'grams', 'gm', 'gram'].includes(normalized)) return 'g';
+            if (['kg', 'kilogram', 'kilograms', 'kilo', 'kilo gram'].includes(normalized)) return 'kg';
+            return 'g';
+        }
+
+        function getWeightInGrams(value, unit) {
+            const amount = Number.parseFloat(value);
+            if (!Number.isFinite(amount) || amount <= 0) return 0;
+            const normalizedUnit = normalizeWeightUnit(unit);
+            return normalizedUnit === 'kg' ? amount * 1000 : amount;
+        }
+
+        function getBaseWeightInGrams(productData) {
+            const rawWeight = Number.parseFloat(productData?.weight || 0);
+            if (!Number.isFinite(rawWeight) || rawWeight <= 0) return 0;
+            return getWeightInGrams(rawWeight, productData?.weight_unit || productData?.unit || 'g');
+        }
+
+        function getWeightMultiplierForSelection(productData, selection) {
+            const baseWeightInGrams = getBaseWeightInGrams(productData);
+            if (baseWeightInGrams <= 0) return 1;
+
+            const selectedWeight = selection?.value != null
+                ? getWeightInGrams(selection.value, selection.unit || productData?.weight_unit || productData?.unit || 'g')
+                : getBaseWeightInGrams(productData);
+
+            return selectedWeight > 0 ? selectedWeight / baseWeightInGrams : 1;
+        }
+
         function showAddToCartSuccess() {
             const successEl = document.getElementById('add-to-cart-success');
             if (successEl) {
@@ -1186,14 +1217,18 @@
         function updateDisplayedPrice() {
             const pricing = getCurrentPricing();
             const qty = Number(selectedQuantity) > 0 ? Number(selectedQuantity) : 1;
+            const selectedWeight = getSelectedWeightForOrder();
+            const weightMultiplier = getWeightMultiplierForSelection(product, selectedWeight);
+            const effectiveSalePrice = pricing.salePrice * weightMultiplier;
+            const effectiveBasePrice = pricing.basePrice * weightMultiplier;
 
             const salePriceEl = document.getElementById('product-sale-price');
             const basePriceEl = document.getElementById('product-base-price');
             const totalPriceEl = document.getElementById('product-total-price');
             const perUnitHintEl = document.getElementById('product-price-hint');
 
-            const saleTotal = pricing.salePrice * qty;
-            const baseTotal = pricing.basePrice * qty;
+            const saleTotal = effectiveSalePrice * qty;
+            const baseTotal = effectiveBasePrice * qty;
 
             if (salePriceEl) {
                 salePriceEl.textContent = formatCurrency(saleTotal);
@@ -1215,7 +1250,8 @@
             }
 
             if (perUnitHintEl) {
-                perUnitHintEl.textContent = `Per item: ${formatCurrency(pricing.salePrice)}`;
+                const weightLabel = selectedWeight?.label ? ` • ${selectedWeight.label}` : '';
+                perUnitHintEl.textContent = `Per item: ${formatCurrency(effectiveSalePrice)}${weightLabel}`;
             }
         }
 
@@ -1561,6 +1597,24 @@
             const lowStock = product.stock_quantity > 0 && product.stock_quantity < 10;
             const weightOptions = getWeightOptions(product);
             const deliveryMessage = getDeliveryMessage(product);
+            const defaultWeightValue = weightOptions[0]?.value || (product?.weight ? parseFloat(product.weight) : '');
+
+            if (product?.is_weight_based || weightOptions.length) {
+                if (!selectedWeightOption) {
+                    const defaultOption = weightOptions[0] || (product?.weight ? {
+                        value: parseFloat(product.weight) || 1,
+                        label: formatWeightLabel(parseFloat(product.weight) || 1, product?.weight_unit || product?.unit || 'g')
+                    } : null);
+
+                    if (defaultOption) {
+                        selectedWeightOption = {
+                            value: defaultOption.value,
+                            label: defaultOption.label,
+                            unit: product?.weight_unit || product?.unit || 'g'
+                        };
+                    }
+                }
+            }
             const averageRating = Number(product.average_rating || 0);
             const ratingCount = Number(product.rating_count || 0);
             const fallbackImage = '/images/placeholder.jpg';
@@ -1674,7 +1728,7 @@
                                 <div style="margin-top: 0.9rem;">
                                     <div style="font-size: 0.92rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.45rem;">Choose size or enter gram/kg</div>
                                     <div style="display:flex; flex-wrap:wrap; gap:0.5rem; align-items:center;">
-                                        <input type="number" id="custom-weight-value" min="0.01" step="0.01" inputmode="decimal" placeholder="${(product.weight_unit || product.unit || 'g').toLowerCase() === 'kg' ? '1.5' : '250'}" onchange="applyCustomWeightFromInput()" oninput="syncManualWeightSelection()" style="flex: 1 1 140px; min-width: 120px; border: 1px solid var(--border-primary); border-radius: 10px; padding: 0.55rem 0.65rem; background: var(--bg-primary); color: var(--text-primary);">
+                                        <input type="number" id="custom-weight-value" min="0.01" step="0.01" inputmode="decimal" value="${defaultWeightValue || ''}" placeholder="${(product.weight_unit || product.unit || 'g').toLowerCase() === 'kg' ? '1.5' : '250'}" onchange="applyCustomWeightFromInput()" oninput="syncManualWeightSelection()" style="flex: 1 1 140px; min-width: 120px; border: 1px solid var(--border-primary); border-radius: 10px; padding: 0.55rem 0.65rem; background: var(--bg-primary); color: var(--text-primary);">
                                         <select id="custom-weight-unit" class="form-select" onchange="syncManualWeightSelection()" style="flex: 0 0 140px; border: 1px solid var(--border-primary); border-radius: 10px; padding: 0.55rem 0.65rem; background: var(--bg-primary); color: var(--text-primary);">
                                             <option value="g" ${((product.weight_unit || product.unit || 'g').toLowerCase() === 'g') ? 'selected' : ''}>Gram (g)</option>
                                             <option value="kg" ${((product.weight_unit || product.unit || 'kg').toLowerCase() === 'kg') ? 'selected' : ''}>Kilogram (kg)</option>
@@ -1971,6 +2025,9 @@
                 btn.style.color = 'var(--text-primary)';
                 btn.style.borderColor = 'var(--border-primary)';
             });
+            if (typeof updateDisplayedPrice === 'function') {
+                updateDisplayedPrice();
+            }
         }
 
         function applyCustomWeightFromInput() {
@@ -1989,6 +2046,10 @@
                 btn.style.borderColor = 'var(--border-primary)';
             });
 
+            if (typeof updateDisplayedPrice === 'function') {
+                updateDisplayedPrice();
+            }
+
             if (typeof showAlert === 'function') {
                 showAlert(`Selected ${manualSelection.label} for this product.`, 'info');
             }
@@ -2004,6 +2065,11 @@
                 label: (buttonEl && buttonEl.getAttribute('data-weight-label')) || formatWeightLabel(value, product?.unit || 'g'),
                 unit: product?.weight_unit || product?.unit || 'g'
             };
+
+            const weightInput = document.getElementById('custom-weight-value');
+            const weightUnit = document.getElementById('custom-weight-unit');
+            if (weightInput) weightInput.value = value;
+            if (weightUnit) weightUnit.value = normalizeWeightUnit(product?.weight_unit || product?.unit || 'g');
 
             document.querySelectorAll('[data-weight-option]').forEach((btn) => {
                 btn.style.background = 'var(--bg-primary)';
@@ -2169,9 +2235,11 @@
 
             const basePrice = parseFloat(product.price || 0);
             const discountPrice = product.discount_price != null ? parseFloat(product.discount_price) : null;
-            const sellingPrice = (discountPrice !== null && discountPrice < basePrice) ? discountPrice : basePrice;
-
+            const baseSellingPrice = (discountPrice !== null && discountPrice < basePrice) ? discountPrice : basePrice;
             const selectedWeight = getSelectedWeightForOrder();
+            const weightMultiplier = getWeightMultiplierForSelection(product, selectedWeight);
+            const sellingPrice = baseSellingPrice * weightMultiplier;
+
 
             const directBuyItem = {
                 product_id: product.id,

@@ -1,33 +1,52 @@
 const db = require('../config/database');
 const Product = require('../models/Product');
+const { getWeightMultiplier } = require('../utils/weightPricing');
 
 async function buildCartSummary(userId, role) {
   const query = `
     SELECT c.id, c.quantity, c.product_id, c.weight_label, c.weight_value, c.weight_unit,
            p.name,
-           p.price as original_price,
-           COALESCE(p.discount_price, p.price) as retail_price,
-           p.wholesale_price, p.image_url, p.stock_quantity,
+           p.price,
+           p.discount_price,
+           p.wholesale_price,
+           p.image_url,
+           p.stock_quantity,
            p.min_wholesale_qty,
-           (CASE
-             WHEN $2 = 'wholesale' AND c.quantity >= p.min_wholesale_qty
-             THEN p.wholesale_price * c.quantity
-             ELSE COALESCE(p.discount_price, p.price) * c.quantity
-           END) as subtotal,
-           (CASE
-             WHEN $2 = 'wholesale' AND c.quantity >= p.min_wholesale_qty
-             THEN p.wholesale_price
-             ELSE COALESCE(p.discount_price, p.price)
-           END) as price
+           p.weight,
+           p.weight_unit,
+           p.unit
     FROM cart c
     JOIN products p ON c.product_id = p.id
     WHERE c.user_id = $1 AND p.is_active = true
     ORDER BY c.created_at DESC
   `;
 
-  const result = await db.query(query, [userId, role]);
-  const cartItems = result.rows;
-  const total = cartItems.reduce((sum, item) => sum + parseFloat(item.subtotal || 0), 0);
+  const result = await db.query(query, [userId]);
+  const cartItems = result.rows.map((item) => {
+    const basePrice = Number.parseFloat(item.price || 0);
+    const discountPrice = item.discount_price != null ? Number.parseFloat(item.discount_price) : null;
+    const retailPrice = discountPrice != null && discountPrice < basePrice ? discountPrice : basePrice;
+    const isWholesale = String(role || '').toLowerCase() === 'wholesale' && Number(item.quantity) >= Number(item.min_wholesale_qty || 0);
+    const unitPrice = isWholesale && item.wholesale_price != null
+      ? Number.parseFloat(item.wholesale_price)
+      : retailPrice;
+
+    const multiplier = getWeightMultiplier(item, item);
+    const price = unitPrice * multiplier;
+    const subtotal = price * Number(item.quantity || 1);
+
+    return {
+      ...item,
+      original_price: basePrice,
+      retail_price: retailPrice,
+      price,
+      subtotal,
+      weight_multiplier: multiplier,
+      is_weight_based: Number(item.weight || 0) > 0 || item.weight_value != null
+    };
+  });
+
+  const total = cartItems.reduce((sum, item) => sum + (Number(item.subtotal) || 0), 0);
 
   return {
     cartItems,
