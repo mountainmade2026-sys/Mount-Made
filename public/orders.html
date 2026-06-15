@@ -796,8 +796,6 @@
                     ? `<button class="btn btn-danger btn-sm" onclick="cancelOrder(${order.id})"><i class="fas fa-times"></i> Cancel Order</button>`
                     : '';
 
-                const invoiceBtn = '<button class="btn btn-secondary btn-sm" onclick="printOrderReceipt(' + order.id + ')"><i class="fas fa-file-invoice"></i> Invoice</button>';
-
                 let returnHtml = '';
                 if (order.status === 'delivered') {
                     if (order.return_status) {
@@ -817,7 +815,7 @@
                 }
 
                 const actionsHtml = (canCustomerCancel(order) || order.status === 'delivered')
-                    ? `<div style="margin-top:1rem;display:flex;justify-content:flex-end;gap:0.5rem;flex-wrap:wrap;">${invoiceBtn}${cancelBtn}${returnHtml}</div>`
+                    ? `<div style="margin-top:1rem;display:flex;justify-content:flex-end;gap:0.5rem;flex-wrap:wrap;">${cancelBtn}${returnHtml}</div>`
                     : '';
 
                 return [
