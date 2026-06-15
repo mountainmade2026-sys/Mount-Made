@@ -1670,9 +1670,23 @@
                             <div style="margin-top: 0.75rem; padding: 0.7rem 0.85rem; border-radius: 10px; border: 1px solid #f59e0b; background: #fff8e1; color: #92400e; font-size: 0.92rem; font-weight: 600;">
                                 <i class="fas fa-clock"></i> ${deliveryMessage}
                             </div>
+                            ${(product.is_weight_based || weightOptions.length) ? `
+                                <div style="margin-top: 0.9rem;">
+                                    <div style="font-size: 0.92rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.45rem;">Choose size or enter gram/kg</div>
+                                    <div style="display:flex; flex-wrap:wrap; gap:0.5rem; align-items:center;">
+                                        <input type="number" id="custom-weight-value" min="0.01" step="0.01" inputmode="decimal" placeholder="${(product.weight_unit || product.unit || 'g').toLowerCase() === 'kg' ? '1.5' : '250'}" onchange="applyCustomWeightFromInput()" oninput="syncManualWeightSelection()" style="flex: 1 1 140px; min-width: 120px; border: 1px solid var(--border-primary); border-radius: 10px; padding: 0.55rem 0.65rem; background: var(--bg-primary); color: var(--text-primary);">
+                                        <select id="custom-weight-unit" class="form-select" onchange="syncManualWeightSelection()" style="flex: 0 0 140px; border: 1px solid var(--border-primary); border-radius: 10px; padding: 0.55rem 0.65rem; background: var(--bg-primary); color: var(--text-primary);">
+                                            <option value="g" ${((product.weight_unit || product.unit || 'g').toLowerCase() === 'g') ? 'selected' : ''}>Gram (g)</option>
+                                            <option value="kg" ${((product.weight_unit || product.unit || 'kg').toLowerCase() === 'kg') ? 'selected' : ''}>Kilogram (kg)</option>
+                                        </select>
+                                        <button type="button" class="btn btn-secondary btn-sm" onclick="applyCustomWeightFromInput()" style="white-space: nowrap;">Use this amount</button>
+                                    </div>
+                                    <small style="display:block; color: var(--text-secondary); font-size: 0.82rem; margin-top: 0.35rem;">Type your own gram/kg amount here. This custom selection will appear in the cart and checkout.</small>
+                                </div>
+                            ` : ''}
                             ${weightOptions.length ? `
                                 <div style="margin-top: 0.9rem;">
-                                    <div style="font-size: 0.92rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.45rem;">Choose size</div>
+                                    <div style="font-size: 0.92rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.45rem;">Preset sizes</div>
                                     <div style="display:flex; flex-wrap:wrap; gap:0.5rem;">
                                         ${weightOptions.map((option, index) => `
                                             <button type="button" class="btn btn-secondary btn-sm" data-weight-option="${option.value}" data-weight-label="${option.label}" onclick="selectProductWeight(${option.value}, this)" style="border-radius: 999px; padding: 0.45rem 0.7rem; ${index === 0 ? 'background: var(--primary); color: #fff; border-color: var(--primary);' : ''}">
@@ -1921,6 +1935,69 @@
             }
         }
 
+        function normalizeManualWeightUnit(unit) {
+            const normalized = String(unit || '').trim().toLowerCase();
+            if (['g', 'grams', 'gm', 'gram'].includes(normalized)) return 'g';
+            if (['kg', 'kilogram', 'kilograms', 'kilo', 'kilo gram'].includes(normalized)) return 'kg';
+            return 'g';
+        }
+
+        function getManualWeightSelection() {
+            const amountInput = document.getElementById('custom-weight-value');
+            const unitSelect = document.getElementById('custom-weight-unit');
+            const amount = Number.parseFloat(amountInput?.value ?? '');
+
+            if (!Number.isFinite(amount) || amount <= 0) {
+                return null;
+            }
+
+            const unit = normalizeManualWeightUnit(unitSelect?.value || product?.weight_unit || product?.unit || 'g');
+            const label = `${amount} ${unit}`;
+
+            return {
+                value: amount,
+                label,
+                unit
+            };
+        }
+
+        function syncManualWeightSelection() {
+            const manualSelection = getManualWeightSelection();
+            if (!manualSelection) return;
+
+            selectedWeightOption = manualSelection;
+            document.querySelectorAll('[data-weight-option]').forEach((btn) => {
+                btn.style.background = 'var(--bg-primary)';
+                btn.style.color = 'var(--text-primary)';
+                btn.style.borderColor = 'var(--border-primary)';
+            });
+        }
+
+        function applyCustomWeightFromInput() {
+            const manualSelection = getManualWeightSelection();
+            if (!manualSelection) {
+                if (typeof showAlert === 'function') {
+                    showAlert('Enter a valid gram or kilogram amount first.', 'info');
+                }
+                return;
+            }
+
+            selectedWeightOption = manualSelection;
+            document.querySelectorAll('[data-weight-option]').forEach((btn) => {
+                btn.style.background = 'var(--bg-primary)';
+                btn.style.color = 'var(--text-primary)';
+                btn.style.borderColor = 'var(--border-primary)';
+            });
+
+            if (typeof showAlert === 'function') {
+                showAlert(`Selected ${manualSelection.label} for this product.`, 'info');
+            }
+        }
+
+        function getSelectedWeightForOrder() {
+            return getManualWeightSelection() || selectedWeightOption || null;
+        }
+
         function selectProductWeight(value, buttonEl) {
             selectedWeightOption = {
                 value,
@@ -2063,11 +2140,13 @@
                 showAlert('This product is out of stock.', 'error');
                 return;
             }
+            const selectedWeight = getSelectedWeightForOrder();
+
             try {
                 await cart.add(product.id, selectedQuantity, {
-                    weight_label: selectedWeightOption?.label || null,
-                    weight_value: selectedWeightOption?.value ?? null,
-                    weight_unit: selectedWeightOption?.unit || null
+                    weight_label: selectedWeight?.label || null,
+                    weight_value: selectedWeight?.value ?? null,
+                    weight_unit: selectedWeight?.unit || null
                 });
                 showAddToCartSuccess();
                 showAlert('Added to cart successfully!', 'success');
@@ -2092,6 +2171,8 @@
             const discountPrice = product.discount_price != null ? parseFloat(product.discount_price) : null;
             const sellingPrice = (discountPrice !== null && discountPrice < basePrice) ? discountPrice : basePrice;
 
+            const selectedWeight = getSelectedWeightForOrder();
+
             const directBuyItem = {
                 product_id: product.id,
                 id: product.id,
@@ -2100,9 +2181,9 @@
                 original_price: (discountPrice !== null && discountPrice < basePrice) ? basePrice : null,
                 quantity: selectedQuantity,
                 stock_quantity: product.stock_quantity,
-                weight_label: selectedWeightOption?.label || null,
-                weight_value: selectedWeightOption?.value ?? null,
-                weight_unit: selectedWeightOption?.unit || null
+                weight_label: selectedWeight?.label || null,
+                weight_value: selectedWeight?.value ?? null,
+                weight_unit: selectedWeight?.unit || null
             };
 
             sessionStorage.setItem('directBuyItem', JSON.stringify(directBuyItem));

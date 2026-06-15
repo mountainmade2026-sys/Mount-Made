@@ -292,6 +292,10 @@
                     <div class="cart-item-details">
                         <h4 style="margin-bottom: 0.5rem;">${item.name}</h4>
                         <p style="color: var(--text-light); margin-bottom: 0.5rem;">${priceBlock} each</p>
+                        ${(() => {
+                            const weightLabel = item.weight_label || (item.weight_value != null && item.weight_unit ? `${item.weight_value} ${item.weight_unit}` : '');
+                            return weightLabel ? `<p style="color: var(--text-secondary); margin-bottom: 0.45rem; font-size: 0.92rem;">Weight: ${weightLabel}</p>` : '';
+                        })()}
                         <div class="cart-item-actions">
                             <div class="quantity-controls" style="display:flex; align-items:center; border:1px solid var(--border); border-radius:8px; overflow:hidden; background: var(--bg-primary);">
                                 <button type="button" class="qty-btn" onclick="changeCartQuantity(${item.id}, -${minQty}, ${minQty}, ${item.stock_quantity}, this.closest('.cart-item-actions').querySelector('input'))" aria-label="Decrease quantity" style="border:none; background:transparent; padding:0.45rem 0.65rem; font-size:1rem; cursor:pointer; color:var(--text-primary);">−</button>
