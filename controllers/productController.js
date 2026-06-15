@@ -5,25 +5,18 @@ function buildRelatedProducts(products, currentProduct, limit = 6) {
   const items = Array.isArray(products) ? products.filter(Boolean) : [];
   const currentId = currentProduct?.id != null ? Number(currentProduct.id) : null;
 
-  const activeItems = items.filter((item) => {
-    if (!item || item.id == null) return false;
-    if (currentId != null && Number(item.id) === currentId) return false;
-    return item.is_active !== false;
-  });
-
-  const sameCategory = currentProduct?.category_id != null
-    ? activeItems.filter((item) => Number(item.category_id) === Number(currentProduct.category_id))
-    : [];
-
-  const fallback = sameCategory.length >= limit
-    ? sameCategory.slice(0, limit)
-    : sameCategory.concat(activeItems.filter((item) => !sameCategory.includes(item))).slice(0, limit);
-
-  if (fallback.length >= limit) {
-    return fallback.slice(0, limit);
+  if (currentProduct?.category_id == null) {
+    return [];
   }
 
-  return activeItems.slice(0, limit);
+  const sameCategory = items.filter((item) => {
+    if (!item || item.id == null) return false;
+    if (currentId != null && Number(item.id) === currentId) return false;
+    if (item.is_active === false) return false;
+    return Number(item.category_id) === Number(currentProduct.category_id);
+  });
+
+  return sameCategory.slice(0, limit);
 }
 
 exports.buildRelatedProducts = buildRelatedProducts;

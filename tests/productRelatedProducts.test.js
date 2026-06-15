@@ -22,7 +22,7 @@ test('buildRelatedProducts keeps the current product out and limits suggestions'
   assert.equal(related[0].id, 8);
 });
 
-test('buildRelatedProducts falls back to recent products when the category is missing', () => {
+test('buildRelatedProducts returns no items when the current product has no category', () => {
   const current = { id: 22, category_id: null };
   const products = [
     { id: 22, name: 'Current', category_id: null },
@@ -31,6 +31,5 @@ test('buildRelatedProducts falls back to recent products when the category is mi
 
   const related = buildRelatedProducts(products, current, 4);
 
-  assert.equal(related.length, 1);
-  assert.equal(related[0].id, 23);
+  assert.equal(related.length, 0);
 });

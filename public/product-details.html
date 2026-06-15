@@ -558,23 +558,28 @@
             border-top: 1px solid var(--border-primary);
         }
 
-        .related-products-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        .related-products-row {
+            display: flex;
             gap: 1rem;
             margin-top: 1rem;
+            overflow-x: auto;
+            padding-bottom: 0.35rem;
+            scroll-snap-type: x proximity;
         }
 
         .related-product-card {
             display: flex;
             flex-direction: column;
             gap: 0.75rem;
+            flex: 0 0 220px;
+            min-width: 220px;
             padding: 1rem;
             border: 1px solid var(--border-primary);
             border-radius: 14px;
             background: var(--bg-primary);
             box-shadow: var(--shadow-sm);
             transition: transform 0.15s ease, border-color 0.15s ease;
+            scroll-snap-align: start;
         }
 
         .related-product-card:hover {
@@ -622,11 +627,13 @@
         }
 
         @media (max-width: 480px) {
-            .related-products-grid {
-                grid-template-columns: 1fr;
+            .related-products-row {
+                gap: 0.75rem;
             }
 
             .related-product-card {
+                flex-basis: 200px;
+                min-width: 200px;
                 padding: 0.85rem;
             }
         }
@@ -1108,7 +1115,7 @@
                 <section class="related-products-section">
                     <h3 style="margin-bottom: 0.25rem;">Related products</h3>
                     <p style="color: var(--text-secondary); margin-bottom: 0.5rem;">Similar items from the same category to help you discover more.</p>
-                    <div class="related-products-grid">
+                    <div class="related-products-row">
                         ${relatedProducts.map((item) => {
                             const price = item.discount_price != null && item.discount_price < item.price
                                 ? item.discount_price
