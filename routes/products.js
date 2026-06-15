@@ -11,6 +11,7 @@ router.get('/settings', productController.getSiteSettings);
 router.get('/search-suggestions', productController.getSearchSuggestions);
 router.get('/carousel', productController.getCarouselProducts);
 router.get('/category/:id', productController.getProductsByCategory);
+router.get('/:id/related', productController.getRelatedProducts);
 router.get('/:id/ratings', productController.getProductRatings);
 router.post('/:id/rating', authenticateToken, productController.submitProductRating);
 router.get('/:id', productController.getProductById);

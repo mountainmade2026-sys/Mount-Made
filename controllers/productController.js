@@ -1,6 +1,33 @@
 const Product = require('../models/Product');
 const db = require('../config/database');
 
+function buildRelatedProducts(products, currentProduct, limit = 6) {
+  const items = Array.isArray(products) ? products.filter(Boolean) : [];
+  const currentId = currentProduct?.id != null ? Number(currentProduct.id) : null;
+
+  const activeItems = items.filter((item) => {
+    if (!item || item.id == null) return false;
+    if (currentId != null && Number(item.id) === currentId) return false;
+    return item.is_active !== false;
+  });
+
+  const sameCategory = currentProduct?.category_id != null
+    ? activeItems.filter((item) => Number(item.category_id) === Number(currentProduct.category_id))
+    : [];
+
+  const fallback = sameCategory.length >= limit
+    ? sameCategory.slice(0, limit)
+    : sameCategory.concat(activeItems.filter((item) => !sameCategory.includes(item))).slice(0, limit);
+
+  if (fallback.length >= limit) {
+    return fallback.slice(0, limit);
+  }
+
+  return activeItems.slice(0, limit);
+}
+
+exports.buildRelatedProducts = buildRelatedProducts;
+
 exports.getAllProducts = async (req, res) => {
   try {
     const { category_id, search, min_price, max_price, limit, offset } = req.query;
@@ -145,6 +172,29 @@ exports.getProductById = async (req, res) => {
   } catch (error) {
     console.error('Get product error:', error);
     res.status(500).json({ error: 'Failed to fetch product.' });
+  }
+};
+
+exports.getRelatedProducts = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const limit = Number.parseInt(req.query.limit, 10) || 6;
+    const product = await Product.findById(id);
+
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found.' });
+    }
+
+    const candidates = await Product.findAll({ limit: Math.max(24, limit + 8) });
+    const relatedProducts = buildRelatedProducts(candidates, product, limit);
+
+    res.json({
+      product_id: Number(id),
+      related_products: relatedProducts
+    });
+  } catch (error) {
+    console.error('Get related products error:', error);
+    res.status(500).json({ error: 'Failed to fetch related products.' });
   }
 };
 

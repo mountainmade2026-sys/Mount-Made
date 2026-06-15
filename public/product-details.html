@@ -551,6 +551,85 @@
             margin-bottom: 1rem;
             font-size: 1.25rem;
         }
+
+        .related-products-section {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-primary);
+        }
+
+        .related-products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .related-product-card {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            padding: 1rem;
+            border: 1px solid var(--border-primary);
+            border-radius: 14px;
+            background: var(--bg-primary);
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.15s ease, border-color 0.15s ease;
+        }
+
+        .related-product-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary-500);
+        }
+
+        .related-product-card img {
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            object-fit: cover;
+            border-radius: 10px;
+            background: var(--bg-secondary);
+        }
+
+        .related-product-card h4 {
+            margin: 0;
+            font-size: 1rem;
+            line-height: 1.35;
+            color: var(--text-primary);
+        }
+
+        .related-product-card p {
+            margin: 0;
+            color: var(--text-secondary);
+            font-size: 0.92rem;
+        }
+
+        .related-product-card .price-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .related-product-card .view-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            text-decoration: none;
+            color: var(--primary-600);
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        @media (max-width: 480px) {
+            .related-products-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .related-product-card {
+                padding: 0.85rem;
+            }
+        }
         
         @media (max-width: 768px) {
             .product-description h3 {
@@ -998,11 +1077,59 @@
                 const data = await api.get(`/products/${productId}`);
                 product = data.product;
                 renderProduct();
+                await loadRelatedProducts(productId);
             } catch (error) {
                 console.error('Failed to load product:', error);
                 document.getElementById('product-content').innerHTML = 
                     '<p class="text-center">Product not found</p>';
             }
+        }
+
+        async function loadRelatedProducts(productId) {
+            try {
+                const response = await api.get(`/products/${productId}/related?limit=6`);
+                renderRelatedProducts(response.related_products || []);
+            } catch (error) {
+                console.error('Failed to load related products:', error);
+                renderRelatedProducts([]);
+            }
+        }
+
+        function renderRelatedProducts(relatedProducts) {
+            const section = document.getElementById('related-products-section');
+            if (!section) return;
+
+            if (!Array.isArray(relatedProducts) || relatedProducts.length === 0) {
+                section.innerHTML = '';
+                return;
+            }
+
+            section.innerHTML = `
+                <section class="related-products-section">
+                    <h3 style="margin-bottom: 0.25rem;">Related products</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 0.5rem;">Similar items from the same category to help you discover more.</p>
+                    <div class="related-products-grid">
+                        ${relatedProducts.map((item) => {
+                            const price = item.discount_price != null && item.discount_price < item.price
+                                ? item.discount_price
+                                : item.price;
+                            return `
+                                <article class="related-product-card">
+                                    <img src="${item.image_url || '/images/placeholder.jpg'}" alt="${item.name}" onerror="this.src='/images/placeholder.jpg'">
+                                    <div>
+                                        <h4>${item.name}</h4>
+                                        <p>${item.category_name || 'Featured item'}</p>
+                                    </div>
+                                    <div class="price-row">
+                                        <strong>${formatCurrency(price || 0)}</strong>
+                                        <a href="/product-details?id=${item.id}" class="view-link">View <i class="fas fa-arrow-right"></i></a>
+                                    </div>
+                                </article>
+                            `;
+                        }).join('')}
+                    </div>
+                </section>
+            `;
         }
 
         async function loadUserAddresses() {
@@ -1425,6 +1552,8 @@
                                 </div>
                             ` : ''}
                         </div>
+
+                        <div id="related-products-section"></div>
                     </div>
                 </div>
             `;
