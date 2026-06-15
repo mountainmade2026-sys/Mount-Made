@@ -593,32 +593,86 @@
         }
 
         .related-products-section {
-            margin-top: 2rem;
-            padding-top: 1.5rem;
+            margin-top: 1.5rem;
+            padding-top: 1rem;
             border-top: 1px solid var(--border-primary);
+        }
+
+        .related-products-header {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .related-products-header h3 {
+            margin: 0;
+            font-size: 1.15rem;
+        }
+
+        .related-products-header p {
+            margin: 0.15rem 0 0;
+            color: var(--text-secondary);
+            font-size: 0.92rem;
+        }
+
+        .related-products-nav {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            flex-shrink: 0;
+        }
+
+        .related-products-nav button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border: 1px solid var(--border-primary);
+            border-radius: 999px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            cursor: pointer;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease;
+        }
+
+        .related-products-nav button:hover {
+            transform: translateY(-1px);
+            border-color: var(--primary-500);
+            background: var(--bg-secondary);
+        }
+
+        .related-products-nav button:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            transform: none;
         }
 
         .related-products-row {
             display: flex;
-            gap: 1rem;
-            margin-top: 1rem;
+            gap: 0.75rem;
+            margin-top: 0.35rem;
             overflow-x: auto;
             overflow-y: hidden;
-            padding-bottom: 0.35rem;
-            scroll-snap-type: x proximity;
+            padding: 0.2rem 0.1rem 0.55rem;
+            scroll-snap-type: x mandatory;
             -webkit-overflow-scrolling: touch;
             scrollbar-width: thin;
+            scroll-behavior: smooth;
         }
 
         .related-product-card {
             display: flex;
             flex-direction: column;
-            gap: 0.75rem;
-            flex: 0 0 220px;
-            min-width: 220px;
-            padding: 1rem;
+            gap: 0.65rem;
+            flex: 0 0 180px;
+            min-width: 180px;
+            padding: 0.85rem;
             border: 1px solid var(--border-primary);
-            border-radius: 14px;
+            border-radius: 12px;
             background: var(--bg-primary);
             box-shadow: var(--shadow-sm);
             transition: transform 0.15s ease, border-color 0.15s ease;
@@ -640,15 +694,15 @@
 
         .related-product-card h4 {
             margin: 0;
-            font-size: 1rem;
-            line-height: 1.35;
+            font-size: 0.98rem;
+            line-height: 1.3;
             color: var(--text-primary);
         }
 
         .related-product-card p {
             margin: 0;
             color: var(--text-secondary);
-            font-size: 0.92rem;
+            font-size: 0.88rem;
         }
 
         .related-product-card .price-row {
@@ -669,16 +723,66 @@
             font-size: 0.95rem;
         }
 
-        @media (max-width: 480px) {
+        @media (max-width: 768px) {
+            .related-product-card {
+                flex-basis: 170px;
+                min-width: 170px;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .related-products-section {
+                margin-top: 1rem;
+                padding-top: 0.75rem;
+            }
+
+            .related-products-header {
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 0.45rem;
+            }
+
+            .related-products-header h3 {
+                font-size: 1rem;
+            }
+
+            .related-products-header p {
+                font-size: 0.85rem;
+            }
+
+            .related-products-nav {
+                align-self: flex-end;
+            }
+
             .related-products-row {
-                gap: 0.75rem;
-                padding-bottom: 0.5rem;
+                gap: 0.6rem;
+                padding: 0.15rem 0.05rem 0.45rem;
             }
 
             .related-product-card {
-                flex: 0 0 84vw;
-                min-width: 84vw;
-                padding: 0.85rem;
+                flex: 0 0 74vw;
+                min-width: 74vw;
+                padding: 0.75rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .related-products-row {
+                gap: 0.55rem;
+            }
+
+            .related-product-card {
+                flex: 0 0 78vw;
+                min-width: 78vw;
+                padding: 0.7rem;
+            }
+
+            .related-product-card h4 {
+                font-size: 0.92rem;
+            }
+
+            .related-product-card p {
+                font-size: 0.82rem;
             }
         }
         
@@ -1157,9 +1261,17 @@
 
             section.innerHTML = `
                 <section class="related-products-section">
-                    <h3 style="margin-bottom: 0.25rem;">Related products</h3>
-                    <p style="color: var(--text-secondary); margin-bottom: 0.5rem;">Similar items from the same category to help you discover more.</p>
-                    <div class="related-products-row">
+                    <div class="related-products-header">
+                        <div>
+                            <h3>Related products</h3>
+                            <p>Similar items from the same category to help you discover more.</p>
+                        </div>
+                        <div class="related-products-nav" aria-label="Related products navigation">
+                            <button type="button" class="related-nav-btn" data-direction="prev" aria-label="Scroll related products left"><i class="fas fa-chevron-left"></i></button>
+                            <button type="button" class="related-nav-btn" data-direction="next" aria-label="Scroll related products right"><i class="fas fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+                    <div class="related-products-row" id="related-products-row">
                         ${relatedProducts.map((item) => {
                             const price = item.discount_price != null && item.discount_price < item.price
                                 ? item.discount_price
@@ -1181,6 +1293,36 @@
                     </div>
                 </section>
             `;
+
+            const relatedRow = document.getElementById('related-products-row');
+            const relatedButtons = document.querySelectorAll('.related-nav-btn');
+
+            if (relatedRow && relatedButtons.length) {
+                const scrollAmount = () => Math.max(220, Math.floor(relatedRow.clientWidth * 0.85));
+
+                const updateArrowState = () => {
+                    const atStart = relatedRow.scrollLeft <= 2;
+                    const atEnd = relatedRow.scrollLeft + relatedRow.clientWidth >= relatedRow.scrollWidth - 2;
+                    relatedButtons.forEach((button) => {
+                        const direction = button.getAttribute('data-direction');
+                        button.disabled = direction === 'prev' ? atStart : atEnd;
+                    });
+                };
+
+                relatedButtons.forEach((button) => {
+                    button.addEventListener('click', () => {
+                        const direction = button.getAttribute('data-direction') === 'next' ? 1 : -1;
+                        relatedRow.scrollBy({
+                            left: direction * scrollAmount(),
+                            behavior: 'smooth'
+                        });
+                    });
+                });
+
+                relatedRow.addEventListener('scroll', updateArrowState, { passive: true });
+                window.addEventListener('resize', updateArrowState, { passive: true });
+                updateArrowState();
+            }
         }
 
         async function loadUserAddresses() {
