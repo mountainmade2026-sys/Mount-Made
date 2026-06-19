@@ -91,6 +91,25 @@ function getDeliveryChargeForSubtotal(subtotal) {
   return amount >= 1999 ? 0 : 99;
 }
 
+function normalizePincode(value) {
+  return String(value || '').replace(/\D/g, '').trim();
+}
+
+function parseAvailablePincodes(rawValue) {
+  return String(rawValue || '')
+    .split(/[\n,]+/)
+    .map(pin => normalizePincode(pin))
+    .filter(Boolean);
+}
+
+function isPincodeServiceable(pin, codAvailablePincodes) {
+  const normalized = normalizePincode(pin);
+  if (normalized.length !== 6) return false;
+  const pincodes = parseAvailablePincodes(codAvailablePincodes);
+  if (!pincodes.length) return true;
+  return pincodes.includes(normalized);
+}
+
 // Create a Razorpay order based on SERVER cart total.
 router.post('/razorpay/create', async (req, res) => {
   try {
@@ -167,6 +186,18 @@ router.post('/razorpay/verify', async (req, res) => {
 
     // Clamp to prevent negative delivery charges distorting the amount check
     const safeDeliveryCharge = Math.max(0, Number(delivery_charge) || 0);
+
+    const shippingPostalCode = normalizePincode(
+      shipping_address?.postal_code || shipping_address?.zip || shipping_address?.pincode
+    );
+    if (shippingPostalCode.length !== 6) {
+      return res.status(400).json({ error: 'A valid 6-digit delivery PIN code is required.' });
+    }
+
+    const siteSettings = await getSiteSettings();
+    if (!isPincodeServiceable(shippingPostalCode, String(siteSettings.cod_available_pincodes || ''))) {
+      return res.status(400).json({ error: 'Delivery is not available at the provided PIN code.' });
+    }
 
     if (!razorpay_payment_id || !razorpay_order_id || !razorpay_signature) {
       return res.status(400).json({ error: 'Missing payment verification fields.' });

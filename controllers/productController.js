@@ -351,6 +351,25 @@ exports.getHomepageSections = async (req, res) => {
   }
 };
 
+function normalizePincode(value) {
+  return String(value || '').replace(/\D/g, '').trim();
+}
+
+function parseAvailablePincodes(rawValue) {
+  return String(rawValue || '')
+    .split(/[\n,]+/)
+    .map(pin => normalizePincode(pin))
+    .filter(Boolean);
+}
+
+function isPincodeServiceable(pin, codAvailablePincodes) {
+  const normalized = normalizePincode(pin);
+  if (normalized.length !== 6) return false;
+  const pincodes = parseAvailablePincodes(codAvailablePincodes);
+  if (!pincodes.length) return true;
+  return pincodes.includes(normalized);
+}
+
 exports.getSiteSettings = async (req, res) => {
   try {
     const result = await db.query('SELECT setting_key, setting_value FROM site_settings');
@@ -364,3 +383,29 @@ exports.getSiteSettings = async (req, res) => {
     res.json({ settings: {} }); // Return empty settings on error
   }
 };
+
+exports.checkPincodeAvailability = async (req, res) => {
+  try {
+    const pin = normalizePincode(req.query.pin);
+    if (pin.length !== 6) {
+      return res.status(400).json({ error: 'A valid 6-digit pincode is required.' });
+    }
+
+    const result = await db.query(
+      'SELECT setting_value FROM site_settings WHERE setting_key = $1',
+      ['cod_available_pincodes']
+    );
+
+    const codAvailablePincodes = result.rows[0]?.setting_value || '';
+    const is_serviceable = isPincodeServiceable(pin, codAvailablePincodes);
+
+    return res.json({
+      pin,
+      is_serviceable,
+      message: is_serviceable
+        ? 'Delivery is available for this pincode.'
+        : 'Delivery is not available for this pincode.'
+    });
+  } catch (error) {
+    console.error('Check pincode availability error:', error);
+    return res.status(500).json({ error: 'Failed to verify pincode availability.' });

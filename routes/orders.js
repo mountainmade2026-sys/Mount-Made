@@ -23,9 +23,46 @@ function getDeliveryChargeForSubtotal(subtotal) {
   return amount >= 1999 ? 0 : 99;
 }
 
+function normalizePincode(value) {
+  return String(value || '').replace(/\D/g, '').trim();
+}
+
+function parseAvailablePincodes(rawValue) {
+  return String(rawValue || '')
+    .split(/[\n,]+/)
+    .map(pin => normalizePincode(pin))
+    .filter(Boolean);
+}
+
+function isPincodeServiceable(pin, codAvailablePincodes) {
+  const normalized = normalizePincode(pin);
+  if (normalized.length !== 6) return false;
+  const pincodes = parseAvailablePincodes(codAvailablePincodes);
+  if (!pincodes.length) return true;
+  return pincodes.includes(normalized);
+}
+
 // Create order
 router.post('/', async (req, res) => {
   try {
+    const shippingAddress = req.body?.shipping_address || {};
+    const deliveryPin = normalizePincode(
+      shippingAddress.postal_code || shippingAddress.zip || shippingAddress.pincode
+    );
+
+    if (deliveryPin.length !== 6) {
+      return res.status(400).json({ error: 'A valid 6-digit delivery PIN code is required.' });
+    }
+
+    const settingsResult = await db.query(
+      'SELECT setting_value FROM site_settings WHERE setting_key = $1',
+      ['cod_available_pincodes']
+    );
+    const codAvailablePincodes = settingsResult.rows[0]?.setting_value || '';
+    if (!isPincodeServiceable(deliveryPin, codAvailablePincodes)) {
+      return res.status(400).json({ error: 'Delivery is not available at the provided PIN code.' });
+    }
+
     const items = Array.isArray(req.body?.items) ? req.body.items : [];
     const itemSubtotal = items.reduce((sum, item) => {
       const quantity = Math.max(1, parseInt(item.quantity || item.qty || 1, 10) || 1);
@@ -230,6 +267,23 @@ router.post('/quick-buy', async (req, res) => {
       FROM products 
       WHERE id = $1
     `;
+    const deliveryPin = normalizePincode(
+      shipping_address?.postal_code || shipping_address?.zip || shipping_address?.pincode
+    );
+
+    if (deliveryPin.length !== 6) {
+      return res.status(400).json({ error: 'A valid 6-digit delivery PIN code is required.' });
+    }
+
+    const settingsResult = await db.query(
+      'SELECT setting_value FROM site_settings WHERE setting_key = $1',
+      ['cod_available_pincodes']
+    );
+    const codAvailablePincodes = settingsResult.rows[0]?.setting_value || '';
+    if (!isPincodeServiceable(deliveryPin, codAvailablePincodes)) {
+      return res.status(400).json({ error: 'Delivery is not available at the provided PIN code.' });
+    }
+
     const productResult = await require('../config/database').query(productQuery, [product_id]);
     
     if (productResult.rows.length === 0) {
@@ -238,12 +292,12 @@ router.post('/quick-buy', async (req, res) => {
 
     const product = productResult.rows[0];
     const retailPrice = product.discount_price != null ? product.discount_price : product.price;
-    const deliveryCharge = getDeliveryChargeForSubtotal(subtotal);
 
     // Determine price based on user type
     const isWholesale = req.user.role === 'wholesale' && req.user.is_approved;
     const price = isWholesale && product.wholesale_price ? product.wholesale_price : retailPrice;
     const subtotal = price * quantity;
+    const deliveryCharge = getDeliveryChargeForSubtotal(subtotal);
 
     const normalizedPaymentMethod = (() => {
       const raw = (payment_method || '').toString().trim();

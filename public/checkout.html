@@ -1992,82 +1992,108 @@
             if (hidden) selectPaymentMethod(hidden.value);
         }
 
+        const checkoutPincodeCache = {};
+
+        function normalizeCheckoutPincode(value) {
+            return String(value || '').replace(/\D/g, '').slice(0, 6).trim();
+        }
+
         function getSelectedPincode() {
             // Prefer the explicit checkout PIN input when available.
             const manualPinEl = document.getElementById('checkout-pincode-input');
             if (manualPinEl) {
-                const manualPin = String(manualPinEl.value || '').trim().replace(/\D/g, '');
+                const manualPin = normalizeCheckoutPincode(manualPinEl.value);
                 if (manualPin) return manualPin;
             }
 
             // Try to get pincode from selected address
             if (selectedAddressId) {
                 const addr = userAddresses.find(a => a.id === selectedAddressId);
-                if (addr && addr.postal_code) return String(addr.postal_code).trim();
+                if (addr && addr.postal_code) return normalizeCheckoutPincode(addr.postal_code);
             }
 
             // Fall back to manual zip input
             const zipEl = document.getElementById('zip');
-            return zipEl ? String(zipEl.value || '').trim() : '';
+            return zipEl ? normalizeCheckoutPincode(zipEl.value) : '';
         }
 
-        function checkCheckoutPincodeAvailability() {
+        async function fetchPincodeAvailability(pin) {
+            const normalizedPin = normalizeCheckoutPincode(pin);
+            if (normalizedPin.length !== 6) {
+                return { pin: normalizedPin, is_serviceable: false, message: 'Enter a valid 6-digit PIN code.' };
+            }
+
+            if (checkoutPincodeCache[normalizedPin]) {
+                return checkoutPincodeCache[normalizedPin];
+            }
+
+            try {
+                const result = await api.get(`/products/check-pincode?pin=${encodeURIComponent(normalizedPin)}`);
+                const payload = {
+                    pin: normalizedPin,
+                    is_serviceable: Boolean(result?.is_serviceable),
+                    message: String(result?.message || '').trim() || (result?.is_serviceable ? 'Delivery is available for this PIN code.' : 'Delivery is not available for this PIN code.')
+                };
+                checkoutPincodeCache[normalizedPin] = payload;
+                return payload;
+            } catch (error) {
+                console.warn('Pincode availability check failed:', error);
+                return {
+                    pin: normalizedPin,
+                    is_serviceable: checkoutCodPincodes.length === 0,
+                    message: 'Could not verify delivery availability. Please try again.'
+                };
+            }
+        }
+
+        async function checkCheckoutPincodeAvailability() {
             const manualPinEl = document.getElementById('checkout-pincode-input');
             const statusEl = document.getElementById('cod-pincode-status');
             const displayEl = document.getElementById('cod-pincode-display');
 
             if (!manualPinEl || !statusEl || !displayEl) return;
 
-            const rawPin = String(manualPinEl.value || '').trim().replace(/\D/g, '');
+            const rawPin = normalizeCheckoutPincode(manualPinEl.value);
             if (!rawPin) {
                 statusEl.innerHTML = '<span style="color: var(--text-secondary); font-size: 0.85rem;">Enter a 6-digit delivery PIN code to check availability.</span>';
                 displayEl.textContent = '—';
                 return;
             }
 
-            if (rawPin.length !== 6) {
-                statusEl.innerHTML = '<span style="color: #ef4444; font-size: 0.85rem;"><i class="fas fa-times-circle"></i> Please enter a valid 6-digit PIN code.</span>';
-                displayEl.textContent = rawPin || '—';
-                manualPinEl.value = rawPin;
-                return;
-            }
-
             manualPinEl.value = rawPin;
-            updateCodPincodeCheck();
+            displayEl.textContent = rawPin;
+            statusEl.innerHTML = '<span style="color: var(--text-secondary); font-size: 0.85rem;"><i class="fas fa-spinner fa-spin"></i> Checking availability...</span>';
+
+            const availability = await fetchPincodeAvailability(rawPin);
+            const color = availability.is_serviceable ? '#22c55e' : '#ef4444';
+            const icon = availability.is_serviceable ? 'check-circle' : 'times-circle';
+            statusEl.innerHTML = `<span style="color: ${color}; font-size: 0.85rem;"><i class="fas fa-${icon}"></i> ${escapeHtml(availability.message)}</span>`;
         }
 
-        function updateCodPincodeCheck() {
+        async function updateCodPincodeCheck() {
             const pincode = getSelectedPincode();
             const displayEl = document.getElementById('cod-pincode-display');
             const statusEl = document.getElementById('cod-pincode-status');
             if (!displayEl || !statusEl) return;
 
-            const normalizedPincode = String(pincode || '').trim().replace(/\D/g, '');
-
-            if (!normalizedPincode) {
+            if (!pincode) {
                 displayEl.textContent = '—';
                 statusEl.innerHTML = '<span style="color: var(--text-secondary); font-size: 0.85rem;">Enter your delivery address or PIN code to check availability.</span>';
                 return;
             }
 
-            displayEl.textContent = normalizedPincode;
+            displayEl.textContent = pincode;
+            statusEl.innerHTML = '<span style="color: var(--text-secondary); font-size: 0.85rem;"><i class="fas fa-spinner fa-spin"></i> Checking availability...</span>';
 
-            if (!checkoutCodPincodes.length) {
-                statusEl.innerHTML = '<span style="color: #22c55e; font-size: 0.85rem;"><i class="fas fa-check-circle"></i> Delivery availability is open for this PIN code.</span>';
-                return;
-            }
-
-            const available = checkoutCodPincodes.includes(normalizedPincode);
-            if (available) {
-                statusEl.innerHTML = '<span style="color: #22c55e; font-size: 0.85rem;"><i class="fas fa-check-circle"></i> Delivery is available for this PIN code.</span>';
-            } else {
-                statusEl.innerHTML = '<span style="color: #ef4444; font-size: 0.85rem;"><i class="fas fa-times-circle"></i> Delivery is not available at this PIN code.</span>';
-            }
+            const availability = await fetchPincodeAvailability(pincode);
+            const color = availability.is_serviceable ? '#22c55e' : '#ef4444';
+            const icon = availability.is_serviceable ? 'check-circle' : 'times-circle';
+            statusEl.innerHTML = `<span style="color: ${color}; font-size: 0.85rem;"><i class="fas fa-${icon}"></i> ${escapeHtml(availability.message)}</span>`;
         }
 
-        function validateDeliveryPincode() {
+        async function validateDeliveryPincode() {
             const pincode = getSelectedPincode();
-            const normalizedPincode = String(pincode || '').trim().replace(/\D/g, '');
+            const normalizedPincode = normalizeCheckoutPincode(pincode);
             const statusEl = document.getElementById('cod-pincode-status');
             const displayEl = document.getElementById('cod-pincode-display');
             if (!displayEl || !statusEl) return false;
@@ -2078,19 +2104,16 @@
                 return false;
             }
 
-            if (!checkoutCodPincodes.length) {
-                statusEl.innerHTML = '<span style="color: #22c55e; font-size: 0.85rem;"><i class="fas fa-check-circle"></i> Delivery availability is open for this PIN code.</span>';
-                return true;
-            }
+            displayEl.textContent = normalizedPincode;
+            statusEl.innerHTML = '<span style="color: var(--text-secondary); font-size: 0.85rem;"><i class="fas fa-spinner fa-spin"></i> Validating PIN code...</span>';
 
-            const available = checkoutCodPincodes.includes(normalizedPincode);
-            if (!available) {
-                statusEl.innerHTML = '<span style="color: #ef4444; font-size: 0.85rem;"><i class="fas fa-times-circle"></i> Delivery is not available at this PIN code.</span>';
-                return false;
-            }
+            const availability = await fetchPincodeAvailability(normalizedPincode);
+            const available = availability.is_serviceable;
+            const color = available ? '#22c55e' : '#ef4444';
+            const icon = available ? 'check-circle' : 'times-circle';
+            statusEl.innerHTML = `<span style="color: ${color}; font-size: 0.85rem;"><i class="fas fa-${icon}"></i> ${escapeHtml(availability.message)}</span>`;
 
-            statusEl.innerHTML = '<span style="color: #22c55e; font-size: 0.85rem;"><i class="fas fa-check-circle"></i> Delivery is available for this PIN code.</span>';
-            return true;
+            return available;
         }
 
         function openBillingManager() {
@@ -2329,7 +2352,7 @@
             let gpayDetailType = null;
             let gpayDetailValue = null;
 
-            if (!validateDeliveryPincode()) {
+            if (!(await validateDeliveryPincode())) {
                 hideOrderStatusModal();
                 setPlaceOrderButtonState(false);
                 showAlert('Please enter a valid delivery PIN code before placing the order.', 'error');
