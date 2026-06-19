@@ -110,48 +110,11 @@
                         <input type="hidden" id="payment_method" name="payment_method" value="gpay">
 
                         <div class="pm-grid" id="pm-grid">
-                            <!-- UPI / Google Pay -->
                             <button type="button" class="pm-tile pm-tile-selected" data-method="gpay">
                                 <span class="pm-tile-icon pm-upi-bg">
                                     <svg viewBox="0 0 48 48" width="28" height="28" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="48" rx="10" fill="#fff"/><text x="50%" y="62%" dominant-baseline="middle" text-anchor="middle" font-size="11" font-family="Arial,sans-serif" font-weight="700" fill="#5C6BC0">UPI</text></svg>
                                 </span>
-                                <span class="pm-tile-label">UPI / GPay<br><small>PhonePe, Paytm, BHIM</small></span>
-                                <span class="pm-tile-check"><i class="fas fa-check-circle"></i></span>
-                            </button>
-
-                            <!-- Debit Card -->
-                            <button type="button" class="pm-tile" data-method="debit_card">
-                                <span class="pm-tile-icon pm-card-bg">
-                                    <i class="fas fa-credit-card" style="font-size:1.5rem;color:#1976d2;"></i>
-                                </span>
-                                <span class="pm-tile-label">Debit Card<br><small>Visa, Mastercard, RuPay</small></span>
-                                <span class="pm-tile-check"><i class="fas fa-check-circle"></i></span>
-                            </button>
-
-                            <!-- Credit Card -->
-                            <button type="button" class="pm-tile" data-method="credit_card">
-                                <span class="pm-tile-icon pm-cc-bg">
-                                    <i class="fas fa-credit-card" style="font-size:1.5rem;color:#c62828;"></i>
-                                </span>
-                                <span class="pm-tile-label">Credit Card<br><small>Visa, Mastercard, Amex</small></span>
-                                <span class="pm-tile-check"><i class="fas fa-check-circle"></i></span>
-                            </button>
-
-                            <!-- Net Banking -->
-                            <button type="button" class="pm-tile" data-method="net_banking">
-                                <span class="pm-tile-icon pm-net-bg">
-                                    <i class="fas fa-university" style="font-size:1.4rem;color:#2e7d32;"></i>
-                                </span>
-                                <span class="pm-tile-label">Net Banking<br><small>SBI, HDFC, ICICI…</small></span>
-                                <span class="pm-tile-check"><i class="fas fa-check-circle"></i></span>
-                            </button>
-
-                            <!-- Cash on Delivery -->
-                            <button type="button" class="pm-tile" data-method="cash_on_delivery">
-                                <span class="pm-tile-icon pm-cod-bg">
-                                    <i class="fas fa-money-bill-wave" style="font-size:1.4rem;color:#f57f17;"></i>
-                                </span>
-                                <span class="pm-tile-label">Cash on Delivery<br><small>Pay when you receive</small></span>
+                                <span class="pm-tile-label">UPI / GPay<br><small>GPay only</small></span>
                                 <span class="pm-tile-check"><i class="fas fa-check-circle"></i></span>
                             </button>
                         </div>
@@ -175,31 +138,16 @@
                                 <label class="form-label">Business QR Code</label>
                                 <img id="gpay-qr-image" alt="GPay QR" style="max-width: 200px; width: 100%; border: 1px solid var(--border-primary); border-radius: 8px; background: #fff;">
                             </div>
-                            <div class="form-help" id="gpay-prefill-hint">Prefilled from your Billing Management details.</div>
-                        </div>
-
-                        <!-- Card / Net Banking info panel -->
-                        <div id="card-info-panel" class="pm-detail-panel hidden">
-                            <div class="pm-info-box">
-                                <i class="fas fa-info-circle" style="color:var(--primary);margin-right:0.5rem;"></i>
-                                Payment will be collected securely at the time of delivery confirmation. Your card details are never stored on our servers.
-                            </div>
-                        </div>
-
-                        <!-- COD details panel -->
-                        <div id="cod-details" class="pm-detail-panel hidden">
-                            <div id="cod-pincode-info" style="padding: 0.9rem 1rem; border-radius: 8px; border: 1px solid var(--border-primary); background: var(--bg-secondary); font-size: 0.92rem;">
-                                <div style="display: flex; align-items: center; gap: 0.55rem; margin-bottom: 0.35rem;">
-                                    <i class="fas fa-map-marker-alt" style="color: var(--primary);"></i>
-                                    <strong>Delivery Pincode</strong>
-                                </div>
-                                <div style="display:flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
+                            <div class="form-group">
+                                <label class="form-label">Delivery PIN Code</label>
+                                <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.5rem;">
                                     <input id="checkout-pincode-input" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="Enter 6-digit PIN" style="flex: 1 1 150px; min-width: 140px; border: 1px solid var(--border-primary); border-radius: 10px; padding: 0.55rem 0.65rem; background: var(--bg-primary); color: var(--text-primary);">
                                     <button type="button" class="btn btn-primary btn-sm" onclick="checkCheckoutPincodeAvailability()">Check</button>
                                 </div>
                                 <div id="cod-pincode-display" style="font-size: 1rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.4rem;">—</div>
                                 <div id="cod-pincode-status"></div>
                             </div>
+                            <div class="form-help" id="gpay-prefill-hint">Prefilled from your Billing Management details.</div>
                         </div>
 
                         <div class="form-group" style="margin-top:1rem;">
@@ -1629,10 +1577,7 @@
             closeModal('address-modal');
             setManualAddressRequired(false);
 
-            // Refresh COD pincode check when address changes
-            if (document.getElementById('payment_method')?.value === 'cash_on_delivery') {
-                updateCodPincodeCheck();
-            }
+            updateCodPincodeCheck();
         }
 
         async function showManualAddressForm() {
@@ -2028,26 +1973,18 @@
         }
 
         function selectPaymentMethod(method) {
-            // Update hidden input
             const hidden = document.getElementById('payment_method');
-            if (hidden) hidden.value = method;
+            if (hidden) hidden.value = method || 'gpay';
 
-            // Update tile selection
             document.querySelectorAll('.pm-tile').forEach(t => {
                 t.classList.toggle('pm-tile-selected', t.dataset.method === method);
             });
 
-            // Show/hide detail panels
             const gpaySection = document.getElementById('gpay-details');
-            const codSection = document.getElementById('cod-details');
-            const cardPanel = document.getElementById('card-info-panel');
+            if (gpaySection) gpaySection.classList.remove('hidden');
 
-            if (gpaySection) gpaySection.classList.toggle('hidden', method !== 'gpay');
-            if (codSection)  codSection.classList.toggle('hidden',  method !== 'cash_on_delivery');
-            if (cardPanel)   cardPanel.classList.toggle('hidden',   method !== 'debit_card' && method !== 'credit_card' && method !== 'net_banking');
-
-            if (method === 'gpay') updateGpayLabelAndPrefill();
-            if (method === 'cash_on_delivery') updateCodPincodeCheck();
+            updateGpayLabelAndPrefill();
+            updateCodPincodeCheck();
         }
 
         function toggleGpayDetails() {
@@ -2083,7 +2020,7 @@
 
             const rawPin = String(manualPinEl.value || '').trim().replace(/\D/g, '');
             if (!rawPin) {
-                statusEl.innerHTML = '<span style="color: var(--text-secondary); font-size: 0.85rem;">Enter a 6-digit PIN code to check COD availability.</span>';
+                statusEl.innerHTML = '<span style="color: var(--text-secondary); font-size: 0.85rem;">Enter a 6-digit delivery PIN code to check availability.</span>';
                 displayEl.textContent = '—';
                 return;
             }
@@ -2109,24 +2046,51 @@
 
             if (!normalizedPincode) {
                 displayEl.textContent = '—';
-                statusEl.innerHTML = '<span style="color: var(--text-secondary); font-size: 0.85rem;">Enter your delivery address or a PIN code to check COD availability.</span>';
+                statusEl.innerHTML = '<span style="color: var(--text-secondary); font-size: 0.85rem;">Enter your delivery address or PIN code to check availability.</span>';
                 return;
             }
 
             displayEl.textContent = normalizedPincode;
 
-            // If no COD PIN restrictions are configured, show that the list is open.
             if (!checkoutCodPincodes.length) {
-                statusEl.innerHTML = '<span style="color: #22c55e; font-size: 0.85rem;"><i class="fas fa-check-circle"></i> No COD PIN restrictions are configured in admin, so COD is available for this PIN.</span>';
+                statusEl.innerHTML = '<span style="color: #22c55e; font-size: 0.85rem;"><i class="fas fa-check-circle"></i> Delivery availability is open for this PIN code.</span>';
                 return;
             }
 
             const available = checkoutCodPincodes.includes(normalizedPincode);
             if (available) {
-                statusEl.innerHTML = '<span style="color: #22c55e; font-size: 0.85rem;"><i class="fas fa-check-circle"></i> Cash on Delivery is available at your pincode.</span>';
+                statusEl.innerHTML = '<span style="color: #22c55e; font-size: 0.85rem;"><i class="fas fa-check-circle"></i> Delivery is available for this PIN code.</span>';
             } else {
-                statusEl.innerHTML = '<span style="color: #ef4444; font-size: 0.85rem;"><i class="fas fa-times-circle"></i> COD is not available at your pincode. Please choose GPay to continue.</span>';
+                statusEl.innerHTML = '<span style="color: #ef4444; font-size: 0.85rem;"><i class="fas fa-times-circle"></i> Delivery is not available at this PIN code.</span>';
             }
+        }
+
+        function validateDeliveryPincode() {
+            const pincode = getSelectedPincode();
+            const normalizedPincode = String(pincode || '').trim().replace(/\D/g, '');
+            const statusEl = document.getElementById('cod-pincode-status');
+            const displayEl = document.getElementById('cod-pincode-display');
+            if (!displayEl || !statusEl) return false;
+
+            if (normalizedPincode.length !== 6) {
+                statusEl.innerHTML = '<span style="color: #ef4444; font-size: 0.85rem;"><i class="fas fa-times-circle"></i> Enter a valid 6-digit delivery PIN code.</span>';
+                displayEl.textContent = normalizedPincode || '—';
+                return false;
+            }
+
+            if (!checkoutCodPincodes.length) {
+                statusEl.innerHTML = '<span style="color: #22c55e; font-size: 0.85rem;"><i class="fas fa-check-circle"></i> Delivery availability is open for this PIN code.</span>';
+                return true;
+            }
+
+            const available = checkoutCodPincodes.includes(normalizedPincode);
+            if (!available) {
+                statusEl.innerHTML = '<span style="color: #ef4444; font-size: 0.85rem;"><i class="fas fa-times-circle"></i> Delivery is not available at this PIN code.</span>';
+                return false;
+            }
+
+            statusEl.innerHTML = '<span style="color: #22c55e; font-size: 0.85rem;"><i class="fas fa-check-circle"></i> Delivery is available for this PIN code.</span>';
+            return true;
         }
 
         function openBillingManager() {
@@ -2170,9 +2134,7 @@
             const zipInput = document.getElementById('zip');
             if (zipInput) {
                 zipInput.addEventListener('input', () => {
-                    if (document.getElementById('payment_method')?.value === 'cash_on_delivery') {
-                        updateCodPincodeCheck();
-                    }
+                    updateCodPincodeCheck();
                 });
             }
 
@@ -2181,9 +2143,7 @@
                 pinInput.addEventListener('input', () => {
                     const value = pinInput.value.replace(/\D/g, '').slice(0, 6);
                     pinInput.value = value;
-                    if (document.getElementById('payment_method')?.value === 'cash_on_delivery') {
-                        updateCodPincodeCheck();
-                    }
+                    updateCodPincodeCheck();
                 });
             }
 
@@ -2238,10 +2198,7 @@
                 checkoutCodPincodes = rawCodPincodes
                     ? rawCodPincodes.split(/[\n,]+/).map(p => String(p || '').trim()).filter(Boolean)
                     : [];
-                // Refresh COD section if already visible
-                if (document.getElementById('payment_method')?.value === 'cash_on_delivery') {
-                    updateCodPincodeCheck();
-                }
+                updateCodPincodeCheck();
 
                 const chargeLabel = document.getElementById('standard-delivery-charge-label');
 
@@ -2371,6 +2328,13 @@
             const paymentMethod = document.getElementById('payment_method').value;
             let gpayDetailType = null;
             let gpayDetailValue = null;
+
+            if (!validateDeliveryPincode()) {
+                hideOrderStatusModal();
+                setPlaceOrderButtonState(false);
+                showAlert('Please enter a valid delivery PIN code before placing the order.', 'error');
+                return;
+            }
 
             if (paymentMethod === 'gpay') {
                 if (!checkoutGpaySettings.enabled) {
