@@ -1924,6 +1924,7 @@
                 const refreshed = await api.get(`/products/${product.id}`);
                 product = refreshed.product;
                 renderProduct();
+                await loadRelatedProducts(product.id);
             } catch (error) {
                 console.error('Submit product rating failed:', error);
                 showAlert(error?.message || 'Failed to submit your rating.', 'error');
