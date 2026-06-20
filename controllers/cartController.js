@@ -14,7 +14,8 @@ async function buildCartSummary(userId, role) {
            p.min_wholesale_qty,
            p.weight,
            p.weight_unit,
-           p.unit
+           p.unit,
+           p.is_weight_based
     FROM cart c
     JOIN products p ON c.product_id = p.id
     WHERE c.user_id = $1 AND p.is_active = true
@@ -31,7 +32,8 @@ async function buildCartSummary(userId, role) {
       ? Number.parseFloat(item.wholesale_price)
       : retailPrice;
 
-    const multiplier = getWeightMultiplier(item, item);
+    const shouldApplyWeight = item.is_weight_based && item.weight_value != null;
+    const multiplier = shouldApplyWeight ? getWeightMultiplier(item, item) : 1;
     const price = unitPrice * multiplier;
     const subtotal = price * Number(item.quantity || 1);
 
@@ -42,7 +44,7 @@ async function buildCartSummary(userId, role) {
       price,
       subtotal,
       weight_multiplier: multiplier,
-      is_weight_based: Number(item.weight || 0) > 0 || item.weight_value != null
+      is_weight_based: Boolean(item.is_weight_based && item.weight_value != null)
     };
   });
 
