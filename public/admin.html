@@ -10134,7 +10134,7 @@
                 : '';
             const rows = items.map(it => {
                 const productId = parseInt(it.product_id || it.id || '', 10);
-                const productUrl = Number.isFinite(productId) ? `${window.location.origin}/product-details?id=${encodeURIComponent(productId)}` : '';
+                const productUrl = Number.isFinite(productId) ? `${window.location.origin}/p/${encodeURIComponent(productId)}` : '';
                 const barcodeValue = String(it.barcode || '').trim();
                 const barcodeTarget = productUrl || barcodeValue;
                 const barcodeLabel = productUrl

@@ -769,6 +769,14 @@ app.get('/product-details', (req, res) => {
   return sendHtmlPage(req, res, 'product-details.html');
 });
 
+app.get('/p/:id', (req, res) => {
+  const productId = String(req.params.id || '').trim();
+  if (!productId) {
+    return res.redirect('/products');
+  }
+  return res.redirect(`/product-details?id=${encodeURIComponent(productId)}`);
+});
+
 app.get('/addresses', (req, res) => {
   return sendHtmlPage(req, res, 'addresses.html');
 });
