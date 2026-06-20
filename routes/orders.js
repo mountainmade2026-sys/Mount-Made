@@ -20,7 +20,7 @@ function getRequiredEnv(name) {
 
 function getDeliveryChargeForSubtotal(subtotal) {
   const amount = Number(subtotal) || 0;
-  return amount >= 1999 ? 0 : 99;
+  return amount >= 2000 ? 0 : 99;
 }
 
 function normalizePincode(value) {

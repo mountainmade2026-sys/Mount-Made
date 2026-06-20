@@ -1495,11 +1495,12 @@
             await loadUserAddresses();
         }
 
-        const FREE_DELIVERY_THRESHOLD = 1999;
+        const FREE_DELIVERY_THRESHOLD = 2000;
         const DELIVERY_FEE = 99;
 
         function getDeliveryChargeForSubtotal(subtotal) {
             const amount = Number(subtotal) || 0;
+            console.log('[Delivery] Subtotal:', amount, 'Threshold:', FREE_DELIVERY_THRESHOLD, 'Is Free?:', amount >= FREE_DELIVERY_THRESHOLD);
             return amount >= FREE_DELIVERY_THRESHOLD ? 0 : DELIVERY_FEE;
         }
 
