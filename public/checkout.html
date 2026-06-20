@@ -522,6 +522,13 @@
                 text-align: center;
                 font-size: 0.95rem;
             }
+
+            .checkout-item-thumb {
+                width: 48px;
+                height: 48px;
+                flex: 0 0 48px;
+                border-radius: 6px;
+            }
         }
 
         .checkout-qty-input::-webkit-outer-spin-button,
@@ -540,6 +547,16 @@
             align-self: flex-start;
             font-weight: 700;
             color: var(--text-primary);
+        }
+
+        .checkout-item-thumb {
+            width: 64px;
+            height: 64px;
+            flex: 0 0 64px;
+            object-fit: cover;
+            border-radius: 8px;
+            background: #fff;
+            border: 1px solid var(--border-primary);
         }
 
         .checkout-header-row {
@@ -1374,6 +1391,7 @@
                     return sale != null ? formatCurrency(sale) : '—';
                 })();
                 document.getElementById('order-items').innerHTML = `<div class="checkout-item-row">
+                    <img src="${item.image_url || '/images/placeholder.jpg'}" alt="${item.name}" class="checkout-item-thumb" onerror="this.src='/images/placeholder.jpg'">
                     <div class="checkout-item-content">
                         <div class="checkout-item-name">${item.name}</div>
                         <div class="checkout-item-meta">
@@ -1430,6 +1448,7 @@
                 })();
 
                 return `<div class="checkout-item-row">
+                    <img src="${item.image_url || '/images/placeholder.jpg'}" alt="${item.name}" class="checkout-item-thumb" onerror="this.src='/images/placeholder.jpg'">
                     <div class="checkout-item-content">
                         <div class="checkout-item-name">${item.name}</div>
                         <div class="checkout-item-meta">
