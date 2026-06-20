@@ -1026,6 +1026,28 @@
         }
 
         /* account dropdown styles moved to styles.css */
+        /* Extra compact overrides for very small screens */
+        @media (max-width: 420px) {
+            #order-items { gap: 0.15rem; }
+            .checkout-item-row {
+                flex-direction: row !important;
+                align-items: center !important;
+                gap: 0.4rem !important;
+                padding: 0.28rem 0 !important;
+                margin: 0.28rem 0 !important;
+                border-bottom-width: 1px !important;
+            }
+            .checkout-item-content { flex: 1 1 auto; }
+            .checkout-item-name { font-size: 0.95rem; line-height: 1.15; font-weight: 600; }
+            .checkout-item-meta { margin-top: 0 !important; gap: 0.35rem !important; font-size: 0.78rem !important; }
+            .checkout-item-weight { display: none !important; }
+            .checkout-item-qty-label { display: none !important; }
+            .checkout-qty-group { min-height: 26px !important; border-radius: 6px !important; }
+            .checkout-qty-btn { padding: 0.12rem 0.25rem !important; min-width: 26px !important; min-height: 26px !important; font-size: 0.95rem !important; }
+            .checkout-qty-input { width: 28px !important; min-width: 28px !important; padding: 0.06rem 0.06rem !important; font-size: 0.9rem !important; }
+            .checkout-item-price { font-size: 0.95rem !important; }
+            .checkout-item-unit-price { display: none !important; }
+        }
     </style>
 
     <script src="/js/main.js?v=20260223"></script>
