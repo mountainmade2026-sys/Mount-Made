@@ -2544,10 +2544,40 @@
                 document.getElementById('enable-loc-close').addEventListener('click', () => { try{document.body.removeChild(modal)}catch(e){} });
                 document.getElementById('enable-loc-retry').addEventListener('click', async () => {
                     try { document.body.removeChild(modal); } catch (e) {}
-                    // Retry by invoking the browser prompt
+                    // Check if permission is now granted after user enabled it
                     try {
-                        navigator.geolocation.getCurrentPosition(() => { showAlert('Location access granted. Please retry auto-fill.', 'success'); }, (e) => { showAlert('Still blocked. Please follow the steps and retry.', 'error'); }, { timeout: 15000 });
-                    } catch (err) { showAlert('Unable to request location. Please enable location in device/browser settings.', 'error'); }
+                        if (navigator.permissions && typeof navigator.permissions.query === 'function') {
+                            const perm = await navigator.permissions.query({ name: 'geolocation' });
+                            if (perm.state === 'granted') {
+                                // Permission is now granted — use the location without asking again
+                                const pinInput = document.getElementById('checkout-pincode-input') || document.getElementById('product-pincode-input');
+                                navigator.geolocation.getCurrentPosition(async (pos) => {
+                                    const lat = pos.coords.latitude; const lon = pos.coords.longitude;
+                                    try {
+                                        const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`;
+                                        const resp = await fetch(url, { headers: { 'Accept': 'application/json' } });
+                                        const data = await resp.json();
+                                        const postal = data.address?.postcode || data.address?.postal_code || '';
+                                        const display = data.display_name || '';
+                                        const statusEl = document.getElementById('cod-pincode-status') || document.getElementById('product-pincode-status');
+                                        if (statusEl) statusEl.innerHTML = `<span style="color:#065f46;">Detected address: ${escapeHtml(display)}</span>`;
+                                        if (pinInput) {
+                                            if (postal) { pinInput.value = postal; checkCheckoutPincodeAvailability?.() || (typeof checkProductPincodeAvailability === 'function' && checkProductPincodeAvailability(pinInput.value)); }
+                                            else { pinInput.value = display || `${lat},${lon}`; }
+                                        }
+                                        showAlert('Location detected. Please verify before placing an order.', 'success');
+                                    } catch (err) { console.error(err); showAlert('Failed to lookup address.', 'error'); }
+                                }, (e) => { showAlert('Still unable to access location. Please verify device settings.', 'error'); }, { enableHighAccuracy: true, timeout: 15000 });
+                                return;
+                            } else if (perm.state === 'denied') {
+                                showAlert('Permission still blocked. Please fully enable location and try again.', 'error');
+                                return;
+                            }
+                        }
+                    } catch (e) { console.warn('Permission check error:', e); }
+                    // If permission state is prompt or unknown, try to get position
+                    showAlert('Requesting location again...', 'info');
+                    navigator.geolocation.getCurrentPosition(() => { showAlert('Location access granted. Please retry auto-fill.', 'success'); }, (e) => { showAlert('Still blocked. Please follow the steps and retry.', 'error'); }, { timeout: 15000 });
                 });
             }
 
