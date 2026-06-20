@@ -2210,12 +2210,66 @@
         }
 
         // Search functionality
-        function handleSearch() {
-            const searchInput = document.getElementById('home-search-input');
-            const query = searchInput.value.trim();
-            if (query) {
-                window.location.href = `/products?search=${encodeURIComponent(query)}`;
+        function normalizeBarcodeQuery(query) {
+            const raw = String(query || '').trim().toUpperCase();
+            if (!raw) return '';
+            if (/^MM-\d{6}$/.test(raw)) {
+                return raw;
             }
+            const digits = raw.replace(/[^0-9]/g, '');
+            if (/^\d{1,6}$/.test(digits)) {
+                return `MM-${digits.padStart(6, '0')}`;
+            }
+            return '';
+        }
+
+        async function lookupBarcodeProduct(query) {
+            const normalized = normalizeBarcodeQuery(query);
+            if (!normalized) return null;
+            try {
+                const response = await api.get(`/products/barcode?barcode=${encodeURIComponent(normalized)}`);
+                return response?.product || null;
+            } catch (error) {
+                return null;
+            }
+        }
+
+        function looksLikeBarcodeQuery(query) {
+            const raw = String(query || '').trim().toUpperCase();
+            if (!raw) return false;
+            if (/^MM-?\d{1,6}$/.test(raw)) {
+                return true;
+            }
+            const digits = raw.replace(/[^0-9]/g, '');
+            return digits.length === 6;
+        }
+
+        async function autoLookupBarcodeRedirect(query) {
+            if (!looksLikeBarcodeQuery(query)) {
+                return false;
+            }
+
+            const product = await lookupBarcodeProduct(query);
+            if (product?.id) {
+                window.location.href = `/product-details?id=${encodeURIComponent(product.id)}`;
+                return true;
+            }
+            return false;
+        }
+
+        async function handleSearch() {
+            const searchInput = document.getElementById('home-search-input');
+            const query = String(searchInput.value || '').trim();
+            if (!query) return;
+            if (looksLikeBarcodeQuery(query)) {
+                const product = await lookupBarcodeProduct(query);
+                if (product && product.id) {
+                window.location.href = `/product-details?id=${encodeURIComponent(product.id)}`;
+                return;
+            }
+            }
+
+            window.location.href = `/products?search=${encodeURIComponent(query)}`;
         }
 
         function renderSearchSuggestions(suggestions, query) {
@@ -2333,8 +2387,91 @@
                     if (user && user.role === 'customer' && !user.phone) {
                         showPhoneRequiredModal();
                     }
+                    // If user is customer and has no saved delivery addresses, prompt to use current location
+                    if (user && user.role === 'customer') {
+                        try {
+                            const resp = await api.get('/addresses');
+                            const addrs = resp.addresses || [];
+                            if (!addrs.length) {
+                                // Ask user to use current location to auto-fill delivery address
+                                showLocationPromptIndex()
+                                    .then(ans => {
+                                        if (ans === true) {
+                                            const pinInput = document.getElementById('checkout-pincode-input') || document.getElementById('product-pincode-input');
+                                            requestAndFillLocationIndex(pinInput);
+                                        }
+                                    })
+                                    .catch(() => {});
+                            }
+                        } catch (err) {
+                            // ignore address fetch errors
+                        }
+                    }
                 } catch (_) {}
             })();
+
+            // --- Location prompt helpers for homepage ---
+            function showLocationPromptIndex() {
+                return new Promise((resolve) => {
+                    if (document.getElementById('use-location-modal-index')) return resolve(false);
+                    const modal = document.createElement('div');
+                    modal.id = 'use-location-modal-index';
+                    modal.setAttribute('role', 'dialog');
+                    modal.style.position = 'fixed';
+                    modal.style.inset = '0';
+                    modal.style.display = 'flex';
+                    modal.style.alignItems = 'center';
+                    modal.style.justifyContent = 'center';
+                    modal.style.background = 'rgba(0,0,0,0.35)';
+                    modal.style.zIndex = '9999';
+
+                    const card = document.createElement('div');
+                    card.style.width = 'min(520px,94%)';
+                    card.style.background = '#fff';
+                    card.style.borderRadius = '12px';
+                    card.style.padding = '18px';
+                    card.style.boxShadow = '0 6px 24px rgba(15,23,42,0.18)';
+                    card.innerHTML = `
+                        <div style="display:flex;gap:12px;align-items:flex-start;">
+                            <div style="width:44px;height:44px;border-radius:10px;background:#e6f4ea;display:flex;align-items:center;justify-content:center;color:#065f46;font-weight:700;">📍</div>
+                            <div>
+                                <div style="font-weight:700;font-size:1.05rem;margin-bottom:6px;">Add a delivery address for faster checkout</div>
+                                <div style="color:#475569;font-size:0.95rem;">We noticed you haven't added a delivery address yet. Would you like to use your device's current location to auto-fill your delivery address?</div>
+                            </div>
+                        </div>
+                        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:14px;">
+                            <button id="loc-no" style="padding:8px 12px;border-radius:8px;border:1px solid #cbd5e1;background:transparent;">No, thanks</button>
+                            <button id="loc-yes" style="padding:8px 12px;border-radius:8px;border:0;background:#0f5132;color:#fff;">Yes, use location</button>
+                        </div>
+                    `;
+                    modal.appendChild(card);
+                    document.body.appendChild(modal);
+                    document.getElementById('loc-no').addEventListener('click', () => { try{document.body.removeChild(modal)}catch(e){}; resolve(false); });
+                    document.getElementById('loc-yes').addEventListener('click', () => { try{document.body.removeChild(modal)}catch(e){}; resolve(true); });
+                });
+            }
+
+            async function requestAndFillLocationIndex(pinInput) {
+                if (!navigator.geolocation) { showAlert('Geolocation not supported.', 'warning'); return; }
+                showAlert('Please allow location access to auto-fill your delivery address.', 'info');
+                navigator.geolocation.getCurrentPosition(async (pos) => {
+                    const lat = pos.coords.latitude; const lon = pos.coords.longitude;
+                    try {
+                        const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`;
+                        const resp = await fetch(url);
+                        const data = await resp.json();
+                        const postal = data.address?.postcode || data.address?.postal_code || '';
+                        const display = data.display_name || '';
+                        const statusEl = document.getElementById('cod-pincode-status') || document.getElementById('product-pincode-status');
+                        if (statusEl) statusEl.innerHTML = `<span style="color:#065f46;">Detected address: ${escapeHtml(display)}</span>`;
+                        if (pinInput) {
+                            if (postal) { pinInput.value = postal; }
+                            else { pinInput.value = display || `${lat},${lon}`; }
+                        }
+                        showAlert('Location detected. Please verify before placing an order.', 'success');
+                    } catch (err) { console.error(err); showAlert('Failed to lookup address from location.', 'error'); }
+                }, (err) => { console.warn(err); showAlert('Unable to access location. Please enable location on your device.', 'error'); }, { enableHighAccuracy:true, timeout:15000 });
+            }
 
             // Wire carousel navigation
             document.getElementById('carousel-prev').addEventListener('click', () => {
@@ -2359,14 +2496,19 @@
             }
 
             if (searchInput) {
-                searchInput.addEventListener('keypress', (e) => {
+                searchInput.addEventListener('keydown', (e) => {
                     if (e.key === 'Enter') {
                         handleSearch();
                     }
                 });
 
+                const debouncedBarcodeRedirect = debounce((value) => {
+                    autoLookupBarcodeRedirect(value);
+                }, 500);
+
                 searchInput.addEventListener('input', (e) => {
                     debouncedSuggestions(e.target.value || '');
+                    debouncedBarcodeRedirect(e.target.value || '');
                 });
 
                 searchInput.addEventListener('focus', (e) => {
