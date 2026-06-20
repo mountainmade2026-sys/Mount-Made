@@ -2569,15 +2569,15 @@
                                     } catch (err) { console.error(err); showAlert('Failed to lookup address.', 'error'); }
                                 }, (e) => { showAlert('Still unable to access location. Please verify device settings.', 'error'); }, { enableHighAccuracy: true, timeout: 15000 });
                                 return;
-                            } else if (perm.state === 'denied') {
-                                showAlert('Permission still blocked. Please fully enable location and try again.', 'error');
+                            } else {
+                                // Permission is still denied or prompt — show instructions again so user can enable on device
+                                showEnableLocationInstructions();
                                 return;
                             }
                         }
                     } catch (e) { console.warn('Permission check error:', e); }
-                    // If permission state is prompt or unknown, try to get position
-                    showAlert('Requesting location again...', 'info');
-                    navigator.geolocation.getCurrentPosition(() => { showAlert('Location access granted. Please retry auto-fill.', 'success'); }, (e) => { showAlert('Still blocked. Please follow the steps and retry.', 'error'); }, { timeout: 15000 });
+                    // Fallback: re-show instructions if permission check fails
+                    showEnableLocationInstructions();
                 });
             }
 
