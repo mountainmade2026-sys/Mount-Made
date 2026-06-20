@@ -2452,25 +2452,103 @@
             }
 
             async function requestAndFillLocationIndex(pinInput) {
-                if (!navigator.geolocation) { showAlert('Geolocation not supported.', 'warning'); return; }
-                showAlert('Please allow location access to auto-fill your delivery address.', 'info');
+                if (!navigator.geolocation) { showAlert('Geolocation is not supported by your browser or device.', 'warning'); return; }
+
+                // Use Permissions API to check current permission state when available
+                try {
+                    if (navigator.permissions && typeof navigator.permissions.query === 'function') {
+                        const perm = await navigator.permissions.query({ name: 'geolocation' });
+                        if (perm.state === 'denied') {
+                            // Permission was previously denied — show clear instructions
+                            showEnableLocationInstructions();
+                            return;
+                        }
+                        // state === 'prompt' or 'granted' — proceed to request position which will trigger native prompt if needed
+                    }
+                } catch (e) {
+                    // ignore permission query errors and proceed to request geolocation
+                }
+
+                showAlert('Requesting your location. Please allow location access when prompted.', 'info');
+
                 navigator.geolocation.getCurrentPosition(async (pos) => {
-                    const lat = pos.coords.latitude; const lon = pos.coords.longitude;
+                    const lat = pos.coords.latitude;
+                    const lon = pos.coords.longitude;
                     try {
                         const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`;
-                        const resp = await fetch(url);
+                        const resp = await fetch(url, { headers: { 'Accept': 'application/json' } });
+                        if (!resp.ok) throw new Error('Geocode lookup failed');
                         const data = await resp.json();
                         const postal = data.address?.postcode || data.address?.postal_code || '';
                         const display = data.display_name || '';
                         const statusEl = document.getElementById('cod-pincode-status') || document.getElementById('product-pincode-status');
                         if (statusEl) statusEl.innerHTML = `<span style="color:#065f46;">Detected address: ${escapeHtml(display)}</span>`;
                         if (pinInput) {
-                            if (postal) { pinInput.value = postal; }
+                            if (postal) { pinInput.value = postal; checkCheckoutPincodeAvailability?.() || (typeof checkProductPincodeAvailability === 'function' && checkProductPincodeAvailability(pinInput.value)); }
                             else { pinInput.value = display || `${lat},${lon}`; }
                         }
                         showAlert('Location detected. Please verify before placing an order.', 'success');
-                    } catch (err) { console.error(err); showAlert('Failed to lookup address from location.', 'error'); }
-                }, (err) => { console.warn(err); showAlert('Unable to access location. Please enable location on your device.', 'error'); }, { enableHighAccuracy:true, timeout:15000 });
+                    } catch (err) {
+                        console.error(err);
+                        showAlert('Failed to lookup address from location.', 'error');
+                    }
+                }, (err) => {
+                    console.warn('Geolocation error', err);
+                    // If permission denied, show clear instructions
+                    if (err && err.code === 1) {
+                        showEnableLocationInstructions();
+                    } else {
+                        showAlert('Unable to access location. Please enable location services and try again.', 'error');
+                    }
+                }, { enableHighAccuracy: true, timeout: 15000 });
+            }
+
+            function showEnableLocationInstructions() {
+                if (document.getElementById('enable-location-modal')) return;
+                const modal = document.createElement('div');
+                modal.id = 'enable-location-modal';
+                modal.style.position = 'fixed'; modal.style.inset = '0'; modal.style.display = 'flex'; modal.style.alignItems = 'center'; modal.style.justifyContent = 'center'; modal.style.background = 'rgba(0,0,0,0.35)'; modal.style.zIndex = '99999';
+                const card = document.createElement('div');
+                card.style.width = 'min(640px,94%)'; card.style.background = '#fff'; card.style.borderRadius = '12px'; card.style.padding = '18px'; card.style.boxShadow = '0 8px 32px rgba(2,6,23,0.24)';
+                const isAndroid = /Android/i.test(navigator.userAgent);
+                const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+                const steps = [];
+                if (isAndroid) {
+                    steps.push('Open Settings → Location → Turn on Location');
+                    steps.push('Then open your browser app → App settings → Permissions → Allow Location');
+                } else if (isIOS) {
+                    steps.push('Open Settings → Privacy & Security → Location Services → Turn on');
+                    steps.push('Then scroll to your browser (Safari/Chrome) and set Location to "While Using the App"');
+                } else {
+                    steps.push('In your browser, open site settings (lock icon near address bar) and allow Location/Geolocation for this site.');
+                    steps.push('Reload the page and retry using location.');
+                }
+                card.innerHTML = `
+                    <div style="display:flex;gap:12px;align-items:flex-start;">
+                        <div style="width:44px;height:44px;border-radius:10px;background:#fff3cd;display:flex;align-items:center;justify-content:center;color:#854d0e;font-weight:700;">⚠️</div>
+                        <div>
+                            <div style="font-weight:800;font-size:1.05rem;margin-bottom:6px;">Location permission is blocked</div>
+                            <div style="color:#475569;font-size:0.95rem;margin-bottom:8px;">To auto-fill your delivery address we need access to your device location. Follow these steps:</div>
+                            <ol style="color:#374151;margin:0 0 8px 18px;">
+                                ${steps.map(s => `<li>${s}</li>`).join('')}
+                            </ol>
+                            <div style="color:#6b7280;font-size:0.85rem;margin-top:6px;">After enabling location, press Retry below.</div>
+                        </div>
+                    </div>
+                    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:14px;">
+                        <button id="enable-loc-close" style="padding:8px 12px;border-radius:8px;border:1px solid #e5e7eb;background:transparent;">Close</button>
+                        <button id="enable-loc-retry" style="padding:8px 12px;border-radius:8px;border:0;background:#0f5132;color:#fff;">Retry</button>
+                    </div>
+                `;
+                modal.appendChild(card); document.body.appendChild(modal);
+                document.getElementById('enable-loc-close').addEventListener('click', () => { try{document.body.removeChild(modal)}catch(e){} });
+                document.getElementById('enable-loc-retry').addEventListener('click', async () => {
+                    try { document.body.removeChild(modal); } catch (e) {}
+                    // Retry by invoking the browser prompt
+                    try {
+                        navigator.geolocation.getCurrentPosition(() => { showAlert('Location access granted. Please retry auto-fill.', 'success'); }, (e) => { showAlert('Still blocked. Please follow the steps and retry.', 'error'); }, { timeout: 15000 });
+                    } catch (err) { showAlert('Unable to request location. Please enable location in device/browser settings.', 'error'); }
+                });
             }
 
             // Wire carousel navigation
