@@ -1959,10 +1959,33 @@
 
             const isQr = type === 'qr';
             if (qrWrap) {
-                qrWrap.classList.toggle('hidden', !isQr || !checkoutGpaySettings.qrImageUrl);
+                qrWrap.classList.toggle('hidden', !isQr || (!checkoutGpaySettings.qrImageUrl && !checkoutGpaySettings.upiId));
             }
+
             if (qrImage) {
+                // If admin configured a UPI ID, generate a dynamic UPI deep-link QR with the current amount
+                const amount = getCurrentCheckoutTotal();
+                let dynamicQrSrc = '';
+
+                if (isQr && checkoutGpaySettings.upiId) {
+                    const upiLink = buildGpayUpiLink(amount, `Order from ${checkoutGpaySettings.payeeName || 'Mount Made'}`, generateGpayRef());
+                    if (upiLink) {
+                        // Use a public QR generator to create an image URL (no external library required)
+                        dynamicQrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(upiLink)}`;
+                        qrImage.src = dynamicQrSrc;
+                        qrImage.style.cursor = 'pointer';
+                        qrImage.onclick = () => {
+                            // Open GPay / UPI with amount when user taps the QR
+                            openGpayWithAmount(amount, `Order from ${checkoutGpaySettings.payeeName || 'Mount Made'}`, generateGpayRef());
+                        };
+                        return;
+                    }
+                }
+
+                // Fallback: use admin provided static QR image (if any) or blank
                 qrImage.src = checkoutGpaySettings.qrImageUrl || '';
+                qrImage.style.cursor = qrImage.src ? 'pointer' : 'default';
+                qrImage.onclick = qrImage.src ? () => window.open(qrImage.src, '_blank') : null;
             }
 
             if (hint) {
