@@ -1,5 +1,5 @@
 const db = require('../config/database');
-const { generateProductBarcode } = require('../utils/productBarcode');
+const { generateProductBarcode, normalizeProductBarcode } = require('../utils/productBarcode');
 
 class Product {
   static async ensureSchemaCompatibility() {
@@ -68,6 +68,7 @@ class Product {
       await db.pool.query("ALTER TABLE products ADD COLUMN IF NOT EXISTS weight_unit VARCHAR(20) DEFAULT 'g'");
       await db.pool.query("ALTER TABLE products ADD COLUMN IF NOT EXISTS weight_options JSONB DEFAULT '[]'::jsonb");
       await db.pool.query('ALTER TABLE products ADD COLUMN IF NOT EXISTS barcode VARCHAR(50)');
+      await db.pool.query("ALTER TABLE products ADD COLUMN IF NOT EXISTS fixed_weight VARCHAR(50)");
       await db.pool.query('ALTER TABLE products ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP');
 
       await db.pool.query(`
@@ -203,7 +204,11 @@ class Product {
     }
 
     if (filters.search) {
-      query += ` AND (p.name ILIKE $${paramCount} OR p.description ILIKE $${paramCount})`;
+      query += ` AND (
+        p.name ILIKE $${paramCount}
+        OR p.description ILIKE $${paramCount}
+        OR COALESCE(NULLIF(p.barcode, ''), CONCAT('MM-', LPAD(p.id::text, 6, '0'))) ILIKE $${paramCount}
+      )`;
       values.push(`%${filters.search}%`);
       paramCount++;
     }
@@ -288,6 +293,48 @@ class Product {
     }
   }
 
+  static async findByBarcode(barcode) {
+    if (!barcode || typeof barcode !== 'string') {
+      return null;
+    }
+
+    const normalized = normalizeProductBarcode(barcode);
+    if (!normalized) {
+      return null;
+    }
+
+    const query = `
+      SELECT
+        p.*,
+        c.name as category_name,
+        COALESCE(pr.average_rating, 0)::numeric(3, 2) AS average_rating,
+        COALESCE(pr.rating_count, 0)::int AS rating_count
+      FROM products p
+      LEFT JOIN categories c ON p.category_id = c.id
+      LEFT JOIN (
+        SELECT
+          product_id,
+          AVG(rating)::numeric(3, 2) AS average_rating,
+          COUNT(*)::int AS rating_count
+        FROM product_ratings
+        GROUP BY product_id
+      ) pr ON pr.product_id = p.id
+      WHERE COALESCE(NULLIF(p.barcode, ''), CONCAT('MM-', LPAD(p.id::text, 6, '0'))) = $1
+      LIMIT 1
+    `;
+
+    try {
+      const result = await db.query(query, [normalized]);
+      const product = result.rows[0];
+      if (product && !product.barcode) {
+        product.barcode = generateProductBarcode(product.id);
+      }
+      return product;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   static async update(id, productData) {
     await this.ensureDiscountColumns();
     const { 
@@ -308,7 +355,8 @@ class Product {
       unit,
       is_weight_based,
       weight_unit,
-      weight_options
+      weight_options,
+      fixed_weight
     } = productData;
 
     const query = `
@@ -331,6 +379,7 @@ class Product {
           is_weight_based = COALESCE($16, is_weight_based),
           weight_unit = COALESCE($17, weight_unit),
           weight_options = COALESCE($18, weight_options),
+          fixed_weight = $20,
           updated_at = CURRENT_TIMESTAMP
         WHERE id = $19
       RETURNING *
@@ -355,7 +404,8 @@ class Product {
       is_weight_based,
       weight_unit,
       weight_options !== undefined ? JSON.stringify(weight_options || []) : null,
-      id
+      id,
+      fixed_weight !== undefined ? fixed_weight : null
     ];
 
     const result = await db.query(query, values);

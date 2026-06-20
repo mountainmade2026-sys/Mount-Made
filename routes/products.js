@@ -12,6 +12,7 @@ router.get('/check-pincode', productController.checkPincodeAvailability);
 router.get('/search-suggestions', productController.getSearchSuggestions);
 router.get('/carousel', productController.getCarouselProducts);
 router.get('/category/:id', productController.getProductsByCategory);
+router.get('/barcode', productController.getProductByBarcode);
 router.get('/:id/related', productController.getRelatedProducts);
 router.get('/:id/ratings', productController.getProductRatings);
 router.post('/:id/rating', authenticateToken, productController.submitProductRating);

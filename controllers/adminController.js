@@ -699,7 +699,10 @@ exports.updateProduct = async (req, res) => {
       unit: incoming.unit ?? existing.unit,
       is_weight_based: incoming.is_weight_based !== undefined ? incoming.is_weight_based : existing.is_weight_based,
       weight_unit: incoming.weight_unit ?? existing.weight_unit ?? 'g',
-      weight_options: incoming.weight_options !== undefined ? incoming.weight_options : existing.weight_options || []
+      weight_options: incoming.weight_options !== undefined ? incoming.weight_options : existing.weight_options || [],
+      fixed_weight: incoming.fixed_weight !== undefined
+        ? (incoming.fixed_weight === null || incoming.fixed_weight === '' ? null : String(incoming.fixed_weight).trim())
+        : existing.fixed_weight
     };
     
     const product = await Product.update(id, productData);

@@ -3600,6 +3600,14 @@
 
                             <div class="form-row">
                                 <div>
+                                    <label class="form-label">Fixed Weight/Size Display (e.g., 400g)</label>
+                                    <input type="text" id="product-fixed-weight" class="form-input" placeholder="400g" maxlength="50">
+                                    <small style="color: var(--text-muted); display:block; margin-top:0.35rem;">Leave empty to hide. This will replace all weight options and show as fixed text.</small>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div>
                                     <label class="form-label">Homepage Section (Optional)</label>
                                     <select id="product-homepage-section" class="form-select">
                                         <option value="">None - Show only in Products page</option>
@@ -3861,6 +3869,14 @@
                                     <label class="form-label">Weight Options</label>
                                     <input type="text" id="edit-product-weight-options" class="form-input" placeholder="250, 500, 1000">
                                     <small style="color: var(--text-muted); display:block; margin-top:0.35rem;">Comma-separated options shown on the product page.</small>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div>
+                                    <label class="form-label">Fixed Weight/Size Display (e.g., 400g)</label>
+                                    <input type="text" id="edit-product-fixed-weight" class="form-input" placeholder="400g" maxlength="50">
+                                    <small style="color: var(--text-muted); display:block; margin-top:0.35rem;">Leave empty to hide. This will replace all weight options and show as fixed text.</small>
                                 </div>
                             </div>
 
@@ -11023,7 +11039,12 @@
                     stock_quantity: parseInt(stock),
                     min_wholesale_qty: parseInt(min_wholesale_qty),
                     image_url,
-                    images
+                    images,
+                    weight: weight ? parseFloat(weight) : null,
+                    weight_unit,
+                    is_weight_based,
+                    weight_options,
+                    fixed_weight: String(document.getElementById('product-fixed-weight').value || '').trim() || null
                 });
 
                 if (response && (response.success || response.product || response.message)) {
@@ -11302,6 +11323,7 @@
             document.getElementById('edit-product-weight').value = product.weight ?? '';
             document.getElementById('edit-product-weight-unit').value = product.weight_unit || 'g';
             document.getElementById('edit-product-is-weight-based').checked = Boolean(product.is_weight_based);
+            document.getElementById('edit-product-fixed-weight').value = product.fixed_weight || '';
             const weightOptionsText = Array.isArray(product.weight_options)
                 ? product.weight_options
                     .map(option => typeof option === 'string' ? option : (option.label || option.value || option.name || ''))
@@ -11639,7 +11661,8 @@
                     unit: weight_unit,
                     is_weight_based,
                     weight_unit,
-                    weight_options
+                    weight_options,
+                    fixed_weight: String(document.getElementById('edit-product-fixed-weight').value || '').trim() || null
                 };
 
                 // Upload new images if provided

@@ -1183,7 +1183,8 @@
                 filtered = filtered.filter(p => {
                     const name = (p.name || '').toLowerCase();
                     const desc = (p.description || '').toLowerCase();
-                    return name.includes(search) || desc.includes(search);
+                    const barcode = (p.barcode || '').toLowerCase();
+                    return name.includes(search) || desc.includes(search) || barcode.includes(search);
                 });
             }
 
@@ -1269,15 +1270,23 @@
             await loadCategories();
             await loadProducts();
 
-            // Pre-select category from URL param (e.g. coming from "Shop by Category")
+            // Pre-select category and search from URL params
             const urlParams = new URLSearchParams(window.location.search);
             const urlCategoryId = parseInt(urlParams.get('category'), 10);
+            const urlSearchQuery = String(urlParams.get('search') || '').trim();
+
             if (urlCategoryId) {
                 const cb = document.getElementById(`cat-${urlCategoryId}`);
                 if (cb) {
                     cb.checked = true;
                     selectedCategories.add(urlCategoryId);
-                    applyFilters();
+                }
+            }
+
+            if (urlSearchQuery) {
+                const searchInput = document.getElementById('search-input');
+                if (searchInput) {
+                    searchInput.value = urlSearchQuery;
                 }
             }
 
@@ -1328,6 +1337,11 @@
                         accountDropdown.classList.add('hidden');
                     }
                 });
+            }
+
+            // Automatically apply initial filters after reconciling URL params
+            if (urlCategoryId || urlSearchQuery) {
+                applyFilters();
             }
 
             // Account logout handler

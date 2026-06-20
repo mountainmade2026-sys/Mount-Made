@@ -1926,31 +1926,9 @@
                             <div style="margin-top: 0.75rem; padding: 0.7rem 0.85rem; border-radius: 10px; border: 1px solid #f59e0b; background: #fff8e1; color: #92400e; font-size: 0.92rem; font-weight: 600;">
                                 <i class="fas fa-clock"></i> ${deliveryMessage}
                             </div>
-                            ${(product.is_weight_based || weightOptions.length) ? `
-                                <div style="margin-top: 0.9rem;">
-                                    <div style="font-size: 0.92rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.45rem;">Choose size or enter gram/kg</div>
-                                    <div style="display:flex; flex-wrap:wrap; gap:0.5rem; align-items:center;">
-                                        <input type="number" id="custom-weight-value" min="0.01" step="0.01" inputmode="decimal" value="${defaultWeightValue || ''}" placeholder="${(product.weight_unit || product.unit || 'g').toLowerCase() === 'kg' ? '1.5' : '250'}" onchange="applyCustomWeightFromInput()" oninput="syncManualWeightSelection()" style="flex: 1 1 140px; min-width: 120px; border: 1px solid var(--border-primary); border-radius: 10px; padding: 0.55rem 0.65rem; background: var(--bg-primary); color: var(--text-primary);">
-                                        <select id="custom-weight-unit" class="form-select" onchange="syncManualWeightSelection()" style="flex: 0 0 140px; border: 1px solid var(--border-primary); border-radius: 10px; padding: 0.55rem 0.65rem; background: var(--bg-primary); color: var(--text-primary);">
-                                            <option value="g" ${((product.weight_unit || product.unit || 'g').toLowerCase() === 'g') ? 'selected' : ''}>Gram (g)</option>
-                                            <option value="kg" ${((product.weight_unit || product.unit || 'kg').toLowerCase() === 'kg') ? 'selected' : ''}>Kilogram (kg)</option>
-                                        </select>
-                                        <button type="button" class="btn btn-secondary btn-sm" onclick="applyCustomWeightFromInput()" style="white-space: nowrap;">Use this amount</button>
-                                    </div>
-                                    <small style="display:block; color: var(--text-secondary); font-size: 0.82rem; margin-top: 0.35rem;">Type your own gram/kg amount here. This custom selection will appear in the cart and checkout.</small>
-                                    ${maxWeightAmount > 0 ? `<small style="display:block; color: var(--text-secondary); font-size: 0.82rem; margin-top: 0.25rem;">Available stock: ${formatWeightLabel(maxWeightAmount, product?.weight_unit || product?.unit || 'g')}. Remaining after this order: ${remainingWeightLabel}.</small>` : ''}
-                                </div>
-                            ` : ''}
-                            ${weightOptions.length ? `
-                                <div style="margin-top: 0.9rem;">
-                                    <div style="font-size: 0.92rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.45rem;">Preset sizes</div>
-                                    <div style="display:flex; flex-wrap:wrap; gap:0.5rem;">
-                                        ${weightOptions.map((option, index) => `
-                                            <button type="button" class="btn btn-secondary btn-sm" data-weight-option="${option.value}" data-weight-label="${option.label}" onclick="selectProductWeight(${option.value}, this)" style="border-radius: 999px; padding: 0.45rem 0.7rem; ${index === 0 ? 'background: var(--primary); color: #fff; border-color: var(--primary);' : ''}">
-                                                ${option.label}
-                                            </button>
-                                        `).join('')}
-                                    </div>
+                            ${product.fixed_weight ? `
+                                <div style="margin-top: 0.75rem; padding: 0.7rem 0.85rem; border-radius: 10px; border: 1px solid #10b981; background: #f0fdf4; color: #065f46; font-size: 0.92rem; font-weight: 600;">
+                                    <i class="fas fa-weight"></i> This product: ${product.fixed_weight}
                                 </div>
                             ` : ''}
                             

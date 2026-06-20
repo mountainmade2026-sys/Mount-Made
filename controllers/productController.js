@@ -113,7 +113,12 @@ exports.getSearchSuggestions = async (req, res) => {
       db.query(
         `SELECT id, name, image_url, price, discount_price
          FROM products
-         WHERE COALESCE(is_active, true) = true AND name ILIKE $1
+         WHERE COALESCE(is_active, true) = true
+           AND (
+             name ILIKE $1
+             OR description ILIKE $1
+             OR COALESCE(NULLIF(barcode, ''), CONCAT('MM-', LPAD(id::text, 6, '0'))) ILIKE $1
+           )
          ORDER BY created_at DESC
          LIMIT 5`,
         [term]
@@ -165,6 +170,25 @@ exports.getProductById = async (req, res) => {
   } catch (error) {
     console.error('Get product error:', error);
     res.status(500).json({ error: 'Failed to fetch product.' });
+  }
+};
+
+exports.getProductByBarcode = async (req, res) => {
+  try {
+    const { barcode } = req.query;
+    if (!barcode || !String(barcode).trim()) {
+      return res.status(400).json({ error: 'Barcode is required.' });
+    }
+
+    const product = await Product.findByBarcode(String(barcode).trim());
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found for barcode.' });
+    }
+
+    res.json({ product });
+  } catch (error) {
+    console.error('Get product by barcode error:', error);
+    res.status(500).json({ error: 'Failed to fetch product by barcode.' });
   }
 };
 
