@@ -1418,19 +1418,160 @@
 
         async function loadUserAddresses() {
             if (!auth.isAuthenticated()) return;
-            
+
             try {
                 const data = await api.get('/addresses');
-                userAddresses = data.addresses;
+                userAddresses = data.addresses || [];
 
                 const defaultAddress = userAddresses.find(a => a.is_default) || userAddresses[0];
                 const pinInput = document.getElementById('product-pincode-input');
+
                 if (defaultAddress && pinInput && !pinInput.value) {
                     pinInput.value = String(defaultAddress.postal_code || '').trim();
                     checkProductPincodeAvailability(pinInput.value);
+                    return;
+                }
+
+                // If there are no saved addresses, prompt user to use current location.
+                if ((!userAddresses || userAddresses.length === 0) && pinInput) {
+                    // Show friendly, professional prompt asking permission to use location
+                    showLocationPrompt()
+                        .then(answer => {
+                            if (answer === true) {
+                                requestAndFillLocation(pinInput);
+                            }
+                        })
+                        .catch(err => {
+                            console.warn('Location prompt cancelled or failed:', err);
+                        });
                 }
             } catch (error) {
                 console.error('Failed to load addresses:', error);
+            }
+        }
+
+        // Show a professional modal asking the user whether to use their current location.
+        // Returns a Promise that resolves to true (yes) or false (no).
+        function showLocationPrompt() {
+            return new Promise((resolve) => {
+                if (document.getElementById('use-location-modal')) {
+                    // Already shown — resolve false by default
+                    resolve(false);
+                    return;
+                }
+
+                const modal = document.createElement('div');
+                modal.id = 'use-location-modal';
+                modal.setAttribute('role', 'dialog');
+                modal.setAttribute('aria-modal', 'true');
+                modal.style.position = 'fixed';
+                modal.style.left = '0';
+                modal.style.top = '0';
+                modal.style.width = '100%';
+                modal.style.height = '100%';
+                modal.style.display = 'flex';
+                modal.style.alignItems = 'center';
+                modal.style.justifyContent = 'center';
+                modal.style.background = 'rgba(0,0,0,0.35)';
+                modal.style.zIndex = '9999';
+
+                const card = document.createElement('div');
+                card.style.width = 'min(520px, 94%)';
+                card.style.background = '#fff';
+                card.style.borderRadius = '12px';
+                card.style.boxShadow = '0 6px 24px rgba(15,23,42,0.25)';
+                card.style.padding = '20px';
+                card.style.fontFamily = 'Arial, sans-serif';
+                card.style.color = '#0f172a';
+
+                card.innerHTML = `
+                    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+                        <div style="width:44px;height:44px;border-radius:10px;background:#e6f4ea;display:flex;align-items:center;justify-content:center;color:#065f46;font-weight:700;">📍</div>
+                        <div>
+                            <div style="font-size:1.05rem;font-weight:700;margin-bottom:4px;">Use your current location?</div>
+                            <div style="color:#475569;font-size:0.94rem;">We can use your device location to auto-fill your delivery address for faster checkout. This uses your phone's location services.</div>
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px;">
+                        <button id="use-location-no" style="background:transparent;border:1px solid #cbd5e1;padding:8px 12px;border-radius:8px;cursor:pointer;color:#0f172a;">No, thanks</button>
+                        <button id="use-location-yes" style="background:#0f5132;color:#fff;border:0;padding:8px 12px;border-radius:8px;cursor:pointer;">Yes, use location</button>
+                    </div>
+                `;
+
+                modal.appendChild(card);
+                document.body.appendChild(modal);
+
+                const cleanup = () => {
+                    try { document.body.removeChild(modal); } catch (_) {}
+                };
+
+                modal.querySelector('#use-location-no').addEventListener('click', () => { cleanup(); resolve(false); });
+                modal.querySelector('#use-location-yes').addEventListener('click', () => { cleanup(); resolve(true); });
+            });
+        }
+
+        // Request geolocation from the browser and fill the pin input and status with address/pincode.
+        async function requestAndFillLocation(pinInput) {
+            if (!navigator.geolocation) {
+                showAlert('Geolocation is not supported by your browser.', 'warning');
+                return;
+            }
+
+            showAlert('Requesting your location. Please allow location access on your device.', 'info');
+
+            const onError = (err) => {
+                console.warn('Geolocation error:', err);
+                showAlert('Unable to get location. Please enable device location and try again.', 'error');
+            };
+
+            navigator.geolocation.getCurrentPosition(async (position) => {
+                try {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    const address = await reverseGeocode(lat, lon);
+
+                    const statusEl = document.getElementById('product-pincode-status');
+                    if (statusEl) {
+                        statusEl.innerHTML = `<span style="color:#065f46;">Detected address: ${escapeHtml(address.display || address.display_name || String(address || ''))}</span>`;
+                    }
+
+                    if (pinInput) {
+                        const postal = String(address.postcode || address.postal_code || '').trim();
+                        if (postal) {
+                            pinInput.value = postal;
+                            checkProductPincodeAvailability(pinInput.value);
+                        } else {
+                            // If no postal code, paste the readable address into the input as fallback
+                            pinInput.value = String(address.display || address.display_name || `${lat},${lon}`);
+                        }
+                    }
+
+                    showAlert('Location added. Please verify the address before placing the order.', 'success');
+                } catch (err) {
+                    console.error('Reverse geocode failed:', err);
+                    onError(err);
+                }
+            }, onError, { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 });
+        }
+
+        // Lightweight reverse-geocode using Nominatim (OpenStreetMap). Returns parsed JSON or minimal object.
+        async function reverseGeocode(lat, lon) {
+            try {
+                const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`;
+                const resp = await fetch(url, { headers: { 'Accept': 'application/json' } });
+                if (!resp.ok) throw new Error('Geocode lookup failed');
+                const data = await resp.json();
+                // Map common fields to a friendly shape
+                const result = {
+                    display: data.display_name,
+                    display_name: data.display_name,
+                    postcode: data.address?.postcode || data.address?.postal_code || '',
+                    raw: data
+                };
+                return result;
+            } catch (error) {
+                console.error('reverseGeocode error:', error);
+                return { display: '', display_name: '', postcode: '' };
             }
         }
 
