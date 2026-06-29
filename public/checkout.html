@@ -1840,15 +1840,15 @@
         }
 
         function buildGpayUpiLink(amount, note = '', transactionRef = '') {
-            const upiId = String(checkoutGpaySettings.upiId || '').trim();
-            if (!upiId) return null;
+            const recipient = String(checkoutGpaySettings.upiId || '').trim();
+            if (!recipient) return null;
 
             const payeeName = String(checkoutGpaySettings.payeeName || 'Mount Made').trim();
             const finalAmount = Number(amount || 0);
             if (!Number.isFinite(finalAmount) || finalAmount <= 0) return null;
 
             const params = new URLSearchParams({
-                pa: upiId,
+                pa: recipient,
                 pn: payeeName,
                 am: finalAmount.toFixed(2),
                 cu: 'INR'
@@ -1882,7 +1882,7 @@
 
             const isAndroid = /android/i.test(navigator.userAgent || '');
             if (isAndroid) {
-                const intentLink = buildGpayIntentLink(amount, note, transactionRef);
+                const intentLink = buildGpayIntentLink(amount, payee, note, transactionRef);
                 if (intentLink) {
                     window.location.href = intentLink;
                     setTimeout(() => {
