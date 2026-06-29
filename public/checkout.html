@@ -122,21 +122,9 @@
                         <!-- UPI / GPay details panel -->
                         <div id="gpay-details" class="pm-detail-panel">
                             <div class="form-group">
-                                <label class="form-label">Choose Payment Option</label>
-                                <select id="gpay-detail-type" class="form-select">
-                                    <option value="upi">UPI ID</option>
-                                    <option value="phone">Phone Number</option>
-                                    <option value="qr">QR Code</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
                                 <label id="gpay-detail-label" class="form-label">UPI ID</label>
                                 <input type="text" id="gpay-detail-value" class="form-input" placeholder="Configured from admin" readonly>
                                 <div class="form-help" id="gpay-bank-display">Bank: -</div>
-                            </div>
-                            <div id="gpay-qr-wrap" class="form-group hidden">
-                                <label class="form-label">Business QR Code</label>
-                                <img id="gpay-qr-image" alt="GPay QR" style="max-width: 200px; width: 100%; border: 1px solid var(--border-primary); border-radius: 8px; background: #fff;">
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Delivery PIN Code</label>
@@ -1880,22 +1868,39 @@
                 return false;
             }
 
+            const navigateToLink = (link) => {
+                try {
+                    const anchor = document.createElement('a');
+                    anchor.href = link;
+                    anchor.style.display = 'none';
+                    anchor.target = '_self';
+                    document.body.appendChild(anchor);
+                    anchor.click();
+                    setTimeout(() => {
+                        if (anchor.parentNode) {
+                            anchor.parentNode.removeChild(anchor);
+                        }
+                    }, 1000);
+                    return true;
+                } catch (error) {
+                    console.warn('Failed to navigate to UPI link:', error);
+                    return false;
+                }
+            };
+
             const isAndroid = /android/i.test(navigator.userAgent || '');
             if (isAndroid) {
-                const intentLink = buildGpayIntentLink(amount, payee, note, transactionRef);
+                const intentLink = buildGpayIntentLink(amount, note, transactionRef);
                 if (intentLink) {
-                    window.location.href = intentLink;
+                    navigateToLink(intentLink);
                     setTimeout(() => {
-                        if (document.visibilityState === 'visible') {
-                            window.location.href = upiLink;
-                        }
-                    }, 900);
+                        navigateToLink(upiLink);
+                    }, 1200);
                     return true;
                 }
             }
 
-            window.location.href = upiLink;
-            return true;
+            return navigateToLink(upiLink);
         }
 
         function savePendingGpayOrder(payload) {
@@ -2049,7 +2054,6 @@
         }
 
         function updateGpayLabelAndPrefill() {
-            const typeSelect = document.getElementById('gpay-detail-type');
             const valueInput = document.getElementById('gpay-detail-value');
             const label = document.getElementById('gpay-detail-label');
             const hint = document.getElementById('gpay-prefill-hint');
@@ -2057,59 +2061,30 @@
             const qrWrap = document.getElementById('gpay-qr-wrap');
             const qrImage = document.getElementById('gpay-qr-image');
 
-            if (!typeSelect || !valueInput || !label) return;
+            if (!valueInput || !label) return;
 
-            const type = typeSelect.value || 'upi';
-            label.textContent = formatGpayLabel(type);
-
-            const valueByType = {
-                upi: checkoutGpaySettings.upiId,
-                phone: checkoutGpaySettings.phoneNumber,
-                qr: checkoutGpaySettings.qrImageUrl
-            };
-
-            valueInput.value = valueByType[type] || '';
+            label.textContent = 'UPI ID';
+            valueInput.value = String(checkoutGpaySettings.upiId || '').trim();
             valueInput.placeholder = 'Configured by admin';
 
             if (bankDisplay) {
                 bankDisplay.textContent = `Bank: ${checkoutGpaySettings.bankName || '-'}`;
             }
 
-            const isQr = type === 'qr';
             if (qrWrap) {
-                qrWrap.classList.toggle('hidden', !isQr || (!checkoutGpaySettings.qrImageUrl && !checkoutGpaySettings.upiId));
+                qrWrap.classList.add('hidden');
             }
 
             if (qrImage) {
-                // If admin configured a UPI ID, generate a dynamic UPI deep-link QR with the current amount
-                const amount = getCurrentCheckoutTotal();
-                let dynamicQrSrc = '';
-
-                if (isQr && checkoutGpaySettings.upiId) {
-                    const upiLink = buildGpayUpiLink(amount, `Order from ${checkoutGpaySettings.payeeName || 'Mount Made'}`, generateGpayRef());
-                    if (upiLink) {
-                        // Use a public QR generator to create an image URL (no external library required)
-                        dynamicQrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(upiLink)}`;
-                        qrImage.src = dynamicQrSrc;
-                        qrImage.style.cursor = 'pointer';
-                        qrImage.onclick = () => {
-                            // Open GPay / UPI with amount when user taps the QR
-                            openGpayWithAmount(amount, `Order from ${checkoutGpaySettings.payeeName || 'Mount Made'}`, generateGpayRef());
-                        };
-                        return;
-                    }
-                }
-
-                // Fallback: use admin provided static QR image (if any) or blank
-                qrImage.src = checkoutGpaySettings.qrImageUrl || '';
-                qrImage.style.cursor = qrImage.src ? 'pointer' : 'default';
-                qrImage.onclick = qrImage.src ? () => window.open(qrImage.src, '_blank') : null;
+                qrImage.src = '';
+                qrImage.style.cursor = 'default';
+                qrImage.onclick = null;
             }
 
             if (hint) {
-                hint.textContent = checkoutGpaySettings.enabled
+                hint.textContent = checkoutGpaySettings.upiId
                     ? `Payee: ${checkoutGpaySettings.payeeName || 'Mount Made'}`
-                    : 'Google Pay is currently disabled by admin.';
+                    : 'Google Pay UPI ID is not configured by admin.';
             }
         }
 
@@ -2504,8 +2479,8 @@
             showOrderProcessing();
 
             const paymentMethod = document.getElementById('payment_method').value;
-            let gpayDetailType = null;
-            let gpayDetailValue = null;
+            let gpayDetailType = 'upi';
+            let gpayDetailValue = checkoutGpaySettings.upiId || '';
 
             if (!(await validateDeliveryPincode())) {
                 hideOrderStatusModal();
@@ -2515,13 +2490,6 @@
             }
 
             if (paymentMethod === 'gpay') {
-                if (!checkoutGpaySettings.enabled) {
-                    showAlert('Google Pay is currently disabled by admin.', 'error');
-                    hideOrderStatusModal();
-                    setPlaceOrderButtonState(false);
-                    return;
-                }
-
                 if (!checkoutGpaySettings.upiId) {
                     showAlert('GPay UPI ID is not configured by admin.', 'error');
                     hideOrderStatusModal();
@@ -2529,14 +2497,8 @@
                     return;
                 }
 
-                const typeSelect = document.getElementById('gpay-detail-type');
-                gpayDetailType = typeSelect?.value || 'upi';
-                const selectedValues = {
-                    upi: checkoutGpaySettings.upiId,
-                    phone: checkoutGpaySettings.phoneNumber,
-                    qr: checkoutGpaySettings.qrImageUrl
-                };
-                gpayDetailValue = (selectedValues[gpayDetailType] || checkoutGpaySettings.upiId || '').trim();
+                gpayDetailType = 'upi';
+                gpayDetailValue = checkoutGpaySettings.upiId.trim();
             }
 
             const userNotes = document.getElementById('notes').value || '';
@@ -2569,134 +2531,41 @@
             const shouldSaveAddress = manualAddressUsed || !!document.getElementById('save_address')?.checked;
 
             if (paymentMethod === 'gpay') {
-                // Preferred: Razorpay (auto-detect success/cancel). Fallback: UPI deep-link + UTR prompt.
-                if (typeof window.Razorpay === 'function') {
-                    try {
-                        const paymentInit = await api.post('/payments/razorpay/create', {
-                            delivery_speed: checkoutDeliverySpeed
-                        });
+                    const gpayRef = generateGpayRef();
+                    orderData.payment_details = {
+                        ...(orderData.payment_details || {}),
+                        ref: gpayRef
+                    };
+                    orderData.notes = `${String(orderData.notes || '').trim()} | Ref: ${gpayRef}`.trim().replace(/^\|\s*/, '');
 
-                        const rpKeyId = paymentInit?.keyId;
-                        const rpOrderId = paymentInit?.orderId;
-                        const rpAmount = paymentInit?.amount;
-                        const rpCurrency = paymentInit?.currency || 'INR';
-                        const rpDeliveryCharge = Number(paymentInit?.delivery_charge) || 0;
-                        const rpDeliverySpeed = paymentInit?.delivery_speed || checkoutDeliverySpeed;
+                    const saved = savePendingGpayOrder({
+                        orderData,
+                        shippingAddress,
+                        shouldSaveAddress,
+                        gpayRef
+                    });
 
-                        if (!rpKeyId || !rpOrderId || !rpAmount) {
-                            throw new Error('Payment initialization failed.');
-                        }
-
-                        const user = auth?.currentUser || null;
-                        const options = {
-                            key: rpKeyId,
-                            amount: rpAmount,
-                            currency: rpCurrency,
-                            name: 'Mount Made',
-                            description: 'Checkout Payment',
-                            order_id: rpOrderId,
-                            handler: async function (response) {
-                                try {
-                                    // Save address first (if selected)
-                                    if (shouldSaveAddress) {
-                                        try {
-                                            await api.post('/addresses', {
-                                                label: 'Home',
-                                                full_name: shippingAddress.full_name,
-                                                phone: shippingAddress.phone,
-                                                address_line1: shippingAddress.address_line1,
-                                                address_line2: shippingAddress.address_line2,
-                                                city: shippingAddress.city,
-                                                state: shippingAddress.state,
-                                                postal_code: shippingAddress.postal_code,
-                                                country: shippingAddress.country,
-                                                is_default: userAddresses.length === 0
-                                            });
-                                        } catch (addrError) {
-                                            console.warn('Failed to save address before order:', addrError);
-                                        }
-                                    }
-
-                                    const verified = await api.post('/payments/razorpay/verify', {
-                                        ...response,
-                                        shipping_address: shippingAddress,
-                                        notes: combinedNotes,
-                                        delivery_speed: rpDeliverySpeed,
-                                        delivery_charge: rpDeliveryCharge
-                                    });
-
-                                    applyOrderPlacedUI(verified.order);
-                                } catch (verifyError) {
-                                    hideOrderStatusModal();
-                                    setPlaceOrderButtonState(false);
-                                    showAlert(verifyError.message || 'Payment verification failed.', 'error');
-                                }
-                            },
-                            modal: {
-                                ondismiss: function () {
-                                    hideOrderStatusModal();
-                                    setPlaceOrderButtonState(false);
-                                    showOrderFailed('Payment was cancelled. No order was created.');
-                                    showAlert('Payment cancelled. Order failed.', 'error');
-                                }
-                            },
-                            prefill: {
-                                name: user?.full_name || shippingAddress?.full_name || '',
-                                email: user?.email || '',
-                                contact: shippingAddress?.phone || ''
-                            },
-                            method: {
-                                upi: true
-                            }
-                        };
-
+                    if (!saved) {
                         hideOrderStatusModal();
                         setPlaceOrderButtonState(false);
-                        const rzp = new window.Razorpay(options);
-                        rzp.open();
+                        showAlert('Unable to start GPay flow. Please try again.', 'error');
                         return;
-                    } catch (rpError) {
-                        console.warn('Razorpay init error, falling back to UPI deep-link:', rpError);
-                        // continue to fallback below
                     }
-                }
 
-                const gpayRef = generateGpayRef();
-                orderData.payment_details = {
-                    ...(orderData.payment_details || {}),
-                    ref: gpayRef
-                };
-                orderData.notes = `${String(orderData.notes || '').trim()} | Ref: ${gpayRef}`.trim().replace(/^\|\s*/, '');
+                    const launched = openGpayWithAmount(totalAmount, 'Checkout Payment', gpayRef);
+                    if (!launched) {
+                        clearPendingGpayOrder();
+                        hideOrderStatusModal();
+                        setPlaceOrderButtonState(false);
+                        showAlert('Failed to open Google Pay.', 'error');
+                        return;
+                    }
 
-                const saved = savePendingGpayOrder({
-                    orderData,
-                    shippingAddress,
-                    shouldSaveAddress,
-                    gpayRef
-                });
-
-                if (!saved) {
                     hideOrderStatusModal();
                     setPlaceOrderButtonState(false);
-                    showAlert('Unable to start GPay flow. Please try again.', 'error');
+                    showAlert('Google Pay opened. Complete payment and return to confirm your order.', 'info');
                     return;
                 }
-
-                const launched = openGpayWithAmount(totalAmount, 'Checkout Payment', gpayRef);
-                if (!launched) {
-                    clearPendingGpayOrder();
-                    hideOrderStatusModal();
-                    setPlaceOrderButtonState(false);
-                    showAlert('Failed to open Google Pay.', 'error');
-                    return;
-                }
-
-                hideOrderStatusModal();
-                setPlaceOrderButtonState(false);
-                showAlert('Google Pay opened. Complete payment and return to confirm your order.', 'info');
-                return;
-            }
-
             try {
                 // If using a manual address and user chose to save it, persist it first
                 if (shouldSaveAddress) {
