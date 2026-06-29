@@ -1868,39 +1868,23 @@
                 return false;
             }
 
-            const navigateToLink = (link) => {
-                try {
-                    const anchor = document.createElement('a');
-                    anchor.href = link;
-                    anchor.style.display = 'none';
-                    anchor.target = '_self';
-                    document.body.appendChild(anchor);
-                    anchor.click();
-                    setTimeout(() => {
-                        if (anchor.parentNode) {
-                            anchor.parentNode.removeChild(anchor);
-                        }
-                    }, 1000);
-                    return true;
-                } catch (error) {
-                    console.warn('Failed to navigate to UPI link:', error);
-                    return false;
-                }
-            };
-
-            const isAndroid = /android/i.test(navigator.userAgent || '');
-            if (isAndroid) {
-                const intentLink = buildGpayIntentLink(amount, note, transactionRef);
-                if (intentLink) {
-                    navigateToLink(intentLink);
-                    setTimeout(() => {
-                        navigateToLink(upiLink);
-                    }, 1200);
-                    return true;
-                }
+            try {
+                const anchor = document.createElement('a');
+                anchor.href = upiLink;
+                anchor.style.display = 'none';
+                anchor.target = '_self';
+                document.body.appendChild(anchor);
+                anchor.click();
+                setTimeout(() => {
+                    if (anchor.parentNode) {
+                        anchor.parentNode.removeChild(anchor);
+                    }
+                }, 1000);
+                return true;
+            } catch (error) {
+                console.warn('Failed to navigate to UPI link:', error);
+                return false;
             }
-
-            return navigateToLink(upiLink);
         }
 
         function savePendingGpayOrder(payload) {
