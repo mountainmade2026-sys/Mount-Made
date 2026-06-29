@@ -5642,7 +5642,7 @@
             const proof = pd?.proof;
             if (proof && proof.url) {
                 const filename = proof.filename || 'Payment Proof';
-                return `<button class="action-btn action-btn-view" onclick="openOrderPaymentProofModal(${order.id}, ${JSON.stringify(proof.url)}, ${JSON.stringify(filename)})" title="View payment proof"><i class="fas fa-eye"></i> Proof</button>`;
+                return `<button class="action-btn action-btn-view" data-order-id="${escapeHtml(String(order.id))}" data-proof-url="${escapeHtml(proof.url)}" data-proof-filename="${escapeHtml(filename)}" onclick="openOrderPaymentProofModal(this.dataset.orderId, this.dataset.proofUrl, this.dataset.proofFilename)" title="View payment proof"><i class="fas fa-eye"></i> Proof</button>`;
             }
             return '';
         }
