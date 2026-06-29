@@ -6301,20 +6301,25 @@
 
                 select.removeEventListener('change', onOfflineSaleProductSelected);
                 select.addEventListener('change', onOfflineSaleProductSelected);
+
+                const quantityInput = document.getElementById('offline-sale-quantity');
+                if (quantityInput) {
+                    quantityInput.removeEventListener('input', updateOfflineSaleAmount);
+                    quantityInput.addEventListener('input', updateOfflineSaleAmount);
+                    quantityInput.removeEventListener('change', updateOfflineSaleAmount);
+                    quantityInput.addEventListener('change', updateOfflineSaleAmount);
+                }
             } catch (error) {
                 console.error('Load offline sale products error:', error);
             }
         }
 
-        function onOfflineSaleProductSelected() {
+        function getOfflineSaleUnitPrice() {
             const productId = parseInt(document.getElementById('offline-sale-product')?.value || '0', 10);
-            if (!productId) {
-                document.getElementById('offline-sale-amount').value = '';
-                return;
-            }
+            if (!productId) return 0;
 
             const product = (window._productsCache || []).find(p => p.id === productId);
-            if (!product) return;
+            if (!product) return 0;
 
             let price = parseFloat(product.price) || 0;
             if (product.discount_percentage != null && product.discount_percentage > 0) {
@@ -6322,7 +6327,18 @@
                 price = price - discountAmount;
             }
 
-            document.getElementById('offline-sale-amount').value = price.toFixed(2);
+            return price;
+        }
+
+        function updateOfflineSaleAmount() {
+            const unitPrice = getOfflineSaleUnitPrice();
+            const quantity = parseInt(document.getElementById('offline-sale-quantity')?.value || '1', 10);
+            const totalAmount = unitPrice * Math.max(1, quantity);
+            document.getElementById('offline-sale-amount').value = totalAmount.toFixed(2);
+        }
+
+        function onOfflineSaleProductSelected() {
+            updateOfflineSaleAmount();
         }
 
         async function loadOfflineSales() {
