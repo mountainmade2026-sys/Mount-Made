@@ -8406,7 +8406,7 @@
                 
                 // Load pincodes into the editor
                 const rawCodPincodes = String(settings.cod_available_pincodes || '').trim();
-                deliveryPincodes = rawCodPincodes
+                window.deliveryPincodes = rawCodPincodes
                     ? rawCodPincodes.split(/[\n,]+/).map(p => p.trim()).filter(Boolean)
                     : [];
                 renderDeliveryPincodeTags();
@@ -9268,7 +9268,7 @@
         };
 
         /* ── Delivery Pincode Editor Functions ── */
-        let deliveryPincodes = [];
+        window.deliveryPincodes = [];
 
         function initDeliveryPincodeEditor() {
             const input = document.getElementById('delivery-pincode-input');
@@ -9301,25 +9301,25 @@
                 return;
             }
             
-            if (deliveryPincodes.includes(pincode)) {
+            if (window.deliveryPincodes.includes(pincode)) {
                 showAlert('This pincode is already added.', 'info');
                 input.value = '';
                 return;
             }
             
-            deliveryPincodes.push(pincode);
+            window.deliveryPincodes.push(pincode);
             input.value = '';
             renderDeliveryPincodeTags();
         }
 
         function removeDeliveryPincode(pincode) {
-            deliveryPincodes = deliveryPincodes.filter(p => p !== pincode);
+            window.deliveryPincodes = window.deliveryPincodes.filter(p => p !== pincode);
             renderDeliveryPincodeTags();
         }
 
         function clearAllDeliveryPincodes() {
             if (!confirm('Are you sure you want to remove all pincodes?')) return;
-            deliveryPincodes = [];
+            window.deliveryPincodes = [];
             renderDeliveryPincodeTags();
         }
 
@@ -9355,9 +9355,9 @@
                 container.appendChild(tag);
             });
             
-            if (countEl) countEl.textContent = deliveryPincodes.length;
-            if (clearBtn) clearBtn.style.display = deliveryPincodes.length > 0 ? 'inline-flex' : 'none';
-            if (textarea) textarea.value = deliveryPincodes.join(',');
+            if (countEl) countEl.textContent = window.deliveryPincodes.length;
+            if (clearBtn) clearBtn.style.display = window.deliveryPincodes.length > 0 ? 'inline-flex' : 'none';
+            if (textarea) textarea.value = window.deliveryPincodes.join(',');
         }
 
         function openDeliveryPincodeImportModal() {
@@ -9399,17 +9399,17 @@
                 return;
             }
             
-            const beforeCount = deliveryPincodes.length;
+            const beforeCount = window.deliveryPincodes.length;
             const duplicates = [];
             const valid = [];
             
             candidates.forEach(pin => {
                 if (pin.length !== 6) {
                     // Invalid length, skip
-                } else if (deliveryPincodes.includes(pin)) {
+                } else if (window.deliveryPincodes.includes(pin)) {
                     duplicates.push(pin);
                 } else {
-                    deliveryPincodes.push(pin);
+                    window.deliveryPincodes.push(pin);
                     valid.push(pin);
                 }
             });
@@ -9438,10 +9438,10 @@
                 return;
             }
             try {
-                const normalized = deliveryPincodes.join(',');
+                const normalized = window.deliveryPincodes.join(',');
                 const response = await api.post('/admin/settings', { cod_available_pincodes: normalized });
                 if (response && (response.success || response.message)) {
-                    showAlert(`Delivery pincode settings saved successfully! (${deliveryPincodes.length} pincodes)`, 'success');
+                    showAlert(`Delivery pincode settings saved successfully! (${window.deliveryPincodes.length} pincodes)`, 'success');
                 } else {
                     throw new Error(response?.error || 'Failed to save delivery pincode settings');
                 }
