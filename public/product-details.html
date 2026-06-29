@@ -1589,7 +1589,7 @@
             }
         }
 
-        function checkProductPincodeAvailability(inputPin) {
+        async function checkProductPincodeAvailability(inputPin) {
             const pinInput = document.getElementById('product-pincode-input');
             const rawPin = inputPin ?? (pinInput ? pinInput.value : '');
             const pin = String(rawPin || '').trim();
@@ -1611,16 +1611,15 @@
 
             if (pinInput) pinInput.value = normalizedPin;
 
-            if (!quickCodPincodes.length) {
-                statusEl.innerHTML = '<span style="color: #22c55e; font-size: 0.9rem;"><i class="fas fa-check-circle"></i> Delivery / COD is available for PIN ' + normalizedPin + '.</span>';
-                return;
-            }
-
-            const available = quickCodPincodes.includes(normalizedPin);
-            if (available) {
-                statusEl.innerHTML = '<span style="color: #22c55e; font-size: 0.9rem;"><i class="fas fa-check-circle"></i> Delivery / COD is available for PIN ' + normalizedPin + '.</span>';
-            } else {
-                statusEl.innerHTML = '<span style="color: #ef4444; font-size: 0.9rem;"><i class="fas fa-times-circle"></i> Delivery / COD is not available for PIN ' + normalizedPin + '. Please choose GPay.</span>';
+            try {
+                const result = await api.get(`/products/check-pincode?pin=${encodeURIComponent(normalizedPin)}`);
+                const isServiceable = Boolean(result?.is_serviceable);
+                const message = String(result?.message || '').trim() || (isServiceable ? 'Delivery / COD is available for PIN ' + normalizedPin + '.' : 'Delivery / COD is not available for PIN ' + normalizedPin + '. Please choose GPay.');
+                statusEl.innerHTML = `<span style="color: ${isServiceable ? '#22c55e' : '#ef4444'}; font-size: 0.9rem;"><i class="fas fa-${isServiceable ? 'check-circle' : 'times-circle'}"></i> ${escapeHtml(message)}</span>`;
+            } catch (error) {
+                console.warn('Product pincode availability check failed:', error);
+                const fallbackServiceable = quickCodPincodes.length === 0 || quickCodPincodes.includes(normalizedPin);
+                statusEl.innerHTML = `<span style="color: ${fallbackServiceable ? '#22c55e' : '#ef4444'}; font-size: 0.9rem;"><i class="fas fa-${fallbackServiceable ? 'check-circle' : 'times-circle'}"></i> ${fallbackServiceable ? 'Delivery / COD is available for PIN ' + normalizedPin + '.' : 'Delivery / COD is not available for PIN ' + normalizedPin + '. Please choose GPay.'}</span>`;
             }
         }
 

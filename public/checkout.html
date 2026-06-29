@@ -2173,10 +2173,13 @@
                 return payload;
             } catch (error) {
                 console.warn('Pincode availability check failed:', error);
+                const fallbackServiceable = checkoutCodPincodes.length === 0 || checkoutCodPincodes.includes(normalizedPin);
                 return {
                     pin: normalizedPin,
-                    is_serviceable: checkoutCodPincodes.length === 0,
-                    message: 'Could not verify delivery availability. Please try again.'
+                    is_serviceable: fallbackServiceable,
+                    message: fallbackServiceable
+                        ? 'Delivery is available for this PIN code.'
+                        : 'Delivery is not available for this PIN code.'
                 };
             }
         }

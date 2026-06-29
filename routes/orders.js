@@ -23,24 +23,11 @@ function getDeliveryChargeForSubtotal(subtotal) {
   return amount >= 2000 ? 0 : 99;
 }
 
-function normalizePincode(value) {
-  return String(value || '').replace(/\D/g, '').trim();
-}
-
-function parseAvailablePincodes(rawValue) {
-  return String(rawValue || '')
-    .split(/[\n,]+/)
-    .map(pin => normalizePincode(pin))
-    .filter(Boolean);
-}
-
-function isPincodeServiceable(pin, codAvailablePincodes) {
-  const normalized = normalizePincode(pin);
-  if (normalized.length !== 6) return false;
-  const pincodes = parseAvailablePincodes(codAvailablePincodes);
-  if (!pincodes.length) return true;
-  return pincodes.includes(normalized);
-}
+const {
+  normalizePincode,
+  parseAvailablePincodes,
+  isPincodeServiceable
+} = require('../utils/pincodeAvailability');
 
 // Create order
 router.post('/', async (req, res) => {
