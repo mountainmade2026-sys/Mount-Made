@@ -34,6 +34,15 @@ function getDeliveryChargeForSubtotal(subtotal, settings = {}) {
     return 0;
   }
 
+  const freeAboveRaw = settings?.standard_delivery_free_above ?? settings?.fast_delivery_free_above;
+  const freeAbove = freeAboveRaw === undefined || freeAboveRaw === null || freeAboveRaw === ''
+    ? 1999
+    : parseNonNegativeNumber(freeAboveRaw);
+
+  if (amount >= freeAbove) {
+    return 0;
+  }
+
   const charge = parseNonNegativeNumber(
     settings?.standard_delivery_charge ?? settings?.fast_delivery_charge ?? 0
   );

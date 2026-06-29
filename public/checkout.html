@@ -1193,7 +1193,8 @@
         let checkoutDeliverySpeed = 'standard';
         let checkoutSettings = {
             standardDeliveryEnabled: false,
-            standardDeliveryCharge: 0
+            standardDeliveryCharge: 0,
+            standardDeliveryFreeAbove: 1999
         };
         let checkoutGpaySettings = {
             enabled: false,
@@ -1499,6 +1500,10 @@
             const amount = Number(subtotal) || 0;
             const enabled = checkoutSettings.standardDeliveryEnabled;
             if (!enabled) {
+                return 0;
+            }
+            const freeAbove = Number(checkoutSettings.standardDeliveryFreeAbove ?? 1999);
+            if (Number.isFinite(freeAbove) && amount >= freeAbove) {
                 return 0;
             }
             const charge = Number(checkoutSettings.standardDeliveryCharge || 0);
@@ -2345,8 +2350,16 @@
                     charge = 0;
                 }
 
+                let freeAbove = (settings.standard_delivery_free_above ?? settings.fast_delivery_free_above) != null
+                    ? parseFloat(settings.standard_delivery_free_above ?? settings.fast_delivery_free_above)
+                    : 1999;
+                if (Number.isNaN(freeAbove) || freeAbove < 0) {
+                    freeAbove = 1999;
+                }
+
                 checkoutSettings.standardDeliveryEnabled = enabled;
                 checkoutSettings.standardDeliveryCharge = charge;
+                checkoutSettings.standardDeliveryFreeAbove = freeAbove;
 
                 checkoutGpaySettings.enabled = String(settings.gpay_enabled || 'false').toLowerCase() === 'true';
                 checkoutGpaySettings.payeeName = String(settings.gpay_payee_name || 'Mount Made').trim();
@@ -2365,8 +2378,9 @@
                 const chargeLabel = document.getElementById('standard-delivery-charge-label');
 
                 if (chargeLabel) {
+                    const freeAboveText = Number.isFinite(freeAbove) ? freeAbove.toFixed(0) : '1999';
                     chargeLabel.textContent = enabled
-                        ? `₹${Number.isFinite(charge) ? charge.toFixed(2) : '0.00'} per order`
+                        ? `₹${Number.isFinite(charge) ? charge.toFixed(2) : '0.00'} below ₹${freeAboveText} • Free above ₹${freeAboveText}`
                         : 'Delivery charge disabled';
                 }
 

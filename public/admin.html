@@ -2565,13 +2565,19 @@
                             </label>
                         </div>
 
-                        <div class="form-group" style="margin-bottom: 1rem; max-width: 260px;">
-                            <label class="form-label" for="standard-delivery-charge">Standard Delivery Charge (₹)</label>
-                            <input type="text" id="standard-delivery-charge" class="form-input" placeholder="e.g., 50">
-                            <small style="color: var(--text-muted); display: block; margin-top: 0.35rem;">
-                                This amount will be applied per order for Standard Delivery.
-                            </small>
+                        <div class="form-row" style="margin-bottom: 1rem; gap: 1rem; flex-wrap: wrap;">
+                            <div style="min-width: 220px; flex: 1;">
+                                <label class="form-label" for="standard-delivery-free-above">Free delivery above (₹)</label>
+                                <input type="text" id="standard-delivery-free-above" class="form-input" placeholder="e.g., 1999">
+                            </div>
+                            <div style="min-width: 220px; flex: 1;">
+                                <label class="form-label" for="standard-delivery-charge">Standard Delivery Charge (₹)</label>
+                                <input type="text" id="standard-delivery-charge" class="form-input" placeholder="e.g., 50">
+                            </div>
                         </div>
+                        <small style="color: var(--text-muted); display: block; margin-top: 0.35rem;">
+                            Delivery is free for orders at or above the above price. Below that, the charge above is applied.
+                        </small>
 
                         <button class="btn btn-primary" onclick="saveDeliverySettings()">
                             <i class="fas fa-truck"></i> Save Delivery Settings
@@ -8409,6 +8415,7 @@
                 // Populate delivery settings
                 const stdEnabledInput = document.getElementById('standard-delivery-enabled');
                 const stdChargeInput = document.getElementById('standard-delivery-charge');
+                const stdFreeAboveInput = document.getElementById('standard-delivery-free-above');
                 if (stdEnabledInput) {
                     const rawEnabled = (settings.standard_delivery_enabled ?? settings.fast_delivery_enabled ?? 'false').toString().toLowerCase();
                     stdEnabledInput.checked = rawEnabled === 'true';
@@ -8417,6 +8424,11 @@
                     const rawCharge = settings.standard_delivery_charge ?? settings.fast_delivery_charge;
                     const parsed = rawCharge != null ? parseFloat(rawCharge) : 0;
                     stdChargeInput.value = !Number.isNaN(parsed) && parsed >= 0 ? parsed : '';
+                }
+                if (stdFreeAboveInput) {
+                    const rawFreeAbove = settings.standard_delivery_free_above ?? settings.fast_delivery_free_above;
+                    const parsed = rawFreeAbove != null ? parseFloat(rawFreeAbove) : 1999;
+                    stdFreeAboveInput.value = !Number.isNaN(parsed) && parsed >= 0 ? parsed : '';
                 }
 
                 const businessEmailInput = document.getElementById('business-support-email');
@@ -8976,16 +8988,22 @@
             try {
                 const enabledEl = document.getElementById('standard-delivery-enabled');
                 const chargeEl = document.getElementById('standard-delivery-charge');
+                const freeAboveEl = document.getElementById('standard-delivery-free-above');
 
                 const standard_delivery_enabled = !!(enabledEl && enabledEl.checked);
                 const rawCharge = chargeEl ? (chargeEl.value || '').trim() : '';
+                const rawFreeAbove = freeAboveEl ? (freeAboveEl.value || '').trim() : '';
 
                 // Allow flexible typing (e.g. "50 ₹" or spaces), keep only digits and dot
                 const normalizedCharge = rawCharge === ''
                     ? ''
                     : rawCharge.replace(/[^0-9.]/g, '');
+                const normalizedFreeAbove = rawFreeAbove === ''
+                    ? ''
+                    : rawFreeAbove.replace(/[^0-9.]/g, '');
 
                 const standard_delivery_charge = normalizedCharge === '' ? 0 : parseFloat(normalizedCharge);
+                const standard_delivery_free_above = normalizedFreeAbove === '' ? 1999 : parseFloat(normalizedFreeAbove);
 
                 if (Number.isNaN(standard_delivery_charge) || standard_delivery_charge < 0) {
                     showAlert('Please enter a valid non-negative delivery charge.', 'error');
@@ -8993,10 +9011,17 @@
                     return;
                 }
 
+                if (Number.isNaN(standard_delivery_free_above) || standard_delivery_free_above < 0) {
+                    showAlert('Please enter a valid non-negative free-delivery threshold.', 'error');
+                    if (freeAboveEl) freeAboveEl.focus();
+                    return;
+                }
+
                 showAlert('Saving delivery settings...', 'info');
                 const response = await api.post('/admin/settings', {
                     standard_delivery_enabled,
-                    standard_delivery_charge
+                    standard_delivery_charge,
+                    standard_delivery_free_above
                 });
 
                 if (response && (response.success || response.message)) {

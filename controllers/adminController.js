@@ -2222,8 +2222,10 @@ exports.updateSiteSettings = async (req, res) => {
       admin_license_expires_at,
       fast_delivery_enabled,
       fast_delivery_charge,
+      fast_delivery_free_above,
       standard_delivery_enabled,
       standard_delivery_charge,
+      standard_delivery_free_above,
       gpay_enabled,
       gpay_payee_name,
       gpay_upi_id,
@@ -2453,6 +2455,14 @@ exports.updateSiteSettings = async (req, res) => {
       updates.push({ key: 'fast_delivery_charge', value: parsed.toFixed(2) });
     }
 
+    if (fast_delivery_free_above !== undefined && fast_delivery_free_above !== null) {
+      const parsed = parseFloat(fast_delivery_free_above);
+      if (Number.isNaN(parsed) || parsed < 0) {
+        return res.status(400).json({ error: 'Free-delivery threshold must be a valid non-negative number.' });
+      }
+      updates.push({ key: 'fast_delivery_free_above', value: parsed.toFixed(2) });
+    }
+
     // Standard delivery toggle
     if (standard_delivery_enabled !== undefined && standard_delivery_enabled !== null) {
       const enabledValue =
@@ -2473,6 +2483,16 @@ exports.updateSiteSettings = async (req, res) => {
       updates.push({ key: 'standard_delivery_charge', value: parsed.toFixed(2) });
       // Also update legacy key for backward compatibility
       updates.push({ key: 'fast_delivery_charge', value: parsed.toFixed(2) });
+    }
+
+    if (standard_delivery_free_above !== undefined && standard_delivery_free_above !== null) {
+      const parsed = parseFloat(standard_delivery_free_above);
+      if (Number.isNaN(parsed) || parsed < 0) {
+        return res.status(400).json({ error: 'Free-delivery threshold must be a valid non-negative number.' });
+      }
+      updates.push({ key: 'standard_delivery_free_above', value: parsed.toFixed(2) });
+      // Also update legacy key for backward compatibility
+      updates.push({ key: 'fast_delivery_free_above', value: parsed.toFixed(2) });
     }
 
     if (gpay_enabled !== undefined && gpay_enabled !== null) {
