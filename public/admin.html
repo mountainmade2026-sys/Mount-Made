@@ -4329,10 +4329,15 @@
         // ═════════════════════════════════════════════════════════════════════
         // DELIVERY PINCODE SETTINGS LOADER
         // ═════════════════════════════════════════════════════════════════════
+        function _canManageDeliveryPincodes() {
+            const role = auth?.currentUser?.role;
+            return role === 'admin' || role === 'super_admin';
+        }
+
         async function loadDeliveryPincodeSettings() {
             try {
-                if (!_isSuperAdminUser()) {
-                    showAlert('Only super admin can manage delivery pincodes.', 'error');
+                if (!_canManageDeliveryPincodes()) {
+                    showAlert('Only admins can manage delivery pincodes.', 'error');
                     return;
                 }
 
@@ -9468,8 +9473,8 @@
         }
 
         window.saveCodPincodeSettings = async function() {
-            if (!_isSuperAdminUser()) {
-                showAlert('Only super admin can update delivery pincodes.', 'error');
+            if (!_canManageDeliveryPincodes()) {
+                showAlert('Only admins can update delivery pincodes.', 'error');
                 return;
             }
             try {
