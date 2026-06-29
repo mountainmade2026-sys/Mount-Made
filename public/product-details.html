@@ -1726,10 +1726,13 @@
 
             if (explicitMessage) return explicitMessage;
 
-            const unitInfo = getUnitInfo(productData);
-            const weightValue = parseFloat(productData?.weight || 0);
-            if (Number.isFinite(weightValue) && weightValue > 0) {
-                return `Delivery available for ${weightValue} ${unitInfo.unit}`;
+            // Only show weight-based delivery message if weight options are enabled
+            if (productData?.is_weight_based) {
+                const unitInfo = getUnitInfo(productData);
+                const weightValue = parseFloat(productData?.weight || 0);
+                if (Number.isFinite(weightValue) && weightValue > 0) {
+                    return `Delivery available for ${weightValue} ${unitInfo.unit}`;
+                }
             }
 
             return 'Delivery information is available during checkout.';
