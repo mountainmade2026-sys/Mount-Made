@@ -1498,6 +1498,9 @@
             <div class="admin-nav-item" onclick="showSection('admin-license')">
                 <i class="fas fa-key"></i> Admin License
             </div>
+            <div class="admin-nav-item" onclick="showSection('delivery-pincodes')">
+                <i class="fas fa-truck"></i> Delivery Pincodes
+            </div>
             <div class="admin-nav-item" onclick="showSection('site-settings')">
                 <i class="fas fa-cog"></i> Site Settings
             </div>
@@ -2926,11 +2929,16 @@
                     </div>
                 </div>
 
-                <!-- Delivery Pincode Availability Section -->
-                <div id="ss-sub-cod" class="data-table-container" style="margin-top: 1.5rem;">
-                    <div class="table-header">
-                        <h3><i class="fas fa-truck"></i> Delivery – Pincode Availability</h3>
-                    </div>
+            </div>
+
+            <!-- Delivery Pincodes Section -->
+            <div id="delivery-pincodes" class="section">
+                <div class="admin-header">
+                    <h1><i class="fas fa-truck"></i> Delivery Pincode Availability</h1>
+                </div>
+
+                <div class="data-table-container">
+                    <div class="table-header"></div>
                     <div style="padding: 2rem;">
                         <p style="color: var(--text-muted); margin-bottom: 1.5rem;">
                             Add pincodes where delivery is available. Leave empty to allow delivery for <strong>all</strong> pincodes.
@@ -4318,6 +4326,32 @@
             }, { passive: true });
         })();
 
+        // ═════════════════════════════════════════════════════════════════════
+        // DELIVERY PINCODE SETTINGS LOADER
+        // ═════════════════════════════════════════════════════════════════════
+        async function loadDeliveryPincodeSettings() {
+            try {
+                if (!_isSuperAdminUser()) {
+                    showAlert('Only super admin can manage delivery pincodes.', 'error');
+                    return;
+                }
+
+                const response = await api.get('/admin/settings');
+                const settings = response.settings || {};
+                
+                // Load pincodes into the editor
+                const rawCodPincodes = String(settings.cod_available_pincodes || '').trim();
+                window.deliveryPincodes = rawCodPincodes
+                    ? rawCodPincodes.split(/[\n,]+/).map(p => p.trim()).filter(Boolean)
+                    : [];
+                renderDeliveryPincodeTags();
+                initDeliveryPincodeEditor();
+            } catch (error) {
+                console.error('Load delivery pincode settings error:', error);
+                showAlert('Failed to load delivery pincode settings', 'error');
+            }
+        }
+
         // Show section and load data
         window.showSection = function(id) {
             if (window._adminLicenseBlocked && id !== 'admin-license') {
@@ -4385,6 +4419,7 @@
                 case 'users': loadUsers(); break;
                 case 'wholesale': loadWholesaleRequests(); break;
                 case 'admin-license': loadAdminLicenseStatus({ silent: true }); break;
+                case 'delivery-pincodes': loadDeliveryPincodeSettings(); break;
                 case 'site-settings': loadSiteSettings(); buildSiteSettingsQuickNav(); break;
             }
 
