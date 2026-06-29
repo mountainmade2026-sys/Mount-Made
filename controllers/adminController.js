@@ -2252,15 +2252,20 @@ exports.updateSiteSettings = async (req, res) => {
       gpay_upi_id !== undefined ||
       gpay_phone_number !== undefined ||
       gpay_bank_name !== undefined ||
-      gpay_qr_image_url !== undefined ||
-      req.body?.cod_available_pincodes !== undefined;
+      gpay_qr_image_url !== undefined;
+
+    const hasAdminManageablePincodeSetting = req.body?.cod_available_pincodes !== undefined;
 
     if (hasLicenseChange && req.user?.role !== 'super_admin') {
       return res.status(403).json({ error: 'Only super admin can manage admin license settings.' });
     }
 
     if (hasSuperAdminOnlyCommerceSetting && req.user?.role !== 'super_admin') {
-      return res.status(403).json({ error: 'Only super admin can manage Business Email, GPay, and COD pincode settings.' });
+      return res.status(403).json({ error: 'Only super admin can manage Business Email and GPay settings.' });
+    }
+
+    if (hasAdminManageablePincodeSetting && !['admin', 'super_admin'].includes(req.user?.role)) {
+      return res.status(403).json({ error: 'Only admins can manage delivery pincode settings.' });
     }
 
     // Collect all provided settings so this endpoint can be reused

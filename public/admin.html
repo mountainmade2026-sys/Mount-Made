@@ -9373,7 +9373,8 @@
             
             container.innerHTML = '';
             
-            deliveryPincodes.forEach(pin => {
+            const pincodes = Array.isArray(window.deliveryPincodes) ? window.deliveryPincodes : [];
+            pincodes.forEach(pin => {
                 const tag = document.createElement('div');
                 tag.style.cssText = `
                     display: inline-flex;
@@ -9395,9 +9396,9 @@
                 container.appendChild(tag);
             });
             
-            if (countEl) countEl.textContent = window.deliveryPincodes.length;
-            if (clearBtn) clearBtn.style.display = window.deliveryPincodes.length > 0 ? 'inline-flex' : 'none';
-            if (textarea) textarea.value = window.deliveryPincodes.join(',');
+            if (countEl) countEl.textContent = pincodes.length;
+            if (clearBtn) clearBtn.style.display = pincodes.length > 0 ? 'inline-flex' : 'none';
+            if (textarea) textarea.value = pincodes.join(',');
         }
 
         function openDeliveryPincodeImportModal() {
