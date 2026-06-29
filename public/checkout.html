@@ -147,6 +147,18 @@
                             <label class="form-label">Order Notes (Optional)</label>
                             <textarea id="notes" class="form-textarea"></textarea>
                         </div>
+                        <div class="form-group" style="margin-top:1rem;">
+                            <label class="form-label">Upload Payment Proof <span style="font-weight:400; font-size:0.95rem;">(Optional)</span></label>
+                            <input type="file" id="payment-proof-file" accept=".jpg,.jpeg,.png,.gif,.webp" class="form-input" />
+                            <div id="payment-proof-preview" class="hidden" style="margin-top:0.85rem;">
+                                <img id="payment-proof-preview-img" style="max-width:100%;border-radius:12px;box-shadow:0 12px 25px rgba(0,0,0,0.1);" alt="Payment proof preview" />
+                                <div style="display:flex; align-items:center; justify-content:space-between; gap:0.75rem; margin-top:0.65rem;">
+                                    <span id="payment-proof-name" style="font-size:0.92rem;color:var(--text-secondary);"></span>
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="clearPaymentProof()">Remove</button>
+                                </div>
+                            </div>
+                            <div id="payment-proof-status" class="form-help">Upload a screenshot or image of your payment confirmation.</div>
+                        </div>
                     </div>
                 </div>
             </form>
@@ -1863,6 +1875,76 @@
             return `MM${Date.now()}${rand}`;
         }
 
+        let paymentProofFile = null;
+        let paymentProofUploadResult = null;
+
+        function resetPaymentProofPreview() {
+            paymentProofFile = null;
+            paymentProofUploadResult = null;
+            const input = document.getElementById('payment-proof-file');
+            const preview = document.getElementById('payment-proof-preview');
+            const previewImg = document.getElementById('payment-proof-preview-img');
+            const previewName = document.getElementById('payment-proof-name');
+            if (input) input.value = '';
+            if (preview) preview.classList.add('hidden');
+            if (previewImg) previewImg.src = '';
+            if (previewName) previewName.textContent = '';
+        }
+
+        function clearPaymentProof() {
+            resetPaymentProofPreview();
+            showAlert('Payment proof removed.', 'success');
+        }
+
+        function previewPaymentProof(file) {
+            const preview = document.getElementById('payment-proof-preview');
+            const previewImg = document.getElementById('payment-proof-preview-img');
+            const previewName = document.getElementById('payment-proof-name');
+            if (!preview || !previewImg || !previewName) return;
+
+            if (!file) {
+                preview.classList.add('hidden');
+                previewImg.src = '';
+                previewName.textContent = '';
+                return;
+            }
+
+            const objectUrl = URL.createObjectURL(file);
+            previewImg.src = objectUrl;
+            previewName.textContent = file.name;
+            preview.classList.remove('hidden');
+        }
+
+        async function uploadPaymentProofIfNeeded() {
+            const fileInput = document.getElementById('payment-proof-file');
+            if (!fileInput?.files?.length) {
+                return null;
+            }
+
+            const file = fileInput.files[0];
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+            if (!allowedTypes.includes(file.type)) {
+                throw new Error('Only JPG, PNG, GIF, and WEBP images are allowed.');
+            }
+            if (file.size > 5 * 1024 * 1024) {
+                throw new Error('File size too large. Maximum size is 5MB.');
+            }
+
+            const formData = new FormData();
+            formData.append('image', file);
+            const result = await api.request('/upload/image', { method: 'POST', body: formData });
+            if (!result || !result.imageUrl || !result.id) {
+                throw new Error('Failed to upload payment proof.');
+            }
+
+            paymentProofUploadResult = {
+                id: result.id,
+                url: result.imageUrl,
+                filename: file.name
+            };
+            return paymentProofUploadResult;
+        }
+
         function buildGpayUpiLink(amount, note = '', transactionRef = '') {
             const recipient = String(checkoutGpaySettings.upiId || '').trim();
             if (!recipient) return null;
@@ -2342,6 +2424,19 @@
                     showAlert('Billing details saved.', 'success');
                 });
             }
+
+            const paymentProofInput = document.getElementById('payment-proof-file');
+            if (paymentProofInput) {
+                paymentProofInput.addEventListener('change', () => {
+                    const file = paymentProofInput.files?.[0] || null;
+                    paymentProofUploadResult = null;
+                    if (file) {
+                        previewPaymentProof(file);
+                    } else {
+                        resetPaymentProofPreview();
+                    }
+                });
+            }
         }
 
         async function loadCheckoutSettings() {
@@ -2540,6 +2635,17 @@
                 }
             }
 
+            try {
+                if (document.getElementById('payment-proof-file')?.files?.length) {
+                    await uploadPaymentProofIfNeeded();
+                }
+            } catch (uploadError) {
+                hideOrderStatusModal();
+                setPlaceOrderButtonState(false);
+                showAlert(uploadError.message || 'Failed to upload payment proof.', 'error');
+                return;
+            }
+
             const userNotes = document.getElementById('notes').value || '';
             const combinedNotes = paymentMethod === 'gpay'
                 ? `GPay via ${formatGpayLabel(gpayDetailType)}: ${gpayDetailValue}${userNotes ? ' | ' + userNotes : ''}`
@@ -2549,10 +2655,29 @@
             const delivery_charge = getDeliveryChargeForSubtotal(currentSubtotal);
             const totalAmount = currentSubtotal + delivery_charge;
 
+            let paymentDetails = paymentMethod === 'gpay'
+                ? { method: gpayDetailType, value: gpayDetailValue }
+                : null;
+            if (paymentProofUploadResult) {
+                const proofEntry = {
+                    proof: {
+                        id: paymentProofUploadResult.id,
+                        url: paymentProofUploadResult.url,
+                        filename: paymentProofUploadResult.filename
+                    }
+                };
+                if (paymentDetails) {
+                    Object.assign(paymentDetails, proofEntry);
+                } else {
+                    Object.assign(proofEntry, { method: paymentMethod });
+                    paymentDetails = proofEntry;
+                }
+            }
+
             const orderData = {
                 shipping_address: shippingAddress,
                 payment_method: paymentMethod,
-                payment_details: paymentMethod === 'gpay' ? { method: gpayDetailType, value: gpayDetailValue } : null,
+                payment_details: paymentDetails,
                 notes: combinedNotes,
                 total_amount: totalAmount,
                 delivery_speed: checkoutDeliverySpeed,
