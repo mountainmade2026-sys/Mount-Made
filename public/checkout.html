@@ -1808,11 +1808,12 @@
             `;
         }
 
-        function showGpayQrPaymentModal(qrImageUrl, gpayRef) {
+        function showGpayQrPaymentModal(qrImageUrl, gpayRef, amount = null) {
             const modal = document.getElementById('order-status-modal');
             const content = document.getElementById('order-status-content');
             if (!modal || !content) return;
 
+            const amountText = amount != null ? formatCurrency(amount) : 'the cart total';
             modal.classList.remove('hidden');
             content.innerHTML = `
                 <button type="button" class="order-modal-close" onclick="hideOrderStatusModal()">
@@ -1822,7 +1823,7 @@
                     <i class="fas fa-qrcode"></i>
                 </div>
                 <h3 class="order-modal-title">Scan QR to pay</h3>
-                <p class="order-modal-text">Use Google Pay to scan this barcode and complete the payment. After payment, return here to confirm your order.</p>
+                <p class="order-modal-text">Use Google Pay to scan this barcode and pay exactly <strong>${escapeHtml(amountText)}</strong> for your order.</p>
                 <img src="${escapeHtml(qrImageUrl)}" alt="GPay QR Code" style="max-width:260px;width:100%;display:block;margin:0.75rem auto 1rem;border-radius:16px;box-shadow:0 12px 30px rgba(0,0,0,0.12);" />
                 <p class="order-modal-text" style="font-size:0.95rem;">Payment reference: <strong>${escapeHtml(gpayRef)}</strong></p>
             `;
@@ -2576,6 +2577,13 @@
                     return;
                 }
 
+                const gpayRef = generateGpayRef();
+                orderData.payment_details = {
+                    ...(orderData.payment_details || {}),
+                    ref: gpayRef
+                };
+                orderData.notes = `${String(orderData.notes || '').trim()} | Ref: ${gpayRef}`.trim().replace(/^\|\s*/, '');
+
                 if (shouldSaveAddress) {
                     try {
                         await api.post('/addresses', {
@@ -2593,6 +2601,18 @@
                     } catch (addrError) {
                         console.warn('Failed to save address before order:', addrError);
                     }
+                }
+
+                const hasUpi = String(checkoutGpaySettings.upiId || '').trim() !== '';
+                if (hasUpi) {
+                    const launched = openGpayWithAmount(totalAmount, 'Checkout Payment', gpayRef);
+                    if (launched) {
+                        showAlert(`Google Pay opened with ${formatCurrency(totalAmount)} prefilled.`, 'info');
+                    }
+                }
+
+                if (checkoutGpaySettings.qrImageUrl) {
+                    showGpayQrPaymentModal(checkoutGpaySettings.qrImageUrl, gpayRef, totalAmount);
                 }
 
                 try {
