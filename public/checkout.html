@@ -1501,6 +1501,7 @@
                                     <button type="button" class="checkout-qty-btn" aria-label="Increase quantity" onclick="event.preventDefault(); changeCheckoutQuantity(${item.id}, 1, document.getElementById('checkout-qty-${item.id}'))">+</button>
                                 </div>
                             </div>
+                            <button type="button" class="btn btn-secondary btn-sm" style="margin-left: auto;" aria-label="Remove item" onclick="event.preventDefault(); removeCheckoutItem(${item.id})"><i class="fas fa-trash"></i> Remove</button>
                             <span class="checkout-item-unit-price">× ${priceBlock}</span>
                         </div>
                     </div>
@@ -1597,6 +1598,27 @@
                 // Revert to server state on error
                 await loadCheckout();
             }
+        }
+
+        async function removeCheckoutItem(itemId) {
+            if (!cartData?.cartItems) return;
+            
+            cartData.cartItems = cartData.cartItems.filter(item => item.id !== itemId);
+            cartData.total = computeCartSubtotal(cartData);
+            checkoutCartSubtotal = cartData.total;
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('directbuy') !== '1') {
+                try {
+                    await api.delete(`/cart/${itemId}`);
+                } catch (err) {
+                    console.error('Failed to remove item from server cart:', err);
+                }
+            }
+            
+            await loadCheckout();
+            updateOrderSummaryTotals();
+            showAlert('Item removed from checkout.', 'success');
         }
 
         async function loadUserAddresses() {

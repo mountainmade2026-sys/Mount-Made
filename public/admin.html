@@ -6298,9 +6298,31 @@
 
                 select.innerHTML = '<option value="">Select a product</option>' +
                     products.map(p => `<option value="${p.id}" ${p.stock_quantity <= 0 ? 'disabled' : ''}>#${p.id} — ${escapeHtml(p.name || 'Unnamed')} (${parseInt(p.stock_quantity || 0, 10)} in stock)</option>`).join('');
+
+                select.removeEventListener('change', onOfflineSaleProductSelected);
+                select.addEventListener('change', onOfflineSaleProductSelected);
             } catch (error) {
                 console.error('Load offline sale products error:', error);
             }
+        }
+
+        function onOfflineSaleProductSelected() {
+            const productId = parseInt(document.getElementById('offline-sale-product')?.value || '0', 10);
+            if (!productId) {
+                document.getElementById('offline-sale-amount').value = '';
+                return;
+            }
+
+            const product = (window._productsCache || []).find(p => p.id === productId);
+            if (!product) return;
+
+            let price = parseFloat(product.price) || 0;
+            if (product.discount_percentage != null && product.discount_percentage > 0) {
+                const discountAmount = (price * product.discount_percentage) / 100;
+                price = price - discountAmount;
+            }
+
+            document.getElementById('offline-sale-amount').value = price.toFixed(2);
         }
 
         async function loadOfflineSales() {
