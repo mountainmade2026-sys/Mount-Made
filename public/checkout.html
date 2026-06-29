@@ -1495,13 +1495,14 @@
             await loadUserAddresses();
         }
 
-        const FREE_DELIVERY_THRESHOLD = 2000;
-        const DELIVERY_FEE = 99;
-
         function getDeliveryChargeForSubtotal(subtotal) {
             const amount = Number(subtotal) || 0;
-            console.log('[Delivery] Subtotal:', amount, 'Threshold:', FREE_DELIVERY_THRESHOLD, 'Is Free?:', amount >= FREE_DELIVERY_THRESHOLD);
-            return amount >= FREE_DELIVERY_THRESHOLD ? 0 : DELIVERY_FEE;
+            const enabled = checkoutSettings.standardDeliveryEnabled;
+            if (!enabled) {
+                return 0;
+            }
+            const charge = Number(checkoutSettings.standardDeliveryCharge || 0);
+            return Number.isFinite(charge) && charge >= 0 ? charge : 0;
         }
 
         function updateOrderSummaryTotals() {
@@ -2364,7 +2365,9 @@
                 const chargeLabel = document.getElementById('standard-delivery-charge-label');
 
                 if (chargeLabel) {
-                    chargeLabel.textContent = '₹99 below ₹1,999 • Free at ₹1,999+';
+                    chargeLabel.textContent = enabled
+                        ? `₹${Number.isFinite(charge) ? charge.toFixed(2) : '0.00'} per order`
+                        : 'Delivery charge disabled';
                 }
 
                 updateOrderSummaryTotals();

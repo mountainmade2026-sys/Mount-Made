@@ -7,6 +7,7 @@ const { authenticateToken } = require('../middleware/auth');
 const { blockAdminCommerce } = require('../middleware/commerceAccess');
 const { sendOrderNotificationToAdmin } = require('../utils/emailService');
 const { notifyOrderPlaced } = require('../utils/whatsappService');
+const { getDeliveryChargeForSubtotal } = require('../utils/deliverySettings');
 
 const router = express.Router();
 
@@ -86,11 +87,6 @@ function verifyRazorpaySignature({ orderId, paymentId, signature, keySecret }) {
   return expected === signature;
 }
 
-function getDeliveryChargeForSubtotal(subtotal) {
-  const amount = Number(subtotal) || 0;
-  return amount >= 2000 ? 0 : 99;
-}
-
 const {
   normalizePincode,
   parseAvailablePincodes,
@@ -115,7 +111,8 @@ router.post('/razorpay/create', async (req, res) => {
       return res.status(400).json({ error: 'Your cart is empty.' });
     }
 
-    const deliveryCharge = getDeliveryChargeForSubtotal(total);
+    const siteSettings = await getSiteSettings();
+    const deliveryCharge = getDeliveryChargeForSubtotal(total, siteSettings);
     const totalAmount = (Number(total) || 0) + deliveryCharge;
     if (!Number.isFinite(totalAmount) || totalAmount <= 0) {
       return res.status(400).json({ error: 'Invalid cart total.' });
@@ -209,7 +206,7 @@ router.post('/razorpay/verify', async (req, res) => {
       return res.status(400).json({ error: 'Your cart is empty. Please contact support with your payment ID.' });
     }
 
-    const serverDeliveryCharge = getDeliveryChargeForSubtotal(total);
+    const serverDeliveryCharge = getDeliveryChargeForSubtotal(total, siteSettings);
     const serverTotalAmount = (Number(total) || 0) + serverDeliveryCharge;
     const serverAmountPaise = Math.round(serverTotalAmount * 100);
 

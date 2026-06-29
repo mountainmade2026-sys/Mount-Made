@@ -7,6 +7,7 @@ const { authenticateToken } = require('../middleware/auth');
 const { blockAdminCommerce } = require('../middleware/commerceAccess');
 const { sendOrderNotificationToAdmin } = require('../utils/emailService');
 const { notifyOrderPlaced } = require('../utils/whatsappService');
+const { getDeliveryChargeForSubtotal } = require('../utils/deliverySettings');
 
 // All order routes require authentication
 router.use(authenticateToken);
@@ -18,9 +19,18 @@ function getRequiredEnv(name) {
   return String(value).trim();
 }
 
-function getDeliveryChargeForSubtotal(subtotal) {
-  const amount = Number(subtotal) || 0;
-  return amount >= 2000 ? 0 : 99;
+async function getSiteDeliverySettings() {
+  try {
+    const result = await db.query('SELECT setting_key, setting_value FROM site_settings');
+    const settings = {};
+    for (const row of result.rows || []) {
+      settings[row.setting_key] = row.setting_value;
+    }
+    return settings;
+  } catch (error) {
+    console.warn('Failed to load delivery settings:', error.message);
+    return {};
+  }
 }
 
 const {
@@ -56,7 +66,8 @@ router.post('/', async (req, res) => {
       const price = Number(item.price || 0);
       return sum + (price * quantity);
     }, 0);
-    const deliveryCharge = getDeliveryChargeForSubtotal(itemSubtotal);
+    const siteSettings = await getSiteDeliverySettings();
+    const deliveryCharge = getDeliveryChargeForSubtotal(itemSubtotal, siteSettings);
     const totalAmount = itemSubtotal + deliveryCharge;
 
     const orderData = {
@@ -284,7 +295,8 @@ router.post('/quick-buy', async (req, res) => {
     const isWholesale = req.user.role === 'wholesale' && req.user.is_approved;
     const price = isWholesale && product.wholesale_price ? product.wholesale_price : retailPrice;
     const subtotal = price * quantity;
-    const deliveryCharge = getDeliveryChargeForSubtotal(subtotal);
+    const siteSettings = await getSiteDeliverySettings();
+    const deliveryCharge = getDeliveryChargeForSubtotal(subtotal, siteSettings);
 
     const normalizedPaymentMethod = (() => {
       const raw = (payment_method || '').toString().trim();
