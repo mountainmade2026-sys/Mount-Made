@@ -4212,6 +4212,11 @@
                                 <textarea id="invoice-editor-address" class="form-textarea" rows="3" oninput="updateInvoicePreview()"></textarea>
                             </div>
                             
+                            <div style="margin-bottom: 1rem;">
+                                <label class="form-label">Thank You Message</label>
+                                <textarea id="invoice-editor-thankyou" class="form-textarea" rows="2" placeholder="Thank you for shopping with Mount Made!" oninput="updateInvoicePreview()">Thank you for shopping with Mount Made!</textarea>
+                            </div>
+                            
                             <h4 style="margin-top: 1.5rem; margin-bottom: 1rem; color: var(--text-dark);">Invoice Items</h4>
                             <div id="invoice-editor-items" style="margin-bottom: 1rem;"></div>
                             
@@ -10750,6 +10755,8 @@
             const email = document.getElementById('invoice-editor-email').value || '';
             const phone = document.getElementById('invoice-editor-phone').value || '';
             const address = document.getElementById('invoice-editor-address').value || '';
+            const thankYou = (document.getElementById('invoice-editor-thankyou') && document.getElementById('invoice-editor-thankyou').value) || (`Thank you for shopping with ${company}!`);
+            const thankYou = (document.getElementById('invoice-editor-thankyou') && document.getElementById('invoice-editor-thankyou').value) || (`Thank you for shopping with ${company}!`);
             const discount = parseFloat(document.getElementById('invoice-editor-discount').value || 0);
             const delivery = parseFloat(document.getElementById('invoice-editor-delivery').value || 0);
 
@@ -10832,7 +10839,7 @@
                     </div>
                     
                     <div style="margin-top: 1rem; color: #666; font-size: 0.8rem; text-align: center;">
-                        <p>Thank you for shopping with ${escapeHtml(company)}!</p>
+                        <p>${(thankYou ? escapeHtml(thankYou).replace(/\n/g, '<br>') : `Thank you for shopping with ${escapeHtml(company)}!`)}</p>
                     </div>
                 </div>
             `;
@@ -10915,7 +10922,7 @@
                     <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;color:#1a4731;font-size:1.1rem;">&#8377;${total.toFixed(2)}</td>
                 </tr>
             </tfoot></table>
-            <div style="margin-top:2rem;color:#666;font-size:0.85rem;"><p>Thank you for shopping with ${escapeHtml(company)}!</p></div>
+            <div style="margin-top:2rem;color:#666;font-size:0.85rem;"><p>${(thankYou ? escapeHtml(thankYou) : `Thank you for shopping with ${escapeHtml(company)}!`)}</p></div>
             <div class="no-print" style="margin-top:1.5rem;"><button onclick="window.print()" style="padding:0.5rem 1rem;background:#1a4731;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:1rem;">&#128424; Print / Save PDF</button></div>
             </body></html>`;
             const w = window.open('', '_blank', 'width=760,height=920');
