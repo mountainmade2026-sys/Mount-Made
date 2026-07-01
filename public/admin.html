@@ -10574,7 +10574,8 @@
             const orders = window._ordersCache || [];
             const o = orders.find(x => x.id == orderId);
             if (!o) { showAlert('Order not found', 'error'); return; }
-            const items = Array.isArray(o.items) ? o.items : [];
+            const edited = o.edited_invoice && typeof o.edited_invoice === 'object' ? o.edited_invoice : null;
+            const items = edited?.items?.length ? edited.items : (Array.isArray(o.items) ? o.items : []);
 
             function formatAddressValue(value) {
                 if (!value) return '';
@@ -10662,29 +10663,40 @@
             const order = orders.find(x => x.id == orderId);
             if (!order) { showAlert('Order not found', 'error'); return; }
 
-            window.invoiceEditorData = {
-                orderId: orderId,
-                items: (Array.isArray(order.items) ? order.items : []).map(it => ({
+            const edited = order.edited_invoice && typeof order.edited_invoice === 'object' ? order.edited_invoice : {};
+            const addr = order.delivery_address || order.shipping_address || order.address || '';
+            const addrStr = typeof addr === 'string' ? addr : (addr.address || '');
+            const invoiceItems = Array.isArray(edited.items) && edited.items.length
+                ? edited.items
+                : (Array.isArray(order.items) ? order.items : []).map(it => ({
                     id: it.product_id || it.id,
                     name: it.product_name || '',
                     quantity: it.quantity || 1,
                     price: parseFloat(it.price || 0)
+                }));
+
+            window.invoiceEditorData = {
+                orderId: orderId,
+                items: invoiceItems.map(item => ({
+                    id: item.id || 0,
+                    name: item.name || '',
+                    quantity: Number.isFinite(Number(item.quantity)) ? Number(item.quantity) : 1,
+                    price: Number.isFinite(Number(item.price)) ? Number(item.price) : 0
                 })),
-                discount: 0,
-                deliveryCharge: parseFloat(order.delivery_charge || 0)
+                discount: Number.isFinite(Number(edited.discount)) ? Number(edited.discount) : 0,
+                deliveryCharge: Number.isFinite(Number(edited.delivery)) ? Number(edited.delivery) : Number.parseFloat(order.delivery_charge || 0) || 0
             };
 
             document.getElementById('invoice-editor-order-id').value = orderId;
-            document.getElementById('invoice-editor-number').value = order.order_number || String(orderId);
-            document.getElementById('invoice-editor-customer').value = order.full_name || '';
-            document.getElementById('invoice-editor-email').value = order.email || '';
-            document.getElementById('invoice-editor-phone').value = order.phone || '';
-            document.getElementById('invoice-editor-discount').value = '0';
+            document.getElementById('invoice-editor-number').value = edited.invoice_number || order.order_number || String(orderId);
+            document.getElementById('invoice-editor-company').value = edited.company || 'Mount Made';
+            document.getElementById('invoice-editor-customer').value = edited.customer || order.full_name || '';
+            document.getElementById('invoice-editor-email').value = edited.email || order.email || '';
+            document.getElementById('invoice-editor-phone').value = edited.phone || order.phone || '';
+            document.getElementById('invoice-editor-discount').value = window.invoiceEditorData.discount;
             document.getElementById('invoice-editor-delivery').value = window.invoiceEditorData.deliveryCharge;
-
-            const addr = order.delivery_address || order.shipping_address || order.address || '';
-            const addrStr = typeof addr === 'string' ? addr : (addr.address || '');
-            document.getElementById('invoice-editor-address').value = addrStr;
+            document.getElementById('invoice-editor-address').value = edited.address || addrStr;
+            document.getElementById('invoice-editor-thankyou').value = edited.thankYou || 'Thank you for shopping with Mount Made!';
 
             renderInvoiceItems();
             updateInvoicePreview();
@@ -10714,9 +10726,9 @@
                         </button>
                     </div>
                     <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 0.5rem; margin-bottom: 0.5rem;">
-                        <input type="text" placeholder="Product name" value="${escapeHtml(item.name)}" class="form-input" style="font-size: 0.9rem;" onchange="updateInvoiceItem(${index}, 'name', this.value)">
-                        <input type="number" placeholder="Qty" value="${item.quantity}" min="1" class="form-input" style="font-size: 0.9rem;" onchange="updateInvoiceItem(${index}, 'quantity', parseInt(this.value))">
-                        <input type="number" placeholder="Price" value="${item.price.toFixed(2)}" min="0" step="0.01" class="form-input" style="font-size: 0.9rem;" onchange="updateInvoiceItem(${index}, 'price', parseFloat(this.value))">
+                        <input type="text" placeholder="Product name" value="${escapeHtml(item.name)}" class="form-input" style="font-size: 0.9rem;" oninput="updateInvoiceItem(${index}, 'name', this.value)">
+                        <input type="number" placeholder="Qty" value="${item.quantity}" min="1" class="form-input" style="font-size: 0.9rem;" oninput="updateInvoiceItem(${index}, 'quantity', parseInt(this.value) || 1)">
+                        <input type="number" placeholder="Price" value="${item.price.toFixed(2)}" min="0" step="0.01" class="form-input" style="font-size: 0.9rem;" oninput="updateInvoiceItem(${index}, 'price', parseFloat(this.value) || 0)">
                     </div>
                     <div style="text-align: right; font-weight: 700; color: var(--primary);">
                         Subtotal: ₹${(item.price * item.quantity).toFixed(2)}
@@ -10946,8 +10958,8 @@
                 address: document.getElementById('invoice-editor-address').value || null,
                 thankYou: document.getElementById('invoice-editor-thankyou')?.value || null,
                 items: window.invoiceEditorData.items || [],
-                discount: parseFloat(document.getElementById('invoice-editor-discount').value || 0),
-                delivery: parseFloat(document.getElementById('invoice-editor-delivery').value || 0)
+                discount: Number.isFinite(Number(document.getElementById('invoice-editor-discount').value)) ? Number(document.getElementById('invoice-editor-discount').value) : 0,
+                delivery: Number.isFinite(Number(document.getElementById('invoice-editor-delivery').value)) ? Number(document.getElementById('invoice-editor-delivery').value) : 0
             };
 
             try {
@@ -10955,15 +10967,22 @@
                 const resp = await api.put(`/admin/orders/${orderId}/invoice`, payload);
                 showAlert(resp.message || 'Invoice saved', 'success');
 
-                // update local cache if present
                 const orders = window._ordersCache || [];
                 const idx = orders.findIndex(o => String(o.id) === String(orderId));
                 if (idx >= 0) {
                     orders[idx].edited_invoice = payload;
-                    // optionally update visible fields
-                    orders[idx].order_number = payload.invoice_number || orders[idx].order_number;
-                    orders[idx].delivery_charge = payload.delivery || orders[idx].delivery_charge;
+                    if (payload.delivery != null) {
+                        orders[idx].delivery_charge = payload.delivery;
+                    }
+                    if (window._currentSection === 'order-history') {
+                        filterOrders();
+                    }
                 }
+
+                window.invoiceEditorData.items = payload.items || [];
+                window.invoiceEditorData.discount = payload.discount || 0;
+                window.invoiceEditorData.deliveryCharge = payload.delivery || 0;
+                updateInvoicePreview();
             } catch (err) {
                 console.error('Save invoice error:', err);
                 showAlert(err.message || 'Failed to save invoice', 'error');
