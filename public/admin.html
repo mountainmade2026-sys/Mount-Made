@@ -1457,7 +1457,7 @@
             <div class="admin-nav-item" onclick="showSection('order-history')" data-section="order-history">
                 <i class="fas fa-history"></i> Order History
             </div>
-            <div class="admin-nav-item" onclick="showSection('order-history')" data-section="order-history">
+            <div class="admin-nav-item" onclick="showSection('invoice-editor')" data-section="invoice-editor">
                 <i class="fas fa-file-invoice-dollar"></i> Invoice Editor
             </div>
             <div class="admin-nav-item" onclick="showSection('customers-orders')">
@@ -4168,14 +4168,14 @@
                 </div>
             </div>
 
-            <!-- Invoice Editor Modal -->
-            <div id="invoice-editor-modal" class="modal">
-                <div class="modal-content modal-content-xl">
-                    <div class="modal-header">
-                        <h2><i class="fas fa-file-invoice-dollar"></i> Invoice Editor</h2>
-                        <button class="modal-close" onclick="closeInvoiceEditorModal()">&times;</button>
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; padding: 1.5rem; max-height: 80vh; overflow-y: auto;">
+            <!-- Invoice Editor Section -->
+            <div id="invoice-editor" class="section">
+                <div class="admin-header">
+                    <h1><i class="fas fa-file-invoice-dollar"></i> Invoice Editor</h1>
+                </div>
+
+                <div style="padding: 1rem;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
                         <!-- Editor Panel -->
                         <div style="border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; background: var(--bg-card);">
                             <h3 style="margin-bottom: 1rem; color: var(--text-dark);">Edit Invoice Details</h3>
@@ -4239,9 +4239,9 @@
                         <!-- Preview Panel -->
                         <div id="invoice-editor-preview" style="border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; background: var(--bg-card); overflow-y: auto; max-height: 70vh; font-family: Arial, sans-serif; font-size: 13px;"></div>
                     </div>
-                    
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" onclick="closeInvoiceEditorModal()">Cancel</button>
+
+                    <div style="display:flex; justify-content:flex-end; gap:0.75rem; margin-top:1rem;">
+                        <button type="button" class="btn btn-secondary" onclick="showSection('order-history')">Cancel</button>
                         <button type="button" class="btn btn-primary" onclick="printEditedInvoice()">
                             <i class="fas fa-print"></i> Print / Save PDF
                         </button>
@@ -4340,7 +4340,7 @@
     // Admin dashboard with improved mobile handling
     (function(){
         const sectionIds = [
-                'dashboard','manage-products','upload-products','categories','homepage-sections','stock-reports','order-history','customers-orders','returns','complaints',
+                'dashboard','manage-products','upload-products','categories','homepage-sections','stock-reports','order-history','invoice-editor','delivery-pincodes','customers-orders','returns','complaints',
             'customers','activities','messages','users','wholesale','admin-license','site-settings','database-backup','ownership-document'
             ];
 
@@ -10684,11 +10684,13 @@
             renderInvoiceItems();
             updateInvoicePreview();
 
-            document.getElementById('invoice-editor-modal').classList.add('show');
+            try { showSection('invoice-editor'); } catch (e) { /* fallback: ensure element visible */
+                const el = document.getElementById('invoice-editor'); if (el) el.classList.add('active');
+            }
         };
 
         window.closeInvoiceEditorModal = function() {
-            document.getElementById('invoice-editor-modal').classList.remove('show');
+            try { showSection('order-history'); } catch (e) { const el = document.getElementById('invoice-editor'); if (el) el.classList.remove('active'); }
             window.invoiceEditorData = { orderId: null, items: [], discount: 0, deliveryCharge: 0 };
         };
 
