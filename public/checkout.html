@@ -129,8 +129,8 @@
                             </div>
                             <div id="gpay-qr-wrap" class="form-group hidden">
                                 <label class="form-label">GPay QR Code</label>
-                                <img id="gpay-qr-image" class="gpay-qr-image" src="" alt="GPay QR Code" />
-                                <div class="form-help">Scan this barcode in Google Pay.</div>
+                                <div id="gpay-qr-container" class="gpay-qr-image" role="img" aria-label="Google Pay QR code"></div>
+                                <div class="form-help" id="gpay-qr-hint">Scan this barcode in Google Pay.</div>
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Delivery PIN Code</label>
@@ -1850,9 +1850,19 @@
                 </div>
                 <h3 class="order-modal-title">Scan QR to pay</h3>
                 <p class="order-modal-text">Use Google Pay to scan this barcode and pay exactly <strong>${escapeHtml(amountText)}</strong> for your order.</p>
-                <img src="${escapeHtml(qrImageUrl)}" alt="GPay QR Code" style="max-width:260px;width:100%;display:block;margin:0.75rem auto 1rem;border-radius:16px;box-shadow:0 12px 30px rgba(0,0,0,0.12);" />
+                <div id="order-status-qr-container" class="gpay-qr-image" style="max-width:260px;width:100%;display:block;margin:0.75rem auto 1rem;border-radius:16px;box-shadow:0 12px 30px rgba(0,0,0,0.12);"></div>
                 <p class="order-modal-text" style="font-size:0.95rem;">Payment reference: <strong>${escapeHtml(gpayRef)}</strong></p>
             `;
+
+            const qrContainer = document.getElementById('order-status-qr-container');
+            if (qrContainer) {
+                const upiLink = buildGpayUpiLink(amount, 'Checkout Payment', gpayRef);
+                if (upiLink) {
+                    generateDynamicGpayQr('order-status-qr-container', upiLink);
+                } else if (qrImageUrl) {
+                    qrContainer.innerHTML = `<img src="${escapeHtml(qrImageUrl)}" alt="GPay QR Code" style="max-width:100%;width:100%;display:block;border-radius:16px;" />`;
+                }
+            }
         }
 
         const BILLING_STORAGE_KEY = 'mm_billing_profile';
@@ -2087,54 +2097,50 @@
             const hint = document.getElementById('gpay-prefill-hint');
             const bankDisplay = document.getElementById('gpay-bank-display');
             const qrWrap = document.getElementById('gpay-qr-wrap');
-            const qrImage = document.getElementById('gpay-qr-image');
+            const qrContainer = document.getElementById('gpay-qr-container');
+            const qrHint = document.getElementById('gpay-qr-hint');
 
             if (!valueInput || !label) return;
 
             const hasQr = String(checkoutGpaySettings.qrImageUrl || '').trim() !== '';
             const hasUpi = String(checkoutGpaySettings.upiId || '').trim() !== '';
+            const currentAmount = getCurrentCheckoutTotal();
+            const dynamicUpiLink = hasUpi ? buildGpayUpiLink(currentAmount, 'Checkout Payment') : null;
 
-            if (hasQr) {
+            if (hasUpi && dynamicUpiLink) {
+                label.textContent = 'Scan QR Code';
+                valueInput.value = checkoutGpaySettings.upiId;
+                valueInput.placeholder = 'Configured by admin';
+                if (qrWrap) {
+                    qrWrap.classList.remove('hidden');
+                }
+                if (qrContainer) {
+                    generateDynamicGpayQr('gpay-qr-container', dynamicUpiLink);
+                    qrContainer.style.cursor = 'pointer';
+                    qrContainer.onclick = () => {
+                        const gpayRef = generateGpayRef();
+                        openGpayWithAmount(currentAmount, 'Checkout Payment', gpayRef);
+                    };
+                }
+                if (qrHint) {
+                    qrHint.textContent = 'Scan or tap this QR code in Google Pay to pay the exact checkout amount.';
+                }
+            } else if (hasQr) {
                 label.textContent = 'Scan QR Code';
                 valueInput.value = '';
                 valueInput.placeholder = 'Scan the QR code below';
                 if (qrWrap) {
                     qrWrap.classList.remove('hidden');
                 }
-                if (qrImage) {
-                    qrImage.src = checkoutGpaySettings.qrImageUrl;
-                    qrImage.style.cursor = 'pointer';
-                    // When QR code is clicked, open Google Pay with the current checkout amount
-                    qrImage.onclick = () => {
-                        const currentAmount = getCurrentCheckoutTotal();
-                        const gpayRef = generateGpayRef();
-                        openGpayWithAmount(currentAmount, 'Checkout Payment', gpayRef);
-                    };
+                if (qrContainer) {
+                    qrContainer.innerHTML = `<img src="${escapeHtml(checkoutGpaySettings.qrImageUrl)}" alt="GPay QR Code" style="width:100%;height:auto;display:block;" />`;
+                    qrContainer.style.cursor = 'default';
+                    qrContainer.onclick = null;
                 }
-                if (hint) {
-                    hint.textContent = 'Scan this barcode in Google Pay to pay with amount prefilled.';
-                }
-            } else if (hasUpi) {
-                // Generate dynamic QR code with current checkout amount
-                label.textContent = 'Scan QR Code (Dynamic)';
-                valueInput.value = checkoutGpaySettings.upiId;
-                valueInput.placeholder = 'UPI configured';
-                if (qrWrap) {
-                    qrWrap.classList.remove('hidden');
-                }
-                if (qrImage) {
-                    qrImage.style.cursor = 'default';
-                    qrImage.onclick = null;
-                    
-                    // Generate dynamic QR code with current checkout amount
-                    const currentAmount = getCurrentCheckoutTotal();
-                    const upiLink = buildGpayUpiLink(currentAmount, 'Checkout Payment');
-                    if (upiLink) {
-                        generateDynamicGpayQr('gpay-qr-wrap', upiLink);
-                    }
-                }
-                if (hint) {
-                    hint.textContent = 'Scan this dynamically generated QR code in Google Pay to pay with exact amount.';
+                if (qrHint) {
+                    qrHint.textContent = hasUpi
+                        ? 'Scan this QR code in Google Pay. The UPI ID is configured, so the amount can be processed on scan.'
+                        : 'Scan this static QR code in Google Pay.';
                 }
             } else {
                 label.textContent = 'UPI ID';
@@ -2143,13 +2149,13 @@
                 if (qrWrap) {
                     qrWrap.classList.add('hidden');
                 }
-                if (qrImage) {
-                    qrImage.src = '';
-                    qrImage.style.cursor = 'default';
-                    qrImage.onclick = null;
+                if (qrContainer) {
+                    qrContainer.innerHTML = '';
+                    qrContainer.style.cursor = 'default';
+                    qrContainer.onclick = null;
                 }
-                if (hint) {
-                    hint.textContent = hasUpi
+                if (qrHint) {
+                    qrHint.textContent = hasUpi
                         ? `Payee: ${checkoutGpaySettings.payeeName || 'Mount Made'}`
                         : 'Google Pay UPI ID is not configured by admin.';
                 }
