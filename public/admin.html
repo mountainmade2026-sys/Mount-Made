@@ -10574,8 +10574,8 @@
             const orders = window._ordersCache || [];
             const o = orders.find(x => x.id == orderId);
             if (!o) { showAlert('Order not found', 'error'); return; }
-            const edited = o.edited_invoice && typeof o.edited_invoice === 'object' ? o.edited_invoice : null;
-            const items = edited?.items?.length ? edited.items : (Array.isArray(o.items) ? o.items : []);
+            const edited = o.edited_invoice && typeof o.edited_invoice === 'object' ? o.edited_invoice : {};
+            const items = Array.isArray(edited.items) && edited.items.length ? edited.items : (Array.isArray(o.items) ? o.items : []);
 
             function formatAddressValue(value) {
                 if (!value) return '';
@@ -10598,22 +10598,45 @@
                 return String(value).trim();
             }
 
-            const deliveryAddress = formatAddressValue(o.delivery_address || o.shipping_address || o.address);
+            const invoiceNumber = edited.invoice_number || o.order_number || String(o.id);
+            const company = edited.company || 'Mount Made';
+            const customerName = edited.customer || o.full_name || 'N/A';
+            const email = edited.email || o.email || 'N/A';
+            const phone = edited.phone || o.phone || '';
+            const rawAddress = edited.address || o.delivery_address || o.shipping_address || o.address || '';
+            const deliveryAddress = formatAddressValue(rawAddress);
             const deliveryAddressHtml = deliveryAddress
                 ? `<br><strong>Delivery Address:</strong><br>${escapeHtml(deliveryAddress).replace(/\n/g, '<br>')}`
                 : '';
+            const discount = Number.isFinite(Number(edited.discount)) ? Number(edited.discount) : 0;
+            const deliveryCharge = Number.isFinite(Number(edited.delivery)) ? Number(edited.delivery) : Number.parseFloat(o.delivery_charge || 0) || 0;
+
             const rows = items.map(it => {
+                const qty = Number.isFinite(Number(it.quantity)) ? Number(it.quantity) : 1;
+                const price = Number.isFinite(Number(it.price)) ? Number(it.price) : 0;
+                const subtotal = qty * price;
+                const label = escapeHtml(it.product_name || it.name || 'Item');
                 return `
                 <tr>
                     <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;vertical-align:top;">
-                        <div style="font-weight:600;color:#111827;">${escapeHtml(it.product_name || 'Item')}</div>
+                        <div style="font-weight:600;color:#111827;">${label}</div>
                     </td>
-                    <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:center;vertical-align:middle;">${it.quantity}</td>
-                    <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;vertical-align:middle;">&#8377;${parseFloat(it.price||0).toFixed(2)}</td>
-                    <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;vertical-align:middle;">&#8377;${(parseFloat(it.price||0)*parseInt(it.quantity||1)).toFixed(2)}</td>
+                    <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:center;vertical-align:middle;">${qty}</td>
+                    <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;vertical-align:middle;">&#8377;${price.toFixed(2)}</td>
+                    <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;vertical-align:middle;">&#8377;${subtotal.toFixed(2)}</td>
                 </tr>`;
             }).join('');
-            const html = `<!DOCTYPE html><html><head><title>Invoice ${escapeHtml(o.order_number||'')}</title>
+
+            let subtotal = 0;
+            items.forEach(it => {
+                const qty = Number.isFinite(Number(it.quantity)) ? Number(it.quantity) : 1;
+                const price = Number.isFinite(Number(it.price)) ? Number(it.price) : 0;
+                subtotal += qty * price;
+            });
+            const total = subtotal - discount + deliveryCharge;
+            const thankYouVal = edited.thankYou || `Thank you for shopping with ${company}!`;
+
+            const html = `<!DOCTYPE html><html><head><title>Invoice ${escapeHtml(invoiceNumber)}</title>
             <style>body{font-family:Arial,sans-serif;max-width:700px;margin:40px auto;color:#222;font-size:14px;}
             .hdr{display:flex;justify-content:space-between;padding-bottom:1rem;border-bottom:2px solid #1a4731;margin-bottom:1.5rem;}
             .brand{font-size:1.6rem;font-weight:800;color:#1a4731;}
@@ -10622,25 +10645,43 @@
             .total-row td{font-weight:700;}
             @media print{body{margin:20px;}.no-print{display:none}}</style></head><body>
             <div class="hdr">
-                <div><div class="brand">Mount Made</div><div style="color:#666;">Tax Invoice</div></div>
+                <div><div class="brand">${escapeHtml(company)}</div><div style="color:#666;">Tax Invoice</div></div>
                 <div style="text-align:right;">
-                    <div><strong>Invoice:</strong> ${escapeHtml(o.order_number||String(o.id))}</div>
+                    <div><strong>Invoice:</strong> ${escapeHtml(invoiceNumber)}</div>
                     <div><strong>Date:</strong> ${formatDate(o.created_at)}</div>
                 </div>
             </div>
             <div style="margin-bottom:1.5rem;">
-                <strong>Customer:</strong> ${escapeHtml(o.full_name||'N/A')}<br>
-                <strong>Email:</strong> ${escapeHtml(o.email||'N/A')}
-                ${o.phone ? `<br><strong>Phone:</strong> ${escapeHtml(o.phone)}` : ''}
+                <strong>Customer:</strong> ${escapeHtml(customerName)}<br>
+                <strong>Email:</strong> ${escapeHtml(email)}
+                ${phone ? `<br><strong>Phone:</strong> ${escapeHtml(phone)}` : ''}
                 ${deliveryAddressHtml}
             </div>
             <table><thead><tr><th>Product</th><th>Qty</th><th>Unit Price</th><th>Subtotal</th></tr></thead>
             <tbody>${rows}</tbody>
-            <tfoot><tr class="total-row">
-                <td colspan="3" style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;">Order Total</td>
-                <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;">&#8377;${parseFloat(o.total_amount||0).toFixed(2)}</td>
-            </tr></tfoot></table>
-            <div style="margin-top:2rem;color:#666;font-size:0.85rem;"><p>Thank you for shopping with Mount Made!</p></div>
+            <tfoot>
+                <tr style="background: white;">
+                    <td colspan="3" style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;">Subtotal</td>
+                    <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;font-weight:700;">&#8377;${subtotal.toFixed(2)}</td>
+                </tr>
+                ${discount > 0 ? `
+                    <tr style="background: #f0f9ff;">
+                        <td colspan="3" style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;">Discount</td>
+                        <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;font-weight:700;color:#10b981;">-&#8377;${discount.toFixed(2)}</td>
+                    </tr>
+                ` : ''}
+                ${deliveryCharge > 0 ? `
+                    <tr style="background: white;">
+                        <td colspan="3" style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;">Delivery Charge</td>
+                        <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;font-weight:700;">+&#8377;${deliveryCharge.toFixed(2)}</td>
+                    </tr>
+                ` : ''}
+                <tr class="total-row" style="background: #f0fdf4;">
+                    <td colspan="3" style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;">Order Total</td>
+                    <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;color:#1a4731;font-size:1.1rem;">&#8377;${total.toFixed(2)}</td>
+                </tr>
+            </tfoot></table>
+            <div style="margin-top:2rem;color:#666;font-size:0.85rem;"><p>${escapeHtml(thankYouVal).replace(/\n/g, '<br>')}</p></div>
             <div class="no-print" style="margin-top:1.5rem;"><button onclick="window.print()" style="padding:0.5rem 1rem;background:#1a4731;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:1rem;">&#128424; Print / Save PDF</button></div>
             </body></html>`;
             const w = window.open('', '_blank', 'width=760,height=920');
