@@ -129,7 +129,8 @@
                             </div>
                             <div id="gpay-qr-wrap" class="form-group hidden">
                                 <label class="form-label">GPay QR Code</label>
-                                <div id="gpay-qr-container" class="gpay-qr-image" role="img" aria-label="Google Pay QR code"></div>
+                                <div id="gpay-qr-container" class="gpay-qr-image" role="img" aria-label="Google Pay QR code" style="min-height:256px;"></div>
+                                <img id="gpay-qr-image" class="gpay-qr-image hidden" src="" alt="GPay QR Code" />
                                 <div class="form-help" id="gpay-qr-hint">Scan this barcode in Google Pay.</div>
                             </div>
                             <div class="form-group">
@@ -1917,20 +1918,34 @@
             try {
                 // Clear any existing QR code
                 container.innerHTML = '';
-                
-                // Generate QR code in the container
-                new QRCode(container, {
-                    text: upiLink,
-                    width: 256,
-                    height: 256,
-                    colorDark: '#000000',
-                    colorLight: '#ffffff',
-                    correctLevel: QRCode.CorrectLevel.H
-                });
-                
+
+                if (typeof window.QRCode === 'function') {
+                    new QRCode(container, {
+                        text: upiLink,
+                        width: 256,
+                        height: 256,
+                        colorDark: '#000000',
+                        colorLight: '#ffffff',
+                        correctLevel: QRCode.CorrectLevel.H
+                    });
+                } else {
+                    // Fallback to public QR API when library is unavailable
+                    const fallbackUrl = `https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=${encodeURIComponent(upiLink)}`;
+                    const img = document.createElement('img');
+                    img.src = fallbackUrl;
+                    img.alt = 'GPay QR Code';
+                    img.style.width = '100%';
+                    img.style.height = 'auto';
+                    img.style.display = 'block';
+                    container.appendChild(img);
+                }
+
                 return true;
             } catch (error) {
                 console.warn('Failed to generate dynamic QR code:', error);
+                if (container) {
+                    container.innerHTML = `<div style="color:#d00;font-size:0.9rem; text-align:center;">Unable to generate QR code. Please try again.</div>`;
+                }
                 return false;
             }
         }
@@ -2105,7 +2120,7 @@
             const hasQr = String(checkoutGpaySettings.qrImageUrl || '').trim() !== '';
             const hasUpi = String(checkoutGpaySettings.upiId || '').trim() !== '';
             const currentAmount = getCurrentCheckoutTotal();
-            const dynamicUpiLink = hasUpi ? buildGpayUpiLink(currentAmount, 'Checkout Payment') : null;
+            const dynamicUpiLink = hasUpi && currentAmount > 0 ? buildGpayUpiLink(currentAmount, 'Checkout Payment') : null;
 
             if (hasUpi && dynamicUpiLink) {
                 label.textContent = 'Scan QR Code';
@@ -2115,12 +2130,16 @@
                     qrWrap.classList.remove('hidden');
                 }
                 if (qrContainer) {
-                    generateDynamicGpayQr('gpay-qr-container', dynamicUpiLink);
+                    qrContainer.classList.remove('hidden');
                     qrContainer.style.cursor = 'pointer';
                     qrContainer.onclick = () => {
                         const gpayRef = generateGpayRef();
                         openGpayWithAmount(currentAmount, 'Checkout Payment', gpayRef);
                     };
+                    generateDynamicGpayQr('gpay-qr-container', dynamicUpiLink);
+                }
+                if (qrImage) {
+                    qrImage.classList.add('hidden');
                 }
                 if (qrHint) {
                     qrHint.textContent = 'Scan or tap this QR code in Google Pay to pay the exact checkout amount.';
@@ -2133,9 +2152,15 @@
                     qrWrap.classList.remove('hidden');
                 }
                 if (qrContainer) {
-                    qrContainer.innerHTML = `<img src="${escapeHtml(checkoutGpaySettings.qrImageUrl)}" alt="GPay QR Code" style="width:100%;height:auto;display:block;" />`;
-                    qrContainer.style.cursor = 'default';
+                    qrContainer.classList.add('hidden');
+                    qrContainer.innerHTML = '';
                     qrContainer.onclick = null;
+                }
+                if (qrImage) {
+                    qrImage.classList.remove('hidden');
+                    qrImage.src = checkoutGpaySettings.qrImageUrl;
+                    qrImage.style.cursor = 'default';
+                    qrImage.onclick = null;
                 }
                 if (qrHint) {
                     qrHint.textContent = hasUpi
