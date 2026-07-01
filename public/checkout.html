@@ -2075,10 +2075,15 @@
                 if (qrImage) {
                     qrImage.src = checkoutGpaySettings.qrImageUrl;
                     qrImage.style.cursor = 'pointer';
-                    qrImage.onclick = () => window.open(checkoutGpaySettings.qrImageUrl, '_blank');
+                    // When QR code is clicked, open Google Pay with the current checkout amount
+                    qrImage.onclick = () => {
+                        const currentAmount = getCurrentCheckoutTotal();
+                        const gpayRef = generateGpayRef();
+                        openGpayWithAmount(currentAmount, 'Checkout Payment', gpayRef);
+                    };
                 }
                 if (hint) {
-                    hint.textContent = 'Scan this barcode in Google Pay to pay.';
+                    hint.textContent = 'Scan this barcode in Google Pay to pay. Amount will be prefilled.';
                 }
             } else {
                 label.textContent = 'UPI ID';
