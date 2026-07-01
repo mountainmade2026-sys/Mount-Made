@@ -4164,6 +4164,87 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Invoice Editor Modal -->
+            <div id="invoice-editor-modal" class="modal">
+                <div class="modal-content modal-content-xl">
+                    <div class="modal-header">
+                        <h2><i class="fas fa-file-invoice-dollar"></i> Invoice Editor</h2>
+                        <button class="modal-close" onclick="closeInvoiceEditorModal()">&times;</button>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; padding: 1.5rem; max-height: 80vh; overflow-y: auto;">
+                        <!-- Editor Panel -->
+                        <div style="border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; background: var(--bg-card);">
+                            <h3 style="margin-bottom: 1rem; color: var(--text-dark);">Edit Invoice Details</h3>
+                            
+                            <input type="hidden" id="invoice-editor-order-id">
+                            
+                            <div style="margin-bottom: 1rem;">
+                                <label class="form-label">Invoice Number</label>
+                                <input type="text" id="invoice-editor-number" class="form-input" oninput="updateInvoicePreview()">
+                            </div>
+                            
+                            <div style="margin-bottom: 1rem;">
+                                <label class="form-label">Company Name</label>
+                                <input type="text" id="invoice-editor-company" class="form-input" value="Mount Made" oninput="updateInvoicePreview()">
+                            </div>
+                            
+                            <div style="margin-bottom: 1rem;">
+                                <label class="form-label">Customer Name</label>
+                                <input type="text" id="invoice-editor-customer" class="form-input" oninput="updateInvoicePreview()">
+                            </div>
+                            
+                            <div style="margin-bottom: 1rem;">
+                                <label class="form-label">Customer Email</label>
+                                <input type="email" id="invoice-editor-email" class="form-input" oninput="updateInvoicePreview()">
+                            </div>
+                            
+                            <div style="margin-bottom: 1rem;">
+                                <label class="form-label">Customer Phone</label>
+                                <input type="text" id="invoice-editor-phone" class="form-input" oninput="updateInvoicePreview()">
+                            </div>
+                            
+                            <div style="margin-bottom: 1rem;">
+                                <label class="form-label">Delivery Address</label>
+                                <textarea id="invoice-editor-address" class="form-textarea" rows="3" oninput="updateInvoicePreview()"></textarea>
+                            </div>
+                            
+                            <h4 style="margin-top: 1.5rem; margin-bottom: 1rem; color: var(--text-dark);">Invoice Items</h4>
+                            <div id="invoice-editor-items" style="margin-bottom: 1rem;"></div>
+                            
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="addInvoiceItem()" style="margin-bottom: 1rem;">
+                                <i class="fas fa-plus"></i> Add Item
+                            </button>
+                            
+                            <div style="margin-bottom: 1rem; padding: 1rem; background: var(--bg); border-radius: 8px;">
+                                <label class="form-label">Discount (₹)</label>
+                                <input type="number" id="invoice-editor-discount" class="form-input" min="0" step="0.01" value="0" oninput="updateInvoicePreview()">
+                            </div>
+                            
+                            <div style="margin-bottom: 1rem; padding: 1rem; background: var(--bg); border-radius: 8px;">
+                                <label class="form-label">Delivery Charge (₹)</label>
+                                <input type="number" id="invoice-editor-delivery" class="form-input" min="0" step="0.01" value="0" oninput="updateInvoicePreview()">
+                            </div>
+                            
+                            <div style="margin-top: 1.5rem; padding: 1rem; background: var(--success-bg); border-radius: 8px;">
+                                <div style="font-weight: 700; font-size: 1.1rem; color: var(--text-dark);">
+                                    Total: ₹<span id="invoice-editor-total">0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Preview Panel -->
+                        <div id="invoice-editor-preview" style="border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; background: var(--bg-card); overflow-y: auto; max-height: 70vh; font-family: Arial, sans-serif; font-size: 13px;"></div>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeInvoiceEditorModal()">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="printEditedInvoice()">
+                            <i class="fas fa-print"></i> Print / Save PDF
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -10448,6 +10529,7 @@
                     : '';
 
                 const invoiceBtn = `<button class="action-btn" style="background:#6c63ff;color:#fff;margin-top:4px;" onclick="printOrderInvoice(${o.id})" title="Download Invoice"><i class="fas fa-file-invoice"></i> Invoice</button>`;
+                const editInvoiceBtn = `<button class="action-btn" style="background:#8b5cf6;color:#fff;margin-top:4px;" onclick="openInvoiceEditor(${o.id})" title="Edit Invoice"><i class="fas fa-edit"></i> Edit</button>`;
                 const proofBtn = getPaymentProofPreviewButton(o);
 
                 html += `
@@ -10467,6 +10549,7 @@
                             ${ofdBtn}
                             ${trackingBtn}
                             ${invoiceBtn}
+                            ${editInvoiceBtn}
                             ${proofBtn}
                         </td>
                     </tr>
@@ -10556,7 +10639,287 @@
             w.focus();
         };
 
+        /* ── Invoice Editor ── */
+        window.invoiceEditorData = {
+            orderId: null,
+            items: [],
+            discount: 0,
+            deliveryCharge: 0
+        };
+
+        window.openInvoiceEditor = function(orderId) {
+            const orders = window._ordersCache || [];
+            const order = orders.find(x => x.id == orderId);
+            if (!order) { showAlert('Order not found', 'error'); return; }
+
+            window.invoiceEditorData = {
+                orderId: orderId,
+                items: (Array.isArray(order.items) ? order.items : []).map(it => ({
+                    id: it.product_id || it.id,
+                    name: it.product_name || '',
+                    quantity: it.quantity || 1,
+                    price: parseFloat(it.price || 0)
+                })),
+                discount: 0,
+                deliveryCharge: parseFloat(order.delivery_charge || 0)
+            };
+
+            document.getElementById('invoice-editor-order-id').value = orderId;
+            document.getElementById('invoice-editor-number').value = order.order_number || String(orderId);
+            document.getElementById('invoice-editor-customer').value = order.full_name || '';
+            document.getElementById('invoice-editor-email').value = order.email || '';
+            document.getElementById('invoice-editor-phone').value = order.phone || '';
+            document.getElementById('invoice-editor-discount').value = '0';
+            document.getElementById('invoice-editor-delivery').value = window.invoiceEditorData.deliveryCharge;
+
+            const addr = order.delivery_address || order.shipping_address || order.address || '';
+            const addrStr = typeof addr === 'string' ? addr : (addr.address || '');
+            document.getElementById('invoice-editor-address').value = addrStr;
+
+            renderInvoiceItems();
+            updateInvoicePreview();
+
+            document.getElementById('invoice-editor-modal').classList.add('show');
+        };
+
+        window.closeInvoiceEditorModal = function() {
+            document.getElementById('invoice-editor-modal').classList.remove('show');
+            window.invoiceEditorData = { orderId: null, items: [], discount: 0, deliveryCharge: 0 };
+        };
+
+        window.renderInvoiceItems = function() {
+            const container = document.getElementById('invoice-editor-items');
+            container.innerHTML = '';
+
+            window.invoiceEditorData.items.forEach((item, index) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.style.cssText = 'margin-bottom: 1rem; padding: 0.75rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg);';
+                itemDiv.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <strong style="color: var(--text-dark);">Item ${index + 1}</strong>
+                        <button type="button" class="btn btn-danger btn-sm" onclick="removeInvoiceItem(${index})" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">
+                            <i class="fas fa-trash"></i> Remove
+                        </button>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 0.5rem; margin-bottom: 0.5rem;">
+                        <input type="text" placeholder="Product name" value="${escapeHtml(item.name)}" class="form-input" style="font-size: 0.9rem;" onchange="updateInvoiceItem(${index}, 'name', this.value)">
+                        <input type="number" placeholder="Qty" value="${item.quantity}" min="1" class="form-input" style="font-size: 0.9rem;" onchange="updateInvoiceItem(${index}, 'quantity', parseInt(this.value))">
+                        <input type="number" placeholder="Price" value="${item.price.toFixed(2)}" min="0" step="0.01" class="form-input" style="font-size: 0.9rem;" onchange="updateInvoiceItem(${index}, 'price', parseFloat(this.value))">
+                    </div>
+                    <div style="text-align: right; font-weight: 700; color: var(--primary);">
+                        Subtotal: ₹${(item.price * item.quantity).toFixed(2)}
+                    </div>
+                `;
+                container.appendChild(itemDiv);
+            });
+        };
+
+        window.updateInvoiceItem = function(index, field, value) {
+            if (index >= 0 && index < window.invoiceEditorData.items.length) {
+                window.invoiceEditorData.items[index][field] = value;
+                renderInvoiceItems();
+                updateInvoicePreview();
+            }
+        };
+
+        window.addInvoiceItem = function() {
+            window.invoiceEditorData.items.push({ id: 0, name: '', quantity: 1, price: 0 });
+            renderInvoiceItems();
+            updateInvoicePreview();
+        };
+
+        window.removeInvoiceItem = function(index) {
+            if (index >= 0 && index < window.invoiceEditorData.items.length) {
+                window.invoiceEditorData.items.splice(index, 1);
+                renderInvoiceItems();
+                updateInvoicePreview();
+            }
+        };
+
+        window.updateInvoicePreview = function() {
+            const company = document.getElementById('invoice-editor-company').value || 'Mount Made';
+            const invNum = document.getElementById('invoice-editor-number').value || 'INV-0001';
+            const customer = document.getElementById('invoice-editor-customer').value || 'Customer';
+            const email = document.getElementById('invoice-editor-email').value || '';
+            const phone = document.getElementById('invoice-editor-phone').value || '';
+            const address = document.getElementById('invoice-editor-address').value || '';
+            const discount = parseFloat(document.getElementById('invoice-editor-discount').value || 0);
+            const delivery = parseFloat(document.getElementById('invoice-editor-delivery').value || 0);
+
+            window.invoiceEditorData.discount = discount;
+            window.invoiceEditorData.deliveryCharge = delivery;
+
+            let subtotal = 0;
+            const itemRows = window.invoiceEditorData.items.map(item => {
+                const lineTotal = item.price * item.quantity;
+                subtotal += lineTotal;
+                return `
+                    <tr style="border: 1px solid #ddd;">
+                        <td style="padding: 0.5rem 0.75rem; border-right: 1px solid #ddd;">${escapeHtml(item.name)}</td>
+                        <td style="padding: 0.5rem 0.75rem; text-align: center; border-right: 1px solid #ddd;">${item.quantity}</td>
+                        <td style="padding: 0.5rem 0.75rem; text-align: right; border-right: 1px solid #ddd;">₹${item.price.toFixed(2)}</td>
+                        <td style="padding: 0.5rem 0.75rem; text-align: right;">₹${lineTotal.toFixed(2)}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            const total = subtotal - discount + delivery;
+
+            const html = `
+                <div style="border: 1px solid #ddd; border-radius: 8px; padding: 1rem; background: white; font-family: Arial, sans-serif;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 1rem; border-bottom: 2px solid #1a4731; padding-bottom: 0.75rem;">
+                        <div>
+                            <div style="font-size: 1.3rem; font-weight: 800; color: #1a4731;">${escapeHtml(company)}</div>
+                            <div style="color: #666; font-size: 0.85rem;">Tax Invoice</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-weight: 700;">Invoice: ${escapeHtml(invNum)}</div>
+                            <div style="font-size: 0.85rem; color: #666;">${new Date().toLocaleDateString('en-IN')}</div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 1rem; font-size: 0.9rem;">
+                        <div><strong>Customer:</strong> ${escapeHtml(customer)}</div>
+                        ${email ? `<div><strong>Email:</strong> ${escapeHtml(email)}</div>` : ''}
+                        ${phone ? `<div><strong>Phone:</strong> ${escapeHtml(phone)}</div>` : ''}
+                        ${address ? `<div><strong>Address:</strong> ${escapeHtml(address).replace(/\n/g, '<br>')}</div>` : ''}
+                    </div>
+                    
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 1rem;">
+                        <thead>
+                            <tr style="background: #f0fdf4;">
+                                <th style="padding: 0.5rem 0.75rem; border: 1px solid #ddd; text-align: left; font-weight: 700;">Product</th>
+                                <th style="padding: 0.5rem 0.75rem; border: 1px solid #ddd; text-align: center; font-weight: 700;">Qty</th>
+                                <th style="padding: 0.5rem 0.75rem; border: 1px solid #ddd; text-align: right; font-weight: 700;">Unit Price</th>
+                                <th style="padding: 0.5rem 0.75rem; border: 1px solid #ddd; text-align: right; font-weight: 700;">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${itemRows}
+                        </tbody>
+                    </table>
+                    
+                    <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
+                        <div style="width: 300px;">
+                            <div style="display: flex; justify-content: space-between; padding: 0.5rem 0.75rem; border-bottom: 1px solid #ddd;">
+                                <span>Subtotal:</span>
+                                <span style="font-weight: 700;">₹${subtotal.toFixed(2)}</span>
+                            </div>
+                            ${discount > 0 ? `
+                                <div style="display: flex; justify-content: space-between; padding: 0.5rem 0.75rem; border-bottom: 1px solid #ddd; color: var(--success);">
+                                    <span>Discount:</span>
+                                    <span style="font-weight: 700;">-₹${discount.toFixed(2)}</span>
+                                </div>
+                            ` : ''}
+                            ${delivery > 0 ? `
+                                <div style="display: flex; justify-content: space-between; padding: 0.5rem 0.75rem; border-bottom: 1px solid #ddd;">
+                                    <span>Delivery:</span>
+                                    <span style="font-weight: 700;">+₹${delivery.toFixed(2)}</span>
+                                </div>
+                            ` : ''}
+                            <div style="display: flex; justify-content: space-between; padding: 0.75rem; background: #f0fdf4; font-weight: 700; font-size: 1.1rem; border-radius: 4px; margin-top: 0.5rem;">
+                                <span>TOTAL:</span>
+                                <span style="color: #1a4731;">₹${total.toFixed(2)}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 1rem; color: #666; font-size: 0.8rem; text-align: center;">
+                        <p>Thank you for shopping with ${escapeHtml(company)}!</p>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('invoice-editor-preview').innerHTML = html;
+            document.getElementById('invoice-editor-total').textContent = total.toFixed(2);
+        };
+
+        window.printEditedInvoice = function() {
+            const orderId = document.getElementById('invoice-editor-order-id').value;
+            const company = document.getElementById('invoice-editor-company').value || 'Mount Made';
+            const invNum = document.getElementById('invoice-editor-number').value || 'INV-0001';
+            const customer = document.getElementById('invoice-editor-customer').value || 'Customer';
+            const email = document.getElementById('invoice-editor-email').value || '';
+            const phone = document.getElementById('invoice-editor-phone').value || '';
+            const address = document.getElementById('invoice-editor-address').value || '';
+            const discount = parseFloat(document.getElementById('invoice-editor-discount').value || 0);
+            const delivery = parseFloat(document.getElementById('invoice-editor-delivery').value || 0);
+
+            let subtotal = 0;
+            const itemRows = window.invoiceEditorData.items.map(item => {
+                const lineTotal = item.price * item.quantity;
+                subtotal += lineTotal;
+                return `
+                    <tr>
+                        <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;vertical-align:top;">
+                            <div style="font-weight:600;color:#111827;">${escapeHtml(item.name)}</div>
+                        </td>
+                        <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:center;vertical-align:middle;">${item.quantity}</td>
+                        <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;vertical-align:middle;">&#8377;${item.price.toFixed(2)}</td>
+                        <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;vertical-align:middle;">&#8377;${lineTotal.toFixed(2)}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            const total = subtotal - discount + delivery;
+
+            const html = `<!DOCTYPE html><html><head><title>Invoice ${escapeHtml(invNum)}</title>
+            <style>body{font-family:Arial,sans-serif;max-width:700px;margin:40px auto;color:#222;font-size:14px;}
+            .hdr{display:flex;justify-content:space-between;padding-bottom:1rem;border-bottom:2px solid #1a4731;margin-bottom:1.5rem;}
+            .brand{font-size:1.6rem;font-weight:800;color:#1a4731;}
+            table{width:100%;border-collapse:collapse;margin-top:1rem;}
+            th{background:#f0fdf4;padding:0.5rem 0.75rem;border:1px solid #ddd;font-weight:700;text-align:left;}
+            .total-row td{font-weight:700;}
+            @media print{body{margin:20px;}.no-print{display:none}}</style></head><body>
+            <div class="hdr">
+                <div><div class="brand">${escapeHtml(company)}</div><div style="color:#666;">Tax Invoice</div></div>
+                <div style="text-align:right;">
+                    <div><strong>Invoice:</strong> ${escapeHtml(invNum)}</div>
+                    <div><strong>Date:</strong> ${new Date().toLocaleDateString('en-IN')}</div>
+                </div>
+            </div>
+            <div style="margin-bottom:1.5rem;">
+                <strong>Customer:</strong> ${escapeHtml(customer)}<br>
+                ${email ? `<strong>Email:</strong> ${escapeHtml(email)}<br>` : ''}
+                ${phone ? `<strong>Phone:</strong> ${escapeHtml(phone)}<br>` : ''}
+                ${address ? `<strong>Address:</strong><br>${escapeHtml(address).replace(/\n/g, '<br>')}` : ''}
+            </div>
+            <table><thead><tr><th>Product</th><th>Qty</th><th>Unit Price</th><th>Subtotal</th></tr></thead>
+            <tbody>${itemRows}</tbody>
+            <tfoot>
+                <tr style="background: white;">
+                    <td colspan="3" style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;">Subtotal</td>
+                    <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;font-weight:700;">&#8377;${subtotal.toFixed(2)}</td>
+                </tr>
+                ${discount > 0 ? `
+                    <tr style="background: #f0f9ff;">
+                        <td colspan="3" style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;">Discount</td>
+                        <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;font-weight:700;color:#10b981;">-&#8377;${discount.toFixed(2)}</td>
+                    </tr>
+                ` : ''}
+                ${delivery > 0 ? `
+                    <tr style="background: white;">
+                        <td colspan="3" style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;">Delivery Charge</td>
+                        <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;font-weight:700;">+&#8377;${delivery.toFixed(2)}</td>
+                    </tr>
+                ` : ''}
+                <tr class="total-row" style="background: #f0fdf4;">
+                    <td colspan="3" style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;">Order Total</td>
+                    <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;color:#1a4731;font-size:1.1rem;">&#8377;${total.toFixed(2)}</td>
+                </tr>
+            </tfoot></table>
+            <div style="margin-top:2rem;color:#666;font-size:0.85rem;"><p>Thank you for shopping with ${escapeHtml(company)}!</p></div>
+            <div class="no-print" style="margin-top:1.5rem;"><button onclick="window.print()" style="padding:0.5rem 1rem;background:#1a4731;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:1rem;">&#128424; Print / Save PDF</button></div>
+            </body></html>`;
+            const w = window.open('', '_blank', 'width=760,height=920');
+            if (!w) { showAlert('Pop-up blocked. Please allow pop-ups for this site.', 'error'); return; }
+            w.document.write(html);
+            w.document.close();
+            w.focus();
+        };
+
         /* ── Orders CSV Exporter ── */
+
         window.downloadOrdersCSV = function() {
             const orders = window._ordersCache || [];
             if (!orders.length) { showAlert('No orders to export. Load order history first.', 'warning'); return; }
