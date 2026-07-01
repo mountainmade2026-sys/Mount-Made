@@ -239,8 +239,7 @@ class Order {
                  'product_name', oi.product_name,
                  'quantity', oi.quantity,
                  'price', oi.price,
-                 'subtotal', oi.subtotal,
-                 'barcode', COALESCE(NULLIF(p.barcode, ''), CONCAT('MM-', LPAD(p.id::text, 6, '0')))
+                 'subtotal', oi.subtotal
                )
              ) as items
       FROM orders o
@@ -265,8 +264,7 @@ class Order {
                  'product_name', oi.product_name,
                  'quantity', oi.quantity,
                  'price', oi.price,
-                 'subtotal', oi.subtotal,
-                 'barcode', COALESCE(NULLIF(p.barcode, ''), CONCAT('MM-', LPAD(p.id::text, 6, '0')))
+                 'subtotal', oi.subtotal
                )
              ) as items
       FROM orders o
@@ -309,8 +307,7 @@ class Order {
                    'product_name', oi.product_name,
                    'quantity', oi.quantity,
                    'price', oi.price,
-                   'subtotal', oi.subtotal,
-                   'barcode', COALESCE(NULLIF(p.barcode, ''), CONCAT('MM-', LPAD(p.id::text, 6, '0')))
+                   'subtotal', oi.subtotal
                  )
                ) FILTER (WHERE oi.id IS NOT NULL),
                '[]'
