@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/mobile-enhancements.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode.js/1.5.3/qrcode.min.js"></script>
 </head>
 <body>
     <nav class="navbar">
@@ -1545,6 +1546,9 @@
                 }
             }
             if (totalEl) totalEl.textContent = formatCurrency(total);
+
+            // Update Google Pay QR code with new total amount
+            updateGpayLabelAndPrefill();
         }
 
         async function changeCheckoutQuantity(itemId, delta, inputEl) {
@@ -1896,6 +1900,31 @@
             return `MM${Date.now()}${rand}`;
         }
 
+        function generateDynamicGpayQr(qrContainerId, upiLink) {
+            const container = document.getElementById(qrContainerId);
+            if (!container) return false;
+
+            try {
+                // Clear any existing QR code
+                container.innerHTML = '';
+                
+                // Generate QR code in the container
+                new QRCode(container, {
+                    text: upiLink,
+                    width: 256,
+                    height: 256,
+                    colorDark: '#000000',
+                    colorLight: '#ffffff',
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+                
+                return true;
+            } catch (error) {
+                console.warn('Failed to generate dynamic QR code:', error);
+                return false;
+            }
+        }
+
         let paymentProofFile = null;
         let paymentProofUploadResult = null;
 
@@ -2083,12 +2112,34 @@
                     };
                 }
                 if (hint) {
-                    hint.textContent = 'Scan this barcode in Google Pay to pay. Amount will be prefilled.';
+                    hint.textContent = 'Scan this barcode in Google Pay to pay with amount prefilled.';
+                }
+            } else if (hasUpi) {
+                // Generate dynamic QR code with current checkout amount
+                label.textContent = 'Scan QR Code (Dynamic)';
+                valueInput.value = checkoutGpaySettings.upiId;
+                valueInput.placeholder = 'UPI configured';
+                if (qrWrap) {
+                    qrWrap.classList.remove('hidden');
+                }
+                if (qrImage) {
+                    qrImage.style.cursor = 'default';
+                    qrImage.onclick = null;
+                    
+                    // Generate dynamic QR code with current checkout amount
+                    const currentAmount = getCurrentCheckoutTotal();
+                    const upiLink = buildGpayUpiLink(currentAmount, 'Checkout Payment');
+                    if (upiLink) {
+                        generateDynamicGpayQr('gpay-qr-wrap', upiLink);
+                    }
+                }
+                if (hint) {
+                    hint.textContent = 'Scan this dynamically generated QR code in Google Pay to pay with exact amount.';
                 }
             } else {
                 label.textContent = 'UPI ID';
-                valueInput.value = hasUpi ? checkoutGpaySettings.upiId : '';
-                valueInput.placeholder = 'Configured by admin';
+                valueInput.value = '';
+                valueInput.placeholder = 'No UPI configured';
                 if (qrWrap) {
                     qrWrap.classList.add('hidden');
                 }
