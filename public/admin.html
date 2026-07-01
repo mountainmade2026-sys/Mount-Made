@@ -1454,8 +1454,11 @@
             </div>
 
             <div class="sidebar-section-title">Orders</div>
-            <div class="admin-nav-item" onclick="showSection('order-history')">
+            <div class="admin-nav-item" onclick="showSection('order-history')" data-section="order-history">
                 <i class="fas fa-history"></i> Order History
+            </div>
+            <div class="admin-nav-item" onclick="showSection('order-history')" data-section="order-history">
+                <i class="fas fa-file-invoice-dollar"></i> Invoice Editor
             </div>
             <div class="admin-nav-item" onclick="showSection('customers-orders')">
                 <i class="fas fa-shopping-bag"></i> Customers Orders
@@ -4474,7 +4477,9 @@
             
             // highlight sidebar item
             document.querySelectorAll('.admin-nav-item').forEach(item => {
-                if (item.textContent.trim().toLowerCase().includes((id || '').replace(/-/g, ' '))) {
+                const sectionMatch = item.dataset.section === id;
+                const textMatch = item.textContent.trim().toLowerCase().includes((id || '').replace(/-/g, ' '));
+                if (sectionMatch || textMatch) {
                     item.classList.add('active');
                 }
             });
