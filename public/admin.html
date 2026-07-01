@@ -4247,8 +4247,8 @@
 
                     <div style="display:flex; justify-content:flex-end; gap:0.75rem; margin-top:1rem;">
                         <button type="button" class="btn btn-secondary" onclick="showSection('order-history')">Cancel</button>
-                        <button type="button" class="btn btn-primary" onclick="printEditedInvoice()">
-                            <i class="fas fa-print"></i> Print / Save PDF
+                        <button type="button" class="btn btn-primary" id="invoice-editor-save-btn" onclick="saveEditedInvoice()">
+                            <i class="fas fa-save"></i> Save
                         </button>
                     </div>
                 </div>
@@ -10855,6 +10855,7 @@
             const email = document.getElementById('invoice-editor-email').value || '';
             const phone = document.getElementById('invoice-editor-phone').value || '';
             const address = document.getElementById('invoice-editor-address').value || '';
+            const thankYouVal = (document.getElementById('invoice-editor-thankyou') && document.getElementById('invoice-editor-thankyou').value) || (`Thank you for shopping with ${company}!`);
             const discount = parseFloat(document.getElementById('invoice-editor-discount').value || 0);
             const delivery = parseFloat(document.getElementById('invoice-editor-delivery').value || 0);
 
@@ -10929,6 +10930,46 @@
             w.document.write(html);
             w.document.close();
             w.focus();
+        };
+
+        window.saveEditedInvoice = async function() {
+            const btn = document.getElementById('invoice-editor-save-btn');
+            const orderId = document.getElementById('invoice-editor-order-id').value;
+            if (!orderId) { showAlert('No order selected', 'error'); return; }
+
+            const payload = {
+                invoice_number: document.getElementById('invoice-editor-number').value || null,
+                company: document.getElementById('invoice-editor-company').value || null,
+                customer: document.getElementById('invoice-editor-customer').value || null,
+                email: document.getElementById('invoice-editor-email').value || null,
+                phone: document.getElementById('invoice-editor-phone').value || null,
+                address: document.getElementById('invoice-editor-address').value || null,
+                thankYou: document.getElementById('invoice-editor-thankyou')?.value || null,
+                items: window.invoiceEditorData.items || [],
+                discount: parseFloat(document.getElementById('invoice-editor-discount').value || 0),
+                delivery: parseFloat(document.getElementById('invoice-editor-delivery').value || 0)
+            };
+
+            try {
+                if (btn) { btn.disabled = true; }
+                const resp = await api.put(`/admin/orders/${orderId}/invoice`, payload);
+                showAlert(resp.message || 'Invoice saved', 'success');
+
+                // update local cache if present
+                const orders = window._ordersCache || [];
+                const idx = orders.findIndex(o => String(o.id) === String(orderId));
+                if (idx >= 0) {
+                    orders[idx].edited_invoice = payload;
+                    // optionally update visible fields
+                    orders[idx].order_number = payload.invoice_number || orders[idx].order_number;
+                    orders[idx].delivery_charge = payload.delivery || orders[idx].delivery_charge;
+                }
+            } catch (err) {
+                console.error('Save invoice error:', err);
+                showAlert(err.message || 'Failed to save invoice', 'error');
+            } finally {
+                if (btn) { btn.disabled = false; }
+            }
         };
 
         /* ── Orders CSV Exporter ── */

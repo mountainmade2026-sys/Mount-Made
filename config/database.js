@@ -762,6 +762,13 @@ const initializeDatabase = async () => {
         ) THEN
           ALTER TABLE orders ADD COLUMN payment_details JSONB;
         END IF;
+
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'orders' AND column_name = 'edited_invoice'
+        ) THEN
+          ALTER TABLE orders ADD COLUMN edited_invoice JSONB;
+        END IF;
       END $$;
     `);
 

@@ -1198,6 +1198,7 @@ exports.updateOrderTracking = async (req, res) => {
       );
 
       if (mark_shipped && currentStatus === 'processing') {
+
         void sendOrderStatusWhatsApp(result.rows[0], 'shipped', currentStatus);
       }
 
@@ -1208,6 +1209,36 @@ exports.updateOrderTracking = async (req, res) => {
   } catch (error) {
     console.error('Update order tracking error:', error);
     res.status(500).json({ error: 'Failed to update tracking info.' });
+  }
+};
+
+// Update edited invoice data for an order
+exports.updateOrderInvoice = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const payload = req.body || {};
+
+    const client = await db.pool.connect();
+    try {
+      // Ensure order exists
+      const existing = await client.query('SELECT id FROM orders WHERE id = $1 FOR UPDATE', [id]);
+      if (!existing.rows.length) {
+        return res.status(404).json({ error: 'Order not found.' });
+      }
+
+      // Save payload into edited_invoice JSONB
+      const result = await client.query(
+        `UPDATE orders SET edited_invoice = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *`,
+        [payload, id]
+      );
+
+      res.json({ message: 'Invoice saved successfully.', order: result.rows[0] });
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error('Save edited invoice error:', error);
+    res.status(500).json({ error: 'Failed to save edited invoice.' });
   }
 };
 

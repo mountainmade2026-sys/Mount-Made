@@ -63,6 +63,7 @@ router.get('/orders', adminController.getAllOrders);
 router.get('/orders/:id', adminController.getOrderDetails);
 router.put('/orders/:id/status', adminController.updateOrderStatus);
 router.put('/orders/:id/tracking', adminController.updateOrderTracking);
+router.put('/orders/:id/invoice', adminController.updateOrderInvoice);
 router.post('/orders/:id/out-for-delivery', adminController.markOutForDelivery);
 
 // Returns Management
