@@ -106,8 +106,6 @@
             display: block;
             width: 100%;
             height: auto;
-            aspect-ratio: 1 / 1;
-            object-fit: contain;
             background: var(--bg-secondary);
             padding: 0.25rem;
             transition: transform 0.35s ease;
@@ -369,15 +367,22 @@
         #products-grid.grid-4 {
             grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important;
             gap: 1rem !important;
+            justify-items: center;
         }
 
         .product-card {
-            max-width: 240px;
-            margin: 0 auto;
+            width: auto;
+            max-width: 100%;
+            justify-self: center;
         }
 
         .product-card .card-image {
-            aspect-ratio: 1 / 1;
+            display: block;
+            width: auto;
+            max-width: 100%;
+            height: auto;
+            object-fit: contain;
+            margin: 0 auto;
         }
 
         .product-card .card-content {
@@ -566,10 +571,6 @@
 
             .products-header h2 {
                 text-align: center;
-            }
-
-            .product-card .card-image {
-                aspect-ratio: 1 / 1;
             }
 
             .product-card .card-footer {

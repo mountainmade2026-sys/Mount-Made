@@ -255,13 +255,14 @@
 
         /* Homepage product cards - compact sizing + better image fit */
         #homepage-sections-container .product-card .card-image {
-            width: 100%;
+            width: auto;
+            max-width: 100%;
             height: auto;
-            aspect-ratio: 4 / 3;
-            max-height: 180px;
+            max-height: 260px;
             object-fit: contain;
             background: var(--bg-secondary);
             display: block;
+            margin: 0 auto;
         }
 
         #homepage-sections-container .product-card .stock-info {
