@@ -478,7 +478,7 @@ app.post('/api/upload', authenticateToken, adminCheck, upload.single('image'), (
 app.use((error, req, res, next) => {
   if (error instanceof multer.MulterError) {
     if (error.code === 'LIMIT_FILE_SIZE') {
-      return res.status(400).json({ error: 'File size too large.' });
+      return res.status(400).json({ error: 'File size too large. Maximum size is 6MB.' });
     }
     return res.status(400).json({ error: error.message });
   }
