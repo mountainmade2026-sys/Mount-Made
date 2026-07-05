@@ -253,17 +253,61 @@
         }
         /* No cross-device fallback: PC banner stays PC-only, Mobile banner stays Mobile-only */
 
-        /* Homepage product cards - compact sizing + better image fit */
-        #homepage-sections-container .product-card .card-image {
-            width: auto;
-            max-width: 100%;
-            height: auto;
-            aspect-ratio: var(--product-card-image-ratio, auto);
-            max-height: 260px;
-            object-fit: contain;
+        /* Homepage product cards - match product section layout */
+        #homepage-sections-container .product-card {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            border-radius: 14px;
+            overflow: hidden;
+            transition: transform 0.24s ease, box-shadow 0.24s ease, border-color 0.24s ease;
+            box-shadow: var(--shadow-sm);
+            min-height: 420px;
+            background: var(--bg-primary);
+        }
+
+        #homepage-sections-container .product-card:hover {
+            transform: translateY(-6px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--primary-200);
+        }
+
+        #homepage-sections-container .product-card .card-image-wrap {
+            flex: 0 0 auto;
+            width: 100%;
+            height: 280px;
+            min-height: 280px;
+            overflow: hidden;
             background: var(--bg-secondary);
+            position: relative;
+            border-radius: 14px 14px 0 0;
+            display: grid;
+            place-items: center;
+            padding: 0;
+        }
+
+        #homepage-sections-container .product-card .card-body {
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            background: var(--bg-primary);
+            overflow: hidden;
+        }
+
+        #homepage-sections-container .product-card .card-image {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center center;
+            transition: transform 0.35s ease;
             display: block;
-            margin: 0 auto;
+            border-radius: 14px 14px 0 0;
+            max-width: none;
+            min-width: 100%;
+            min-height: 100%;
         }
 
         #homepage-sections-container .product-card .stock-info {
@@ -273,28 +317,52 @@
         }
 
         #homepage-sections-container .product-card .card-content {
-            padding: 0.75rem 0.9rem 0.8rem;
+            padding: 0.35rem 0.45rem 0.2rem;
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow: hidden;
         }
 
         #homepage-sections-container .product-card .card-description {
             margin-bottom: var(--space-2);
+            display: -webkit-box;
             -webkit-line-clamp: 1;
-            line-clamp: 1;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         #homepage-sections-container .product-card .product-price {
-            font-size: 1.35rem;
+            font-size: 1.1rem;
             color: var(--primary-700);
         }
 
         #homepage-sections-container .product-card .card-footer {
-            padding: 0 0.9rem 0.9rem;
-            gap: 0.45rem;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0.35rem;
+            padding: 0 1rem 0.75rem;
         }
 
         #homepage-sections-container .product-card .card-footer .btn {
-            padding: 0.45rem 0.6rem;
-            font-size: 0.78rem;
+            padding: 0.4rem 0.6rem;
+            font-size: 0.76rem;
+        }
+
+        #homepage-sections-container .product-card .product-action-row {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            flex-wrap: nowrap;
+            width: 100%;
+        }
+
+        #homepage-sections-container .product-card .product-action-row .btn {
+            flex: 1;
+            min-width: 0;
+            min-height: 38px;
+            width: auto;
         }
 
         #homepage-sections-container .product-card .add-cart-cta {
@@ -306,22 +374,27 @@
             font-size: 0.8em;
         }
 
-
         @media (max-width: 768px) {
             #homepage-sections-container .product-card .card-image {
-                max-height: 110px;
+                height: 170px;
+                min-height: 170px;
             }
 
             #homepage-sections-container .product-card .card-content {
-                padding: 0.5rem 0.65rem 0.65rem;
+                padding: 0.5rem 0.75rem 0.75rem;
             }
 
             #homepage-sections-container .product-card .card-footer {
-                padding: 0 0.65rem 0.65rem;
+                padding: 0 0.75rem 0.75rem;
+                gap: 0.35rem;
             }
         }
 
         @media (max-width: 600px) {
+            #homepage-sections-container .product-card {
+                min-height: auto;
+            }
+
             #homepage-sections-container .product-card .card-description {
                 display: none;
             }
@@ -333,11 +406,14 @@
             #homepage-sections-container .product-card .card-footer {
                 flex-direction: column;
                 align-items: stretch;
+                padding: 0 0.75rem 0.5rem;
+                gap: 0.35rem;
             }
 
             #homepage-sections-container .product-card .card-footer .btn {
                 width: 100% !important;
                 margin-left: 0 !important;
+                padding: 0.32rem 0.35rem;
             }
 
             #homepage-sections-container .product-card .product-action-row {
@@ -345,18 +421,38 @@
                 grid-template-columns: repeat(2, minmax(0, 1fr));
                 gap: 0.25rem;
                 width: 100%;
+                justify-items: stretch;
+            }
+
+            #homepage-sections-container .product-card .card-image-wrap {
+                height: 170px;
+                min-height: 170px;
             }
 
             #homepage-sections-container .product-card .product-action-row .btn {
                 width: 100% !important;
                 min-width: 0;
-                padding: 0.34rem 0.2rem;
-                font-size: 0.64rem;
-                gap: 0.2rem;
-                line-height: 1.1;
+                min-height: 36px !important;
+                padding: 0.32rem 0.28rem;
+                font-size: 0.72rem;
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
+                line-height: 1.05;
+                gap: 0.15rem;
+            }
+
+            #homepage-sections-container .product-card .product-action-row .btn {
+                width: 100% !important;
+                min-width: 0;
+                min-height: 36px !important;
+                padding: 0.32rem 0.28rem;
+                font-size: 0.72rem;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                line-height: 1.05;
+                gap: 0.15rem;
             }
 
             #homepage-sections-container .product-card .product-action-row .btn i {
@@ -733,29 +829,40 @@
 
         .carousel-item {
             min-width: 280px;
+            display: flex;
+            flex-direction: column;
             background: var(--bg-primary);
-            border-radius: 8px;
+            border-radius: 14px;
             overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.24s ease, box-shadow 0.24s ease, border-color 0.24s ease;
             cursor: pointer;
             flex-shrink: 0;
+            min-height: 420px;
         }
 
         .carousel-item:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+            transform: translateY(-6px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--primary-200);
         }
 
         .carousel-item-image {
             width: 100%;
-            height: 200px;
-            object-fit: contain;
+            height: 280px;
+            object-fit: cover;
+            object-position: center center;
             background: var(--bg-secondary);
+            display: block;
         }
 
         .carousel-item-content {
-            padding: 1rem;
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
+            padding: 0.35rem 0.45rem 0.2rem;
+            min-height: 0;
+            overflow: hidden;
         }
 
         .carousel-item-title {
@@ -796,13 +903,21 @@
 
         .carousel-item-footer {
             display: flex;
-            gap: 0.5rem;
+            gap: 0.35rem;
+            flex-wrap: nowrap;
+            align-items: stretch;
+            width: 100%;
+            padding: 0 1rem 0.75rem;
+            box-sizing: border-box;
         }
 
         .carousel-item-footer .btn {
             flex: 1;
-            padding: 0.5rem;
-            font-size: 0.875rem;
+            min-width: 0;
+            min-height: 36px;
+            padding: 0.4rem 0.6rem;
+            font-size: 0.76rem;
+            white-space: nowrap;
         }
 
         .carousel-nav {
@@ -869,6 +984,25 @@
 
             .carousel-track-container {
                 min-height: 260px;
+            }
+
+            .carousel-item-image {
+                height: 170px;
+            }
+
+            .carousel-item-content {
+                padding: 0.5rem 0.75rem 0.75rem;
+            }
+
+            .carousel-item-footer {
+                padding: 0 0.75rem 0.75rem;
+                gap: 0.35rem;
+            }
+
+            .carousel-item-footer .btn {
+                min-height: 36px;
+                padding: 0.32rem 0.28rem;
+                font-size: 0.72rem;
             }
 
             .carousel-nav {
@@ -1877,70 +2011,50 @@
                                         '<span class="product-badge" style="background: var(--error);">Out of Stock</span>' : ''}
                                     
                                     <a href="/product-details?id=${product.id}" style="text-decoration: none; color: inherit;">
-                                        <img src="${product.image_url || '/images/placeholder.jpg'}" 
-                                             alt="${product.name}" 
-                                             class="card-image"
-                                             loading="lazy"
-                                             decoding="async"
-                                             onerror="this.src='/images/placeholder.jpg'">
-                                        
-                                        <div class="card-content">
-                                            <h3 class="card-title">${product.name}</h3>
-                                            <p class="card-description">${product.description || ''}</p>
-                                            
-                                            ${(() => {
-                                                const useWholesale = auth.isWholesale() && product.wholesale_price;
-                                                const base = parseFloat(product.price || 0);
-                                                const discount = product.discount_price != null ? parseFloat(product.discount_price) : null;
-                                                const retail = discount != null && discount < base ? discount : base;
-                                                const sale = useWholesale ? parseFloat(product.wholesale_price) : retail;
-                                                const showDiscount = !useWholesale && discount != null && discount < base;
-                                                if (useWholesale) {
-                                                    return `<div class="product-price">${formatCurrency(sale)}</div><p class="stock-info">Min order: ${product.min_wholesale_qty} units</p>`;
-                                                }
-                                                if (showDiscount) {
-                                                    return `<div class="product-price"><span class="price-original">${formatCurrency(base)}</span><span class="price-discount">${formatCurrency(retail)}</span></div>`;
-                                                }
-                                                return `<div class="product-price">${formatCurrency(sale)}</div>`;
-                                            })()}
+                                        <div class="card-image-wrap">
+                                            <img src="${product.image_url || '/images/placeholder.jpg'}" 
+                                                 alt="${product.name}" 
+                                                 class="card-image"
+                                                 loading="lazy"
+                                                 decoding="async"
+                                                 onerror="this.src='/images/placeholder.jpg'">
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="card-content">
+                                                <h3 class="card-title">${product.name}</h3>
+                                                <p class="card-description">${product.description || ''}</p>
+                                                
+                                                ${(() => {
+                                                    const useWholesale = auth.isWholesale() && product.wholesale_price;
+                                                    const base = parseFloat(product.price || 0);
+                                                    const discount = product.discount_price != null ? parseFloat(product.discount_price) : null;
+                                                    const retail = discount != null && discount < base ? discount : base;
+                                                    const sale = useWholesale ? parseFloat(product.wholesale_price) : retail;
+                                                    const showDiscount = !useWholesale && discount != null && discount < base;
+                                                    if (useWholesale) {
+                                                        return `<div class="product-price">${formatCurrency(sale)}</div><p class="stock-info">Min order: ${product.min_wholesale_qty} units</p>`;
+                                                    }
+                                                    if (showDiscount) {
+                                                        return `<div class="product-price"><span class="price-original">${formatCurrency(base)}</span><span class="price-discount">${formatCurrency(retail)}</span></div>`;
+                                                    }
+                                                    return `<div class="product-price">${formatCurrency(sale)}</div>`;
+                                                })()}
+                                            </div>
                                         </div>
                                     </a>
                                     
-                                    <div class="card-footer" style="display:flex; flex-direction:column; align-items:stretch; gap:0.35rem;">
-                                        ${(() => {
-                                            const isWholesaleUser = !!(auth && typeof auth.isWholesale === 'function' && auth.isWholesale());
-                                            const raw = isWholesaleUser ? parseInt(product.min_wholesale_qty || 10, 10) : 1;
-                                            const minQty = isWholesaleUser
-                                                ? (Number.isFinite(raw) && raw > 0 ? raw : 10)
-                                                : 1;
-
-                                            return `
-                                                <div class="product-qty-row" style="display:flex; align-items:center; gap:0.25rem;">
-                                                    <label for="home-qty-${product.id}" style="font-size:0.8rem; color:var(--text-light);">Qty${isWholesaleUser && minQty > 1 ? ` (min ${minQty})` : ''}</label>
-                                                    <input type="number"
-                                                           id="home-qty-${product.id}"
-                                                           class="form-input"
-                                                           value="${minQty}"
-                                                           min="${minQty}"
-                                                           step="${minQty}"
-                                                           max="${product.stock_quantity || 99}"
-                                                           style="width:64px; padding:0.25rem 0.35rem; font-size:0.85rem;">
-                                                </div>
-                                            `;
-                                        })()}
-                                        <div class="product-action-row" style="display:flex; align-items:center; gap:0.25rem; width:100%;">
+                                    <div class="card-footer product-card-footer">
+                                        <div class="product-action-row" style="width:100%;">
                                             <button class="btn btn-primary btn-sm add-cart-cta" 
                                                     onclick="addToCart(${product.id})"
-                                                    ${product.stock_quantity === 0 ? 'disabled' : ''}
-                                                    style="flex:1; min-width:0; width:auto;">
+                                                    ${product.stock_quantity === 0 ? 'disabled' : ''}>
                                                 <i class="fas fa-cart-plus"></i>
-                                                ${product.stock_quantity === 0 ? 'Out' : 'Add'}
+                                                ${product.stock_quantity === 0 ? 'Out of Stock' : 'Add to Cart'}
                                             </button>
                                             <button class="btn btn-success btn-sm" 
                                                     onclick="buyNow(${product.id})"
-                                                    ${product.stock_quantity === 0 ? 'disabled' : ''}
-                                                    style="flex:1; min-width:0; width:auto;">
-                                                <i class="fas fa-credit-card"></i> Buy
+                                                    ${product.stock_quantity === 0 ? 'disabled' : ''}>
+                                                <i class="fas fa-credit-card"></i> Buy Now
                                             </button>
                                         </div>
                                     </div>
@@ -1976,48 +2090,10 @@
             }
         }
         
-        function getHomeQuantity(productId) {
-            const input = document.getElementById(`home-qty-${productId}`);
-            if (!input) return 1;
-
-            const rawVal = parseInt(input.value, 10);
-            const minQty = parseInt(input.min, 10);
-            const stepQty = parseInt(input.step, 10);
-            const maxQty = parseInt(input.max, 10);
-
-            const min = Number.isFinite(minQty) && minQty > 0 ? minQty : 1;
-            const step = Number.isFinite(stepQty) && stepQty > 0 ? stepQty : 1;
-            const hasMax = Number.isFinite(maxQty) && maxQty > 0;
-
-            let val = Number.isFinite(rawVal) && rawVal > 0 ? rawVal : min;
-
-            if (hasMax && maxQty < step) {
-                input.value = String(maxQty);
-                return maxQty;
-            }
-
-            val = Math.max(min, val);
-            if (hasMax) val = Math.min(val, maxQty);
-
-            if (step > 1) {
-                val = Math.ceil(val / step) * step;
-                if (hasMax && val > maxQty) {
-                    val = Math.floor(maxQty / step) * step;
-                }
-                val = Math.max(min, val);
-            }
-
-            if (hasMax) val = Math.min(val, maxQty);
-
-            input.value = String(val);
-            return val;
-        }
-
         // Add to cart function
         async function addToCart(productId) {
             try {
-                const quantity = getHomeQuantity(productId);
-                await cart.add(productId, quantity);
+                await cart.add(productId, 1);
             } catch (error) {
                 console.error('Add to cart error:', error);
                 if (!auth.isAuthenticated()) {
@@ -2063,10 +2139,9 @@
                 const basePrice = parseFloat(product.price || 0);
                 const discountPrice = product.discount_price != null ? parseFloat(product.discount_price) : null;
                 const sellingPrice = (discountPrice !== null && discountPrice < basePrice) ? discountPrice : basePrice;
-                const quantity = getHomeQuantity(productId);
 
                 try {
-                    await cart.add(product.id, quantity);
+                    await cart.add(product.id, 1);
                     window.location.href = '/checkout';
                 } catch (err) {
                     console.error('Buy now error:', err);
