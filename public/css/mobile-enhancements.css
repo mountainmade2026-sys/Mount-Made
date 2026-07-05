@@ -325,6 +325,66 @@
     scrollbar-width: auto;
   }
 
+  /* ── Universal mobile product card layout ── */
+  .product-card {
+    display: flex !important;
+    flex-direction: column !important;
+    height: auto !important;
+    min-height: 300px !important;
+    max-height: none !important;
+  }
+
+  .product-card .card-image-wrap {
+    flex: 0 0 auto !important;
+    width: 100% !important;
+    height: 170px !important;
+    min-height: 170px !important;
+  }
+
+  .product-card .card-body {
+    flex: 1 1 auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 0 !important;
+    min-height: 0 !important;
+  }
+
+  .product-card .card-content {
+    padding: 0.35rem 0.5rem 0.25rem !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .product-card .card-footer,
+  .product-card .product-card-footer {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 0.5rem !important;
+    padding: 0.35rem 0.5rem 0.45rem !important;
+    min-height: 80px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .product-card .product-action-row {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 0.35rem !important;
+    width: 100% !important;
+    justify-content: space-between !important;
+  }
+
+  .product-card .product-action-row .btn {
+    flex: 1 1 calc(50% - 0.25rem) !important;
+    min-width: 0 !important;
+    min-height: 40px !important;
+    padding: 0.35rem 0.45rem !important;
+    width: auto !important;
+  }
+
   .grid.grid-4 > .product-card,
   .grid.grid-3 > .product-card,
   .grid.grid-2 > .product-card {
@@ -332,6 +392,19 @@
     max-width: 100% !important;
     width: 100% !important;
     scroll-snap-align: unset;
+  }
+
+  .section-title {
+    padding: 1rem 1rem 0.5rem !important;
+    margin-bottom: 0 !important;
+  }
+
+  .product-card .product-action-row .btn {
+    flex: 1 1 calc(50% - 0.25rem) !important;
+    min-width: 0 !important;
+    min-height: 40px !important;
+    padding: 0.35rem 0.45rem !important;
+    width: auto !important;
   }
 
   /* ── Section headings – Amazon-style compact spacing ── */

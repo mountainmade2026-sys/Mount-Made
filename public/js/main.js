@@ -190,10 +190,7 @@ const api = {
         throw new Error('Invalid file type. Only JPG, PNG, GIF, and WEBP images are allowed.');
       }
 
-      // Check file size (5MB max)
-      if (file.size > 5 * 1024 * 1024) {
-        throw new Error('File size too large. Maximum size is 5MB.');
-      }
+      // No client-side file size limit enforced here (server controls limits)
 
       const formData = new FormData();
       formData.append('image', file);
@@ -2053,7 +2050,7 @@ function validateImageFile(file) {
   }
   
   if (file.size > 5 * 1024 * 1024) {
-    return { valid: false, error: 'File size too large. Maximum size is 5MB.' };
+    return { valid: false, error: 'File size too large.' };
   }
   
   return { valid: true };

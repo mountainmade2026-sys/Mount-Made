@@ -135,11 +135,8 @@ const fileFilter = (req, file, cb) => {
 };
 
 const upload = multer({ 
-    storage: storage,
-    fileFilter: fileFilter,
-    limits: {
-        fileSize: 5 * 1024 * 1024 // 5MB limit
-    }
+  storage: storage,
+  fileFilter: fileFilter
 });
 
 // Middleware
@@ -481,7 +478,7 @@ app.post('/api/upload', authenticateToken, adminCheck, upload.single('image'), (
 app.use((error, req, res, next) => {
   if (error instanceof multer.MulterError) {
     if (error.code === 'LIMIT_FILE_SIZE') {
-      return res.status(400).json({ error: 'File size too large. Maximum size is 5MB.' });
+      return res.status(400).json({ error: 'File size too large.' });
     }
     return res.status(400).json({ error: error.message });
   }

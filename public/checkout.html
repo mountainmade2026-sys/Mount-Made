@@ -1998,9 +1998,7 @@
             if (!allowedTypes.includes(file.type)) {
                 throw new Error('Only JPG, PNG, GIF, and WEBP images are allowed.');
             }
-            if (file.size > 5 * 1024 * 1024) {
-                throw new Error('File size too large. Maximum size is 5MB.');
-            }
+            // No client-side size limit enforced; server handles file size policies.
 
             const formData = new FormData();
             formData.append('image', file);
