@@ -2269,6 +2269,7 @@ exports.updateSiteSettings = async (req, res) => {
       slider_image_3,
       slider_image_4,
       slider_image_5,
+      product_card_image_ratio,
       site_notice_text,
       site_notice_enabled,
       site_notice_color
@@ -2587,6 +2588,15 @@ exports.updateSiteSettings = async (req, res) => {
         }
         updates.push({ key: `slider_image_${i}`, value: imgUrl });
       }
+    }
+
+    if (product_card_image_ratio !== undefined) {
+      const allowedRatios = ['1/1','4/3','3/4','16/9','9/16','2/3','3/2','5/4','4/5'];
+      const ratioValue = String(product_card_image_ratio || '').trim();
+      if (ratioValue && !allowedRatios.includes(ratioValue)) {
+        return res.status(400).json({ error: `Product card image ratio must be one of: ${allowedRatios.join(', ')}.` });
+      }
+      updates.push({ key: 'product_card_image_ratio', value: ratioValue });
     }
 
     // Featured Deals flip cards (1–5): front image, back image, label text, title text

@@ -2255,6 +2255,51 @@
                     </div>
                 </div>
 
+                <div id="ss-sub-product-card" class="data-table-container" style="margin-top: 1.5rem;">
+                    <div class="table-header">
+                        <h3><i class="fas fa-th-large"></i> Product Card Image Ratio</h3>
+                    </div>
+                    <div style="padding: 2rem;">
+                        <p style="color: var(--text-muted); margin-bottom: 1rem;">
+                            Choose how product card images should be shaped in catalog cards. This setting helps keep product cards aligned across the store and prevents very tall or wide photos from breaking the layout.
+                        </p>
+                        <div style="display:grid;gap:1rem;max-width:560px;">
+                            <div class="form-group">
+                                <label class="form-label" for="product-card-image-ratio">Product card image ratio</label>
+                                <select id="product-card-image-ratio" class="form-input" onchange="updateProductCardImageRatioPreview()">
+                                    <option value="">Default (auto)</option>
+                                    <option value="1/1">Square (1:1)</option>
+                                    <option value="4/3">Standard Landscape (4:3)</option>
+                                    <option value="16/9">Wide Landscape (16:9)</option>
+                                    <option value="3/2">Classic Landscape (3:2)</option>
+                                    <option value="5/4">Soft Landscape (5:4)</option>
+                                    <option value="3/4">Portrait (3:4)</option>
+                                    <option value="9/16">Tall Portrait (9:16)</option>
+                                    <option value="2/3">Portrait (2:3)</option>
+                                    <option value="4/5">Soft Portrait (4:5)</option>
+                                </select>
+                                <small style="color:var(--text-muted); display:block; margin-top:0.35rem;">
+                                    The ratio controls the thumbnail frame for product cards. Preview updates instantly when you change the selection.
+                                </small>
+                            </div>
+
+                            <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-start;">
+                                <div style="flex:1; min-width: 240px;">
+                                    <label class="form-label">Preview</label>
+                                    <div id="product-card-image-ratio-preview-wrap" style="width:100%;max-width:320px;min-height:180px;padding:1rem;border-radius:16px;border:1px solid var(--border-primary);background:var(--bg-primary);display:flex;align-items:center;justify-content:center;overflow:hidden;">
+                                        <img id="product-card-image-ratio-preview" src="/images/placeholder.jpg" alt="Product card preview" style="width:100%;height:100%;object-fit:contain;object-position:center;display:block;">
+                                    </div>
+                                    <div id="product-card-image-ratio-preview-label" style="margin-top:0.75rem;color:var(--text-muted);font-size:0.92rem;">Current ratio: Default (auto)</div>
+                                </div>
+                            </div>
+
+                            <button class="btn btn-primary" type="button" onclick="saveProductCardImageRatioSettings()">
+                                <i class="fas fa-save"></i> Save Product Card Ratio
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <div id="ss-sub-flipcards" class="data-table-container" style="margin-top: 1.5rem;">
                     <div class="table-header">
                         <h3><i class="fas fa-layer-group"></i> Featured Deals – Flip Cards</h3>
@@ -4539,6 +4584,7 @@
             var subs = [
                 { id: 'ss-sub-logo',      label: 'Site Logo' },
                 { id: 'ss-sub-slider',    label: 'Hero Slider' },
+                { id: 'ss-sub-product-card', label: 'Product Card Image' },
                 { id: 'ss-sub-flipcards', label: 'Flip Cards' },
                 { id: 'ss-sub-banners',   label: 'Hero Banners' },
                 { id: 'ss-sub-admin',     label: 'Admin Account' },
@@ -8028,6 +8074,19 @@
                     }
                 }
 
+                const productCardImageRatioEl = document.getElementById('product-card-image-ratio');
+                const productCardImageRatioPreviewLabel = document.getElementById('product-card-image-ratio-preview-label');
+                if (productCardImageRatioEl) {
+                    productCardImageRatioEl.value = settings.product_card_image_ratio || '';
+                }
+                if (productCardImageRatioPreviewLabel) {
+                    const selectedRatio = productCardImageRatioEl ? (productCardImageRatioEl.value || '') : '';
+                    productCardImageRatioPreviewLabel.textContent = selectedRatio
+                        ? `Current ratio: ${selectedRatio.replace('/', ':')}`
+                        : 'Current ratio: Default (auto)';
+                }
+                updateProductCardImageRatioPreview();
+
                 const aboutDescriptionEl = document.getElementById('about-us-description');
                 const aboutPageTitleEl = document.getElementById('about-page-title');
                 const faqPageTitleEl = document.getElementById('faq-page-title');
@@ -8556,6 +8615,42 @@
             } catch (error) {
                 console.error('Save homepage headings error:', error);
                 showAlert(error.message || 'Failed to save homepage headings', 'error');
+            }
+        };
+
+        window.updateProductCardImageRatioPreview = function() {
+            const ratioSelect = document.getElementById('product-card-image-ratio');
+            const previewImage = document.getElementById('product-card-image-ratio-preview');
+            const previewLabel = document.getElementById('product-card-image-ratio-preview-label');
+            if (!ratioSelect || !previewImage || !previewLabel) return;
+
+            const selectedRatio = (ratioSelect.value || '').trim();
+            if (selectedRatio) {
+                previewImage.style.aspectRatio = selectedRatio;
+                previewLabel.textContent = `Current ratio: ${selectedRatio.replace('/', ':')}`;
+            } else {
+                previewImage.style.removeProperty('aspect-ratio');
+                previewLabel.textContent = 'Current ratio: Default (auto)';
+            }
+        };
+
+        window.saveProductCardImageRatioSettings = async function() {
+            try {
+                const ratioSelect = document.getElementById('product-card-image-ratio');
+                const product_card_image_ratio = ratioSelect ? (ratioSelect.value || '').trim() : '';
+
+                showAlert('Saving product card image ratio...', 'info');
+                const response = await api.post('/admin/settings', { product_card_image_ratio });
+
+                if (response && (response.success || response.message)) {
+                    showAlert('Product card image ratio saved successfully!', 'success');
+                    await loadSiteSettings();
+                } else {
+                    throw new Error(response?.error || 'Failed to save product card image ratio');
+                }
+            } catch (error) {
+                console.error('Save product card image ratio error:', error);
+                showAlert(error.message || 'Failed to save product card image ratio', 'error');
             }
         };
 

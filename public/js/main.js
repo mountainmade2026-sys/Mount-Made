@@ -2000,7 +2000,12 @@ function optimizeDynamicImages(root = document) {
 
     if (!img.style.aspectRatio) {
       if (img.classList.contains('card-image') || img.classList.contains('carousel-item-image')) {
-        img.style.aspectRatio = '4 / 3';
+        const isProductCardImage = !!img.closest('.product-card');
+        if (isProductCardImage && window._productCardImageRatio) {
+          img.style.aspectRatio = window._productCardImageRatio;
+        } else if (!isProductCardImage) {
+          img.style.aspectRatio = '4 / 3';
+        }
       } else if (img.classList.contains('category-image')) {
         img.style.aspectRatio = '1 / 1';
       }
@@ -2009,6 +2014,16 @@ function optimizeDynamicImages(root = document) {
     img.setAttribute('data-image-optimized', 'true');
   });
 }
+
+window.applyProductCardImageRatio = function(settings) {
+  const ratio = String(settings?.product_card_image_ratio || '').trim();
+  window._productCardImageRatio = ratio;
+  if (ratio) {
+    document.documentElement.style.setProperty('--product-card-image-ratio', ratio);
+  } else {
+    document.documentElement.style.removeProperty('--product-card-image-ratio');
+  }
+};
 
 // Form Validation
 function validateEmail(email) {
@@ -2289,6 +2304,7 @@ async function loadSiteLogo() {
       localStorage.setItem('site_logo_size_mobile', String(mobileLogoSize));
 
       applySiteLogo(logoUrl, normalizedLogoSize, mobileLogoSize);
+      applyProductCardImageRatio(settings);
 
       // Apply dynamic footer contact info
       applyFooterContact(settings);

@@ -105,10 +105,16 @@
         .product-card .card-image {
             display: block;
             width: 100%;
+            max-width: 100%;
             height: auto;
+            aspect-ratio: var(--product-card-image-ratio, auto);
+            max-height: 280px;
+            object-fit: contain;
+            object-position: center;
             background: var(--bg-secondary);
             padding: 0.25rem;
             transition: transform 0.35s ease;
+            margin: 0 auto;
         }
 
         .product-card:hover .card-image {

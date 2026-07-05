@@ -1274,6 +1274,19 @@ html[data-theme="dark"] .price-discount {
   transition: transform var(--transition-slow);
 }
 
+.product-card .card-image {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  aspect-ratio: var(--product-card-image-ratio, auto);
+  max-height: 280px;
+  object-fit: contain;
+  object-position: center;
+  background: var(--bg-secondary);
+  display: block;
+  margin: 0 auto;
+}
+
 .category-image {
   width: 100%;
   height: auto;
