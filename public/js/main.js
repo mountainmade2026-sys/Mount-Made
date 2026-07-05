@@ -2049,8 +2049,8 @@ function validateImageFile(file) {
     return { valid: false, error: 'Invalid file type. Only JPG, PNG and GIF images are allowed.' };
   }
   
-  if (file.size > 5 * 1024 * 1024) {
-    return { valid: false, error: 'File size too large.' };
+  if (file.size > 6 * 1024 * 1024) {
+    return { valid: false, error: 'File size too large. Maximum size is 6MB.' };
   }
   
   return { valid: true };

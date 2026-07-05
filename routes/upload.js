@@ -23,7 +23,10 @@ const fileFilter = (req, file, cb) => {
 
 const upload = multer({ 
     storage: storage,
-    fileFilter: fileFilter
+    fileFilter: fileFilter,
+    limits: {
+        fileSize: 6 * 1024 * 1024 // 6MB limit for product images
+    }
 });
 
 async function saveUploadToDb(file) {
@@ -91,7 +94,7 @@ router.post('/images', authenticateToken, upload.array('images', 10), async (req
 router.use((err, req, res, next) => {
     if (err instanceof multer.MulterError) {
         if (err.code === 'LIMIT_FILE_SIZE') {
-            return res.status(400).json({ error: 'File size too large.' });
+            return res.status(400).json({ error: 'File size too large. Maximum size is 6MB.' });
         }
         return res.status(400).json({ error: err.message });
     } else if (err) {
