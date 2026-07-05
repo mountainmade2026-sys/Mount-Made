@@ -66,11 +66,6 @@ router.put('/orders/:id/tracking', adminController.updateOrderTracking);
 router.put('/orders/:id/invoice', adminController.updateOrderInvoice);
 router.post('/orders/:id/out-for-delivery', adminController.markOutForDelivery);
 
-// Returns Management
-router.get('/returns', adminController.getAllReturns);
-router.get('/returns/stats', adminController.getReturnStats);
-router.put('/returns/:id/status', adminController.updateReturnStatus);
-
 // Homepage Sections Management
 router.get('/homepage-sections', adminController.getAllHomepageSections);
 router.post('/homepage-sections', adminController.createHomepageSection);
