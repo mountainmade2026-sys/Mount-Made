@@ -160,6 +160,76 @@
   }
 }
 
+/* Strong mobile overrides for the Featured Products carousel to counter inline styles */
+@media (max-width: 768px) {
+  .carousel-wrapper .carousel-track .carousel-item {
+    min-height: auto !important;
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .carousel-wrapper .carousel-track .carousel-item .carousel-item-image {
+    height: 150px !important;
+    min-height: 150px !important;
+  }
+
+  .carousel-wrapper .carousel-track .carousel-item .carousel-item-content {
+    padding-bottom: 0.25rem !important;
+  }
+
+  .carousel-wrapper .carousel-track .carousel-item .carousel-item-footer {
+    padding-bottom: 0.35rem !important;
+    padding-top: 0.25rem !important;
+    gap: 0.25rem !important;
+  }
+
+  /* Reduce nav button overlap and ensure cards align */
+  .carousel-prev, .carousel-next {
+    width: 38px !important;
+    height: 38px !important;
+  }
+}
+
+/* Extra-tight mobile tweaks for very small screens */
+@media (max-width: 480px) {
+  .carousel-track-container {
+    min-height: auto !important;
+    padding-bottom: 0.25rem !important;
+  }
+
+  .carousel-track {
+    align-items: flex-start !important;
+    gap: 0.6rem !important;
+  }
+
+  .carousel-item {
+    min-height: auto !important;
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+    max-width: 200px !important;
+  }
+
+  .carousel-item-image {
+    height: 120px !important;
+    min-height: 120px !important;
+  }
+
+  .carousel-item-content {
+    padding: 0.35rem 0.5rem 0.25rem !important;
+  }
+
+  .carousel-item-footer {
+    padding: 0.25rem 0.5rem 0.35rem !important;
+    gap: 0.2rem !important;
+  }
+
+  .carousel-nav {
+    width: 36px !important;
+    height: 36px !important;
+  }
+}
+
 /* Extra mobile optimizations */
 @media (max-width: 575px) {
   /* Prevent horizontal scroll */
@@ -192,16 +262,76 @@
     background-color: #0d3d18;
     box-shadow: 0 2px 8px rgba(0,0,0,0.24);
   }
-  
-  /* Footer stacking */
-  .footer-links {
-    flex-direction: column;
-    gap: var(--space-4);
+
+  /* Reduce generic section paddings at very bottom of homepage sections */
+  #homepage-sections-container > section.container {
+    margin-bottom: 1rem !important;
   }
-  
-  .footer-column {
-    width: 100%;
+}
+
+@media (max-width: 640px) {
+  #homepage-sections-container .product-card {
+    min-height: auto !important;
+    max-height: none !important;
   }
+
+  #homepage-sections-container .product-card .card-body {
+    min-height: 0 !important;
+  }
+
+  #homepage-sections-container .product-card .card-content {
+    padding-bottom: 0.15rem !important;
+  }
+
+  #homepage-sections-container .product-card .card-footer,
+  #homepage-sections-container .product-card .product-card-footer,
+  #homepage-sections-container .product-card .product-action-row {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0.2rem !important;
+    gap: 0.2rem !important;
+    min-height: auto !important;
+  }
+
+  #homepage-sections-container .product-card .card-footer {
+    padding: 0 0.7rem 0.25rem !important;
+  }
+
+  #homepage-sections-container .product-card .product-action-row {
+    gap: 0.2rem !important;
+    flex-wrap: wrap !important;
+  }
+
+  #homepage-sections-container .product-card .card-footer .btn,
+  #homepage-sections-container .product-card .product-action-row .btn {
+    min-height: 32px !important;
+    line-height: 1.1 !important;
+    padding: 0.2rem 0.3rem !important;
+    font-size: 0.7rem !important;
+  }
+}
+
+.footer-section h3 {
+    margin: 0 0 0.25rem 0 !important;
+    font-size: 1rem !important;
+  }
+
+  .footer-section ul {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .footer-section li {
+    margin-bottom: 0.25rem !important;
+  }
+
+  .footer-bottom {
+    padding-top: 0.4rem !important;
+    padding-bottom: 0.4rem !important;
+    font-size: 0.86rem !important;
+  }
+
+
   
   /* Authentication forms */
   .auth-container {
@@ -226,7 +356,6 @@
   .address-actions .btn {
     width: 100%;
   }
-}
 
 /* Landscape mode optimizations for phones */
 @media (max-height: 600px) and (orientation: landscape) {
@@ -334,6 +463,26 @@
     max-height: none !important;
   }
 
+  /* Tighten spacing for Featured Products carousel cards on small screens */
+  .carousel-section .carousel-track .product-card,
+  .carousel-track .product-card.carousel-item {
+    min-height: auto !important;
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+  }
+
+  .carousel-section .carousel-track .product-card .card-image-wrap {
+    height: 150px !important;
+    min-height: 150px !important;
+  }
+
+  .carousel-section .carousel-track .product-card .card-content,
+  .carousel-section .carousel-track .product-card .card-footer,
+  .carousel-section .carousel-track .product-card .product-action-row {
+    padding-bottom: 0.15rem !important;
+    margin-bottom: 0 !important;
+  }
+
   .product-card .card-image-wrap {
     flex: 0 0 auto !important;
     width: 100% !important;
@@ -362,9 +511,9 @@
     flex-wrap: wrap !important;
     align-items: center !important;
     justify-content: space-between !important;
-    gap: 0.5rem !important;
-    padding: 0.35rem 0.5rem 0.45rem !important;
-    min-height: 80px !important;
+    gap: 0.25rem !important;
+    padding: 0.2rem 0.45rem 0.25rem !important;
+    min-height: auto !important;
     width: 100% !important;
     box-sizing: border-box !important;
   }
@@ -372,7 +521,7 @@
   .product-card .product-action-row {
     display: flex !important;
     flex-wrap: wrap !important;
-    gap: 0.35rem !important;
+    gap: 0.25rem !important;
     width: 100% !important;
     justify-content: space-between !important;
   }
@@ -380,8 +529,8 @@
   .product-card .product-action-row .btn {
     flex: 1 1 calc(50% - 0.25rem) !important;
     min-width: 0 !important;
-    min-height: 40px !important;
-    padding: 0.35rem 0.45rem !important;
+    min-height: 34px !important;
+    padding: 0.25rem 0.35rem !important;
     width: auto !important;
   }
 
