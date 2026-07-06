@@ -1790,7 +1790,29 @@
             const showDiscount = !isWholesale && discount != null && discount < basePrice;
             const inStock = product.stock_quantity > 0;
             const lowStock = product.stock_quantity > 0 && product.stock_quantity < 10;
-            const weightOptions = product?.is_weight_based ? getWeightOptions(product) : [];
+            let weightOptions = product?.is_weight_based ? getWeightOptions(product) : [];
+            // If admin provided a fixed_weight, prefer that as the only selectable option
+            let _fixedWeightOption = null;
+            if (product?.is_weight_based && product?.fixed_weight) {
+                try {
+                    const m = String(product.fixed_weight || '').trim().match(/^(\d+(?:\.\d+)?)\s*([a-zA-Z]+)?$/);
+                    if (m) {
+                        let amt = parseFloat(m[1]);
+                        let unit = (m[2] || product.weight_unit || product.unit || 'g').toString().trim().toLowerCase();
+                        if (unit === 'kg') {
+                            amt = amt * 1000; // store value in grams to match getWeightOptions semantics
+                        }
+                        const normUnit = unit === 'kg' ? 'kg' : 'g';
+                        const grams = Number.isFinite(amt) ? amt : null;
+                        if (grams && grams > 0) {
+                            _fixedWeightOption = { value: grams, label: String(product.fixed_weight).trim(), unit: normUnit };
+                            weightOptions = [_fixedWeightOption];
+                        }
+                    }
+                } catch (_) {
+                    // ignore parse errors and fall back to regular weight options
+                }
+            }
             const deliveryMessage = getDeliveryMessage(product);
             const defaultWeightValue = weightOptions[0]?.value || (product?.weight ? parseFloat(product.weight) : '');
             const maxWeightAmount = getMaxWeightAmount(product);
@@ -1804,15 +1826,32 @@
                 if (!selectedWeightOption) {
                     const defaultOption = weightOptions[0] || (product?.weight ? {
                         value: parseFloat(product.weight) || 1,
-                        label: formatWeightLabel(parseFloat(product.weight) || 1, product?.weight_unit || product?.unit || 'g')
+                        label: formatWeightLabel(parseFloat(product.weight) || 1, product?.weight_unit || product?.unit || 'g'),
+                        unit: product?.weight_unit || product?.unit || 'g'
                     } : null);
 
                     if (defaultOption) {
-                        selectedWeightOption = {
+                        // If we have a parsed fixed-weight option, use its unit/value; otherwise use product defaults
+                        selectedWeightOption = _fixedWeightOption ? {
+                            value: _fixedWeightOption.value,
+                            label: _fixedWeightOption.label,
+                            unit: _fixedWeightOption.unit
+                        } : {
                             value: defaultOption.value,
                             label: defaultOption.label,
-                            unit: product?.weight_unit || product?.unit || 'g'
+                            unit: defaultOption.unit || product?.weight_unit || product?.unit || 'g'
                         };
+
+                        // If custom weight input exists, populate it to reflect the fixed selection
+                        try {
+                            const weightInput = document.getElementById('custom-weight-value');
+                            const weightUnit = document.getElementById('custom-weight-unit');
+                            if (_fixedWeightOption && weightInput) {
+                                const displayVal = (_fixedWeightOption.unit === 'kg') ? (_fixedWeightOption.value / 1000) : _fixedWeightOption.value;
+                                weightInput.value = displayVal;
+                                if (weightUnit) weightUnit.value = _fixedWeightOption.unit;
+                            }
+                        } catch (_) {}
                     }
                 }
             } else {
@@ -2289,15 +2328,7 @@
             }
 
             const manualSelection = getManualWeightSelection();
-            if (manualSelection) {
-                return manualSelection;
-            }
-
-            const amountInput = document.getElementById('custom-weight-value');
-            if (amountInput && String(amountInput.value || '').trim() === '') {
-                return null;
-            }
-
+            if (manualSelection) return manualSelection;
             return selectedWeightOption || null;
         }
 
