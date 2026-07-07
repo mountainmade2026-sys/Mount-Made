@@ -5927,6 +5927,44 @@
                 try {
                     const resp = await api.get('/admin/orders');
                     const orders = (resp && resp.orders) ? resp.orders : [];
+                    // Dynamically recalculate some dashboard totals from live orders + offline sales
+                    try {
+                        const computedTotalOrders = Array.isArray(orders) ? orders.length : 0;
+                        const deliveredRevenue = Array.isArray(orders)
+                            ? orders.reduce((s, o) => s + (String(o.status || '').toLowerCase() === 'delivered' ? (parseFloat(o.total_amount) || 0) : 0), 0)
+                            : 0;
+
+                        // Fetch offline sales and include their amounts in revenue
+                        let offlineSum = 0;
+                        try {
+                            const offResp = await api.get('/admin/offline-sales');
+                            const offline = (offResp && (offResp.offlineSales || offResp.offline_sales || offResp.sales)) || [];
+                            offlineSum = Array.isArray(offline) ? offline.reduce((s, r) => s + (parseFloat(r.amount_paid) || 0), 0) : 0;
+                        } catch (offErr) {
+                            console.warn('Failed to load offline sales for dashboard recalculation:', offErr);
+                        }
+
+                        const computedRevenue = deliveredRevenue + offlineSum;
+
+                        // Update stat cards if values differ (orders & revenue are first two cards)
+                        const statEls = document.querySelectorAll('#stats-container .stat-card-value[data-count]');
+                        if (statEls && statEls.length >= 2) {
+                            const ordersEl = statEls[0];
+                            const revenueEl = statEls[1];
+                            const prevOrders = parseInt(ordersEl.dataset.count) || 0;
+                            if (prevOrders !== computedTotalOrders) {
+                                ordersEl.dataset.count = computedTotalOrders;
+                                animateCountUp(ordersEl, computedTotalOrders, '', 0, 1000);
+                            }
+                            const prevRevenue = parseFloat(revenueEl.dataset.count) || 0;
+                            if (Math.abs(prevRevenue - computedRevenue) > 0.01) {
+                                revenueEl.dataset.count = computedRevenue;
+                                animateCountUp(revenueEl, computedRevenue, '₹', 2, 1000);
+                            }
+                        }
+                    } catch (calcErr) {
+                        console.warn('Dashboard dynamic totals calc failed:', calcErr);
+                    }
                     const sorted = orders
                         .slice()
                         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
