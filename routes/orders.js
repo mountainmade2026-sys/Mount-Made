@@ -77,34 +77,38 @@ router.post('/', async (req, res) => {
       total_amount: totalAmount
     };
 
-    const order = await Order.create(orderData);
+    // Enqueue the order for background processing to avoid DB contention under spikes
+    try {
+      const { orderQueue } = require('../queues/orderQueue');
+      const job = await orderQueue.add('create', { orderData });
+      return res.status(202).json({ message: 'Order accepted for processing.', jobId: job.id });
+    } catch (queueErr) {
+      console.warn('Order queue unavailable, falling back to synchronous processing:', queueErr && queueErr.message);
+      // Fallback to synchronous processing for reliability
+      const order = await Order.create(orderData);
+      // Trigger notifications asynchronously (worker normally handles this)
+      const capturedUserId = req.user.id;
+      const capturedOrderId = order.id;
+      Promise.resolve().then(async () => {
+        try {
+          const [userResult, itemsResult] = await Promise.all([
+            db.query('SELECT full_name, phone FROM users WHERE id = $1', [capturedUserId]),
+            db.query(
+              'SELECT product_name, quantity, price FROM order_items WHERE order_id = $1',
+              [capturedOrderId]
+            )
+          ]);
+          const customer = userResult.rows[0] || {};
+          const items = itemsResult.rows || [];
+          await sendOrderNotificationToAdmin(order, customer, items);
+          await notifyOrderPlaced(customer.phone, customer.full_name || 'Customer', order.order_number, order.total_amount);
+        } catch (emailErr) {
+          console.error('[EMAIL] Order notification failed:', emailErr.message, emailErr.stack);
+        }
+      }).catch(err => console.error('[EMAIL] Unhandled order email error:', err.message));
 
-    // Fire-and-forget email notification — does NOT block the order response
-    const capturedUserId = req.user.id;
-    const capturedOrderId = order.id;
-    Promise.resolve().then(async () => {
-      try {
-        const [userResult, itemsResult] = await Promise.all([
-          db.query('SELECT full_name, phone FROM users WHERE id = $1', [capturedUserId]),
-          db.query(
-            'SELECT product_name, quantity, price FROM order_items WHERE order_id = $1',
-            [capturedOrderId]
-          )
-        ]);
-        const customer = userResult.rows[0] || {};
-        const items = itemsResult.rows || [];
-        await sendOrderNotificationToAdmin(order, customer, items);
-        console.log(`[EMAIL] Order notification sent for order ${order.order_number}`);
-        await notifyOrderPlaced(customer.phone, customer.full_name || 'Customer', order.order_number, order.total_amount);
-      } catch (emailErr) {
-        console.error('[EMAIL] Order notification failed:', emailErr.message, emailErr.stack);
-      }
-    }).catch(err => console.error('[EMAIL] Unhandled order email error:', err.message));
-
-    res.status(201).json({ 
-      message: 'Order placed successfully.',
-      order 
-    });
+      return res.status(201).json({ message: 'Order placed successfully.', order });
+    }
   } catch (error) {
     console.error('Create order error:', error);
     const isStockError = /stock|out of stock|unavailable/i.test(error.message);
