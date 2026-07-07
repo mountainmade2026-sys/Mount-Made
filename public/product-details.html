@@ -78,6 +78,16 @@
             border: 1px solid var(--border-primary);
             box-shadow: var(--shadow-md);
             cursor: zoom-in;
+            opacity: 0;
+            transition: opacity 220ms ease, transform 180ms ease;
+        }
+
+        .product-main-image.loaded {
+            opacity: 1;
+        }
+
+        .product-main-image.loading {
+            opacity: 0.35;
         }
         
         @media (max-width: 768px) {
@@ -111,7 +121,12 @@
             border-radius: 8px;
             cursor: pointer;
             border: 2px solid var(--border-primary);
-            transition: border-color 0.2s;
+            transition: border-color 0.2s, transform 0.2s ease, opacity 0.2s ease;
+        }
+
+        .product-thumbnail:hover {
+            transform: translateY(-1px);
+            opacity: 0.95;
         }
         
         @media (max-width: 480px) {
@@ -1896,8 +1911,11 @@
                              alt="${product.name}" 
                              id="product-main-image"
                              class="product-main-image"
-                                onclick="openImageLightbox(this.src, this.alt)"
-                             onerror="this.src='/images/placeholder.jpg'">
+                             loading="eager"
+                             decoding="async"
+                             onclick="openImageLightbox(this.src, this.alt)"
+                             onload="this.classList.add('loaded')"
+                             onerror="this.onerror=null; this.src='/images/placeholder.jpg'; this.classList.add('loaded');">
                         ${productImages.length > 1 ? `
                             <div class="product-thumbnails" id="product-thumbnails">
                                 ${productImages.map((image, index) => `
@@ -1905,6 +1923,8 @@
                                          alt="${product.name} image ${index + 1}" 
                                          class="product-thumbnail ${index === 0 ? 'active' : ''}"
                                          data-image="${image}"
+                                         loading="lazy"
+                                         decoding="async"
                                          onclick="selectProductImage(this)"
                                          onerror="this.src='/images/placeholder.jpg'">
                                 `).join('')}
@@ -2369,13 +2389,25 @@
             if (!mainImage || !thumbnailElement) return;
 
             const newImage = thumbnailElement.getAttribute('data-image');
-            if (!newImage) return;
+            if (!newImage || mainImage.src === newImage) return;
 
-            mainImage.src = newImage;
             document.querySelectorAll('.product-thumbnail').forEach((thumbnail) => {
                 thumbnail.classList.remove('active');
             });
             thumbnailElement.classList.add('active');
+
+            mainImage.classList.add('loading');
+            const previewImage = new Image();
+            previewImage.onload = () => {
+                mainImage.src = newImage;
+                mainImage.alt = thumbnailElement.alt || mainImage.alt;
+                mainImage.classList.remove('loading');
+            };
+            previewImage.onerror = () => {
+                mainImage.src = '/images/placeholder.jpg';
+                mainImage.classList.remove('loading');
+            };
+            previewImage.src = newImage;
         }
 
         function openImageLightbox(imageSrc, imageAlt = 'Product image') {

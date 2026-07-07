@@ -1278,6 +1278,7 @@ html[data-theme="dark"] .price-discount {
   width: 100%;
   max-width: 100%;
   height: auto;
+  min-height: 180px;
   aspect-ratio: var(--product-card-image-ratio, auto);
   max-height: 280px;
   object-fit: contain;
@@ -1285,6 +1286,12 @@ html[data-theme="dark"] .price-discount {
   background: var(--bg-secondary);
   display: block;
   margin: 0 auto;
+  opacity: 0;
+  transition: opacity 220ms ease, transform var(--transition-slow);
+}
+
+.product-card .card-image.loaded {
+  opacity: 1;
 }
 
 .category-image {

@@ -1048,7 +1048,7 @@
             grid.innerHTML = products.map(p => `
                 <div class="card product-card">
                     <div class="card-image-wrap">
-                        <img src="${p.image_url || '/images/placeholder.jpg'}" alt="${p.name}" class="card-image" loading="lazy" decoding="async" onerror="this.src='/images/placeholder.jpg'">
+                        <img src="${p.image_url || '/images/placeholder.jpg'}" alt="${p.name}" class="card-image" loading="lazy" decoding="async" onload="this.classList.add('loaded')" onerror="this.onerror=null; this.src='/images/placeholder.jpg'; this.classList.add('loaded');">
                     </div>
                     <div class="card-body">
                         <a href="/product-details?id=${p.id}" class="product-card-link">
