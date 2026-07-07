@@ -55,14 +55,16 @@ class Order {
   static async create(orderData) {
     // Retry loop: handles PostgreSQL serialization failures (code 40001) that can
     // occur when two concurrent orders race on the same product rows.
-    const MAX_SERIALIZATION_RETRIES = 3;
+    const MAX_SERIALIZATION_RETRIES = 6;
     let lastError;
     for (let attempt = 0; attempt < MAX_SERIALIZATION_RETRIES; attempt++) {
       try {
         return await this._createOnce(orderData);
       } catch (err) {
-        if (err.code === '40001' && attempt < MAX_SERIALIZATION_RETRIES - 1) {
-          // Serialization failure — safe to retry from scratch
+        const message = String(err && err.message || '').toLowerCase();
+        const isSerialization = (err && (err.code === '40001' || message.includes('could not serialize access') || message.includes('serialization') || message.includes('deadlock detected')));
+        if (isSerialization && attempt < MAX_SERIALIZATION_RETRIES - 1) {
+          // Serialization or deadlock — safe to retry from scratch
           lastError = err;
           continue;
         }
