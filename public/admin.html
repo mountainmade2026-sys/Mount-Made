@@ -1767,6 +1767,9 @@
                             <option value="">All Categories</option>
                         </select>
                     </div>
+                    <div class="filter-summary" style="margin-left:auto; display:flex; align-items:center; color: var(--text-muted); font-size:0.95rem;">
+                        <span id="manage-products-total-count">0 products</span>
+                    </div>
                 </div>
 
                 <div id="products-list"></div>
@@ -6300,6 +6303,7 @@
 
                 // Use filterProducts to render (ensures consistency with search/filter behavior)
                 filterProducts();
+                updateManageProductsCount(window._productsCache.length, window._productsCache.length);
             } catch (error) {
                 console.error('Load products error:', error);
                 document.getElementById('products-list').innerHTML = '<div class="empty-state"><p>Error loading products</p></div>';
@@ -10300,6 +10304,16 @@
             document.getElementById('users-list').innerHTML = html;
         };
 
+        function updateManageProductsCount(filteredCount, totalCount) {
+            const el = document.getElementById('manage-products-total-count');
+            if (!el) return;
+            if (filteredCount === totalCount) {
+                el.textContent = `${totalCount} product${totalCount === 1 ? '' : 's'}`;
+            } else {
+                el.textContent = `${filteredCount} of ${totalCount} product${totalCount === 1 ? '' : 's'}`;
+            }
+        }
+
         window.filterProducts = function() {
             const search = (document.getElementById('product-search')?.value || '').toLowerCase().trim();
             const category = document.getElementById('category-filter')?.value || '';
@@ -10319,6 +10333,7 @@
                 return matchesSearch && matchesCategory;
             });
 
+            updateManageProductsCount(filtered.length, products.length);
             if (filtered.length === 0) {
                 document.getElementById('products-list').innerHTML = '<div class="empty-state"><p>No products found</p></div>';
                 return;
