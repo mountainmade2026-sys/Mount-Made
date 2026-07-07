@@ -2969,10 +2969,10 @@
                         <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
                             <input type="text" id="delivery-pincode-input" inputmode="numeric" maxlength="6" placeholder="Enter 6-digit pincode" 
                                    style="flex: 1; min-width: 140px; border: 1px solid var(--border-primary); border-radius: 6px; padding: 0.55rem 0.65rem; background: var(--bg-primary); color: var(--text-primary); font-size: 0.95rem;">
-                            <button type="button" class="btn btn-secondary" onclick="addDeliveryPincode()" style="white-space: nowrap;">
+                            <button type="button" id="delivery-pincode-add-btn" class="btn btn-secondary" onclick="addDeliveryPincode()" style="white-space: nowrap;">
                                 <i class="fas fa-plus"></i> Add Pincode
                             </button>
-                            <button type="button" class="btn btn-secondary" onclick="openDeliveryPincodeImportModal()" style="white-space: nowrap;">
+                            <button type="button" id="delivery-pincode-import-btn" class="btn btn-secondary" onclick="openDeliveryPincodeImportModal()" style="white-space: nowrap;">
                                 <i class="fas fa-file-import"></i> Bulk Import
                             </button>
                         </div>
@@ -2987,7 +2987,7 @@
                             <span style="color: var(--text-muted);">
                                 <strong id="delivery-pincode-count">0</strong> pincodes added
                             </span>
-                            <button type="button" class="btn btn-danger btn-sm" onclick="clearAllDeliveryPincodes()" style="display: none;" id="clear-all-pincodes-btn">
+                            <button type="button" id="clear-all-pincodes-btn" class="btn btn-danger btn-sm" onclick="clearAllDeliveryPincodes()" style="display: none;">
                                 <i class="fas fa-trash"></i> Clear All
                             </button>
                         </div>
@@ -3003,10 +3003,9 @@
                 </div>
 
                 <!-- Bulk Import Modal -->
-                <div id="delivery-pincode-import-modal" class="modal hidden">
-                    <div class="modal-overlay" onclick="closeDeliveryPincodeImportModal()"></div>
-                    <div class="modal-dialog" style="max-width: 600px;">
-                        <button type="button" class="modal-close" onclick="closeDeliveryPincodeImportModal()">
+                <div id="delivery-pincode-import-modal" class="modal">
+                    <div class="modal-content modal-content-md" style="max-width: 600px;">
+                        <button type="button" id="delivery-pincode-import-close-btn" class="modal-close" onclick="closeDeliveryPincodeImportModal()">
                             <i class="fas fa-times"></i>
                         </button>
                         <div class="modal-header">
@@ -3020,8 +3019,8 @@
                             <div id="bulk-import-status" style="margin-top: 1rem; padding: 0.75rem; border-radius: 6px; display: none;"></div>
                         </div>
                         <div class="modal-footer" style="display: flex; gap: 0.5rem; justify-content: flex-end; padding: 1.5rem;">
-                            <button type="button" class="btn btn-secondary" onclick="closeDeliveryPincodeImportModal()">Cancel</button>
-                            <button type="button" class="btn btn-primary" onclick="importBulkDeliveryPincodes()">
+                            <button type="button" id="delivery-pincode-import-cancel-btn" class="btn btn-secondary" onclick="closeDeliveryPincodeImportModal()">Cancel</button>
+                            <button type="button" id="delivery-pincode-import-action-btn" class="btn btn-primary" onclick="importBulkDeliveryPincodes()">
                                 <i class="fas fa-check"></i> Import
                             </button>
                         </div>
@@ -4458,6 +4457,7 @@
                     : [];
                 renderDeliveryPincodeTags();
                 initDeliveryPincodeEditor();
+                bindDeliveryPincodeEditorEvents();
             } catch (error) {
                 console.error('Load delivery pincode settings error:', error);
                 showAlert('Failed to load delivery pincode settings', 'error');
@@ -9238,9 +9238,63 @@
         function initDeliveryPincodeEditor() {
             const input = document.getElementById('delivery-pincode-input');
             if (input) {
-                input.addEventListener('keypress', (e) => {
+                input.addEventListener('keydown', (e) => {
                     if (e.key === 'Enter') {
+                        e.preventDefault();
                         addDeliveryPincode();
+                    }
+                });
+            }
+        }
+
+        function bindDeliveryPincodeEditorEvents() {
+            const section = document.getElementById('delivery-pincodes');
+            if (!section || section.dataset.deliveryEventsBound) return;
+            section.dataset.deliveryEventsBound = 'true';
+
+            const addBtn = document.getElementById('delivery-pincode-add-btn');
+            if (addBtn && !addBtn.dataset.bound) {
+                addBtn.dataset.bound = 'true';
+                addBtn.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    addDeliveryPincode();
+                });
+            }
+
+            const importBtn = document.getElementById('delivery-pincode-import-btn');
+            if (importBtn && !importBtn.dataset.bound) {
+                importBtn.dataset.bound = 'true';
+                importBtn.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    openDeliveryPincodeImportModal();
+                });
+            }
+
+            const clearBtn = document.getElementById('clear-all-pincodes-btn');
+            if (clearBtn && !clearBtn.dataset.bound) {
+                clearBtn.dataset.bound = 'true';
+                clearBtn.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    clearAllDeliveryPincodes();
+                });
+            }
+
+            const importActionBtn = document.getElementById('delivery-pincode-import-action-btn');
+            if (importActionBtn && !importActionBtn.dataset.bound) {
+                importActionBtn.dataset.bound = 'true';
+                importActionBtn.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    importBulkDeliveryPincodes();
+                });
+            }
+
+            const bulkTextarea = document.getElementById('bulk-import-pincodes');
+            if (bulkTextarea && !bulkTextarea.dataset.bound) {
+                bulkTextarea.dataset.bound = 'true';
+                bulkTextarea.addEventListener('keydown', (event) => {
+                    if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+                        event.preventDefault();
+                        importBulkDeliveryPincodes();
                     }
                 });
             }
@@ -9329,15 +9383,91 @@
         function openDeliveryPincodeImportModal() {
             const modal = document.getElementById('delivery-pincode-import-modal');
             if (modal) {
+                modal.classList.add('show');
                 modal.classList.remove('hidden');
                 const textarea = document.getElementById('bulk-import-pincodes');
                 if (textarea) textarea.value = '';
+                const statusEl = document.getElementById('bulk-import-status');
+                if (statusEl) {
+                    statusEl.style.display = 'none';
+                    statusEl.textContent = '';
+                }
             }
         }
 
-        function closeDeliveryPincodeImportModal() {
+        window.closeDeliveryPincodeImportModal = function() {
             const modal = document.getElementById('delivery-pincode-import-modal');
-            if (modal) modal.classList.add('hidden');
+            if (modal) {
+                modal.classList.remove('show');
+                modal.classList.add('hidden');
+            }
+        };
+
+        function bindDeliveryPincodeEditorEvents() {
+            const closeBtn = document.getElementById('delivery-pincode-import-close-btn');
+            if (closeBtn && !closeBtn.dataset.bound) {
+                closeBtn.dataset.bound = 'true';
+                closeBtn.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    window.closeDeliveryPincodeImportModal();
+                });
+            }
+
+            const cancelBtn = document.getElementById('delivery-pincode-import-cancel-btn');
+            if (cancelBtn && !cancelBtn.dataset.bound) {
+                cancelBtn.dataset.bound = 'true';
+                cancelBtn.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    window.closeDeliveryPincodeImportModal();
+                });
+            }
+
+            const addBtn = document.getElementById('delivery-pincode-add-btn');
+            if (addBtn && !addBtn.dataset.bound) {
+                addBtn.dataset.bound = 'true';
+                addBtn.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    addDeliveryPincode();
+                });
+            }
+
+            const importBtn = document.getElementById('delivery-pincode-import-btn');
+            if (importBtn && !importBtn.dataset.bound) {
+                importBtn.dataset.bound = 'true';
+                importBtn.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    openDeliveryPincodeImportModal();
+                });
+            }
+
+            const clearBtn = document.getElementById('clear-all-pincodes-btn');
+            if (clearBtn && !clearBtn.dataset.bound) {
+                clearBtn.dataset.bound = 'true';
+                clearBtn.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    clearAllDeliveryPincodes();
+                });
+            }
+
+            const importActionBtn = document.getElementById('delivery-pincode-import-action-btn');
+            if (importActionBtn && !importActionBtn.dataset.bound) {
+                importActionBtn.dataset.bound = 'true';
+                importActionBtn.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    importBulkDeliveryPincodes();
+                });
+            }
+
+            const bulkTextarea = document.getElementById('bulk-import-pincodes');
+            if (bulkTextarea && !bulkTextarea.dataset.bound) {
+                bulkTextarea.dataset.bound = 'true';
+                bulkTextarea.addEventListener('keydown', (event) => {
+                    if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+                        event.preventDefault();
+                        importBulkDeliveryPincodes();
+                    }
+                });
+            }
         }
 
         function importBulkDeliveryPincodes() {
@@ -13439,6 +13569,7 @@
                     }
                 } catch (e) { /* ignore */ }
 
+                bindDeliveryPincodeEditorEvents();
                 showSection('dashboard');
             } catch (error) {
                 console.error('Admin initialization error:', error);
