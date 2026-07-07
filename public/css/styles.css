@@ -1286,7 +1286,7 @@ html[data-theme="dark"] .price-discount {
   background: var(--bg-secondary);
   display: block;
   margin: 0 auto;
-  opacity: 0;
+  opacity: 1;
   transition: opacity 220ms ease, transform var(--transition-slow);
 }
 

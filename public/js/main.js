@@ -1980,12 +1980,30 @@ function hideLoading(elementId) {
   }
 }
 
+function normalizeImageUrl(value) {
+  const url = String(value || '').trim();
+  if (!url || url === '/images/placeholder.jpg' || url === 'images/placeholder.jpg') {
+    return '/images/placeholder.jpg';
+  }
+  try {
+    return encodeURI(url);
+  } catch (error) {
+    return '/images/placeholder.jpg';
+  }
+}
+
 function optimizeDynamicImages(root = document) {
   const scope = root && root.querySelectorAll ? root : document;
   const images = scope.querySelectorAll('img:not([data-image-optimized="true"])');
 
   images.forEach((img) => {
     const isCritical = !!img.closest('.hero, .search-section, .navbar-brand');
+    const currentSrc = img.getAttribute('src');
+    const normalizedSrc = normalizeImageUrl(currentSrc);
+
+    if (normalizedSrc !== currentSrc) {
+      img.setAttribute('src', normalizedSrc);
+    }
 
     if (!img.getAttribute('decoding')) {
       img.setAttribute('decoding', 'async');
@@ -1994,6 +2012,17 @@ function optimizeDynamicImages(root = document) {
     if (!img.getAttribute('loading')) {
       img.setAttribute('loading', isCritical ? 'eager' : 'lazy');
     }
+
+    img.addEventListener('load', () => {
+      img.classList.add('loaded');
+    }, { once: true });
+
+    img.addEventListener('error', () => {
+      if (img.src && !img.src.endsWith('/images/placeholder.jpg')) {
+        img.src = '/images/placeholder.jpg';
+      }
+      img.classList.add('loaded');
+    }, { once: true });
 
     if (!img.style.aspectRatio) {
       if (img.classList.contains('card-image') || img.classList.contains('carousel-item-image')) {

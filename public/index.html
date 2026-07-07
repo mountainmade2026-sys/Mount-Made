@@ -393,6 +393,8 @@
         @media (max-width: 600px) {
             #homepage-sections-container .product-card {
                 min-height: auto;
+                max-height: none;
+                margin-bottom: 0.75rem;
             }
 
             #homepage-sections-container .product-card .card-description {
@@ -403,60 +405,45 @@
                 display: none !important;
             }
 
+            #homepage-sections-container .product-card .card-content {
+                padding: 0.3rem 0.7rem 0.15rem;
+            }
+
             #homepage-sections-container .product-card .card-footer {
                 flex-direction: column;
                 align-items: stretch;
-                padding: 0 0.75rem 0.5rem;
-                gap: 0.35rem;
-            }
-
-            #homepage-sections-container .product-card .card-footer .btn {
-                width: 100% !important;
-                margin-left: 0 !important;
-                padding: 0.32rem 0.35rem;
+                padding: 0 0.65rem 0.2rem;
+                gap: 0.15rem;
             }
 
             #homepage-sections-container .product-card .product-action-row {
                 display: grid !important;
                 grid-template-columns: repeat(2, minmax(0, 1fr));
-                gap: 0.25rem;
+                gap: 0.15rem;
                 width: 100%;
                 justify-items: stretch;
             }
 
-            #homepage-sections-container .product-card .card-image-wrap {
-                height: 170px;
-                min-height: 170px;
-            }
-
             #homepage-sections-container .product-card .product-action-row .btn {
                 width: 100% !important;
                 min-width: 0;
-                min-height: 36px !important;
-                padding: 0.32rem 0.28rem;
+                min-height: 32px !important;
+                padding: 0.25rem 0.22rem !important;
                 font-size: 0.72rem;
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
-                line-height: 1.05;
-                gap: 0.15rem;
-            }
-
-            #homepage-sections-container .product-card .product-action-row .btn {
-                width: 100% !important;
-                min-width: 0;
-                min-height: 36px !important;
-                padding: 0.32rem 0.28rem;
-                font-size: 0.72rem;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                line-height: 1.05;
-                gap: 0.15rem;
+                line-height: 1.1;
+                gap: 0.1rem;
             }
 
             #homepage-sections-container .product-card .product-action-row .btn i {
                 display: none;
+            }
+
+            #homepage-sections-container .product-card .card-image-wrap {
+                height: 150px;
+                min-height: 150px;
             }
         }
 
@@ -2063,7 +2050,8 @@
                                                  class="card-image"
                                                  loading="lazy"
                                                  decoding="async"
-                                                 onerror="this.src='/images/placeholder.jpg'">
+                                                 onload="this.classList.add('loaded')"
+                                                 onerror="this.onerror=null; this.src='/images/placeholder.jpg'; this.classList.add('loaded');">
                                         </div>
                                         <div class="card-body">
                                             <div class="card-content">
@@ -2240,7 +2228,8 @@
                          loading="${index === 0 ? 'eager' : 'lazy'}"
                          fetchpriority="${index === 0 ? 'high' : 'auto'}"
                          decoding="async"
-                         onerror="this.src='/images/placeholder.jpg'">
+                         onload="this.classList.add('loaded')"
+                         onerror="this.onerror=null; this.src='/images/placeholder.jpg'; this.classList.add('loaded');">
                     <div class="carousel-item-content">
                         <h3 class="carousel-item-title">${product.name}</h3>
                         ${product.stock_quantity === 0
