@@ -2423,7 +2423,7 @@
             const delivery_charge = getDeliveryChargeForSubtotal(currentSubtotal);
             const totalAmount = currentSubtotal + delivery_charge;
 
-            let paymentDetails = paymentMethod === 'gpay'
+            let paymentDetails = ['gpay', 'phone', 'bhim'].includes(paymentMethod)
                 ? { method: gpayDetailType, value: gpayDetailValue }
                 : null;
 
