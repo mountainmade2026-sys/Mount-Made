@@ -235,10 +235,9 @@
         }
 
         function buildGpayUpiLink(payload) {
-            if (!payload || payload.paymentType === 'qr') {
-                return null;
-            }
+            if (!payload) return null;
 
+            // Prefer explicit paymentValue (could be upiId or phone); fall back to upiId/phoneNumber
             const recipient = String(payload.paymentValue || payload.upiId || payload.phoneNumber || '').trim();
             if (!recipient) return null;
 
