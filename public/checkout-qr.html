@@ -297,6 +297,21 @@
             const timerId = setInterval(update, 1000);
         }
 
+        function isMobileDevice() {
+            try {
+                const ua = navigator.userAgent || '';
+                const mobileUA = /Mobi|Android|iPhone|iPad|iPod|Windows Phone/i;
+                if (mobileUA.test(ua)) return true;
+                if (navigator.maxTouchPoints && navigator.maxTouchPoints > 1) {
+                    // treat small touch devices as mobile
+                    return Math.min(window.screen.width, window.screen.height) < 900;
+                }
+                return false;
+            } catch (e) {
+                return false;
+            }
+        }
+
         function initPage() {
             const payload = getPendingPayment();
             if (!payload) {
@@ -314,19 +329,23 @@
                     qrPaidButton.textContent = 'Scan QR to Pay';
                 }
                 qrPaidButton.addEventListener('click', () => {
-                    if (qrPaidLink) {
-                        // Try navigating to the UPI link to open UPI app
-                        window.location.href = qrPaidLink;
-                        // Fallback: create and click an anchor (some browsers handle intents better)
-                        try {
-                            const a = document.createElement('a');
-                            a.href = qrPaidLink;
-                            a.style.display = 'none';
-                            document.body.appendChild(a);
-                            a.click();
-                            a.remove();
-                        } catch (e) {}
+                    if (!qrPaidLink) return;
+                    if (!isMobileDevice()) {
+                        const notice = document.getElementById('qr-notice');
+                        if (notice) notice.textContent = 'Open your UPI app on mobile and scan the QR code to pay.';
+                        else alert('Open your UPI app on mobile and scan the QR code to pay.');
+                        return;
                     }
+                    // Mobile: open UPI link to launch UPI app with amount
+                    window.location.href = qrPaidLink;
+                    try {
+                        const a = document.createElement('a');
+                        a.href = qrPaidLink;
+                        a.style.display = 'none';
+                        document.body.appendChild(a);
+                        a.click();
+                        a.remove();
+                    } catch (e) {}
                 });
             }
             // Wire the direct-pay button under the QR image
@@ -338,7 +357,13 @@
                 }
                 qrDirectBtn.addEventListener('click', () => {
                     if (!qrPaidLink) return;
-                    // Open UPI link (amount fixed from payload)
+                    if (!isMobileDevice()) {
+                        const notice = document.getElementById('qr-notice');
+                        if (notice) notice.textContent = 'Direct Pay works on mobile devices only. Scan the QR using your UPI app.';
+                        else alert('Direct Pay works on mobile devices only. Scan the QR using your UPI app.');
+                        return;
+                    }
+                    // Mobile: open UPI link (amount fixed from payload)
                     window.location.href = qrPaidLink;
                     try {
                         const a = document.createElement('a');
