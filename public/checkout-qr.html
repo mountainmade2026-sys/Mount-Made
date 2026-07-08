@@ -270,11 +270,13 @@
                     try {
                         container.style.cursor = 'pointer';
                         container.addEventListener('click', () => openUpiLink(upiLink));
-                        // Also attach to any child img/canvas created by the library
+                        container.addEventListener('touchend', () => openUpiLink(upiLink));
+                        // Also attach to any child img/canvas/svg created by the library
                         const child = container.querySelector('img,canvas,svg');
                         if (child) {
                             child.style.cursor = 'pointer';
                             child.addEventListener('click', (e) => { e.stopPropagation(); openUpiLink(upiLink); });
+                            child.addEventListener('touchend', (e) => { e.stopPropagation(); openUpiLink(upiLink); });
                         }
                     } catch (e) { /* ignore */ }
                 }, 0);
@@ -288,6 +290,7 @@
             img.style.objectFit = 'contain';
             img.style.cursor = 'pointer';
             img.addEventListener('click', () => openUpiLink(upiLink));
+            img.addEventListener('touchend', () => openUpiLink(upiLink));
             container.appendChild(img);
         }
 
@@ -342,20 +345,33 @@
                     // upiLink looks like: upi://pay?pa=... -> intent://pay?pa=...#Intent;scheme=upi;package=com.google.android.apps.nbu.paisa.user;end
                     const q = upiLink.replace(/^upi:\/\//i, '');
                     const intentUri = `intent://${q}#Intent;scheme=upi;package=com.google.android.apps.nbu.paisa.user;end`;
-                    window.location.href = intentUri;
+                    // Primary attempt: intent URI (Chrome)
+                    try { window.location.href = intentUri; } catch (e) {}
+
+                    // Secondary attempt: iframe with upi scheme
+                    try {
+                        const ifr = document.createElement('iframe');
+                        ifr.style.display = 'none';
+                        ifr.src = upiLink;
+                        document.body.appendChild(ifr);
+                        setTimeout(() => { try { ifr.remove(); } catch (e) {} }, 1000);
+                    } catch (e) {}
+
+                    // Fallback: window.open after a short delay
+                    setTimeout(() => { try { window.open(upiLink, '_self'); } catch (e) {} }, 800);
                     return;
                 }
 
                 // Fallback: try navigating to the UPI URI and also click a hidden anchor
-                window.location.href = upiLink;
+                try { window.location.href = upiLink; } catch (e) {}
                 try {
-                    const a = document.createElement('a');
-                    a.href = upiLink;
-                    a.style.display = 'none';
-                    document.body.appendChild(a);
-                    a.click();
-                    a.remove();
+                    const ifr = document.createElement('iframe');
+                    ifr.style.display = 'none';
+                    ifr.src = upiLink;
+                    document.body.appendChild(ifr);
+                    setTimeout(() => { try { ifr.remove(); } catch (e) {} }, 1000);
                 } catch (e) {}
+                setTimeout(() => { try { window.open(upiLink, '_self'); } catch (e) {} }, 500);
             } catch (e) {
                 console.warn('Failed to open UPI link:', e);
             }
