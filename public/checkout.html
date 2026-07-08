@@ -135,12 +135,6 @@
                                 <input type="text" id="gpay-detail-value" class="form-input" placeholder="Configured from admin" readonly>
                                 <div class="form-help" id="gpay-bank-display">Bank: -</div>
                             </div>
-                            <div id="gpay-qr-wrap" class="form-group hidden">
-                                <label class="form-label">GPay QR Code</label>
-                                <div id="gpay-qr-container" class="gpay-qr-image" role="img" aria-label="Google Pay QR code" style="min-height:256px;"></div>
-                                <img id="gpay-qr-image" class="gpay-qr-image hidden" src="" alt="GPay QR Code" />
-                                <div class="form-help" id="gpay-qr-hint">Scan this barcode in Google Pay.</div>
-                            </div>
                             <div class="form-group">
                                 <label class="form-label">Delivery PIN Code</label>
                                 <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.5rem;">
@@ -1833,37 +1827,6 @@
             `;
         }
 
-        function showGpayQrPaymentModal(qrImageUrl, gpayRef, amount = null) {
-            const modal = document.getElementById('order-status-modal');
-            const content = document.getElementById('order-status-content');
-            if (!modal || !content) return;
-
-            const amountText = amount != null ? formatCurrency(amount) : 'the cart total';
-            modal.classList.remove('hidden');
-            content.innerHTML = `
-                <button type="button" class="order-modal-close" onclick="hideOrderStatusModal()">
-                    <i class="fas fa-times"></i>
-                </button>
-                <div class="order-modal-icon success">
-                    <i class="fas fa-qrcode"></i>
-                </div>
-                <h3 class="order-modal-title">Scan QR to pay</h3>
-                <p class="order-modal-text">Use Google Pay to scan this barcode and pay exactly <strong>${escapeHtml(amountText)}</strong> for your order.</p>
-                <div id="order-status-qr-container" class="gpay-qr-image" style="max-width:260px;width:100%;display:block;margin:0.75rem auto 1rem;border-radius:16px;box-shadow:0 12px 30px rgba(0,0,0,0.12);"></div>
-                <p class="order-modal-text" style="font-size:0.95rem;">Payment reference: <strong>${escapeHtml(gpayRef)}</strong></p>
-            `;
-
-            const qrContainer = document.getElementById('order-status-qr-container');
-            if (qrContainer) {
-                const upiLink = buildGpayUpiLink(amount, 'Checkout Payment', gpayRef);
-                if (upiLink) {
-                    generateDynamicGpayQr('order-status-qr-container', upiLink);
-                } else if (qrImageUrl) {
-                    qrContainer.innerHTML = `<img src="${escapeHtml(qrImageUrl)}" alt="GPay QR Code" style="max-width:100%;width:100%;display:block;border-radius:16px;" />`;
-                }
-            }
-        }
-
         const BILLING_STORAGE_KEY = 'mm_billing_profile';
 
         function loadBillingProfile() {
@@ -1909,46 +1872,6 @@
             return `MM${Date.now()}${rand}`;
         }
 
-        function generateDynamicGpayQr(qrContainerId, upiLink) {
-            const container = document.getElementById(qrContainerId);
-            if (!container) return false;
-
-            try {
-                // Clear any existing QR code
-                container.innerHTML = '';
-
-                if (typeof window.QRCode === 'function') {
-                    new QRCode(container, {
-                        text: upiLink,
-                        width: 256,
-                        height: 256,
-                        colorDark: '#000000',
-                        colorLight: '#ffffff',
-                        correctLevel: QRCode.CorrectLevel.H
-                    });
-                } else {
-                    // Fallback to public QR API when library is unavailable
-                    const fallbackUrl = `https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=${encodeURIComponent(upiLink)}`;
-                    const img = document.createElement('img');
-                    img.src = fallbackUrl;
-                    img.alt = 'GPay QR Code';
-                    img.style.width = '100%';
-                    img.style.height = 'auto';
-                    img.style.display = 'block';
-                    container.appendChild(img);
-                }
-
-                return true;
-            } catch (error) {
-                console.warn('Failed to generate dynamic QR code:', error);
-                if (container) {
-                    container.innerHTML = `<div style="color:#d00;font-size:0.9rem; text-align:center;">Unable to generate QR code. Please try again.</div>`;
-                }
-                return false;
-            }
-        }
-
-
         function buildGpayUpiLink(amount, note = '', transactionRef = '') {
             const recipient = String(checkoutGpaySettings.upiId || '').trim();
             if (!recipient) return null;
@@ -1974,39 +1897,6 @@
             }
 
             return `upi://pay?${params.toString()}`;
-        }
-
-        function buildGpayIntentLink(amount, note = '', transactionRef = '') {
-            const upiLink = buildGpayUpiLink(amount, note, transactionRef);
-            if (!upiLink) return null;
-            const query = upiLink.replace('upi://pay?', '');
-            return `intent://pay?${query}#Intent;scheme=upi;package=com.google.android.apps.nbu.paisa.user;end`;
-        }
-
-        function openGpayWithAmount(amount, note = '', transactionRef = '') {
-            const upiLink = buildGpayUpiLink(amount, note, transactionRef);
-            if (!upiLink) {
-                showAlert('GPay UPI ID is not configured by admin.', 'error');
-                return false;
-            }
-
-            try {
-                const anchor = document.createElement('a');
-                anchor.href = upiLink;
-                anchor.style.display = 'none';
-                anchor.target = '_self';
-                document.body.appendChild(anchor);
-                anchor.click();
-                setTimeout(() => {
-                    if (anchor.parentNode) {
-                        anchor.parentNode.removeChild(anchor);
-                    }
-                }, 1000);
-                return true;
-            } catch (error) {
-                console.warn('Failed to navigate to UPI link:', error);
-                return false;
-            }
         }
 
         function applyOrderPlacedUI(order) {
@@ -2051,9 +1941,8 @@
             const hasQr = String(checkoutGpaySettings.qrImageUrl || '').trim() !== '';
             const hasUpi = String(checkoutGpaySettings.upiId || '').trim() !== '';
             const hasPhone = String(checkoutGpaySettings.phoneNumber || '').trim() !== '';
-            const currentAmount = getCurrentCheckoutTotal();
             const recipient = method === 'phone' ? (hasPhone ? checkoutGpaySettings.phoneNumber : checkoutGpaySettings.upiId) : checkoutGpaySettings.upiId || checkoutGpaySettings.phoneNumber;
-            const dynamicUpiLink = recipient && currentAmount > 0 ? buildGpayUpiLink(currentAmount, method === 'bhim' ? 'BHIM Payment' : method === 'phone' ? 'PhonePe Payment' : 'GPay Payment') : null;
+            const currentAmount = getCurrentCheckoutTotal();
 
             const labelMap = {
                 gpay: 'UPI ID',
@@ -2076,57 +1965,18 @@
             }
 
             if (qrWrap) {
-                qrWrap.classList.remove('hidden');
+                qrWrap.classList.add('hidden');
             }
 
-            if (hasQr && !dynamicUpiLink) {
-                if (qrContainer) {
-                    qrContainer.classList.add('hidden');
-                    qrContainer.innerHTML = '';
-                    qrContainer.onclick = null;
-                }
-                if (qrImage) {
-                    qrImage.classList.remove('hidden');
-                    qrImage.src = checkoutGpaySettings.qrImageUrl;
-                    qrImage.style.cursor = 'default';
-                    qrImage.onclick = null;
-                }
-                if (qrHint) {
-                    qrHint.textContent = `Scan this QR code in ${displayMethodMap[method] || 'GPay'}.`;
-                }
-            } else if (dynamicUpiLink) {
-                if (qrContainer) {
-                    qrContainer.classList.remove('hidden');
-                    qrContainer.style.cursor = 'pointer';
-                    qrContainer.onclick = () => {
-                        openGpayWithAmount(currentAmount, `${displayMethodMap[method]} Payment`);
-                    };
-                    generateDynamicGpayQr('gpay-qr-container', dynamicUpiLink);
-                }
-                if (qrImage) {
-                    qrImage.classList.add('hidden');
-                }
-                if (qrHint) {
-                    qrHint.textContent = `Scan or tap this QR code in ${displayMethodMap[method]} to pay the exact checkout amount.`;
-                }
-            } else {
-                if (qrWrap) {
-                    qrWrap.classList.add('hidden');
-                }
-                if (qrContainer) {
-                    qrContainer.innerHTML = '';
-                    qrContainer.style.cursor = 'default';
-                    qrContainer.onclick = null;
-                }
-                if (qrImage) {
-                    qrImage.classList.add('hidden');
-                    qrImage.src = '';
-                }
-                if (qrHint) {
-                    qrHint.textContent = recipient
-                        ? `Payee: ${checkoutGpaySettings.payeeName || 'Mount Made'}`
-                        : 'Payment details are not configured by admin.';
-                }
+            if (qrImage) {
+                qrImage.classList.add('hidden');
+                qrImage.src = '';
+            }
+
+            if (qrHint) {
+                qrHint.textContent = recipient
+                    ? `Payment details are configured for ${displayMethodMap[method] || 'GPay'}. After placing the order, you will complete payment on the next page.`
+                    : 'Payment details are not configured by admin.';
             }
         }
 
@@ -2597,7 +2447,7 @@
             const manualAddressUsed = !selectedAddressId;
             const shouldSaveAddress = manualAddressUsed || !!document.getElementById('save_address')?.checked;
 
-            if (paymentMethod === 'gpay') {
+            if (paymentMethod === 'gpay' || paymentMethod === 'phone' || paymentMethod === 'bhim') {
                 const gpayRef = generateGpayRef();
                 orderData.payment_details = {
                     ...(orderData.payment_details || {}),
@@ -2621,14 +2471,6 @@
                         });
                     } catch (addrError) {
                         console.warn('Failed to save address before order:', addrError);
-                    }
-                }
-
-                const hasUpi = String(checkoutGpaySettings.upiId || '').trim() !== '';
-                if (hasUpi) {
-                    const launched = openGpayWithAmount(totalAmount, 'Checkout Payment', gpayRef);
-                    if (launched) {
-                        showAlert(`Google Pay opened with ${formatCurrency(totalAmount)} prefilled.`, 'info');
                     }
                 }
 

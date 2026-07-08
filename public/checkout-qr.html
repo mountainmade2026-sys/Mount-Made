@@ -155,7 +155,7 @@
                 <div class="qr-countdown" id="qr-countdown">Time remaining: 09:00</div>
 
                 <div class="button-row">
-                    <button type="button" class="btn btn-primary" id="qr-paid-button"><i class="fas fa-check"></i> I have paid</button>
+                    <button type="button" class="btn btn-primary" id="qr-paid-button"><i class="fas fa-arrow-right"></i> Pay directly</button>
                     <button type="button" class="btn btn-secondary" id="qr-cancel-button"><i class="fas fa-times"></i> Cancel payment</button>
                 </div>
 
@@ -299,8 +299,12 @@
             startCountdown(payload.expiresAt || (Date.now() + 9 * 60 * 1000));
 
             document.getElementById('qr-paid-button').addEventListener('click', () => {
-                clearPendingPayment();
-                window.location.href = '/orders';
+                const upiLink = buildGpayUpiLink(payload);
+                if (upiLink) {
+                    window.location.href = upiLink;
+                } else {
+                    window.location.href = '/checkout.html';
+                }
             });
             document.getElementById('qr-cancel-button').addEventListener('click', () => {
                 clearPendingPayment();
