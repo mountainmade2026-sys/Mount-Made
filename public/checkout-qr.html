@@ -281,11 +281,14 @@
             if (!recipient) return null;
 
             // Accept a full UPI URI if provided.
+            if (/^upi:\/\//i.test(recipient)) {
+                return recipient;
+            }
             if (/^upi:/i.test(recipient)) {
                 return recipient.replace(/^upi:/i, 'upi://');
             }
 
-            if (recipient.startsWith('http') || recipient.includes('://')) {
+            if (recipient.startsWith('http') || /^[a-z][a-z0-9+.-]*:\/\//i.test(recipient)) {
                 return null;
             }
 
