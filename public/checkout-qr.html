@@ -70,8 +70,10 @@
         }
         .qr-image {
             margin: 0 auto 1rem;
-            width: 260px;
-            height: 260px;
+            width: min(260px, 100%);
+            height: min(260px, 100%);
+            max-width: 100%;
+            aspect-ratio: 1 / 1;
             border-radius: 24px;
             background: #fff;
             display: flex;
@@ -79,6 +81,35 @@
             justify-content: center;
             overflow: hidden;
             box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                padding: 1rem;
+            }
+            .payment-card-header {
+                padding: 1.25rem 1rem;
+            }
+            .payment-card-body {
+                padding: 1.25rem;
+            }
+            .payment-summary {
+                gap: 0.75rem;
+            }
+            .payment-summary-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.35rem;
+            }
+            .qr-panel {
+                padding: 0.85rem;
+            }
+            .button-row {
+                gap: 0.65rem;
+            }
+            .btn {
+                padding: 0.9rem 1rem;
+            }
         }
         .qr-countdown {
             margin-top: 1rem;
@@ -237,9 +268,17 @@
         function buildGpayUpiLink(payload) {
             if (!payload) return null;
 
-            // Prefer explicit paymentValue (could be upiId or phone); fall back to upiId/phoneNumber
-            const recipient = String(payload.paymentValue || payload.upiId || payload.phoneNumber || '').trim();
-            if (!recipient) return null;
+            // If the payload is QR-only, prefer the configured UPI ID or phone number.
+            let recipient = '';
+            if (payload.paymentType !== 'qr') {
+                recipient = String(payload.paymentValue || '').trim();
+            }
+            if (!recipient) {
+                recipient = String(payload.upiId || payload.phoneNumber || '').trim();
+            }
+            if (!recipient || recipient.startsWith('http') || recipient.includes('://')) {
+                return null;
+            }
 
             const params = new URLSearchParams({
                 pa: recipient,

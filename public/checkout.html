@@ -2484,7 +2484,9 @@
                     orderNumber: 'Pending',
                     paymentMethod,
                     paymentType: gpayDetailType,
-                    paymentValue: gpayDetailValue,
+                    paymentValue: gpayDetailType === 'qr'
+                        ? (checkoutGpaySettings.upiId || checkoutGpaySettings.phoneNumber || '')
+                        : gpayDetailValue,
                     qrImageUrl: checkoutGpaySettings.qrImageUrl || '',
                     upiId: checkoutGpaySettings.upiId || '',
                     phoneNumber: checkoutGpaySettings.phoneNumber || '',
