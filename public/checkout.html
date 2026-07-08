@@ -147,10 +147,6 @@
                             <div class="form-help" id="gpay-prefill-hint">Prefilled from your Billing Management details.</div>
                         </div>
 
-                        <div class="form-group" style="margin-top:1rem;">
-                            <label class="form-label">Order Notes (Optional)</label>
-                            <textarea id="notes" class="form-textarea"></textarea>
-                        </div>
                     </div>
                 </div>
             </form>
@@ -273,10 +269,6 @@
             <div class="form-group">
                 <label class="form-label">GPay Phone Number</label>
                 <input type="text" id="billing-phone-input" class="form-input" placeholder="10-digit phone">
-            </div>
-            <div class="form-group">
-                <label class="form-label">QR Code Link / Note</label>
-                <input type="text" id="billing-qr-input" class="form-input" placeholder="https://... or note about QR">
             </div>
             <div class="billing-modal-actions">
                 <button type="button" class="btn btn-secondary" onclick="closeModal('billing-modal')">Cancel</button>
@@ -2139,12 +2131,9 @@
             const prefSelect = document.getElementById('billing-preferred');
             const upiInput = document.getElementById('billing-upi-input');
             const phoneInput = document.getElementById('billing-phone-input');
-            const qrInput = document.getElementById('billing-qr-input');
-
             if (prefSelect) prefSelect.value = profile.preferred || 'upi';
             if (upiInput) upiInput.value = profile.upi || '';
             if (phoneInput) phoneInput.value = profile.phone || '';
-            if (qrInput) qrInput.value = profile.qr || '';
 
             openModal('billing-modal');
         }
@@ -2209,8 +2198,7 @@
                     const updated = saveBillingProfile({
                         preferred: document.getElementById('billing-preferred')?.value || 'upi',
                         upi: document.getElementById('billing-upi-input')?.value || '',
-                        phone: document.getElementById('billing-phone-input')?.value || '',
-                        qr: document.getElementById('billing-qr-input')?.value || ''
+                        phone: document.getElementById('billing-phone-input')?.value || ''
                     });
                     updateGpayLabelAndPrefill();
                     closeModal('billing-modal');
