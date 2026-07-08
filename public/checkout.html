@@ -2330,12 +2330,12 @@
         }
 
         document.getElementById('checkout-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            setPlaceOrderButtonState(true);
+                    e.preventDefault();
+                    setPlaceOrderButtonState(true);
+                    try {
+                        let shippingAddress;
 
-                let shippingAddress;
-
-                if (selectedAddressId) {
+                        if (selectedAddressId) {
                     // Use selected saved address
                     const addr = userAddresses.find(a => a.id === selectedAddressId);
                     shippingAddress = {
@@ -2590,6 +2590,11 @@
                 console.error('Checkout submit failed:', error);
                 showAlert(error.message || 'Failed to place order', 'error');
             }
+        } catch (err) {
+            console.error('Checkout submit handler error:', err);
+            try { setPlaceOrderButtonState(false); } catch(e){}
+            try { showAlert(err.message || 'Failed to place order', 'error'); } catch(e){}
+        }
         });
 
         // ── Verification overlay for missing phone/email ──────────────
