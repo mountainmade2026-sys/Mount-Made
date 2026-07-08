@@ -131,11 +131,6 @@
                         <!-- UPI / GPay details panel -->
                         <div id="gpay-details" class="pm-detail-panel">
                             <div class="form-group">
-                                <label id="gpay-detail-label" class="form-label">UPI ID</label>
-                                <input type="text" id="gpay-detail-value" class="form-input" placeholder="Configured from admin" readonly>
-                                <div class="form-help" id="gpay-bank-display">Bank: -</div>
-                            </div>
-                            <div class="form-group">
                                 <label class="form-label">Delivery PIN Code</label>
                                 <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.5rem;">
                                     <input id="checkout-pincode-input" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="Enter 6-digit PIN" style="flex: 1 1 150px; min-width: 140px; border: 1px solid var(--border-primary); border-radius: 10px; padding: 0.55rem 0.65rem; background: var(--bg-primary); color: var(--text-primary);">
@@ -259,7 +254,6 @@
                 <select id="billing-preferred" class="form-select">
                     <option value="upi">UPI ID</option>
                     <option value="phone">Phone Number</option>
-                    <option value="qr">QR Code / Link</option>
                 </select>
             </div>
             <div class="form-group">
@@ -1942,25 +1936,23 @@
             const currentAmount = getCurrentCheckoutTotal();
 
             const labelMap = {
-                gpay: onlyQr ? 'QR Code / Link' : 'UPI ID',
-                phone: onlyQr ? 'QR Code / Link' : 'Phone Number',
-                bhim: onlyQr ? 'QR Code / Link' : 'BHIM ID'
+                gpay: 'UPI ID',
+                phone: 'Phone Number',
+                bhim: 'BHIM ID'
             };
             const displayMethodMap = {
-                gpay: onlyQr ? 'QR Code' : 'GPay / UPI',
-                phone: onlyQr ? 'QR Code' : 'PhonePe',
-                bhim: onlyQr ? 'QR Code' : 'BHIM'
+                gpay: 'GPay / UPI',
+                phone: 'PhonePe',
+                bhim: 'BHIM'
             };
 
-            label.textContent = labelMap[method] || (onlyQr ? 'QR Code / Link' : 'UPI ID');
+            label.textContent = labelMap[method] || 'UPI ID';
             valueInput.value = recipient || '';
             valueInput.placeholder = recipient ? 'Configured by admin' : 'Not configured';
             if (bankDisplay) {
-                bankDisplay.textContent = onlyQr
-                    ? 'QR code configured'
-                    : method === 'phone'
-                        ? `Phone: ${checkoutGpaySettings.phoneNumber || '-'} `
-                        : `Bank: ${checkoutGpaySettings.bankName || '-'}`;
+                bankDisplay.textContent = method === 'phone'
+                    ? `Phone: ${checkoutGpaySettings.phoneNumber || '-'}`
+                    : `Bank: ${checkoutGpaySettings.bankName || '-'}`;
             }
 
             if (qrWrap) {
