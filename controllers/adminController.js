@@ -42,6 +42,26 @@ function normalizePhone(value) {
   return String(value || '').trim();
 }
 
+function toNumber(value) {
+  const numericValue = Number.parseFloat(value);
+  return Number.isFinite(numericValue) ? numericValue : 0;
+}
+
+function isWholesaleSalePrice(itemPrice, product = {}) {
+  const wholesalePrice = toNumber(product && product.wholesale_price);
+  const currentPrice = toNumber(itemPrice);
+  return wholesalePrice > 0 && currentPrice > 0 && Math.abs(currentPrice - wholesalePrice) <= 0.01;
+}
+
+function getEffectiveRetailPrice(product = {}) {
+  const basePrice = toNumber(product && product.price);
+  const discountPrice = product && product.discount_price != null ? toNumber(product.discount_price) : null;
+  if (discountPrice !== null && discountPrice > 0 && discountPrice < basePrice) {
+    return discountPrice;
+  }
+  return basePrice;
+}
+
 async function getOrderContactForNotification(orderSnapshot = {}) {
   const order = orderSnapshot || {};
   const phone = String(order.phone || order.user_phone || '').trim();
@@ -1477,10 +1497,10 @@ exports.getDashboardHistory = async (req, res) => {
 
     const rowsResult = await db.query(`
       SELECT
-        o.created_at::date                                     AS date,
-        COUNT(DISTINCT o.id)                                   AS orders,
-        COALESCE(SUM(o.total_amount) FILTER (WHERE o.status = 'delivered'), 0) AS revenue,
-        COALESCE(SUM(oi.quantity * COALESCE(p.wholesale_price, 0)) FILTER (WHERE o.status = 'delivered'), 0) AS cost,
+        o.created_at::date AS date,
+        COUNT(DISTINCT o.id) AS orders,
+        COALESCE(SUM(oi.subtotal) FILTER (WHERE o.status = 'delivered'), 0) AS revenue,
+        COALESCE(SUM(oi.quantity * COALESCE(p.brought_price, 0)) FILTER (WHERE o.status = 'delivered'), 0) AS cost,
         COALESCE(SUM(o.delivery_charge) FILTER (WHERE o.status = 'delivered'), 0) AS delivery_fees
       FROM orders o
       LEFT JOIN order_items oi ON oi.order_id = o.id
@@ -1539,44 +1559,54 @@ exports.getDashboardStats = async (req, res) => {
     const orderCountQuery = await db.query('SELECT COUNT(*) as total_orders FROM orders');
     const offlineSaleCountQuery = await db.query('SELECT COUNT(*) as total_offline_sales FROM offline_sales');
 
-    // Revenue = only delivered orders (customer actually received the product)
-    // plus offline sales, then subtract refunded return amounts.
-    const revenueQuery = await db.query(`
+    const salesProfitQuery = await db.query(`
       SELECT
-        COALESCE(SUM(o.total_amount), 0)
-          - COALESCE((
-              SELECT SUM(r.refund_amount)
-              FROM returns r
-              WHERE r.status = 'refunded' AND r.refund_amount IS NOT NULL
-            ), 0)
-        + COALESCE((SELECT SUM(amount_paid) FROM offline_sales), 0)
-        AS total_revenue
-      FROM orders o
-      WHERE o.status = 'delivered'
-    `);
-
-    // Cost (spent) = wholesale cost of delivered items only, minus returned items,
-    // plus the wholesale cost of offline sales.
-    const spentQuery = await db.query(`
-      SELECT
-        COALESCE(SUM(oi.quantity * COALESCE(p.wholesale_price, 0)), 0)
-          - COALESCE((
-              SELECT SUM(ri.quantity * COALESCE(p2.wholesale_price, 0))
-              FROM return_items ri
-              JOIN returns r ON r.id = ri.return_id
-              LEFT JOIN products p2 ON p2.id = ri.product_id
-              WHERE r.status = 'refunded'
-            ), 0)
-        + COALESCE((
-              SELECT SUM(os.quantity * COALESCE(p3.wholesale_price, 0))
-              FROM offline_sales os
-              LEFT JOIN products p3 ON p3.id = os.product_id
-            ), 0)
-        AS total_spent
+        COALESCE(
+          SUM(CASE
+            WHEN o.status = 'delivered' AND (
+              p.wholesale_price IS NOT NULL AND p.wholesale_price > 0 AND oi.price IS NOT NULL AND ABS(oi.price - p.wholesale_price) <= 0.01
+            ) THEN oi.subtotal ELSE 0 END),
+          0
+        ) AS wholesale_revenue,
+        COALESCE(
+          SUM(CASE
+            WHEN o.status = 'delivered' AND NOT (
+              p.wholesale_price IS NOT NULL AND p.wholesale_price > 0 AND oi.price IS NOT NULL AND ABS(oi.price - p.wholesale_price) <= 0.01
+            ) THEN oi.subtotal ELSE 0 END),
+          0
+        ) AS normal_revenue,
+        COALESCE(
+          SUM(CASE
+            WHEN o.status = 'delivered' AND (
+              p.wholesale_price IS NOT NULL AND p.wholesale_price > 0 AND oi.price IS NOT NULL AND ABS(oi.price - p.wholesale_price) <= 0.01
+            ) THEN oi.quantity * COALESCE(p.brought_price, 0) ELSE 0 END),
+          0
+        ) AS wholesale_cost,
+        COALESCE(
+          SUM(CASE
+            WHEN o.status = 'delivered' AND NOT (
+              p.wholesale_price IS NOT NULL AND p.wholesale_price > 0 AND oi.price IS NOT NULL AND ABS(oi.price - p.wholesale_price) <= 0.01
+            ) THEN oi.quantity * COALESCE(p.brought_price, 0) ELSE 0 END),
+          0
+        ) AS normal_cost
       FROM order_items oi
       JOIN orders o ON o.id = oi.order_id
       LEFT JOIN products p ON p.id = oi.product_id
       WHERE o.status = 'delivered'
+    `);
+
+    const offlineSalesProfitQuery = await db.query(`
+      SELECT
+        COALESCE(SUM(amount_paid), 0) AS offline_revenue,
+        COALESCE(SUM(quantity * COALESCE(p.brought_price, 0)), 0) AS offline_cost
+      FROM offline_sales os
+      LEFT JOIN products p ON p.id = os.product_id
+    `);
+
+    const refundQuery = await db.query(`
+      SELECT COALESCE(SUM(refund_amount), 0) AS total_refunds
+      FROM returns
+      WHERE status = 'refunded' AND refund_amount IS NOT NULL
     `);
 
     const userCountQuery = await db.query(
@@ -1592,22 +1622,45 @@ exports.getDashboardStats = async (req, res) => {
         SELECT
           COALESCE(SUM(stock_quantity), 0) as stock_units,
           COALESCE(SUM(stock_quantity * price), 0) as stock_value,
-          COALESCE(SUM(stock_quantity * COALESCE(wholesale_price, 0)), 0) as stock_spent
+          COALESCE(SUM(stock_quantity * COALESCE(
+            CASE
+              WHEN discount_price IS NOT NULL AND discount_price > 0 AND discount_price < price THEN discount_price
+              ELSE price
+            END,
+            0
+          )), 0) as normal_stock_value,
+          COALESCE(SUM(stock_quantity * COALESCE(wholesale_price, 0)), 0) as wholesale_stock_value,
+          COALESCE(SUM(stock_quantity * COALESCE(brought_price, 0)), 0) as stock_spent
         FROM products
         WHERE is_active = true
       `
     );
 
     const totalOrders = parseInt(orderCountQuery.rows[0]?.total_orders, 10) || 0;
-    const totalRevenue = parseFloat(revenueQuery.rows[0]?.total_revenue) || 0;
-    const totalSpent = parseFloat(spentQuery.rows[0]?.total_spent) || 0;
-    const totalProfit = totalRevenue - totalSpent;
+    const wholesaleRevenue = parseFloat(salesProfitQuery.rows[0]?.wholesale_revenue) || 0;
+    const normalRevenue = parseFloat(salesProfitQuery.rows[0]?.normal_revenue) || 0;
+    const wholesaleCost = parseFloat(salesProfitQuery.rows[0]?.wholesale_cost) || 0;
+    const normalCost = parseFloat(salesProfitQuery.rows[0]?.normal_cost) || 0;
+    const offlineRevenue = parseFloat(offlineSalesProfitQuery.rows[0]?.offline_revenue) || 0;
+    const offlineCost = parseFloat(offlineSalesProfitQuery.rows[0]?.offline_cost) || 0;
+    const totalRefunds = parseFloat(refundQuery.rows[0]?.total_refunds) || 0;
+
+    const totalRevenue = normalRevenue + wholesaleRevenue + offlineRevenue - totalRefunds;
+    const totalSpent = normalCost + wholesaleCost + offlineCost;
+    const normalProfit = normalRevenue + offlineRevenue - normalCost - offlineCost;
+    const wholesaleProfit = wholesaleRevenue - wholesaleCost;
+    const totalProfit = normalProfit + wholesaleProfit;
+
     const totalCustomers = parseInt(userCountQuery.rows[0]?.total_customers, 10) || 0;
     const totalProducts = parseInt(productCountQuery.rows[0]?.total_products, 10) || 0;
     const stockUnits = parseInt(stockTotalsQuery.rows[0]?.stock_units, 10) || 0;
     const stockValue = parseFloat(stockTotalsQuery.rows[0]?.stock_value) || 0;
+    const normalStockValue = parseFloat(stockTotalsQuery.rows[0]?.normal_stock_value) || 0;
+    const wholesaleStockValue = parseFloat(stockTotalsQuery.rows[0]?.wholesale_stock_value) || 0;
     const stockSpent = parseFloat(stockTotalsQuery.rows[0]?.stock_spent) || 0;
     const stockProfit = stockValue - stockSpent;
+    const stockNormalProfit = normalStockValue - stockSpent;
+    const stockWholesaleProfit = wholesaleStockValue - stockSpent;
 
     res.json({
       stats: {
@@ -1615,12 +1668,16 @@ exports.getDashboardStats = async (req, res) => {
         total_revenue: totalRevenue,
         total_spent: totalSpent,
         total_profit: totalProfit,
+        normal_profit: normalProfit,
+        wholesale_profit: wholesaleProfit,
         total_customers: totalCustomers,
         total_products: totalProducts,
         stock_units: stockUnits,
         stock_value: stockValue,
         stock_spent: stockSpent,
-        stock_profit: stockProfit
+        stock_profit: stockProfit,
+        normal_stock_profit: stockNormalProfit,
+        wholesale_stock_profit: stockWholesaleProfit
       }
     });
   } catch (error) {
@@ -1688,7 +1745,9 @@ exports.getStockReports = async (req, res) => {
         p.category_id,
         c.name as category_name,
         p.price,
+        p.discount_price,
         p.wholesale_price,
+        p.brought_price,
         p.stock_quantity as current_stock,
         p.images,
         p.is_active,
@@ -1698,17 +1757,27 @@ exports.getStockReports = async (req, res) => {
         p.stock_quantity
           + COALESCE(SUM(CASE WHEN o.status != 'cancelled' THEN oi.quantity ELSE 0 END), 0)
           + COALESCE((SELECT SUM(quantity) FROM offline_sales os WHERE os.product_id = p.id), 0) AS initial_stock,
-        COALESCE(SUM(CASE WHEN o.status = 'delivered' THEN oi.subtotal ELSE 0 END), 0)
-          + COALESCE((SELECT SUM(amount_paid) FROM offline_sales os WHERE os.product_id = p.id), 0) AS total_revenue,
-        COALESCE(SUM(CASE WHEN o.status = 'delivered' THEN oi.quantity * COALESCE(p.wholesale_price, 0) ELSE 0 END), 0)
-          + COALESCE((SELECT SUM(os.quantity * COALESCE(p2.wholesale_price, 0)) FROM offline_sales os JOIN products p2 ON p2.id = os.product_id WHERE os.product_id = p.id), 0) AS total_cost
+        COALESCE(SUM(CASE WHEN o.status = 'delivered' AND NOT (
+          p.wholesale_price IS NOT NULL AND p.wholesale_price > 0 AND oi.price IS NOT NULL AND ABS(oi.price - p.wholesale_price) <= 0.01
+        ) THEN oi.subtotal ELSE 0 END), 0)
+          + COALESCE((SELECT SUM(amount_paid) FROM offline_sales os WHERE os.product_id = p.id), 0) AS normal_revenue,
+        COALESCE(SUM(CASE WHEN o.status = 'delivered' AND (
+          p.wholesale_price IS NOT NULL AND p.wholesale_price > 0 AND oi.price IS NOT NULL AND ABS(oi.price - p.wholesale_price) <= 0.01
+        ) THEN oi.subtotal ELSE 0 END), 0) AS wholesale_revenue,
+        COALESCE(SUM(CASE WHEN o.status = 'delivered' AND NOT (
+          p.wholesale_price IS NOT NULL AND p.wholesale_price > 0 AND oi.price IS NOT NULL AND ABS(oi.price - p.wholesale_price) <= 0.01
+        ) THEN oi.quantity * COALESCE(p.brought_price, 0) ELSE 0 END), 0) AS normal_cost,
+        COALESCE(SUM(CASE WHEN o.status = 'delivered' AND (
+          p.wholesale_price IS NOT NULL AND p.wholesale_price > 0 AND oi.price IS NOT NULL AND ABS(oi.price - p.wholesale_price) <= 0.01
+        ) THEN oi.quantity * COALESCE(p.brought_price, 0) ELSE 0 END), 0) AS wholesale_cost,
+        COALESCE((SELECT SUM(os.quantity * COALESCE(p2.brought_price, 0)) FROM offline_sales os LEFT JOIN products p2 ON p2.id = os.product_id WHERE os.product_id = p.id), 0) AS offline_cost
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.id
       LEFT JOIN order_items oi ON p.id = oi.product_id
       LEFT JOIN orders o ON oi.order_id = o.id
       WHERE ${where.join(' AND ')}
-      GROUP BY p.id, p.name, p.description, p.category_id, c.name, p.price, 
-               p.wholesale_price, p.stock_quantity, p.images, p.is_active, p.created_at
+      GROUP BY p.id, p.name, p.description, p.category_id, c.name, p.price, p.discount_price,
+               p.wholesale_price, p.brought_price, p.stock_quantity, p.images, p.is_active, p.created_at
       ORDER BY p.id ASC
     `;
 
@@ -1797,6 +1866,19 @@ exports.getStockReports = async (req, res) => {
       
       const transactionsResult = await db.query(transactionsQuery, [product.id]);
       
+      const normalRevenue = parseFloat(product.normal_revenue) || 0;
+      const wholesaleRevenue = parseFloat(product.wholesale_revenue) || 0;
+      const normalCost = parseFloat(product.normal_cost) || 0;
+      const wholesaleCost = parseFloat(product.wholesale_cost) || 0;
+      const offlineCost = parseFloat(product.offline_cost) || 0;
+      const effectiveRetailPrice = getEffectiveRetailPrice(product);
+      const wholesalePrice = product.wholesale_price ? parseFloat(product.wholesale_price) : null;
+      const broughtPrice = product.brought_price ? parseFloat(product.brought_price) : null;
+      const stockNormalProfit = (parseInt(product.current_stock) || 0) * (Number.isFinite(effectiveRetailPrice) ? effectiveRetailPrice : 0)
+        - (parseInt(product.current_stock) || 0) * (Number.isFinite(broughtPrice) ? broughtPrice : 0);
+      const stockWholesaleProfit = (parseInt(product.current_stock) || 0) * (wholesalePrice || 0)
+        - (parseInt(product.current_stock) || 0) * (Number.isFinite(broughtPrice) ? broughtPrice : 0);
+
       stockReports.push({
         id: product.id,
         name: product.name,
@@ -1804,13 +1886,18 @@ exports.getStockReports = async (req, res) => {
         category_id: product.category_id,
         category_name: product.category_name,
         price: parseFloat(product.price),
-        wholesale_price: product.wholesale_price ? parseFloat(product.wholesale_price) : null,
+        discount_price: product.discount_price ? parseFloat(product.discount_price) : null,
+        wholesale_price: wholesalePrice,
+        brought_price: broughtPrice,
         current_stock: parseInt(product.current_stock) || 0,
         total_sold: parseInt(product.total_sold) || 0,
         initial_stock: parseInt(product.initial_stock) || 0,
-        total_revenue: parseFloat(product.total_revenue) || 0,
-        total_cost: parseFloat(product.total_cost) || 0,
-        total_profit: (parseFloat(product.total_revenue) || 0) - (parseFloat(product.total_cost) || 0),
+        total_revenue: normalRevenue + wholesaleRevenue,
+        total_cost: normalCost + wholesaleCost + offlineCost,
+        normal_profit: normalRevenue - normalCost,
+        wholesale_profit: wholesaleRevenue - wholesaleCost,
+        normal_stock_profit: stockNormalProfit,
+        wholesale_stock_profit: stockWholesaleProfit,
         images: product.images,
         is_active: product.is_active,
         created_at: product.created_at,
