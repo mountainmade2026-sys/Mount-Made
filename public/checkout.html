@@ -2479,14 +2479,17 @@
                     });
                 }
 
+                const actualPaymentRecipient = String(gpayDetailType === 'qr'
+                    ? (checkoutGpaySettings.upiId || checkoutGpaySettings.phoneNumber || '')
+                    : gpayDetailValue || checkoutGpaySettings.upiId || checkoutGpaySettings.phoneNumber || '').trim();
+                const pendingPaymentType = gpayDetailType === 'qr' && actualPaymentRecipient ? 'upi' : gpayDetailType;
+
                 const paymentRedirect = {
                     orderId: null,
                     orderNumber: 'Pending',
                     paymentMethod,
-                    paymentType: gpayDetailType,
-                    paymentValue: gpayDetailType === 'qr'
-                        ? (checkoutGpaySettings.upiId || checkoutGpaySettings.phoneNumber || '')
-                        : gpayDetailValue,
+                    paymentType: pendingPaymentType,
+                    paymentValue: actualPaymentRecipient,
                     qrImageUrl: checkoutGpaySettings.qrImageUrl || '',
                     upiId: checkoutGpaySettings.upiId || '',
                     phoneNumber: checkoutGpaySettings.phoneNumber || '',

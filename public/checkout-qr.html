@@ -259,6 +259,15 @@
                 img.style.width = '100%';
                 img.style.height = '100%';
                 img.style.objectFit = 'contain';
+                img.style.cursor = 'pointer';
+                img.addEventListener('click', () => {
+                    const fallbackLink = buildGpayUpiLink(payload);
+                    if (fallbackLink) openUpiLink(fallbackLink);
+                });
+                img.addEventListener('touchend', () => {
+                    const fallbackLink = buildGpayUpiLink(payload);
+                    if (fallbackLink) openUpiLink(fallbackLink);
+                });
                 qrContainer.appendChild(img);
             } else {
                 qrContainer.innerHTML = '<div style="color:#94a3b8; font-size:0.95rem;">No QR code available.</div>';
@@ -268,14 +277,7 @@
         function buildGpayUpiLink(payload) {
             if (!payload) return null;
 
-            // If the payload is QR-only, prefer the configured UPI ID or phone number.
-            let recipient = '';
-            if (payload.paymentType !== 'qr') {
-                recipient = String(payload.paymentValue || '').trim();
-            }
-            if (!recipient) {
-                recipient = String(payload.upiId || payload.phoneNumber || '').trim();
-            }
+            const recipient = String(payload.paymentValue || payload.upiId || payload.phoneNumber || '').trim();
             if (!recipient || recipient.startsWith('http') || recipient.includes('://')) {
                 return null;
             }
