@@ -298,8 +298,27 @@
             recipient = String(recipient || '').trim();
             if (!recipient) return null;
 
-            if (/^upi:\/\//i.test(recipient)) {
-                return recipient;
+            if (/^upi:\/\/(pay)?/i.test(recipient)) {
+                let normalized = recipient.replace(/^upi:pay/i, 'upi://pay');
+                normalized = normalized.replace(/^upi:\/\//i, 'upi://');
+                try {
+                    const url = new URL(normalized);
+                    const params = new URLSearchParams(url.search);
+                    const payeeName = String(payload.payeeName || 'Mount Made').trim();
+                    const orderNote = `Order ${payload.orderNumber || ''}`.trim();
+                    const amount = Number(payload.amount || 0);
+
+                    if (payeeName) params.set('pn', payeeName);
+                    if (orderNote) params.set('tn', orderNote);
+                    if (Number.isFinite(amount) && amount > 0) {
+                        params.set('am', amount.toFixed(2));
+                    }
+                    params.set('cu', 'INR');
+
+                    return `upi://pay?${params.toString()}`;
+                } catch (e) {
+                    return null;
+                }
             }
 
             if (/^[a-z][a-z0-9+.-]*:\/\//i.test(recipient)) {
