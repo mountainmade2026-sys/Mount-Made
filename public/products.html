@@ -177,6 +177,7 @@
             transition: transform 0.35s ease;
             display: block !important;
             border-radius: 14px 14px 0 0 !important;
+            cursor: pointer;
         }
 
         .product-card:hover .card-image {
@@ -1048,7 +1049,7 @@
             grid.innerHTML = products.map(p => `
                 <div class="card product-card">
                     <div class="card-image-wrap">
-                        <img src="${p.image_url || '/images/placeholder.jpg'}" alt="${p.name}" class="card-image" loading="lazy" decoding="async" onload="this.classList.add('loaded')" onerror="this.onerror=null; this.src='/images/placeholder.jpg'; this.classList.add('loaded');">
+                        <img src="${p.image_url || '/images/placeholder.jpg'}" alt="${p.name}" class="card-image" loading="lazy" decoding="async" onclick="window.location.href='/product-details?id=${encodeURIComponent(p.id)}'" onload="this.classList.add('loaded')" onerror="this.onerror=null; this.src='/images/placeholder.jpg'; this.classList.add('loaded');">
                     </div>
                     <div class="card-body">
                         <a href="/product-details?id=${p.id}" class="product-card-link">
