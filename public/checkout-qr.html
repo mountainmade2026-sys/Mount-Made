@@ -265,6 +265,19 @@
                     colorLight: '#ffffff',
                     correctLevel: QRCode.CorrectLevel.H
                 });
+                // Ensure taps/clicks on the generated QR open the UPI link on mobile
+                setTimeout(() => {
+                    try {
+                        container.style.cursor = 'pointer';
+                        container.addEventListener('click', () => openUpiLink(upiLink));
+                        // Also attach to any child img/canvas created by the library
+                        const child = container.querySelector('img,canvas,svg');
+                        if (child) {
+                            child.style.cursor = 'pointer';
+                            child.addEventListener('click', (e) => { e.stopPropagation(); openUpiLink(upiLink); });
+                        }
+                    } catch (e) { /* ignore */ }
+                }, 0);
                 return;
             }
             const img = document.createElement('img');
@@ -273,6 +286,8 @@
             img.style.width = '100%';
             img.style.height = '100%';
             img.style.objectFit = 'contain';
+            img.style.cursor = 'pointer';
+            img.addEventListener('click', () => openUpiLink(upiLink));
             container.appendChild(img);
         }
 
