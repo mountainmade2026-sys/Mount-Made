@@ -423,41 +423,30 @@
             }
             try {
                 const ua = navigator.userAgent || '';
+
+                // First try the native upi:// URI directly, which preserves amount in most UPI apps.
+                try {
+                    const nativeAnchor = document.createElement('a');
+                    nativeAnchor.style.display = 'none';
+                    nativeAnchor.href = upiLink;
+                    document.body.appendChild(nativeAnchor);
+                    nativeAnchor.click();
+                    setTimeout(() => { try { nativeAnchor.remove(); } catch (e) {} }, 1000);
+                } catch (e) {
+                    try { window.location.href = upiLink; } catch (_) {}
+                }
+
+                // On Android Chrome, use intent fallback only if native UPI didn't launch.
                 if (/Android/i.test(ua) && /Chrome/i.test(ua)) {
                     const q = upiLink.replace(/^upi:\/\//i, '');
                     const intentUri = `intent://${q}#Intent;scheme=upi;package=com.google.android.apps.nbu.paisa.user;end`;
-
-                    try {
-                        const intentAnchor = document.createElement('a');
-                        intentAnchor.style.display = 'none';
-                        intentAnchor.href = intentUri;
-                        document.body.appendChild(intentAnchor);
-                        intentAnchor.click();
-                        setTimeout(() => { try { intentAnchor.remove(); } catch (e) {} }, 1000);
-                    } catch (e) {
-                        try { window.location.href = intentUri; } catch (_) {}
-                    }
-
-                    try {
-                        const ifr = document.createElement('iframe');
-                        ifr.style.display = 'none';
-                        ifr.src = upiLink;
-                        document.body.appendChild(ifr);
-                        setTimeout(() => { try { ifr.remove(); } catch (e) {} }, 1000);
-                    } catch (e) {}
-
-                    return;
-                }
-
-                try {
-                    const linkAnchor = document.createElement('a');
-                    linkAnchor.style.display = 'none';
-                    linkAnchor.href = upiLink;
-                    document.body.appendChild(linkAnchor);
-                    linkAnchor.click();
-                    setTimeout(() => { try { linkAnchor.remove(); } catch (e) {} }, 1000);
-                } catch (e) {
-                    try { window.location.href = upiLink; } catch (_) {}
+                    setTimeout(() => {
+                        try {
+                            window.location.href = intentUri;
+                        } catch (e) {
+                            console.warn('GPay intent fallback failed:', e);
+                        }
+                    }, 600);
                 }
             } catch (e) {
                 console.warn('Failed to open UPI link:', e);
