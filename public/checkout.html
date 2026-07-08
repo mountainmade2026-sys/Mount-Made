@@ -2422,7 +2422,11 @@
                     }
                 }
 
-if (!gpayDetailValue && !(gpayDetailType === 'qr' && hasQr)) {
+                // If gpayDetailValue is empty, try to fall back to any configured admin value
+                if (!gpayDetailValue && !(gpayDetailType === 'qr' && hasQr)) {
+                    gpayDetailValue = checkoutGpaySettings.upiId || checkoutGpaySettings.phoneNumber || (hasQr ? checkoutGpaySettings.qrImageUrl : '') || '';
+                }
+                if (!gpayDetailValue && !(gpayDetailType === 'qr' && hasQr)) {
                     showAlert('Payment settings are not configured by admin.', 'error');
                     setPlaceOrderButtonState(false);
                     return;
