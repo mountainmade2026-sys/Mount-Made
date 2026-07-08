@@ -3623,10 +3623,6 @@
 
                             <div class="form-row">
                                 <div>
-                                    <label class="form-label">Brought Price (₹)</label>
-                                    <input type="number" id="product-brought-price" class="form-input" placeholder="0.00" step="0.01">
-                                </div>
-                                <div>
                                     <label class="form-label">Discount Price (₹) <small style="color: var(--text-muted); font-weight: normal;">Optional — final selling price if lower than base price</small></label>
                                     <input type="number" id="product-discount-percent" class="form-input" placeholder="e.g. 50.00" min="0" step="0.01" oninput="calcDiscountPreview('product-price','product-discount-percent','product-discount-preview')">
                                     <small id="product-discount-preview" style="color:var(--success,#10b981);display:block;margin-top:4px;min-height:1.2em;"></small>
@@ -3902,10 +3898,6 @@
                             </div>
 
                             <div class="form-row">
-                                <div>
-                                    <label class="form-label">Brought Price (₹)</label>
-                                    <input type="number" id="edit-product-brought-price" class="form-input" placeholder="0.00" step="0.01">
-                                </div>
                                 <div>
                                     <label class="form-label">Discount Price (₹) <small style="color: var(--text-muted); font-weight: normal;">Optional — final selling price if lower than base price</small></label>
                                     <input type="number" id="edit-product-discount-percent" class="form-input" placeholder="e.g. 50.00" min="0" step="0.01" oninput="calcDiscountPreview('edit-product-price','edit-product-discount-percent','edit-product-discount-preview')">
@@ -11695,7 +11687,6 @@
                     homepage_section_id = fallbackSectionId || null;
                 }
                 const description = document.getElementById('product-description').value;
-                const brought_price = document.getElementById('product-brought-price').value;
                 const wholesale_price = document.getElementById('product-wholesale-price').value;
                 const min_wholesale_qty = document.getElementById('product-min-wholesale').value || 10;
                 const weight = document.getElementById('product-weight').value;
@@ -11756,7 +11747,6 @@
                     category_id: parseInt(category_id),
                     homepage_section_id: homepage_section_id ? parseInt(homepage_section_id) : null,
                     price: parseFloat(price),
-                    brought_price: brought_price !== null && brought_price !== '' ? parseFloat(brought_price) : null,
                     wholesale_price: wholesale_price !== null && wholesale_price !== '' ? parseFloat(wholesale_price) : null,
                     discount_price: discount_price !== null && discount_price !== '' ? parseFloat(discount_price) : null,
                     stock_quantity: parseInt(stock),
@@ -12003,7 +11993,6 @@
             document.getElementById('edit-product-id').value = product.id;
             document.getElementById('edit-product-name').value = product.name || '';
             document.getElementById('edit-product-price').value = product.price != null ? product.price : '';
-            document.getElementById('edit-product-brought-price').value = product.brought_price != null ? product.brought_price : '';
             document.getElementById('edit-product-wholesale-price').value = product.wholesale_price != null ? product.wholesale_price : '';
             document.getElementById('edit-product-stock').value = product.stock_quantity != null ? product.stock_quantity : 0;
 
@@ -12339,7 +12328,6 @@
                     homepage_section_id = fallbackSectionId || null;
                 }
                 const description = document.getElementById('edit-product-description').value;
-                const brought_price = document.getElementById('edit-product-brought-price').value;
                 const wholesale_price = document.getElementById('edit-product-wholesale-price').value;
                 const weight = document.getElementById('edit-product-weight').value;
                 const weight_unit = document.getElementById('edit-product-weight-unit').value || 'g';
@@ -12380,7 +12368,6 @@
                     category_id: parseInt(category_id),
                     homepage_section_id: homepage_section_id ? parseInt(homepage_section_id) : null,
                     price: priceToSave,
-                    brought_price: brought_price !== null && brought_price !== '' ? parseFloat(brought_price) : null,
                     wholesale_price: wholesale_price !== null && wholesale_price !== '' ? parseFloat(wholesale_price) : null,
                     discount_price: discountToSave,
                     discount_adjust: null,
