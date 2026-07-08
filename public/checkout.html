@@ -2384,7 +2384,24 @@
             let gpayDetailType = document.getElementById('gpay-detail-type')?.value || 'upi';
             let gpayDetailValue = '';
 
-            if (!(await validateDeliveryPincode())) {
+            // Run pincode validation but don't let it hang forever — timeout after 3s
+            let pincodeOk = false;
+            try {
+                const res = await Promise.race([
+                    validateDeliveryPincode(),
+                    new Promise(resolve => setTimeout(() => resolve('timeout'), 3000))
+                ]);
+                if (res === 'timeout') {
+                    console.warn('Pincode validation timed out; proceeding optimistically');
+                    pincodeOk = true;
+                } else {
+                    pincodeOk = !!res;
+                }
+            } catch (e) {
+                console.warn('Pincode validation failed:', e);
+                pincodeOk = false;
+            }
+            if (!pincodeOk) {
                 setPlaceOrderButtonState(false);
                 showAlert('Please enter a valid delivery PIN code before placing the order.', 'error');
                 return;
