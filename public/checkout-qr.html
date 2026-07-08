@@ -277,7 +277,18 @@
         function buildGpayUpiLink(payload) {
             if (!payload) return null;
 
-            let recipient = String(payload.paymentValue || payload.upiId || payload.phoneNumber || '').trim();
+            // Prefer explicit UPI id / phoneNumber over a paymentValue that is a QR image URL.
+            const rawValue = String(payload.paymentValue || '').trim();
+            const upiId = String(payload.upiId || '').trim();
+            const phone = String(payload.phoneNumber || '').trim();
+
+            // If paymentValue looks like a URL (qr image), prefer upiId or phone if available.
+            let recipient = rawValue;
+            if (/^https?:\/\//i.test(rawValue) || /^data:/i.test(rawValue)) {
+                recipient = upiId || phone || rawValue;
+            }
+            if (!recipient) recipient = upiId || phone || '';
+            recipient = String(recipient || '').trim();
             if (!recipient) return null;
 
             // Accept a full UPI URI if provided.
@@ -288,7 +299,8 @@
                 return recipient.replace(/^upi:/i, 'upi://');
             }
 
-            if (recipient.startsWith('http') || /^[a-z][a-z0-9+.-]*:\/\//i.test(recipient)) {
+            // If recipient still looks like a URL/protocol we don't support, bail out.
+            if (/^[a-z][a-z0-9+.-]*:\/\//i.test(recipient)) {
                 return null;
             }
 
