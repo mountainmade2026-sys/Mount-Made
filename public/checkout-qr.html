@@ -150,6 +150,7 @@
                     <h2>Scan the QR code below</h2>
                     <div id="qr-image" class="qr-image"></div>
                     <div id="qr-hint" style="font-size:0.95rem; color:#475569; line-height:1.55;">Use your UPI app to scan and pay.</div>
+                    <div style="margin-top:0.75rem;"><button type="button" id="qr-direct-pay-button" class="btn btn-primary" style="padding:0.6rem 1rem;font-weight:700;border-radius:8px;"><i class="fas fa-arrow-up-right-from-square"></i> Pay Directly</button></div>
                 </div>
 
                 <div class="qr-countdown" id="qr-countdown">Time remaining: 09:00</div>
@@ -314,8 +315,39 @@
                 }
                 qrPaidButton.addEventListener('click', () => {
                     if (qrPaidLink) {
+                        // Try navigating to the UPI link to open UPI app
                         window.location.href = qrPaidLink;
+                        // Fallback: create and click an anchor (some browsers handle intents better)
+                        try {
+                            const a = document.createElement('a');
+                            a.href = qrPaidLink;
+                            a.style.display = 'none';
+                            document.body.appendChild(a);
+                            a.click();
+                            a.remove();
+                        } catch (e) {}
                     }
+                });
+            }
+            // Wire the direct-pay button under the QR image
+            const qrDirectBtn = document.getElementById('qr-direct-pay-button');
+            if (qrDirectBtn) {
+                if (!qrPaidLink) {
+                    qrDirectBtn.disabled = true;
+                    qrDirectBtn.textContent = 'Direct Pay not available';
+                }
+                qrDirectBtn.addEventListener('click', () => {
+                    if (!qrPaidLink) return;
+                    // Open UPI link (amount fixed from payload)
+                    window.location.href = qrPaidLink;
+                    try {
+                        const a = document.createElement('a');
+                        a.href = qrPaidLink;
+                        a.style.display = 'none';
+                        document.body.appendChild(a);
+                        a.click();
+                        a.remove();
+                    } catch (e) {}
                 });
             }
             document.getElementById('qr-cancel-button').addEventListener('click', () => {
