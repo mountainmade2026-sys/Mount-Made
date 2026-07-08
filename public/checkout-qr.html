@@ -312,6 +312,40 @@
             }
         }
 
+        function openUpiLink(upiLink) {
+            if (!upiLink) return;
+            if (!isMobileDevice()) {
+                const notice = document.getElementById('qr-notice');
+                if (notice) notice.textContent = 'Direct Pay works on mobile devices only. Scan the QR using your UPI app.';
+                else alert('Direct Pay works on mobile devices only. Scan the QR using your UPI app.');
+                return;
+            }
+            try {
+                const ua = navigator.userAgent || '';
+                // Use Android Chrome intent URI to improve reliability for Google Pay
+                if (/Android/i.test(ua) && /Chrome/i.test(ua)) {
+                    // upiLink looks like: upi://pay?pa=... -> intent://pay?pa=...#Intent;scheme=upi;package=com.google.android.apps.nbu.paisa.user;end
+                    const q = upiLink.replace(/^upi:\/\//i, '');
+                    const intentUri = `intent://${q}#Intent;scheme=upi;package=com.google.android.apps.nbu.paisa.user;end`;
+                    window.location.href = intentUri;
+                    return;
+                }
+
+                // Fallback: try navigating to the UPI URI and also click a hidden anchor
+                window.location.href = upiLink;
+                try {
+                    const a = document.createElement('a');
+                    a.href = upiLink;
+                    a.style.display = 'none';
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                } catch (e) {}
+            } catch (e) {
+                console.warn('Failed to open UPI link:', e);
+            }
+        }
+
         function initPage() {
             const payload = getPendingPayment();
             if (!payload) {
@@ -330,22 +364,7 @@
                 }
                 qrPaidButton.addEventListener('click', () => {
                     if (!qrPaidLink) return;
-                    if (!isMobileDevice()) {
-                        const notice = document.getElementById('qr-notice');
-                        if (notice) notice.textContent = 'Open your UPI app on mobile and scan the QR code to pay.';
-                        else alert('Open your UPI app on mobile and scan the QR code to pay.');
-                        return;
-                    }
-                    // Mobile: open UPI link to launch UPI app with amount
-                    window.location.href = qrPaidLink;
-                    try {
-                        const a = document.createElement('a');
-                        a.href = qrPaidLink;
-                        a.style.display = 'none';
-                        document.body.appendChild(a);
-                        a.click();
-                        a.remove();
-                    } catch (e) {}
+                    openUpiLink(qrPaidLink);
                 });
             }
             // Wire the direct-pay button under the QR image
@@ -357,23 +376,17 @@
                 }
                 qrDirectBtn.addEventListener('click', () => {
                     if (!qrPaidLink) return;
-                    if (!isMobileDevice()) {
-                        const notice = document.getElementById('qr-notice');
-                        if (notice) notice.textContent = 'Direct Pay works on mobile devices only. Scan the QR using your UPI app.';
-                        else alert('Direct Pay works on mobile devices only. Scan the QR using your UPI app.');
-                        return;
-                    }
-                    // Mobile: open UPI link (amount fixed from payload)
-                    window.location.href = qrPaidLink;
-                    try {
-                        const a = document.createElement('a');
-                        a.href = qrPaidLink;
-                        a.style.display = 'none';
-                        document.body.appendChild(a);
-                        a.click();
-                        a.remove();
-                    } catch (e) {}
+                    openUpiLink(qrPaidLink);
                 });
+                // Allow tapping the QR image itself to open the UPI app on mobile
+                const qrImageEl = document.getElementById('qr-image');
+                if (qrImageEl) {
+                    qrImageEl.style.cursor = 'pointer';
+                    qrImageEl.addEventListener('click', () => {
+                        if (!qrPaidLink) return;
+                        openUpiLink(qrPaidLink);
+                    });
+                }
             }
             document.getElementById('qr-cancel-button').addEventListener('click', () => {
                 clearPendingPayment();
