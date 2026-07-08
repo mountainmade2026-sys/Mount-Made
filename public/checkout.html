@@ -2157,7 +2157,16 @@
             const saveBtn = document.getElementById('billing-save');
 
             if (typeSelect) {
-                typeSelect.value = 'upi';
+                // Choose a sensible default based on configured admin settings
+                const hasQr = String(checkoutGpaySettings.qrImageUrl || '').trim() !== '';
+                const hasUpi = String(checkoutGpaySettings.upiId || '').trim() !== '';
+                const hasPhone = String(checkoutGpaySettings.phoneNumber || '').trim() !== '';
+                let defaultType = 'upi';
+                if (hasUpi) defaultType = 'upi';
+                else if (hasPhone) defaultType = 'phone';
+                else if (hasQr) defaultType = 'qr';
+                else defaultType = 'upi';
+                typeSelect.value = defaultType;
                 typeSelect.addEventListener('change', () => updateGpayLabelAndPrefill());
                 updateGpayLabelAndPrefill();
             }
