@@ -2383,6 +2383,9 @@
                 const paymentMethod = document.getElementById('payment_method').value;
             let gpayDetailType = document.getElementById('gpay-detail-type')?.value || 'upi';
             let gpayDetailValue = '';
+            let hasQr = false;
+            let hasUpi = false;
+            let hasPhone = false;
 
             // Run pincode validation but don't let it hang forever — timeout after 3s
             let pincodeOk = false;
@@ -2408,9 +2411,9 @@
             }
 
             if (paymentMethod === 'gpay' || paymentMethod === 'phone' || paymentMethod === 'bhim') {
-                const hasQr = String(checkoutGpaySettings.qrImageUrl || '').trim() !== '';
-                const hasUpi = String(checkoutGpaySettings.upiId || '').trim() !== '';
-                const hasPhone = String(checkoutGpaySettings.phoneNumber || '').trim() !== '';
+                hasQr = String(checkoutGpaySettings.qrImageUrl || '').trim() !== '';
+                hasUpi = String(checkoutGpaySettings.upiId || '').trim() !== '';
+                hasPhone = String(checkoutGpaySettings.phoneNumber || '').trim() !== '';
 
                 if (paymentMethod === 'phone') {
                     gpayDetailType = 'phone';
