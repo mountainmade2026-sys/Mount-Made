@@ -2956,12 +2956,13 @@
             </div>
 
             <!-- Delivery Pincodes Section -->
-            <div id="delivery-pincodes" class="section">
-                <div class="admin-header">
-                    <h1><i class="fas fa-truck"></i> Delivery Pincode Availability</h1>
-                </div>
+            <div id="ss-sub-cod" class="section">
+                <div id="delivery-pincodes">
+                    <div class="admin-header">
+                        <h1><i class="fas fa-truck"></i> Delivery Pincode Availability</h1>
+                    </div>
 
-                <div class="data-table-container">
+                    <div class="data-table-container">
                     <div class="table-header"></div>
                     <div style="padding: 2rem;">
                         <p style="color: var(--text-muted); margin-bottom: 1.5rem;">
@@ -4565,7 +4566,7 @@
 
         function _applySuperAdminOnlySiteSettingsVisibility() {
             const isSuper = _isSuperAdminUser();
-            ['ss-sub-email', 'ss-sub-gpay', 'ss-sub-cod'].forEach(function(id) {
+            ['ss-sub-email', 'ss-sub-gpay'].forEach(function(id) {
                 var el = document.getElementById(id);
                 if (el) el.style.display = isSuper ? '' : 'none';
             });
