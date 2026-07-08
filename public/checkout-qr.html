@@ -499,13 +499,8 @@
                     if (!qrPaidLink) return;
                     openUpiLink(qrPaidLink);
                 });
-                try { console.info('Opening UPI link:', upiLink); } catch (e) {}
-                // Try native upi:// navigation first (preserves amount in most apps)
-                const qrImageEl = document.getElementById('qr-image');
-                    // Use direct location assign which is more reliable than synthetic anchor clicks in some browsers
-                    window.location.href = upiLink;
-                }
             }
+        }
             document.getElementById('qr-cancel-button').addEventListener('click', () => {
                 clearPendingPayment();
                 window.location.href = '/checkout.html';
