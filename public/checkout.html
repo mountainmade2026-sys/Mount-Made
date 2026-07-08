@@ -2322,10 +2322,12 @@
 
         document.getElementById('checkout-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            let shippingAddress;
-            
-            if (selectedAddressId) {
+            setPlaceOrderButtonState(true);
+
+            try {
+                let shippingAddress;
+
+                if (selectedAddressId) {
                 // Use selected saved address
                 const addr = userAddresses.find(a => a.id === selectedAddressId);
                 shippingAddress = {
@@ -2350,6 +2352,7 @@
 
                 if (!validateCheckoutForm()) {
                     showAlert('Please fill in all required shipping address fields.', 'error');
+                    setPlaceOrderButtonState(false);
                     const firstInvalid = document.querySelector('#checkout-form .is-invalid');
                     if (firstInvalid) firstInvalid.focus();
                     return;
@@ -2374,7 +2377,6 @@
             let gpayDetailValue = checkoutGpaySettings.upiId || '';
 
             if (!(await validateDeliveryPincode())) {
-                hideOrderStatusModal();
                 setPlaceOrderButtonState(false);
                 showAlert('Please enter a valid delivery PIN code before placing the order.', 'error');
                 return;
@@ -2406,7 +2408,6 @@
 
                 if (!gpayDetailValue && !hasQr) {
                     showAlert('Payment settings are not configured by admin.', 'error');
-                    hideOrderStatusModal();
                     setPlaceOrderButtonState(false);
                     return;
                 }
@@ -2416,6 +2417,10 @@
             const combinedNotes = paymentMethod === 'gpay'
                 ? `GPay via ${formatGpayLabel(gpayDetailType)}: ${gpayDetailValue}${userNotes ? ' | ' + userNotes : ''}`
                 : userNotes;
+
+            if (!cartData || !Array.isArray(cartData.cartItems) || !cartData.cartItems.length) {
+                throw new Error('Your cart is empty. Add items before placing an order.');
+            }
 
             const currentSubtotal = computeCartSubtotal(cartData) || checkoutCartSubtotal || 0;
             const delivery_charge = getDeliveryChargeForSubtotal(currentSubtotal);
@@ -2453,46 +2458,61 @@
                 };
                 orderData.notes = `${String(orderData.notes || '').trim()} | Ref: ${gpayRef}`.trim().replace(/^\|\s*/, '');
 
-                if (shouldSaveAddress) {
-                    try {
-                        await api.post('/addresses', {
-                            label: 'Home',
-                            full_name: shippingAddress.full_name,
-                            phone: shippingAddress.phone,
-                            address_line1: shippingAddress.address_line1,
-                            address_line2: shippingAddress.address_line2,
-                            city: shippingAddress.city,
-                            state: shippingAddress.state,
-                            postal_code: shippingAddress.postal_code,
-                            country: shippingAddress.country,
-                            is_default: userAddresses.length === 0
-                        });
-                    } catch (addrError) {
-                        console.warn('Failed to save address before order:', addrError);
+                try {
+                    if (shouldSaveAddress) {
+                        try {
+                            await api.post('/addresses', {
+                                label: 'Home',
+                                full_name: shippingAddress.full_name,
+                                phone: shippingAddress.phone,
+                                address_line1: shippingAddress.address_line1,
+                                address_line2: shippingAddress.address_line2,
+                                city: shippingAddress.city,
+                                state: shippingAddress.state,
+                                postal_code: shippingAddress.postal_code,
+                                country: shippingAddress.country,
+                                is_default: userAddresses.length === 0
+                            });
+                        } catch (addrError) {
+                            console.warn('Failed to save address before order:', addrError);
+                        }
                     }
-                }
 
-                const result = await api.post('/orders', orderData);
-                const order = result.order || {};
-                const paymentRedirect = {
-                    orderId: order.id || order.order_id || null,
-                    orderNumber: order.order_number || order.id || 'N/A',
-                    paymentMethod,
-                    paymentType: gpayDetailType,
-                    paymentValue: gpayDetailValue,
-                    qrImageUrl: checkoutGpaySettings.qrImageUrl || '',
-                    upiId: checkoutGpaySettings.upiId || '',
-                    phoneNumber: checkoutGpaySettings.phoneNumber || '',
-                    payeeName: checkoutGpaySettings.payeeName || 'Mount Made',
-                    amount: totalAmount,
-                    expiresAt: Date.now() + 9 * 60 * 1000
-                };
-                sessionStorage.setItem('checkoutPendingPayment', JSON.stringify(paymentRedirect));
-                window.location.href = '/checkout-qr.html';
-                return;
+                    const result = await api.post('/orders', orderData);
+                    const order = result.order || {};
+                    const paymentRedirect = {
+                        orderId: order.id || order.order_id || null,
+                        orderNumber: order.order_number || order.id || 'N/A',
+                        paymentMethod,
+                        paymentType: gpayDetailType,
+                        paymentValue: gpayDetailValue,
+                        qrImageUrl: checkoutGpaySettings.qrImageUrl || '',
+                        upiId: checkoutGpaySettings.upiId || '',
+                        phoneNumber: checkoutGpaySettings.phoneNumber || '',
+                        payeeName: checkoutGpaySettings.payeeName || 'Mount Made',
+                        amount: totalAmount,
+                        expiresAt: Date.now() + 9 * 60 * 1000
+                    };
+                    const redirectPath = '/checkout-qr.html';
+                    try {
+                        sessionStorage.setItem('checkoutPendingPayment', JSON.stringify(paymentRedirect));
+                    } catch (storageError) {
+                        console.warn('Unable to save pending checkout payment:', storageError);
+                    }
+                    window.location.assign(redirectPath);
+                    setTimeout(() => {
+                        if (window.location.pathname !== redirectPath) {
+                            window.location.assign(redirectPath);
+                        }
+                    }, 100);
+                    return;
+                } catch (error) {
+                    setPlaceOrderButtonState(false);
+                    showAlert(error.message || 'Failed to place order', 'error');
+                    return;
+                }
             }
             try {
-                // If using a manual address and user chose to save it, persist it first
                 if (shouldSaveAddress) {
                     try {
                         await api.post('/addresses', {
@@ -2515,8 +2535,8 @@
                 const result = await api.post('/orders', orderData);
                 applyOrderPlacedUI(result.order);
             } catch (error) {
-                hideOrderStatusModal();
                 setPlaceOrderButtonState(false);
+                console.error('Checkout submit failed:', error);
                 showAlert(error.message || 'Failed to place order', 'error');
             }
         });

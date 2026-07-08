@@ -196,13 +196,16 @@
             const methodLabelMap = {
                 gpay: 'GPay / UPI',
                 phone: 'PhonePe',
-                bhim: 'BHIM'
+                bhim: 'BHIM',
+                qr: 'QR Code'
             };
 
             document.getElementById('qr-order-number').textContent = escapeHtml(payload.orderNumber || payload.orderId || '—');
             document.getElementById('qr-amount').textContent = formatCurrency(payload.amount || 0);
-            document.getElementById('qr-method').textContent = methodLabelMap[payload.paymentMethod] || 'GPay';
-            document.getElementById('qr-recipient').textContent = escapeHtml(payload.paymentValue || payload.upiId || payload.phoneNumber || payload.payeeName || '—');
+            document.getElementById('qr-method').textContent = methodLabelMap[payload.paymentMethod] || methodLabelMap[payload.paymentType] || 'GPay';
+            document.getElementById('qr-recipient').textContent = payload.paymentType === 'qr'
+                ? escapeHtml(payload.payeeName || '—')
+                : escapeHtml(payload.paymentValue || payload.upiId || payload.phoneNumber || payload.payeeName || '—');
 
             const hintText = payload.paymentMethod === 'phone'
                 ? 'Open PhonePe or your preferred UPI app and scan the code.'
@@ -231,6 +234,10 @@
         }
 
         function buildGpayUpiLink(payload) {
+            if (!payload || payload.paymentType === 'qr') {
+                return null;
+            }
+
             const recipient = String(payload.paymentValue || payload.upiId || payload.phoneNumber || '').trim();
             if (!recipient) return null;
 
@@ -298,14 +305,19 @@
             renderQrContent(payload);
             startCountdown(payload.expiresAt || (Date.now() + 9 * 60 * 1000));
 
-            document.getElementById('qr-paid-button').addEventListener('click', () => {
-                const upiLink = buildGpayUpiLink(payload);
-                if (upiLink) {
-                    window.location.href = upiLink;
-                } else {
-                    window.location.href = '/checkout.html';
+            const qrPaidButton = document.getElementById('qr-paid-button');
+            const qrPaidLink = buildGpayUpiLink(payload);
+            if (qrPaidButton) {
+                if (!qrPaidLink) {
+                    qrPaidButton.disabled = true;
+                    qrPaidButton.textContent = 'Scan QR to Pay';
                 }
-            });
+                qrPaidButton.addEventListener('click', () => {
+                    if (qrPaidLink) {
+                        window.location.href = qrPaidLink;
+                    }
+                });
+            }
             document.getElementById('qr-cancel-button').addEventListener('click', () => {
                 clearPendingPayment();
                 window.location.href = '/checkout.html';
