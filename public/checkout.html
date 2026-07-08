@@ -186,8 +186,8 @@
                             <div style="display: flex; justify-content: space-between; font-size: 1.1rem; margin-bottom: 1.5rem; font-weight:600;">
                                 <strong>Total:</strong><strong id="order-total" style="color: var(--primary);">₹0.00</strong>
                             </div>
-                            <button type="submit" id="place-order-btn" form="checkout-form" class="btn btn-primary" style="width: 100%;">
-                                <i class="fas fa-check"></i> <span class="place-order-label">Place Order</span>
+                            <button type="button" id="confirm-order-btn" class="btn btn-primary" style="width: 100%;">
+                                <i class="fas fa-check"></i> <span class="confirm-order-label">Confirm Order</span>
                             </button>
                         </div>
                     </div>
@@ -615,7 +615,7 @@
             background: var(--bg-secondary);
         }
 
-        #place-order-btn[disabled] {
+        #confirm-order-btn[disabled] {
             opacity: 0.8;
             cursor: wait;
         }
@@ -1900,10 +1900,10 @@
         }
 
         function applyOrderPlacedUI(order) {
-            const placeOrderBtn = document.getElementById('place-order-btn');
+            const placeOrderBtn = document.getElementById('confirm-order-btn');
             if (placeOrderBtn) {
                 placeOrderBtn.disabled = true;
-                const label = placeOrderBtn.querySelector('.place-order-label');
+                const label = placeOrderBtn.querySelector('.confirm-order-label');
                 const icon = placeOrderBtn.querySelector('i');
                 if (label) label.textContent = 'Order Placed';
                 if (icon) icon.className = 'fas fa-check';
@@ -2305,13 +2305,13 @@
         }
 
         function setPlaceOrderButtonState(isProcessing) {
-            const placeOrderBtn = document.getElementById('place-order-btn');
-            const label = placeOrderBtn?.querySelector('.place-order-label');
+            const placeOrderBtn = document.getElementById('confirm-order-btn');
+            const label = placeOrderBtn?.querySelector('.confirm-order-label');
             if (!placeOrderBtn) return;
 
             placeOrderBtn.disabled = !!isProcessing;
             if (label) {
-                label.textContent = isProcessing ? 'Placing Order...' : 'Place Order';
+                label.textContent = isProcessing ? 'Placing Order...' : 'Confirm Order';
             }
 
             const icon = placeOrderBtn.querySelector('i');
@@ -2754,6 +2754,20 @@
                     }
                 });
             });
+
+            // Wire confirm-order button to submit the checkout form
+            const confirmBtn = document.getElementById('confirm-order-btn');
+            if (confirmBtn) {
+                confirmBtn.addEventListener('click', (evt) => {
+                    evt.preventDefault();
+                    const form = document.getElementById('checkout-form');
+                    if (form && typeof form.requestSubmit === 'function') {
+                        form.requestSubmit();
+                    } else if (form) {
+                        form.submit();
+                    }
+                });
+            }
 
             // Account dropdown toggle
             const accountToggle = document.getElementById('account-toggle');
