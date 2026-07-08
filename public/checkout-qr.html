@@ -277,8 +277,15 @@
         function buildGpayUpiLink(payload) {
             if (!payload) return null;
 
-            const recipient = String(payload.paymentValue || payload.upiId || payload.phoneNumber || '').trim();
-            if (!recipient || recipient.startsWith('http') || recipient.includes('://')) {
+            let recipient = String(payload.paymentValue || payload.upiId || payload.phoneNumber || '').trim();
+            if (!recipient) return null;
+
+            // Accept a full UPI URI if provided.
+            if (/^upi:/i.test(recipient)) {
+                return recipient.replace(/^upi:/i, 'upi://');
+            }
+
+            if (recipient.startsWith('http') || recipient.includes('://')) {
                 return null;
             }
 
