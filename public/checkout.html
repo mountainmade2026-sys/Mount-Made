@@ -2755,11 +2755,33 @@
                 });
             });
 
-            // Wire confirm-order button to submit the checkout form
+            // Wire confirm-order button to submit the checkout form and show dynamic confirmation text
             const confirmBtn = document.getElementById('confirm-order-btn');
             if (confirmBtn) {
                 confirmBtn.addEventListener('click', (evt) => {
                     evt.preventDefault();
+
+                    confirmBtn.disabled = true;
+                    const label = confirmBtn.querySelector('.confirm-order-label');
+                    if (label) label.textContent = 'Confirming...';
+
+                    let msg = document.getElementById('order-confirmation-msg');
+                    if (!msg) {
+                        msg = document.createElement('div');
+                        msg.id = 'order-confirmation-msg';
+                        msg.style.cssText = 'margin:0.5rem 0;font-size:0.95rem;color:#065f46;';
+                        const container = confirmBtn.parentElement;
+                        if (container) container.insertBefore(msg, confirmBtn);
+                        else document.body.appendChild(msg);
+                    }
+
+                    const paymentMethod = document.getElementById('payment_method')?.value || '';
+                    if (['gpay', 'phone', 'bhim'].includes(paymentMethod)) {
+                        msg.textContent = 'Confirming order — you will be redirected to the payment QR page.';
+                    } else {
+                        msg.textContent = 'Confirming order — placing your order now.';
+                    }
+
                     const form = document.getElementById('checkout-form');
                     if (form && typeof form.requestSubmit === 'function') {
                         form.requestSubmit();
