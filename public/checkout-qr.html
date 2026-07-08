@@ -274,32 +274,34 @@
             }
         }
 
+        function normalizeUpiRecipient(value) {
+            const raw = String(value || '').trim();
+            if (!raw) return '';
+            if (/^upi:/i.test(raw)) {
+                return raw.replace(/^upi:/i, 'upi://');
+            }
+            return raw;
+        }
+
         function buildGpayUpiLink(payload) {
             if (!payload) return null;
 
-            // Prefer explicit UPI id / phoneNumber over a paymentValue that is a QR image URL.
-            const rawValue = String(payload.paymentValue || '').trim();
-            const upiId = String(payload.upiId || '').trim();
+            const rawValue = normalizeUpiRecipient(payload.paymentValue);
+            const upiId = normalizeUpiRecipient(payload.upiId);
             const phone = String(payload.phoneNumber || '').trim();
 
-            // If paymentValue looks like a URL (qr image), prefer upiId or phone if available.
             let recipient = rawValue;
             if (/^https?:\/\//i.test(rawValue) || /^data:/i.test(rawValue)) {
-                recipient = upiId || phone || rawValue;
+                recipient = upiId || phone || '';
             }
             if (!recipient) recipient = upiId || phone || '';
             recipient = String(recipient || '').trim();
             if (!recipient) return null;
 
-            // Accept a full UPI URI if provided.
             if (/^upi:\/\//i.test(recipient)) {
                 return recipient;
             }
-            if (/^upi:/i.test(recipient)) {
-                return recipient.replace(/^upi:/i, 'upi://');
-            }
 
-            // If recipient still looks like a URL/protocol we don't support, bail out.
             if (/^[a-z][a-z0-9+.-]*:\/\//i.test(recipient)) {
                 return null;
             }
@@ -402,15 +404,21 @@
             }
             try {
                 const ua = navigator.userAgent || '';
-                // Use Android Chrome intent URI to improve reliability for Google Pay
                 if (/Android/i.test(ua) && /Chrome/i.test(ua)) {
-                    // upiLink looks like: upi://pay?pa=... -> intent://pay?pa=...#Intent;scheme=upi;package=com.google.android.apps.nbu.paisa.user;end
                     const q = upiLink.replace(/^upi:\/\//i, '');
                     const intentUri = `intent://${q}#Intent;scheme=upi;package=com.google.android.apps.nbu.paisa.user;end`;
-                    // Primary attempt: intent URI (Chrome)
-                    try { window.location.href = intentUri; } catch (e) {}
 
-                    // Secondary attempt: iframe with upi scheme
+                    try {
+                        const intentAnchor = document.createElement('a');
+                        intentAnchor.style.display = 'none';
+                        intentAnchor.href = intentUri;
+                        document.body.appendChild(intentAnchor);
+                        intentAnchor.click();
+                        setTimeout(() => { try { intentAnchor.remove(); } catch (e) {} }, 1000);
+                    } catch (e) {
+                        try { window.location.href = intentUri; } catch (_) {}
+                    }
+
                     try {
                         const ifr = document.createElement('iframe');
                         ifr.style.display = 'none';
@@ -419,21 +427,19 @@
                         setTimeout(() => { try { ifr.remove(); } catch (e) {} }, 1000);
                     } catch (e) {}
 
-                    // Fallback: window.open after a short delay
-                    setTimeout(() => { try { window.open(upiLink, '_self'); } catch (e) {} }, 800);
                     return;
                 }
 
-                // Fallback: try navigating to the UPI URI and also click a hidden anchor
-                try { window.location.href = upiLink; } catch (e) {}
                 try {
-                    const ifr = document.createElement('iframe');
-                    ifr.style.display = 'none';
-                    ifr.src = upiLink;
-                    document.body.appendChild(ifr);
-                    setTimeout(() => { try { ifr.remove(); } catch (e) {} }, 1000);
-                } catch (e) {}
-                setTimeout(() => { try { window.open(upiLink, '_self'); } catch (e) {} }, 500);
+                    const linkAnchor = document.createElement('a');
+                    linkAnchor.style.display = 'none';
+                    linkAnchor.href = upiLink;
+                    document.body.appendChild(linkAnchor);
+                    linkAnchor.click();
+                    setTimeout(() => { try { linkAnchor.remove(); } catch (e) {} }, 1000);
+                } catch (e) {
+                    try { window.location.href = upiLink; } catch (_) {}
+                }
             } catch (e) {
                 console.warn('Failed to open UPI link:', e);
             }

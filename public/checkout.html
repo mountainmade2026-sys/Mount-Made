@@ -1941,27 +1941,34 @@
             const hasQr = String(checkoutGpaySettings.qrImageUrl || '').trim() !== '';
             const hasUpi = String(checkoutGpaySettings.upiId || '').trim() !== '';
             const hasPhone = String(checkoutGpaySettings.phoneNumber || '').trim() !== '';
-            const recipient = method === 'phone' ? (hasPhone ? checkoutGpaySettings.phoneNumber : checkoutGpaySettings.upiId) : checkoutGpaySettings.upiId || checkoutGpaySettings.phoneNumber;
+            const onlyQr = hasQr && !hasUpi && !hasPhone;
+            const recipient = onlyQr
+                ? checkoutGpaySettings.qrImageUrl.trim()
+                : method === 'phone'
+                    ? (hasPhone ? checkoutGpaySettings.phoneNumber : checkoutGpaySettings.upiId)
+                    : checkoutGpaySettings.upiId || checkoutGpaySettings.phoneNumber;
             const currentAmount = getCurrentCheckoutTotal();
 
             const labelMap = {
-                gpay: 'UPI ID',
-                phone: 'Phone Number',
-                bhim: 'BHIM ID'
+                gpay: onlyQr ? 'QR Code / Link' : 'UPI ID',
+                phone: onlyQr ? 'QR Code / Link' : 'Phone Number',
+                bhim: onlyQr ? 'QR Code / Link' : 'BHIM ID'
             };
             const displayMethodMap = {
-                gpay: 'GPay / UPI',
-                phone: 'PhonePe',
-                bhim: 'BHIM'
+                gpay: onlyQr ? 'QR Code' : 'GPay / UPI',
+                phone: onlyQr ? 'QR Code' : 'PhonePe',
+                bhim: onlyQr ? 'QR Code' : 'BHIM'
             };
 
-            label.textContent = labelMap[method] || 'UPI ID';
+            label.textContent = labelMap[method] || (onlyQr ? 'QR Code / Link' : 'UPI ID');
             valueInput.value = recipient || '';
             valueInput.placeholder = recipient ? 'Configured by admin' : 'Not configured';
             if (bankDisplay) {
-                bankDisplay.textContent = method === 'phone'
-                    ? `Phone: ${checkoutGpaySettings.phoneNumber || '-'} `
-                    : `Bank: ${checkoutGpaySettings.bankName || '-'}`;
+                bankDisplay.textContent = onlyQr
+                    ? 'QR code configured'
+                    : method === 'phone'
+                        ? `Phone: ${checkoutGpaySettings.phoneNumber || '-'} `
+                        : `Bank: ${checkoutGpaySettings.bankName || '-'}`;
             }
 
             if (qrWrap) {
@@ -2415,7 +2422,10 @@
                 hasUpi = String(checkoutGpaySettings.upiId || '').trim() !== '';
                 hasPhone = String(checkoutGpaySettings.phoneNumber || '').trim() !== '';
 
-                if (paymentMethod === 'phone') {
+                if (!hasUpi && !hasPhone && hasQr) {
+                    gpayDetailType = 'qr';
+                    gpayDetailValue = checkoutGpaySettings.qrImageUrl.trim();
+                } else if (paymentMethod === 'phone') {
                     gpayDetailType = 'phone';
                     gpayDetailValue = hasPhone ? checkoutGpaySettings.phoneNumber.trim() : checkoutGpaySettings.upiId.trim();
                 } else if (paymentMethod === 'bhim') {
@@ -2437,14 +2447,14 @@
                         gpayDetailType = 'phone';
                         gpayDetailValue = checkoutGpaySettings.phoneNumber.trim();
                     } else {
-                        gpayDetailType = 'upi';
-                        gpayDetailValue = '';
+                        gpayDetailType = 'qr';
+                        gpayDetailValue = hasQr ? checkoutGpaySettings.qrImageUrl.trim() : '';
                     }
                 }
 
-                // If gpayDetailValue is empty, try to fall back to any configured admin value
-                if (!gpayDetailValue && !(gpayDetailType === 'qr' && hasQr)) {
-                    gpayDetailValue = checkoutGpaySettings.upiId || checkoutGpaySettings.phoneNumber || (hasQr ? checkoutGpaySettings.qrImageUrl : '') || '';
+                if (!gpayDetailValue && hasQr) {
+                    gpayDetailType = 'qr';
+                    gpayDetailValue = checkoutGpaySettings.qrImageUrl.trim();
                 }
                 if (!gpayDetailValue && !(gpayDetailType === 'qr' && hasQr)) {
                     showAlert('Payment settings are not configured by admin.', 'error');
@@ -2542,7 +2552,7 @@
                     paymentType: pendingPaymentType,
                     // Ensure paymentValue contains a usable UPI recipient when available.
                     // Prefer actualPaymentRecipient (upiId or phone) so checkout-qr can build deep-links.
-                    paymentValue: actualPaymentRecipient || (pendingPaymentType === 'qr' ? checkoutGpaySettings.qrImageUrl || '' : ''),
+                    paymentValue: actualPaymentRecipient || checkoutGpaySettings.upiId || checkoutGpaySettings.phoneNumber || (pendingPaymentType === 'qr' ? checkoutGpaySettings.qrImageUrl || '' : ''),
                     qrImageUrl: checkoutGpaySettings.qrImageUrl || '',
                     upiId: checkoutGpaySettings.upiId || '',
                     phoneNumber: checkoutGpaySettings.phoneNumber || '',
