@@ -2368,7 +2368,7 @@
                 setPlaceOrderButtonState(true);
 
                 const paymentMethod = document.getElementById('payment_method').value;
-            let gpayDetailType = document.getElementById('gpay-detail-type')?.value || 'upi';
+            let gpayDetailType = 'upi';
             let gpayDetailValue = '';
             let hasQr = false;
             let hasUpi = false;
@@ -2443,7 +2443,7 @@
                 }
             }
 
-            const userNotes = document.getElementById('notes').value || '';
+            const userNotes = document.getElementById('notes')?.value || '';
             const combinedNotes = paymentMethod === 'gpay'
                 ? `GPay via ${formatGpayLabel(gpayDetailType)}: ${gpayDetailValue}${userNotes ? ' | ' + userNotes : ''}`
                 : userNotes;
