@@ -2450,6 +2450,10 @@
             const shouldSaveAddress = manualAddressUsed || !!document.getElementById('save_address')?.checked;
 
             if (paymentMethod === 'gpay' || paymentMethod === 'phone' || paymentMethod === 'bhim') {
+                // For UPI-based methods, do not wait for server order creation here.
+                // Instead, generate a client-side pending payment payload and redirect
+                // immediately to the QR page. The final order will be created when
+                // the user completes payment (via the Pay Directly flow on the QR page).
                 const gpayRef = generateGpayRef();
                 orderData.payment_details = {
                     ...(orderData.payment_details || {}),
@@ -2457,59 +2461,52 @@
                 };
                 orderData.notes = `${String(orderData.notes || '').trim()} | Ref: ${gpayRef}`.trim().replace(/^\|\s*/, '');
 
-                try {
-                    if (shouldSaveAddress) {
-                        try {
-                            await api.post('/addresses', {
-                                label: 'Home',
-                                full_name: shippingAddress.full_name,
-                                phone: shippingAddress.phone,
-                                address_line1: shippingAddress.address_line1,
-                                address_line2: shippingAddress.address_line2,
-                                city: shippingAddress.city,
-                                state: shippingAddress.state,
-                                postal_code: shippingAddress.postal_code,
-                                country: shippingAddress.country,
-                                is_default: userAddresses.length === 0
-                            });
-                        } catch (addrError) {
-                            console.warn('Failed to save address before order:', addrError);
-                        }
-                    }
-
-                    const result = await api.post('/orders', orderData);
-                    const order = result.order || {};
-                    const paymentRedirect = {
-                        orderId: order.id || order.order_id || null,
-                        orderNumber: order.order_number || order.id || 'N/A',
-                        paymentMethod,
-                        paymentType: gpayDetailType,
-                        paymentValue: gpayDetailValue,
-                        qrImageUrl: checkoutGpaySettings.qrImageUrl || '',
-                        upiId: checkoutGpaySettings.upiId || '',
-                        phoneNumber: checkoutGpaySettings.phoneNumber || '',
-                        payeeName: checkoutGpaySettings.payeeName || 'Mount Made',
-                        amount: totalAmount,
-                        expiresAt: Date.now() + 9 * 60 * 1000
-                    };
-                    const redirectPath = '/checkout-qr.html';
-                    try {
-                        sessionStorage.setItem('checkoutPendingPayment', JSON.stringify(paymentRedirect));
-                    } catch (storageError) {
-                        console.warn('Unable to save pending checkout payment:', storageError);
-                    }
-                    window.location.assign(redirectPath);
-                    setTimeout(() => {
-                        if (window.location.pathname !== redirectPath) {
-                            window.location.assign(redirectPath);
-                        }
-                    }, 100);
-                    return;
-                } catch (error) {
-                    setPlaceOrderButtonState(false);
-                    showAlert(error.message || 'Failed to place order', 'error');
-                    return;
+                // Attempt to save address in background (don't await — do not block redirect)
+                if (shouldSaveAddress) {
+                    api.post('/addresses', {
+                        label: 'Home',
+                        full_name: shippingAddress.full_name,
+                        phone: shippingAddress.phone,
+                        address_line1: shippingAddress.address_line1,
+                        address_line2: shippingAddress.address_line2,
+                        city: shippingAddress.city,
+                        state: shippingAddress.state,
+                        postal_code: shippingAddress.postal_code,
+                        country: shippingAddress.country,
+                        is_default: userAddresses.length === 0
+                    }).catch(addrError => {
+                        console.warn('Failed to save address (background):', addrError);
+                    });
                 }
+
+                const paymentRedirect = {
+                    orderId: null,
+                    orderNumber: 'Pending',
+                    paymentMethod,
+                    paymentType: gpayDetailType,
+                    paymentValue: gpayDetailValue,
+                    qrImageUrl: checkoutGpaySettings.qrImageUrl || '',
+                    upiId: checkoutGpaySettings.upiId || '',
+                    phoneNumber: checkoutGpaySettings.phoneNumber || '',
+                    payeeName: checkoutGpaySettings.payeeName || 'Mount Made',
+                    amount: totalAmount,
+                    ref: gpayRef,
+                    expiresAt: Date.now() + 9 * 60 * 1000
+                };
+
+                const redirectPath = '/checkout-qr.html';
+                try {
+                    sessionStorage.setItem('checkoutPendingPayment', JSON.stringify(paymentRedirect));
+                } catch (storageError) {
+                    console.warn('Unable to save pending checkout payment:', storageError);
+                }
+                window.location.assign(redirectPath);
+                setTimeout(() => {
+                    if (window.location.pathname !== redirectPath) {
+                        window.location.assign(redirectPath);
+                    }
+                }, 100);
+                return;
             }
             try {
                 if (shouldSaveAddress) {
