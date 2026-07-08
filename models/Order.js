@@ -125,9 +125,9 @@ class Order {
         }
       }
       
-      // Generate unique business order number (MMDLDDMMYYYY, then MMDLDDMMYYYY2, MMDLDDMMYYYY3...)
+      // Insert order first, then set a stable business order number based on ID
       const orderBase = this.buildOrderNumberBase(new Date());
-      const orderQuery = `
+      const insertQuery = `
         INSERT INTO orders (
           user_id,
           order_number,
@@ -148,48 +148,37 @@ class Order {
           delivery_speed,
           delivery_charge
         )
-        VALUES ($1, $2, $3, $4, $5, $6, COALESCE($7, 'unpaid'), $8, $9, $10, $11, $12, $13, $14, $15, 'pending', $16, $17)
+        VALUES ($1, NULL, $2, $3, $4, $5, COALESCE($6, 'unpaid'), $7, $8, $9, $10, $11, $12, $13, $14, 'pending', $15, $16)
         RETURNING *
       `;
 
-      let order = null;
-      const maxRetries = 5;
-      for (let attempt = 0; attempt < maxRetries; attempt++) {
-        const orderNumber = await this.generateOrderNumber(client, orderBase);
-        try {
-          const orderResult = await client.query(orderQuery, [
-            user_id,
-            orderNumber,
-            total_amount,
-            JSON.stringify(shipping_address),
-            payment_method,
-            payment_provider,
-            payment_status,
-            payment_currency,
-            payment_amount,
-            payment_gateway_order_id,
-            payment_gateway_payment_id,
-            payment_gateway_signature,
-            paid_at,
-            notes,
-            payment_details ? JSON.stringify(payment_details) : null,
-            delivery_speed,
-            delivery_charge
-          ]);
+      const insertResult = await client.query(insertQuery, [
+        user_id,
+        total_amount,
+        JSON.stringify(shipping_address),
+        payment_method,
+        payment_provider,
+        payment_status,
+        payment_currency,
+        payment_amount,
+        payment_gateway_order_id,
+        payment_gateway_payment_id,
+        payment_gateway_signature,
+        paid_at,
+        notes,
+        payment_details ? JSON.stringify(payment_details) : null,
+        delivery_speed,
+        delivery_charge
+      ]);
 
-          order = orderResult.rows[0];
-          break;
-        } catch (insertError) {
-          const isUniqueViolation = insertError && insertError.code === '23505';
-          if (!isUniqueViolation || attempt === maxRetries - 1) {
-            throw insertError;
-          }
-        }
-      }
+      let order = insertResult.rows[0];
 
-      if (!order) {
-        throw new Error('Unable to generate unique order number');
-      }
+      // Build stable order number using the inserted id to avoid scanning the orders table
+      const orderNumber = `${orderBase}${order.id}`;
+      await client.query('UPDATE orders SET order_number = $1 WHERE id = $2', [orderNumber, order.id]);
+      // Refresh order
+      const refreshed = await client.query('SELECT * FROM orders WHERE id = $1', [order.id]);
+      order = refreshed.rows[0];
 
       // Create order items
       for (const item of items) {

@@ -4,6 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const { authenticateToken } = require('../middleware/auth');
 const db = require('../config/database');
+const { compressImageBuffer } = require('../utils/imageCompression');
 
 // Use memory storage so we can persist to DB (avoids losing files on redeploy)
 const storage = multer.memoryStorage();
@@ -32,10 +33,10 @@ const upload = multer({
 async function saveUploadToDb(file) {
     const filename = file.originalname;
     const mimetype = file.mimetype;
-    const data = file.buffer;
+    const { buffer: optimizedBuffer, mimetype: optimizedMime } = await compressImageBuffer(file.buffer, mimetype, filename);
     const result = await db.query(
         'INSERT INTO uploads (filename, mimetype, data) VALUES ($1, $2, $3) RETURNING id',
-        [filename, mimetype, data]
+        [filename, optimizedMime, optimizedBuffer]
     );
     return result.rows[0].id;
 }

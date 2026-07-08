@@ -9,7 +9,7 @@ const restoreController = require('../controllers/restoreController');
 // Multer config for SQL uploads
 const upload = multer({
   dest: path.join(__dirname, '../tmp'),
-  limits: { fileSize: 100 * 1024 * 1024 }, // 100MB max
+  limits: { fileSize: 10 * 1024 * 1024 * 1024 }, // 10GB max
   fileFilter: (req, file, cb) => {
     if (file.mimetype === 'application/sql' || file.originalname.endsWith('.sql')) {
       cb(null, true);
@@ -29,7 +29,7 @@ router.use((error, req, res, next) => {
 
   if (error instanceof multer.MulterError) {
     if (error.code === 'LIMIT_FILE_SIZE') {
-      return res.status(400).json({ error: 'Restore file is too large. Maximum size is 100MB.' });
+      return res.status(400).json({ error: 'Restore file is too large. Maximum size is about 10GB.' });
     }
     return res.status(400).json({ error: error.message || 'Restore upload failed' });
   }

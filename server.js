@@ -35,6 +35,7 @@ const User = require('./models/User');
 const { authenticateToken } = require('./middleware/auth');
 const { adminCheck } = require('./middleware/adminCheck');
 const backupController = require('./controllers/backupController');
+const { compressImageBuffer } = require('./utils/imageCompression');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -404,6 +405,22 @@ app.use(express.static(path.join(__dirname, 'public'), {
     }
   }
 }));
+
+async function compressExistingUploads() {
+  try {
+    const result = await database.query('SELECT id, mimetype, data FROM uploads ORDER BY id ASC');
+    for (const row of result.rows || []) {
+      const buffer = Buffer.isBuffer(row.data) ? row.data : Buffer.from(row.data || []);
+      const { buffer: optimizedBuffer, mimetype: optimizedMime, changed } = await compressImageBuffer(buffer, row.mimetype, `upload-${row.id}`);
+      if (changed) {
+        await database.query('UPDATE uploads SET mimetype = $1, data = $2 WHERE id = $3', [optimizedMime, optimizedBuffer, row.id]);
+      }
+    }
+    console.log('✓ Existing uploads compression pass completed');
+  } catch (error) {
+    console.warn('Upload compression pass skipped:', error?.message || error);
+  }
+}
 
 // DB-backed upload fetch (survives redeploys)
 app.get('/uploads/:id', async (req, res, next) => {
@@ -822,6 +839,7 @@ const initializeApp = async () => {
     const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD || 'SuperAdmin@123';
     await User.ensureSuperAdmin(superAdminEmail, superAdminPassword);
     console.log(`✓ Super admin user ensured: ${superAdminEmail}`);
+    await compressExistingUploads();
 
     const enableTestAccounts = String(process.env.ENABLE_TEST_ACCOUNTS || '').trim().toLowerCase() === 'true';
     if (enableTestAccounts) {

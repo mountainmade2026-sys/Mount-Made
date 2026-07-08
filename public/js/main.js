@@ -347,7 +347,7 @@ const auth = {
   },
 
   async login(email, password) {
-    const data = await api.post('/auth/login', { email, password });
+    const data = await api.post('/auth/login', { identifier: email, email, password });
     const isAdminLike = data?.user?.role === 'admin' || data?.user?.role === 'super_admin';
     if (data?.token && !isAdminLike) {
       localStorage.setItem('token', data.token);
