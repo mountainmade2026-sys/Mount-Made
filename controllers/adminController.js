@@ -629,6 +629,8 @@ exports.createProduct = async (req, res) => {
     const price = parseFloat(productData.price);
     const discountProvided = productData.discount_price !== undefined && productData.discount_price !== null && productData.discount_price !== '';
     const discountPrice = discountProvided ? parseFloat(productData.discount_price) : null;
+    const broughtProvided = productData.brought_price !== undefined && productData.brought_price !== null && productData.brought_price !== '';
+    const broughtPrice = broughtProvided ? parseFloat(productData.brought_price) : null;
 
     if (Number.isNaN(price)) {
       return res.status(400).json({ error: 'Price must be a valid number.' });
@@ -641,9 +643,14 @@ exports.createProduct = async (req, res) => {
     if (discountPrice !== null && discountPrice >= price) {
       return res.status(400).json({ error: 'Discount price must be less than the base price.' });
     }
+
+    if (broughtProvided && (Number.isNaN(broughtPrice) || broughtPrice < 0)) {
+      return res.status(400).json({ error: 'Brought price must be a valid non-negative number when provided.' });
+    }
     
     productData.price = price;
     productData.discount_price = discountPrice;
+    productData.brought_price = broughtPrice;
 
     if (productData.discount_adjust !== undefined) {
       const rawAdjust = productData.discount_adjust;
@@ -681,6 +688,9 @@ exports.updateProduct = async (req, res) => {
       category_id: incoming.category_id ?? existing.category_id,
       homepage_section_id: incoming.homepage_section_id !== undefined ? incoming.homepage_section_id : existing.homepage_section_id,
       price: incoming.price !== undefined ? parseFloat(incoming.price) : existing.price,
+      brought_price: incoming.brought_price !== undefined
+        ? (incoming.brought_price === null || incoming.brought_price === '' ? null : parseFloat(incoming.brought_price))
+        : existing.brought_price,
       wholesale_price: incoming.wholesale_price !== undefined
         ? (incoming.wholesale_price === null ? null : parseFloat(incoming.wholesale_price))
         : existing.wholesale_price,

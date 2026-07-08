@@ -17,6 +17,7 @@ class Product {
           homepage_section_id INTEGER,
           price DECIMAL(10, 2) NOT NULL,
           wholesale_price DECIMAL(10, 2),
+          brought_price DECIMAL(10, 2),
           stock_quantity INTEGER DEFAULT 0,
           min_wholesale_qty INTEGER DEFAULT 10,
           image_url VARCHAR(500),
@@ -60,6 +61,7 @@ class Product {
       await db.pool.query('ALTER TABLE products ADD COLUMN IF NOT EXISTS stock_quantity INTEGER DEFAULT 0');
       await db.pool.query('ALTER TABLE products ADD COLUMN IF NOT EXISTS min_wholesale_qty INTEGER DEFAULT 10');
       await db.pool.query('ALTER TABLE products ADD COLUMN IF NOT EXISTS wholesale_price NUMERIC');
+      await db.pool.query('ALTER TABLE products ADD COLUMN IF NOT EXISTS brought_price NUMERIC');
       await db.pool.query('ALTER TABLE products ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true');
       await db.pool.query("ALTER TABLE products ADD COLUMN IF NOT EXISTS images JSONB DEFAULT '[]'::jsonb");
       await db.pool.query('ALTER TABLE products ADD COLUMN IF NOT EXISTS weight NUMERIC');
@@ -114,6 +116,7 @@ class Product {
       homepage_section_id,
       price, 
       wholesale_price, 
+      brought_price,
       discount_price,
       discount_adjust,
       stock_quantity, 
@@ -130,7 +133,7 @@ class Product {
 
     const query = `
       INSERT INTO products (
-        name, description, category_id, homepage_section_id, price, wholesale_price, discount_price, discount_adjust,
+        name, description, category_id, homepage_section_id, price, wholesale_price, brought_price, discount_price, discount_adjust,
         stock_quantity, min_wholesale_qty, image_url, images, is_active, weight, unit, is_weight_based, weight_unit, weight_options
       )
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
@@ -144,6 +147,7 @@ class Product {
       homepage_section_id || null,
       price, 
       wholesale_price, 
+      brought_price,
       discount_price,
       discount_adjust ? String(discount_adjust).trim() : null,
       stock_quantity,
@@ -344,6 +348,7 @@ class Product {
       homepage_section_id,
       price, 
       wholesale_price, 
+      brought_price,
       discount_price,
       discount_adjust,
       stock_quantity,
@@ -367,21 +372,22 @@ class Product {
           homepage_section_id = $4,
           price = COALESCE($5, price),
           wholesale_price = COALESCE($6, wholesale_price),
-          discount_price = $7,
-          discount_adjust = COALESCE($8, discount_adjust),
-          stock_quantity = COALESCE($9, stock_quantity),
-          min_wholesale_qty = COALESCE($10, min_wholesale_qty),
-          image_url = COALESCE($11, image_url),
-          images = COALESCE($12, images),
-          is_active = COALESCE($13, is_active),
-          weight = COALESCE($14, weight),
-          unit = COALESCE($15, unit),
-          is_weight_based = COALESCE($16, is_weight_based),
-          weight_unit = COALESCE($17, weight_unit),
-          weight_options = COALESCE($18, weight_options),
-          fixed_weight = $20,
+          brought_price = COALESCE($7, brought_price),
+          discount_price = $8,
+          discount_adjust = COALESCE($9, discount_adjust),
+          stock_quantity = COALESCE($10, stock_quantity),
+          min_wholesale_qty = COALESCE($11, min_wholesale_qty),
+          image_url = COALESCE($12, image_url),
+          images = COALESCE($13, images),
+          is_active = COALESCE($14, is_active),
+          weight = COALESCE($15, weight),
+          unit = COALESCE($16, unit),
+          is_weight_based = COALESCE($17, is_weight_based),
+          weight_unit = COALESCE($18, weight_unit),
+          weight_options = COALESCE($19, weight_options),
+          fixed_weight = $21,
           updated_at = CURRENT_TIMESTAMP
-        WHERE id = $19
+        WHERE id = $20
       RETURNING *
     `;
 
@@ -392,6 +398,7 @@ class Product {
       homepage_section_id !== undefined ? homepage_section_id : null,
       price, 
       wholesale_price, 
+      brought_price,
       discount_price,
       discount_adjust !== undefined && discount_adjust !== null ? String(discount_adjust).trim() : null,
       stock_quantity,
