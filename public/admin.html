@@ -4545,6 +4545,7 @@
                 case 'admin-license': loadAdminLicenseStatus({ silent: true }); break;
                 case 'delivery-pincodes': loadDeliveryPincodeSettings(); break;
                 case 'site-settings': loadSiteSettings(); buildSiteSettingsQuickNav(); break;
+                case 'database-backup': loadBackupHistory(); break;
             }
 
             // Hide the fixed quick-nav when leaving site-settings
@@ -5358,14 +5359,13 @@
         async function loadAdminLicenseStatus(options = {}) {
             const { silent = false } = options;
             try {
-                const response = await api.get('/products/settings');
-                const settings = response?.settings || {};
-                const serverTime = new Date().toISOString();
-                const manualBlocked = String(settings.admin_license_blocked || '').toLowerCase() === 'true';
-                const expiresAt = (settings.admin_license_expires_at || '').trim() || null;
-                const expiresAtMs = expiresAt ? new Date(expiresAt).getTime() : null;
-                const isExpired = !!(expiresAtMs && Date.now() >= expiresAtMs);
-                const isBlocked = manualBlocked || isExpired;
+                const response = await api.get('/admin/license/status');
+                const licenseData = response?.license || {};
+                const serverTime = licenseData.serverTime || new Date().toISOString();
+                const manualBlocked = !!licenseData.manualBlocked;
+                const expiresAt = (licenseData.expiresAt || '').trim() || null;
+                const isExpired = !!licenseData.isExpired;
+                const isBlocked = !!licenseData.isBlocked;
 
                 const license = {
                     serverTime,
@@ -5373,9 +5373,7 @@
                     manualBlocked,
                     isExpired,
                     isBlocked,
-                    message: isBlocked
-                        ? 'Your License is expired Please Contact ur developer.'
-                        : 'License is active.'
+                    message: licenseData.message || (isBlocked ? 'Your License is expired Please Contact ur developer.' : 'License is active.')
                 };
 
                 renderAdminLicenseStatus(license);
