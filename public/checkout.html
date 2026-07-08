@@ -2372,8 +2372,8 @@
                 setPlaceOrderButtonState(true);
 
                 const paymentMethod = document.getElementById('payment_method').value;
-            let gpayDetailType = 'upi';
-            let gpayDetailValue = checkoutGpaySettings.upiId || '';
+            let gpayDetailType = document.getElementById('gpay-detail-type')?.value || 'upi';
+            let gpayDetailValue = '';
 
             if (!(await validateDeliveryPincode())) {
                 setPlaceOrderButtonState(false);
@@ -2393,19 +2393,27 @@
                     gpayDetailType = 'bhim';
                     gpayDetailValue = hasUpi ? checkoutGpaySettings.upiId.trim() : (hasPhone ? checkoutGpaySettings.phoneNumber.trim() : '');
                 } else {
-                    if (hasQr) {
-                        gpayDetailType = 'qr';
+                    if (gpayDetailType === 'qr' && hasQr) {
                         gpayDetailValue = checkoutGpaySettings.qrImageUrl.trim();
+                    } else if (gpayDetailType === 'phone') {
+                        gpayDetailType = 'phone';
+                        gpayDetailValue = hasPhone ? checkoutGpaySettings.phoneNumber.trim() : checkoutGpaySettings.upiId.trim();
+                    } else if (gpayDetailType === 'bhim') {
+                        gpayDetailType = 'bhim';
+                        gpayDetailValue = hasUpi ? checkoutGpaySettings.upiId.trim() : (hasPhone ? checkoutGpaySettings.phoneNumber.trim() : '');
                     } else if (hasUpi) {
                         gpayDetailType = 'upi';
                         gpayDetailValue = checkoutGpaySettings.upiId.trim();
+                    } else if (hasPhone) {
+                        gpayDetailType = 'phone';
+                        gpayDetailValue = checkoutGpaySettings.phoneNumber.trim();
                     } else {
                         gpayDetailType = 'upi';
                         gpayDetailValue = '';
                     }
                 }
 
-                if (!gpayDetailValue && !hasQr) {
+if (!gpayDetailValue && !(gpayDetailType === 'qr' && hasQr)) {
                     showAlert('Payment settings are not configured by admin.', 'error');
                     setPlaceOrderButtonState(false);
                     return;
@@ -2479,17 +2487,29 @@
                     });
                 }
 
-                const actualPaymentRecipient = String(gpayDetailType === 'qr'
-                    ? (checkoutGpaySettings.upiId || checkoutGpaySettings.phoneNumber || '')
-                    : gpayDetailValue || checkoutGpaySettings.upiId || checkoutGpaySettings.phoneNumber || '').trim();
-                const pendingPaymentType = gpayDetailType === 'qr' && actualPaymentRecipient ? 'upi' : gpayDetailType;
+                const actualPaymentRecipient = String(
+                    gpayDetailType === 'phone'
+                        ? (hasPhone ? checkoutGpaySettings.phoneNumber : checkoutGpaySettings.upiId)
+                        : (hasUpi ? checkoutGpaySettings.upiId : (hasPhone ? checkoutGpaySettings.phoneNumber : ''))
+                ).trim();
+
+                let pendingPaymentType = gpayDetailType;
+                if (gpayDetailType === 'qr') {
+                    if (actualPaymentRecipient) {
+                        pendingPaymentType = hasUpi ? 'upi' : 'phone';
+                    } else {
+                        pendingPaymentType = 'qr';
+                    }
+                }
 
                 const paymentRedirect = {
                     orderId: null,
                     orderNumber: 'Pending',
                     paymentMethod,
                     paymentType: pendingPaymentType,
-                    paymentValue: actualPaymentRecipient,
+                    // Ensure paymentValue contains a usable UPI recipient when available.
+                    // Prefer actualPaymentRecipient (upiId or phone) so checkout-qr can build deep-links.
+                    paymentValue: actualPaymentRecipient || (pendingPaymentType === 'qr' ? checkoutGpaySettings.qrImageUrl || '' : ''),
                     qrImageUrl: checkoutGpaySettings.qrImageUrl || '',
                     upiId: checkoutGpaySettings.upiId || '',
                     phoneNumber: checkoutGpaySettings.phoneNumber || '',
