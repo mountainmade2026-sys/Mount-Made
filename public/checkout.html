@@ -2324,55 +2324,54 @@
             e.preventDefault();
             setPlaceOrderButtonState(true);
 
-            try {
                 let shippingAddress;
 
                 if (selectedAddressId) {
-                // Use selected saved address
-                const addr = userAddresses.find(a => a.id === selectedAddressId);
-                shippingAddress = {
-                    address_id: addr.id,
-                    full_name: addr.full_name,
-                    phone: addr.phone,
-                    address_line1: addr.address_line1,
-                    address_line2: addr.address_line2,
-                    city: addr.city,
-                    state: addr.state,
-                    postal_code: addr.postal_code,
-                    country: addr.country
-                };
-            } else {
-                // Use manual address form
-                const nameEl = document.getElementById('name');
-                const addrEl = document.getElementById('address');
-                const cityEl = document.getElementById('city');
-                const stateEl = document.getElementById('state');
-                const zipEl = document.getElementById('zip');
-                const phoneEl = document.getElementById('phone');
+                    // Use selected saved address
+                    const addr = userAddresses.find(a => a.id === selectedAddressId);
+                    shippingAddress = {
+                        address_id: addr.id,
+                        full_name: addr.full_name,
+                        phone: addr.phone,
+                        address_line1: addr.address_line1,
+                        address_line2: addr.address_line2,
+                        city: addr.city,
+                        state: addr.state,
+                        postal_code: addr.postal_code,
+                        country: addr.country
+                    };
+                } else {
+                    // Use manual address form
+                    const nameEl = document.getElementById('name');
+                    const addrEl = document.getElementById('address');
+                    const cityEl = document.getElementById('city');
+                    const stateEl = document.getElementById('state');
+                    const zipEl = document.getElementById('zip');
+                    const phoneEl = document.getElementById('phone');
 
-                if (!validateCheckoutForm()) {
-                    showAlert('Please fill in all required shipping address fields.', 'error');
-                    setPlaceOrderButtonState(false);
-                    const firstInvalid = document.querySelector('#checkout-form .is-invalid');
-                    if (firstInvalid) firstInvalid.focus();
-                    return;
+                    if (!validateCheckoutForm()) {
+                        showAlert('Please fill in all required shipping address fields.', 'error');
+                        setPlaceOrderButtonState(false);
+                        const firstInvalid = document.querySelector('#checkout-form .is-invalid');
+                        if (firstInvalid) firstInvalid.focus();
+                        return;
+                    }
+
+                    shippingAddress = {
+                        full_name: nameEl.value,
+                        address_line1: addrEl.value,
+                        address_line2: document.getElementById('address2').value,
+                        city: cityEl.value,
+                        state: stateEl.value,
+                        postal_code: zipEl.value,
+                        phone: phoneEl.value,
+                        country: 'India'
+                    };
                 }
 
-                shippingAddress = {
-                    full_name: nameEl.value,
-                    address_line1: addrEl.value,
-                    address_line2: document.getElementById('address2').value,
-                    city: cityEl.value,
-                    state: stateEl.value,
-                    postal_code: zipEl.value,
-                    phone: phoneEl.value,
-                    country: 'India'
-                };
-            }
-            
-            setPlaceOrderButtonState(true);
+                setPlaceOrderButtonState(true);
 
-            const paymentMethod = document.getElementById('payment_method').value;
+                const paymentMethod = document.getElementById('payment_method').value;
             let gpayDetailType = 'upi';
             let gpayDetailValue = checkoutGpaySettings.upiId || '';
 
