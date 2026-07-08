@@ -6607,11 +6607,11 @@
             const lowStock = stockReports.filter(p => p.current_stock > 0 && p.current_stock <= 10).length;
             const outOfStock = stockReports.filter(p => p.current_stock <= 0).length;
 
-            let totalRevenue = 0, normalProfit = 0, wholesaleProfit = 0;
+            let totalRevenue = 0, normalStockProfit = 0, wholesaleStockProfit = 0;
             stockReports.forEach(p => {
                 totalRevenue += parseFloat(p.total_revenue) || 0;
-                normalProfit += parseFloat(p.normal_profit) || 0;
-                wholesaleProfit += parseFloat(p.wholesale_profit) || 0;
+                normalStockProfit += parseFloat(p.normal_stock_profit) || 0;
+                wholesaleStockProfit += parseFloat(p.wholesale_stock_profit) || 0;
             });
 
             // Update stats cards
@@ -6621,7 +6621,7 @@
             document.getElementById('out-stock-count').textContent = outOfStock;
             document.getElementById('stock-total-revenue').textContent = formatCurrency(totalRevenue);
             const profitEl = document.getElementById('stock-total-profit');
-            const totalProfit = normalProfit + wholesaleProfit;
+            const totalProfit = normalStockProfit + wholesaleStockProfit;
             profitEl.textContent = formatCurrency(totalProfit);
             profitEl.style.color = totalProfit >= 0 ? 'var(--success)' : 'var(--danger)';
         }
@@ -6645,8 +6645,8 @@
                 '<th>Remaining</th>' +
                 '<th class="col-hide-xs">Stock Value</th>' +
                 '<th>Revenue</th>' +
-                '<th>Normal Profit</th>' +
-                '<th>Wholesale Profit</th>' +
+                '<th>Normal Stock Profit</th>' +
+                '<th>Wholesale Stock Profit</th>' +
                 '<th>Status</th>' +
                 '<th>Actions</th>' +
                 '</tr></thead><tbody>';
@@ -6658,9 +6658,9 @@
                 const price = parseFloat(product.price) || 0;
                 const stockValue = currentStock * price;
                 const totalRevenue = parseFloat(product.total_revenue) || 0;
-                const normalProfit = parseFloat(product.normal_profit) || 0;
-                const wholesaleProfit = parseFloat(product.wholesale_profit) || 0;
-                const totalProfit = normalProfit + wholesaleProfit;
+                const normalStockProfit = parseFloat(product.normal_stock_profit) || 0;
+                const wholesaleStockProfit = parseFloat(product.wholesale_stock_profit) || 0;
+                const totalProfit = normalStockProfit + wholesaleStockProfit;
 
                 const statusClass = currentStock > 10 ? 'success' : currentStock > 0 ? 'warning' : 'danger';
                 const statusText = currentStock > 10 ? 'In Stock' : currentStock > 0 ? 'Low Stock' : 'Out of Stock';
@@ -6684,8 +6684,8 @@
                         <td><strong>${currentStock}</strong></td>
                         <td class="col-hide-xs" style="white-space: nowrap;">${formatCurrency(stockValue)}</td>
                         <td style="white-space: nowrap;">${formatCurrency(totalRevenue)}</td>
-                        <td style="color: ${normalProfit >= 0 ? 'var(--success)' : 'var(--danger)'}; font-weight: 600; white-space: nowrap;">${formatCurrency(normalProfit)}</td>
-                        <td style="color: ${wholesaleProfit >= 0 ? 'var(--success)' : 'var(--danger)'}; font-weight: 600; white-space: nowrap;">${formatCurrency(wholesaleProfit)}</td>
+                        <td style="color: ${normalStockProfit >= 0 ? 'var(--success)' : 'var(--danger)'}; font-weight: 600; white-space: nowrap;">${formatCurrency(normalStockProfit)}</td>
+                        <td style="color: ${wholesaleStockProfit >= 0 ? 'var(--success)' : 'var(--danger)'}; font-weight: 600; white-space: nowrap;">${formatCurrency(wholesaleStockProfit)}</td>
                         <td><span class="badge badge-${statusClass}" style="white-space: nowrap;">${statusText}</span></td>
                         <td style="white-space: nowrap;">
                             <button class="action-btn action-btn-view" onclick="viewStockHistory(${product.id})">
