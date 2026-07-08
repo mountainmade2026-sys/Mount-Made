@@ -449,7 +449,21 @@
             startCountdown(payload.expiresAt || (Date.now() + 9 * 60 * 1000));
 
             const qrPaidButton = document.getElementById('qr-paid-button');
-            const qrPaidLink = buildGpayUpiLink(payload);
+            let qrPaidLink = buildGpayUpiLink(payload);
+            // Debug log to help trace why Direct Pay may be disabled
+            try { console.info('checkout-qr payload:', payload); console.info('initial upiLink:', qrPaidLink); } catch (e) {}
+            // Defensive fallback: if builder failed but admin provided upiId/phone, construct link directly
+            if (!qrPaidLink) {
+                const pa = String(payload.upiId || payload.phoneNumber || '').trim();
+                if (pa) {
+                    const pn = String(payload.payeeName || 'Mount Made').trim();
+                    const tn = `Order ${payload.orderNumber || ''}`.trim();
+                    const am = Number(payload.amount || 0).toFixed(2);
+                    const params = new URLSearchParams({ pa, pn, tn, am, cu: 'INR' });
+                    qrPaidLink = `upi://pay?${params.toString()}`;
+                    try { console.info('fallback upiLink:', qrPaidLink); } catch (e) {}
+                }
+            }
             if (qrPaidButton) {
                 if (!qrPaidLink) {
                     qrPaidButton.disabled = true;
