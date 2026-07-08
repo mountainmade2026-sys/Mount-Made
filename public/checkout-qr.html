@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Complete Payment</title>
+    <link rel="stylesheet" href="/css/styles.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode.js/1.5.3/qrcode.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: Inter, system-ui, sans-serif;
+            background: #f8fafc;
+            color: #111827;
+        }
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+        .payment-card {
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
+            overflow: hidden;
+            border: 1px solid rgba(15, 23, 42, 0.06);
+        }
+        .payment-card-header {
+            padding: 1.5rem 1.75rem;
+            background: linear-gradient(135deg, #10b981 0%, #22c55e 100%);
+            color: #fff;
+        }
+        .payment-card-header h1 {
+            margin: 0;
+            font-size: 1.6rem;
+        }
+        .payment-card-header p {
+            margin: 0.75rem 0 0;
+            opacity: 0.92;
+            line-height: 1.6;
+        }
+        .payment-card-body {
+            padding: 1.75rem;
+        }
+        .payment-summary {
+            display: grid;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .payment-summary-item {
+            display: flex;
+            justify-content: space-between;
+            color: #374151;
+            font-size: 0.95rem;
+        }
+        .payment-summary-item strong {
+            color: #111827;
+        }
+        .qr-panel {
+            text-align: center;
+            padding: 1rem;
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            border-radius: 18px;
+            background: #f8fafc;
+        }
+        .qr-panel h2 {
+            margin: 0 0 0.75rem;
+            font-size: 1.15rem;
+        }
+        .qr-image {
+            margin: 0 auto 1rem;
+            width: 260px;
+            height: 260px;
+            border-radius: 24px;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
+        }
+        .qr-countdown {
+            margin-top: 1rem;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #16a34a;
+        }
+        .button-row {
+            margin-top: 1.5rem;
+            display: grid;
+            gap: 0.75rem;
+        }
+        .button-row .btn {
+            width: 100%;
+            text-align: center;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.95rem 1.25rem;
+            border-radius: 999px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .btn-primary {
+            background: #10b981;
+            color: #fff;
+        }
+        .btn-secondary {
+            background: #e5e7eb;
+            color: #111827;
+        }
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+        .notice {
+            padding: 1rem;
+            border-radius: 16px;
+            background: #f8fafc;
+            border: 1px solid rgba(15, 23, 42, 0.08);
+            color: #334155;
+            margin-top: 1rem;
+        }
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="payment-card">
+            <div class="payment-card-header">
+                <h1>Pay with QR Code</h1>
+                <p>Complete your payment within 9 minutes to confirm your order.</p>
+            </div>
+            <div class="payment-card-body">
+                <div class="payment-summary">
+                    <div class="payment-summary-item"><span>Order</span><strong id="qr-order-number">#—</strong></div>
+                    <div class="payment-summary-item"><span>Amount</span><strong id="qr-amount">₹0.00</strong></div>
+                    <div class="payment-summary-item"><span>Payment method</span><strong id="qr-method">GPay</strong></div>
+                    <div class="payment-summary-item"><span>Recipient</span><strong id="qr-recipient">—</strong></div>
+                </div>
+
+                <div class="qr-panel">
+                    <h2>Scan the QR code below</h2>
+                    <div id="qr-image" class="qr-image"></div>
+                    <div id="qr-hint" style="font-size:0.95rem; color:#475569; line-height:1.55;">Use your UPI app to scan and pay.</div>
+                </div>
+
+                <div class="qr-countdown" id="qr-countdown">Time remaining: 09:00</div>
+
+                <div class="button-row">
+                    <button type="button" class="btn btn-primary" id="qr-paid-button"><i class="fas fa-check"></i> I have paid</button>
+                    <button type="button" class="btn btn-secondary" id="qr-cancel-button"><i class="fas fa-times"></i> Cancel payment</button>
+                </div>
+
+                <div class="notice" id="qr-notice">
+                    If payment is not completed within the countdown, this QR session will expire and you will need to place the order again.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function formatCurrency(amount) {
+            const value = Number(amount || 0);
+            return '₹' + value.toFixed(2);
+        }
+
+        function escapeHtml(value) {
+            return String(value || '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
+        }
+
+        function getPendingPayment() {
+            try {
+                const raw = sessionStorage.getItem('checkoutPendingPayment');
+                return raw ? JSON.parse(raw) : null;
+            } catch (e) {
+                console.warn('Unable to read pending payment session:', e);
+                return null;
+            }
+        }
+
+        function clearPendingPayment() {
+            sessionStorage.removeItem('checkoutPendingPayment');
+        }
+
+        function renderQrContent(payload) {
+            if (!payload) return;
+
+            const methodLabelMap = {
+                gpay: 'GPay / UPI',
+                phone: 'PhonePe',
+                bhim: 'BHIM'
+            };
+
+            document.getElementById('qr-order-number').textContent = escapeHtml(payload.orderNumber || payload.orderId || '—');
+            document.getElementById('qr-amount').textContent = formatCurrency(payload.amount || 0);
+            document.getElementById('qr-method').textContent = methodLabelMap[payload.paymentMethod] || 'GPay';
+            document.getElementById('qr-recipient').textContent = escapeHtml(payload.paymentValue || payload.upiId || payload.phoneNumber || payload.payeeName || '—');
+
+            const hintText = payload.paymentMethod === 'phone'
+                ? 'Open PhonePe or your preferred UPI app and scan the code.'
+                : payload.paymentMethod === 'bhim'
+                    ? 'Open BHIM or your preferred UPI app and scan the code.'
+                    : 'Open Google Pay or your preferred UPI app and scan the code.';
+            document.getElementById('qr-hint').textContent = hintText;
+
+            const qrContainer = document.getElementById('qr-image');
+            qrContainer.innerHTML = '';
+
+            const upiLink = buildGpayUpiLink(payload);
+            if (upiLink) {
+                generateDynamicQr('qr-image', upiLink);
+            } else if (payload.qrImageUrl) {
+                const img = document.createElement('img');
+                img.src = payload.qrImageUrl;
+                img.alt = 'Payment QR Code';
+                img.style.width = '100%';
+                img.style.height = '100%';
+                img.style.objectFit = 'contain';
+                qrContainer.appendChild(img);
+            } else {
+                qrContainer.innerHTML = '<div style="color:#94a3b8; font-size:0.95rem;">No QR code available.</div>';
+            }
+        }
+
+        function buildGpayUpiLink(payload) {
+            const recipient = String(payload.paymentValue || payload.upiId || payload.phoneNumber || '').trim();
+            if (!recipient) return null;
+
+            const params = new URLSearchParams({
+                pa: recipient,
+                pn: payload.payeeName || 'Mount Made',
+                tn: `Order ${payload.orderNumber || ''}`.trim(),
+                am: Number(payload.amount || 0).toFixed(2),
+                cu: 'INR'
+            });
+            return `upi://pay?${params.toString()}`;
+        }
+
+        function generateDynamicQr(containerId, upiLink) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            container.innerHTML = '';
+            if (window.QRCode) {
+                new QRCode(container, {
+                    text: upiLink,
+                    width: 260,
+                    height: 260,
+                    colorDark: '#000000',
+                    colorLight: '#ffffff',
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+                return;
+            }
+            const img = document.createElement('img');
+            img.src = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(upiLink)}`;
+            img.alt = 'Payment QR Code';
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.objectFit = 'contain';
+            container.appendChild(img);
+        }
+
+        function startCountdown(expiresAt) {
+            const countdown = document.getElementById('qr-countdown');
+            if (!countdown) return;
+
+            function update() {
+                const remainingMs = Number(expiresAt || 0) - Date.now();
+                if (remainingMs <= 0) {
+                    countdown.textContent = 'Time remaining: 00:00';
+                    clearInterval(timerId);
+                    document.getElementById('qr-notice').textContent = 'Payment session expired. Please return to checkout and place your order again.';
+                    return;
+                }
+                const minutes = Math.floor(remainingMs / 60000);
+                const seconds = Math.floor((remainingMs % 60000) / 1000);
+                countdown.textContent = `Time remaining: ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            }
+
+            update();
+            const timerId = setInterval(update, 1000);
+        }
+
+        function initPage() {
+            const payload = getPendingPayment();
+            if (!payload) {
+                document.body.innerHTML = '<div class="container"><div class="payment-card"><div class="payment-card-body"><h2>Payment information not found.</h2><p>Please return to checkout and try again.</p><button class="btn btn-primary" onclick="window.location.href=\'/checkout.html\'">Return to Checkout</button></div></div></div>';
+                return;
+            }
+            renderQrContent(payload);
+            startCountdown(payload.expiresAt || (Date.now() + 9 * 60 * 1000));
+
+            document.getElementById('qr-paid-button').addEventListener('click', () => {
+                clearPendingPayment();
+                window.location.href = '/orders';
+            });
+            document.getElementById('qr-cancel-button').addEventListener('click', () => {
+                clearPendingPayment();
+                window.location.href = '/checkout.html';
+            });
+        }
+
+        initPage();
+    </script>
+</body>
+</html>

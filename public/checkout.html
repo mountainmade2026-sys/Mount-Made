@@ -107,9 +107,23 @@
                         <div class="pm-grid" id="pm-grid">
                             <button type="button" class="pm-tile pm-tile-selected" data-method="gpay">
                                 <span class="pm-tile-icon pm-upi-bg">
-                                    <svg viewBox="0 0 48 48" width="28" height="28" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="48" rx="10" fill="#fff"/><text x="50%" y="62%" dominant-baseline="middle" text-anchor="middle" font-size="11" font-family="Arial,sans-serif" font-weight="700" fill="#5C6BC0">UPI</text></svg>
+                                    <i class="fab fa-google-pay" style="font-size: 24px;"></i>
                                 </span>
                                 <span class="pm-tile-label">UPI / GPay<br><small>GPay only</small></span>
+                                <span class="pm-tile-check"><i class="fas fa-check-circle"></i></span>
+                            </button>
+                            <button type="button" class="pm-tile" data-method="phone">
+                                <span class="pm-tile-icon pm-phone-bg">
+                                    <i class="fas fa-mobile-alt" style="font-size: 22px;"></i>
+                                </span>
+                                <span class="pm-tile-label">PhonePe<br><small>UPI / Phone</small></span>
+                                <span class="pm-tile-check"><i class="fas fa-check-circle"></i></span>
+                            </button>
+                            <button type="button" class="pm-tile" data-method="bhim">
+                                <span class="pm-tile-icon pm-bhim-bg">
+                                    <i class="fas fa-wallet" style="font-size: 22px;"></i>
+                                </span>
+                                <span class="pm-tile-label">BHIM<br><small>UPI payment</small></span>
                                 <span class="pm-tile-check"><i class="fas fa-check-circle"></i></span>
                             </button>
                         </div>
@@ -903,6 +917,8 @@
         }
 
         .pm-upi-bg  { background: #ede7f6; }
+        .pm-phone-bg { background: #e0f2fe; }
+        .pm-bhim-bg { background: #ecfdf5; }
         .pm-card-bg { background: #e3f2fd; }
         .pm-cc-bg   { background: #ffebee; }
         .pm-net-bg  { background: #e8f5e9; }
@@ -2098,7 +2114,7 @@
             showOrderSuccess(order);
         }
 
-        function updateGpayLabelAndPrefill() {
+        function updateGpayLabelAndPrefill(selectedMethod = document.getElementById('payment_method')?.value || 'gpay') {
             const valueInput = document.getElementById('gpay-detail-value');
             const label = document.getElementById('gpay-detail-label');
             const hint = document.getElementById('gpay-prefill-hint');
@@ -2106,43 +2122,43 @@
             const qrWrap = document.getElementById('gpay-qr-wrap');
             const qrContainer = document.getElementById('gpay-qr-container');
             const qrHint = document.getElementById('gpay-qr-hint');
+            const qrImage = document.getElementById('gpay-qr-image');
 
             if (!valueInput || !label) return;
 
+            const method = String(selectedMethod || 'gpay').toLowerCase();
             const hasQr = String(checkoutGpaySettings.qrImageUrl || '').trim() !== '';
             const hasUpi = String(checkoutGpaySettings.upiId || '').trim() !== '';
+            const hasPhone = String(checkoutGpaySettings.phoneNumber || '').trim() !== '';
             const currentAmount = getCurrentCheckoutTotal();
-            const dynamicUpiLink = hasUpi && currentAmount > 0 ? buildGpayUpiLink(currentAmount, 'Checkout Payment') : null;
+            const recipient = method === 'phone' ? (hasPhone ? checkoutGpaySettings.phoneNumber : checkoutGpaySettings.upiId) : checkoutGpaySettings.upiId || checkoutGpaySettings.phoneNumber;
+            const dynamicUpiLink = recipient && currentAmount > 0 ? buildGpayUpiLink(currentAmount, method === 'bhim' ? 'BHIM Payment' : method === 'phone' ? 'PhonePe Payment' : 'GPay Payment') : null;
 
-            if (hasUpi && dynamicUpiLink) {
-                label.textContent = 'Scan QR Code';
-                valueInput.value = checkoutGpaySettings.upiId;
-                valueInput.placeholder = 'Configured by admin';
-                if (qrWrap) {
-                    qrWrap.classList.remove('hidden');
-                }
-                if (qrContainer) {
-                    qrContainer.classList.remove('hidden');
-                    qrContainer.style.cursor = 'pointer';
-                    qrContainer.onclick = () => {
-                        const gpayRef = generateGpayRef();
-                        openGpayWithAmount(currentAmount, 'Checkout Payment', gpayRef);
-                    };
-                    generateDynamicGpayQr('gpay-qr-container', dynamicUpiLink);
-                }
-                if (qrImage) {
-                    qrImage.classList.add('hidden');
-                }
-                if (qrHint) {
-                    qrHint.textContent = 'Scan or tap this QR code in Google Pay to pay the exact checkout amount.';
-                }
-            } else if (hasQr) {
-                label.textContent = 'Scan QR Code';
-                valueInput.value = '';
-                valueInput.placeholder = 'Scan the QR code below';
-                if (qrWrap) {
-                    qrWrap.classList.remove('hidden');
-                }
+            const labelMap = {
+                gpay: 'UPI ID',
+                phone: 'Phone Number',
+                bhim: 'BHIM ID'
+            };
+            const displayMethodMap = {
+                gpay: 'GPay / UPI',
+                phone: 'PhonePe',
+                bhim: 'BHIM'
+            };
+
+            label.textContent = labelMap[method] || 'UPI ID';
+            valueInput.value = recipient || '';
+            valueInput.placeholder = recipient ? 'Configured by admin' : 'Not configured';
+            if (bankDisplay) {
+                bankDisplay.textContent = method === 'phone'
+                    ? `Phone: ${checkoutGpaySettings.phoneNumber || '-'} `
+                    : `Bank: ${checkoutGpaySettings.bankName || '-'}`;
+            }
+
+            if (qrWrap) {
+                qrWrap.classList.remove('hidden');
+            }
+
+            if (hasQr && !dynamicUpiLink) {
                 if (qrContainer) {
                     qrContainer.classList.add('hidden');
                     qrContainer.innerHTML = '';
@@ -2155,14 +2171,24 @@
                     qrImage.onclick = null;
                 }
                 if (qrHint) {
-                    qrHint.textContent = hasUpi
-                        ? 'Scan this QR code in Google Pay. The UPI ID is configured, so the amount can be processed on scan.'
-                        : 'Scan this static QR code in Google Pay.';
+                    qrHint.textContent = `Scan this QR code in ${displayMethodMap[method] || 'GPay'}.`;
+                }
+            } else if (dynamicUpiLink) {
+                if (qrContainer) {
+                    qrContainer.classList.remove('hidden');
+                    qrContainer.style.cursor = 'pointer';
+                    qrContainer.onclick = () => {
+                        openGpayWithAmount(currentAmount, `${displayMethodMap[method]} Payment`);
+                    };
+                    generateDynamicGpayQr('gpay-qr-container', dynamicUpiLink);
+                }
+                if (qrImage) {
+                    qrImage.classList.add('hidden');
+                }
+                if (qrHint) {
+                    qrHint.textContent = `Scan or tap this QR code in ${displayMethodMap[method]} to pay the exact checkout amount.`;
                 }
             } else {
-                label.textContent = 'UPI ID';
-                valueInput.value = '';
-                valueInput.placeholder = 'No UPI configured';
                 if (qrWrap) {
                     qrWrap.classList.add('hidden');
                 }
@@ -2171,10 +2197,14 @@
                     qrContainer.style.cursor = 'default';
                     qrContainer.onclick = null;
                 }
+                if (qrImage) {
+                    qrImage.classList.add('hidden');
+                    qrImage.src = '';
+                }
                 if (qrHint) {
-                    qrHint.textContent = hasUpi
+                    qrHint.textContent = recipient
                         ? `Payee: ${checkoutGpaySettings.payeeName || 'Mount Made'}`
-                        : '';
+                        : 'Payment details are not configured by admin.';
                 }
             }
         }
@@ -2593,18 +2623,32 @@
                 return;
             }
 
-            if (paymentMethod === 'gpay') {
+            if (paymentMethod === 'gpay' || paymentMethod === 'phone' || paymentMethod === 'bhim') {
                 const hasQr = String(checkoutGpaySettings.qrImageUrl || '').trim() !== '';
                 const hasUpi = String(checkoutGpaySettings.upiId || '').trim() !== '';
+                const hasPhone = String(checkoutGpaySettings.phoneNumber || '').trim() !== '';
 
-                if (hasQr) {
-                    gpayDetailType = 'qr';
-                    gpayDetailValue = checkoutGpaySettings.qrImageUrl.trim();
-                } else if (hasUpi) {
-                    gpayDetailType = 'upi';
-                    gpayDetailValue = checkoutGpaySettings.upiId.trim();
+                if (paymentMethod === 'phone') {
+                    gpayDetailType = 'phone';
+                    gpayDetailValue = hasPhone ? checkoutGpaySettings.phoneNumber.trim() : checkoutGpaySettings.upiId.trim();
+                } else if (paymentMethod === 'bhim') {
+                    gpayDetailType = 'bhim';
+                    gpayDetailValue = hasUpi ? checkoutGpaySettings.upiId.trim() : (hasPhone ? checkoutGpaySettings.phoneNumber.trim() : '');
                 } else {
-                    showAlert('GPay UPI ID or QR code is not configured by admin.', 'error');
+                    if (hasQr) {
+                        gpayDetailType = 'qr';
+                        gpayDetailValue = checkoutGpaySettings.qrImageUrl.trim();
+                    } else if (hasUpi) {
+                        gpayDetailType = 'upi';
+                        gpayDetailValue = checkoutGpaySettings.upiId.trim();
+                    } else {
+                        gpayDetailType = 'upi';
+                        gpayDetailValue = '';
+                    }
+                }
+
+                if (!gpayDetailValue && !hasQr) {
+                    showAlert('Payment settings are not configured by admin.', 'error');
                     hideOrderStatusModal();
                     setPlaceOrderButtonState(false);
                     return;
@@ -2712,18 +2756,23 @@
                     }
                 }
 
-                if (checkoutGpaySettings.qrImageUrl) {
-                    showGpayQrPaymentModal(checkoutGpaySettings.qrImageUrl, gpayRef, totalAmount);
-                }
-
-                try {
-                    const result = await api.post('/orders', orderData);
-                    applyOrderPlacedUI(result.order);
-                } catch (orderError) {
-                    hideOrderStatusModal();
-                    setPlaceOrderButtonState(false);
-                    showAlert(orderError.message || 'Failed to place order.', 'error');
-                }
+                const result = await api.post('/orders', orderData);
+                const order = result.order || {};
+                const paymentRedirect = {
+                    orderId: order.id || order.order_id || null,
+                    orderNumber: order.order_number || order.id || 'N/A',
+                    paymentMethod,
+                    paymentType: gpayDetailType,
+                    paymentValue: gpayDetailValue,
+                    qrImageUrl: checkoutGpaySettings.qrImageUrl || '',
+                    upiId: checkoutGpaySettings.upiId || '',
+                    phoneNumber: checkoutGpaySettings.phoneNumber || '',
+                    payeeName: checkoutGpaySettings.payeeName || 'Mount Made',
+                    amount: totalAmount,
+                    expiresAt: Date.now() + 9 * 60 * 1000
+                };
+                sessionStorage.setItem('checkoutPendingPayment', JSON.stringify(paymentRedirect));
+                window.location.href = '/checkout-qr.html';
                 return;
             }
             try {
