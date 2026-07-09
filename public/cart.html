@@ -256,13 +256,34 @@
 
         function renderCartData(data) {
         const container = document.getElementById('cart-items');
-        if (!data || !data.cartItems || data.cartItems.length === 0) {
+            if (!data || !data.cartItems || data.cartItems.length === 0) {
             container.innerHTML = '<div class="card"><div class="card-content text-center"><p>Your cart is empty</p><a href="/products" class="btn btn-primary mt-2" data-continue-shopping>Start Shopping</a></div></div>';
             document.getElementById('cart-subtotal').textContent = '₹0.00';
             document.getElementById('cart-total').textContent = '₹0.00';
             updateCartShoppingLinks();
             return;
         }
+            // If the currently-displayed quantities and subtotals already match the
+            // incoming data, avoid re-rendering the whole DOM to prevent flicker.
+            try {
+                const allMatch = data.cartItems.every(item => {
+                    const itemEl = document.querySelector(`[data-cart-item-id="${item.id}"]`);
+                    if (!itemEl) return false;
+                    const input = itemEl.querySelector('input');
+                    const displayedQty = input ? parseInt(input.value, 10) : null;
+                    const subtotalEl = itemEl.querySelector('[data-item-subtotal]');
+                    const displayedSubtotal = subtotalEl ? parseFloat((subtotalEl.textContent || '').replace(/[^0-9.-]+/g, '')) : null;
+                    const itemSubtotal = Number(item.subtotal || item.price * item.quantity || 0);
+                    return (Number.isFinite(displayedQty) ? displayedQty : null) === Number(item.quantity) &&
+                           (Number.isFinite(displayedSubtotal) ? Math.round(displayedSubtotal*100) : null) === Math.round(itemSubtotal*100);
+                });
+                if (allMatch) {
+                    // Update totals from server response in case they changed
+                    document.getElementById('cart-subtotal').textContent = formatCurrency(data.total || 0);
+                    document.getElementById('cart-total').textContent = formatCurrency(data.total || 0);
+                    return;
+                }
+            } catch (e) { /* fall through to full render */ }
         const isWholesaleUser = !!(auth && typeof auth.isWholesale === 'function' && auth.isWholesale());
 
         container.innerHTML = data.cartItems.map(function(item) {
