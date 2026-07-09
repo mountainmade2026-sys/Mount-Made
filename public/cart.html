@@ -442,28 +442,25 @@
             if (!pendingCartRequests[itemId]) {
                 pendingCartRequests[itemId] = (async () => {
                     while (lastDesiredQty[itemId] != null) {
-                            const toSend = lastDesiredQty[itemId];
-                            lastDesiredQty[itemId] = null;
-                            const token = ++cartTokenCounter;
-                            lastSentToken[itemId] = token;
-                            try {
-                                const response = await cart.update(itemId, toSend);
-                                // Only apply server response if it's for the most recent sent token
-                                if (lastSentToken[itemId] === token) {
-                                    if (response && Array.isArray(response.cartItems)) {
-                                        renderCartData(response);
-                                    } else {
-                                        await loadCart();
-                                    }
+                        const toSend = lastDesiredQty[itemId];
+                        lastDesiredQty[itemId] = null;
+                        const token = ++cartTokenCounter;
+                        lastSentToken[itemId] = token;
+                        try {
+                            const response = await cart.update(itemId, toSend);
+                            // Only apply server response if it's for the most recent sent token
+                            if (lastSentToken[itemId] === token) {
+                                if (response && Array.isArray(response.cartItems)) {
+                                    reconcileCartData(response);
                                 } else {
-                                    // Ignore out-of-order response; newer request exists
-                                    // Do nothing - next loop iteration will send the latest
+                                    await loadCart();
                                 }
-                            } catch (e) {
-                                console.warn('Background cart update failed for', itemId, e);
-                                await loadCart();
                             }
+                        } catch (e) {
+                            console.warn('Background cart update failed for', itemId, e);
+                            await loadCart();
                         }
+                    }
                     delete pendingCartRequests[itemId];
                 })();
             }
@@ -508,7 +505,6 @@
             }
             q = Math.max(step, q);
         }
-
         // Optimistic update: adjust local display then schedule background sync
         updateLocalCartDisplay(itemId, q);
         lastDesiredQty[itemId] = q;
@@ -522,7 +518,7 @@
                     try {
                         const response = await cart.update(itemId, toSend);
                         if (lastSentToken[itemId] === token) {
-                            if (response && Array.isArray(response.cartItems)) renderCartData(response);
+                            if (response && Array.isArray(response.cartItems)) reconcileCartData(response);
                             else await loadCart();
                         }
                     } catch (e) {
@@ -566,6 +562,55 @@
                 window.location.href = '/login?redirect=/checkout';
             }, 1000);
         }
+    }
+
+    function reconcileCartData(response) {
+        // If response is missing expected structure, fallback to full render
+        if (!response || !Array.isArray(response.cartItems)) {
+            renderCartData(response);
+            return;
+        }
+
+        // Build a map of response items
+        const respMap = new Map(response.cartItems.map(i => [String(i.id), i]));
+        // Check if all current DOM items exist in response
+        const domItems = Array.from(document.querySelectorAll('[data-cart-item-id]'));
+        const domIds = domItems.map(el => String(el.dataset.cartItemId));
+        const respIds = response.cartItems.map(i => String(i.id));
+        // If set of ids differs, do a full render
+        if (domIds.length !== respIds.length || domIds.some(id => !respMap.has(id))) {
+            renderCartData(response);
+            return;
+        }
+
+        // Incrementally update each item's displayed qty and subtotal
+        domItems.forEach(el => {
+            const id = String(el.dataset.cartItemId);
+            const item = respMap.get(id);
+            if (!item) return;
+            const input = el.querySelector('input');
+            const subtotalEl = el.querySelector('[data-item-subtotal]');
+            const desiredQty = Number(item.quantity || 0);
+
+            // If input is focused (user interaction), don't override it immediately
+            if (input && document.activeElement !== input) {
+                const cur = parseInt(input.value || '0', 10);
+                if (cur !== desiredQty) input.value = desiredQty;
+            }
+
+            if (subtotalEl) {
+                const unit = parseFloat(el.dataset.unitPrice || '0') || 0;
+                const newSubtotal = unit * desiredQty;
+                const curSubtotal = parseFloat((subtotalEl.textContent || '').replace(/[^0-9.-]+/g, '')) || 0;
+                if (Math.round(curSubtotal*100) !== Math.round(newSubtotal*100)) {
+                    subtotalEl.textContent = formatCurrency(newSubtotal);
+                }
+            }
+        });
+
+        // Update totals
+        document.getElementById('cart-subtotal').textContent = formatCurrency(response.total || 0);
+        document.getElementById('cart-total').textContent = formatCurrency(response.total || 0);
     }
 
     (async function() {
