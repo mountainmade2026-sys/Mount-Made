@@ -413,6 +413,13 @@
             flex-wrap: nowrap;
         }
 
+        .checkout-qty-remove-wrap .checkout-item-unit-price {
+            white-space: nowrap;
+            flex: 0 0 auto;
+            font-size: 0.85rem;
+            align-self: flex-start;
+        }
+
         .checkout-remove-btn {
             flex: 0 0 auto;
             width: auto;
@@ -1453,8 +1460,8 @@
                                                onchange="changeCheckoutQuantity(${item.id}, 0, this)">
                                         <button type="button" class="checkout-qty-btn" aria-label="Increase quantity" onclick="event.preventDefault(); changeCheckoutQuantity(${item.id}, 1, document.getElementById('checkout-qty-${item.id}'))" ${item.quantity >= (item.stock_quantity || 0) ? 'disabled' : ''}>+</button>
                                     </div>
-                                    <span class="checkout-item-unit-price">× ${priceBlock}</span>
                                 </div>
+                                <span class="checkout-item-unit-price">× ${priceBlock}</span>
                                 <button type="button" class="btn btn-secondary btn-sm checkout-remove-btn" aria-label="Remove item" onclick="event.preventDefault(); removeCheckoutItem(${item.id})"><i class="fas fa-trash"></i> Remove</button>
                             </div>
                         </div>
@@ -1512,8 +1519,8 @@
                                                onchange="changeCheckoutQuantity(${item.id}, 0, this)">
                                         <button type="button" class="checkout-qty-btn" aria-label="Increase quantity" onclick="event.preventDefault(); changeCheckoutQuantity(${item.id}, 1, document.getElementById('checkout-qty-${item.id}'))" ${toNumber(item.quantity || item.qty || 1) >= (item.stock_quantity || 0) ? 'disabled' : ''}>+</button>
                                     </div>
-                                    <span class="checkout-item-unit-price">× ${priceBlock}</span>
                                 </div>
+                                <span class="checkout-item-unit-price">× ${priceBlock}</span>
                                 <button type="button" class="btn btn-secondary btn-sm checkout-remove-btn" aria-label="Remove item" onclick="event.preventDefault(); removeCheckoutItem(${item.id})"><i class="fas fa-trash"></i> Remove</button>
                             </div>
                         </div>
