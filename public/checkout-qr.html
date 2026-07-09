@@ -309,7 +309,7 @@
             const phone = String(payload.phoneNumber || '').trim();
 
             let recipient = rawValue;
-            if (/^https?:\/\//i.test(rawValue) || /^data:/i.test(rawValue)) {
+            if (/^https?:\/\//i.test(rawValue) || /^data:/i.test(rawValue) || /^file:\/\//i.test(rawValue) || /^[\/\\]/.test(rawValue) || rawValue.includes('/')) {
                 recipient = upiId || phone || '';
             }
             if (!recipient) recipient = upiId || phone || '';
