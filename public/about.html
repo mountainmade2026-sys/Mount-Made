@@ -395,73 +395,96 @@
 
                 applyAboutUsStyles(settings);
 
-                const aboutPageTitle = (settings.about_page_title || '').trim();
-                const aboutIntroTitle = (settings.about_intro_title || '').trim();
-                const missionVisionTitle = (settings.about_mission_vision_title || '').trim();
-                const description = (settings.about_us_description || '').trim();
+                const aboutPageTitle = (settings.about_page_title || '').trim() || 'About Us';
+                const aboutIntroTitle = (settings.about_intro_title || '').trim() || 'Welcome to Mount Made';
+                const missionVisionTitle = (settings.about_mission_vision_title || '').trim() || 'Our Mission & Vision';
+                const description = (settings.about_us_description || '').trim() || 'Discover Mount Made\'s story, values, and commitment to fresh, trustworthy grocery experiences.';
                 const descriptionShape = getBoxShape(settings.about_us_description_box_shape);
+
+                // Load all 5 paragraph blocks
                 const blocks = [1, 2, 3, 4, 5].map((idx) => ({
                     heading: String(settings[`about_us_heading_${idx}`] || '').trim(),
                     paragraph: String(settings[`about_us_paragraph_${idx}`] || '').trim(),
                     index: idx
                 })).filter((item) => item.paragraph);
 
-                if (pageTitleEl) {
-                    pageTitleEl.textContent = aboutPageTitle || 'About Us';
-                }
-                if (introTitleEl) {
-                    introTitleEl.textContent = aboutIntroTitle || 'Welcome to Mount Made';
-                }
-                if (missionVisionTitleEl) {
-                    missionVisionTitleEl.textContent = missionVisionTitle || 'Our Mission & Vision';
-                }
-                if (descEl) {
-                    descEl.textContent = description || '';
-                }
+                // Update page title and header
+                if (pageTitleEl) pageTitleEl.textContent = aboutPageTitle;
+                if (descEl) descEl.textContent = description;
 
-                if (!introTitleEl || !introSubtitleEl || !introContentEl) return;
+                // Update intro section
+                if (introTitleEl) introTitleEl.textContent = aboutIntroTitle;
+                if (introSubtitleEl) introSubtitleEl.textContent = description;
 
-                const introBlock = blocks[0] || { heading: '', paragraph: '' };
-                const cards = blocks.slice(1);
-
-                introTitleEl.textContent = aboutIntroTitle || introBlock.heading || '';
-                introSubtitleEl.textContent = description || '';
-
-                const introParagraph = (introBlock.paragraph || '').trim();
-                introContentEl.style.border = '1px solid rgba(34, 197, 94, 0.18)';
-                introContentEl.style.borderRadius = boxRadiusFor(descriptionShape);
-                introContentEl.style.background = 'linear-gradient(180deg, #ffffff, #f7fff9)';
-                introContentEl.style.padding = '0.9rem 1rem';
-                introContentEl.style.boxShadow = '0 8px 18px rgba(15, 23, 42, 0.06)';
-                introContentEl.innerHTML = introParagraph
-                    ? renderBlock(introParagraph)
-                    : (description ? `<p>${escapeHtml(description)}</p>` : '');
-
-                if (!gridEl) {
-                    return;
+                // Render intro content box with the description
+                if (introContentEl) {
+                    introContentEl.style.border = '1px solid rgba(34, 197, 94, 0.18)';
+                    introContentEl.style.borderRadius = boxRadiusFor(descriptionShape);
+                    introContentEl.style.background = 'linear-gradient(180deg, #ffffff, #f7fff9)';
+                    introContentEl.style.padding = '0.9rem 1rem';
+                    introContentEl.style.boxShadow = '0 8px 18px rgba(15, 23, 42, 0.06)';
+                    introContentEl.innerHTML = description 
+                        ? renderBlock(description)
+                        : '<p>Mount Made brings premium, carefully sourced groceries and household staples to your doorstep with a simple, reliable experience.</p>';
                 }
 
-                if (cards.length === 0) {
-                    gridEl.innerHTML = '';
-                    return;
-                }
+                // Update mission & vision title
+                if (missionVisionTitleEl) missionVisionTitleEl.textContent = missionVisionTitle;
 
-                gridEl.innerHTML = cards
-                    .map((block) => {
-                        const shape = getBoxShape(settings[`about_us_paragraph_${block.index}_box_shape`]);
-                        return `
-                            <article class="about-card" style="border-radius:${boxRadiusFor(shape)};">
-                                <h3 class="about-card-title">${escapeHtml(block.heading || `Section ${block.index}`)}</h3>
-                                ${renderBlock(block.paragraph)}
+                // Render grid cards
+                if (gridEl) {
+                    if (blocks.length === 0) {
+                        // Show default placeholder cards when no content exists
+                        gridEl.innerHTML = `
+                            <article class="about-card">
+                                <h3 class="about-card-title">Quality & Sourcing</h3>
+                                <p>We carefully select each product to ensure premium quality and freshness for our customers.</p>
+                            </article>
+                            <article class="about-card">
+                                <h3 class="about-card-title">Reliability & Trust</h3>
+                                <p>Your trust is our foundation. We maintain transparent practices and honest communication.</p>
+                            </article>
+                            <article class="about-card">
+                                <h3 class="about-card-title">Convenience & Support</h3>
+                                <p>Easy ordering, fast delivery, and dedicated customer support for your everyday needs.</p>
                             </article>
                         `;
-                    })
-                    .join('');
+                    } else {
+                        gridEl.innerHTML = blocks
+                            .map((block) => {
+                                const shape = getBoxShape(settings[`about_us_paragraph_${block.index}_box_shape`]);
+                                return `
+                                    <article class="about-card" style="border-radius:${boxRadiusFor(shape)};">
+                                        <h3 class="about-card-title">${escapeHtml(block.heading || `Section ${block.index}`)}</h3>
+                                        ${renderBlock(block.paragraph)}
+                                    </article>
+                                `;
+                            })
+                            .join('');
+                    }
+                }
 
             } catch (error) {
                 console.error('Failed to load About Us content:', error);
                 if (descEl) {
-                    descEl.textContent = 'Unable to load About Us content right now.';
+                    descEl.textContent = 'Discover Mount Made\'s story, values, and commitment to fresh, trustworthy grocery experiences.';
+                }
+                // Render default placeholder cards on error
+                if (gridEl) {
+                    gridEl.innerHTML = `
+                        <article class="about-card">
+                            <h3 class="about-card-title">Quality & Sourcing</h3>
+                            <p>We carefully select each product to ensure premium quality and freshness for our customers.</p>
+                        </article>
+                        <article class="about-card">
+                            <h3 class="about-card-title">Reliability & Trust</h3>
+                            <p>Your trust is our foundation. We maintain transparent practices and honest communication.</p>
+                        </article>
+                        <article class="about-card">
+                            <h3 class="about-card-title">Convenience & Support</h3>
+                            <p>Easy ordering, fast delivery, and dedicated customer support for your everyday needs.</p>
+                        </article>
+                    `;
                 }
             }
         }
