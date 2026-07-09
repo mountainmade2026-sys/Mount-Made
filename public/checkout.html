@@ -398,6 +398,13 @@
             line-height: 1.4;
         }
 
+        .checkout-remove-btn {
+            flex: 0 0 auto;
+            white-space: nowrap;
+            order: 2;
+            margin-left: auto;
+        }
+
         .checkout-item-weight {
             flex: 0 0 100%;
             font-size: 0.82rem;
@@ -408,8 +415,10 @@
             display: flex;
             align-items: center;
             gap: 0.35rem;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
             min-width: 0;
+            flex: 0 0 auto;
+            order: 1;
         }
 
         .checkout-item-qty-label {
@@ -530,6 +539,8 @@
 
         .checkout-item-unit-price {
             white-space: nowrap;
+            flex: 0 0 auto;
+            order: 3;
         }
 
         .checkout-item-price {
@@ -1480,7 +1491,7 @@
                                     <button type="button" class="checkout-qty-btn" aria-label="Increase quantity" onclick="event.preventDefault(); changeCheckoutQuantity(${item.id}, 1, document.getElementById('checkout-qty-${item.id}'))" ${toNumber(item.quantity || item.qty || 1) >= (item.stock_quantity || 0) ? 'disabled' : ''}>+</button>
                                 </div>
                             </div>
-                            <button type="button" class="btn btn-secondary btn-sm" style="margin-left: auto;" aria-label="Remove item" onclick="event.preventDefault(); removeCheckoutItem(${item.id})"><i class="fas fa-trash"></i> Remove</button>
+                            <button type="button" class="btn btn-secondary btn-sm checkout-remove-btn" aria-label="Remove item" onclick="event.preventDefault(); removeCheckoutItem(${item.id})"><i class="fas fa-trash"></i> Remove</button>
                             <span class="checkout-item-unit-price">× ${priceBlock}</span>
                         </div>
                     </div>
