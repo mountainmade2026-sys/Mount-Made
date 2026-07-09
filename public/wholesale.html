@@ -1727,6 +1727,15 @@
         });
 
         // Verify wholesale access
+        function escapeHtml(str) {
+            return String(str || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
         const wholesaleCatalogState = {
             allProducts: [],
             categories: [],
@@ -1870,7 +1879,7 @@
 
             try {
                 const data = await api.get('/orders');
-                const orders = data.orders || [];
+                const orders = data && data.orders ? data.orders : [];
 
                 if (!orders.length) {
                     container.innerHTML = `
@@ -1886,28 +1895,32 @@
                 }
 
                 container.innerHTML = orders.map(order => {
+                    if (!order) return '';
                     const canCancel = order.status === 'pending' || order.status === 'processing';
                     return `
                     <div class="ws-order-card">
                         <div class="ws-order-head">
                             <div>
-                                <div class="ws-order-id">Order #${order.order_number}</div>
+                                <div class="ws-order-id">Order #${order.order_number || order.id}</div>
                                 <div class="ws-order-date">${formatDate(order.created_at)}</div>
                             </div>
                             <div class="ws-order-head-right">
                                 <span class="${getWholesaleOrderStatusClass(order.status)}">${getWholesaleOrderStatusText(order.status)}</span>
-                                <span class="ws-order-total">${formatCurrency(order.total_amount)}</span>
+                                <span class="ws-order-total">${formatCurrency(order.total_amount || 0)}</span>
                             </div>
                         </div>
                         <div class="ws-order-body">
                             <div class="ws-order-items">
-                                ${(order.items || []).map(item => `
+                                ${(order.items || []).map(item => {
+                                    if (!item) return '';
+                                    return `
                                     <div class="ws-order-item">
-                                        <span class="ws-order-item-name">${item.product_name}</span>
-                                        <span class="ws-order-item-qty">× ${item.quantity}</span>
-                                        <span class="ws-order-item-price">${formatCurrency(item.subtotal)}</span>
+                                        <span class="ws-order-item-name">${escapeHtml(item.product_name || 'Unknown Product')}</span>
+                                        <span class="ws-order-item-qty">× ${item.quantity || 1}</span>
+                                        <span class="ws-order-item-price">${formatCurrency(item.subtotal || 0)}</span>
                                     </div>
-                                `).join('')}
+                                `;
+                                }).join('')}
                             </div>
                         </div>
                         ${canCancel ? `
@@ -1937,7 +1950,7 @@
                 wholesaleOrdersLoaded = true;
             } catch (error) {
                 console.error('Failed to load wholesale orders:', error);
-                container.innerHTML = '<div class="ws-order-card" style="padding:2rem;text-align:center;color:#64748b;">Failed to load orders. Please refresh and try again.</div>';
+                container.innerHTML = '<div class="ws-order-card" style="padding:2rem;text-align:center;color:#64748b;"><i class="fas fa-exclamation-circle" style="font-size:2rem;margin-bottom:1rem;display:block;color:#f59e0b;"></i>Failed to load orders. Please refresh and try again.</div>';
             }
         }
 
@@ -2131,14 +2144,18 @@
                     api.get('/products/categories')
                 ]);
 
-                wholesaleCatalogState.allProducts = productsResponse.products || [];
-                wholesaleCatalogState.categories = categoriesResponse.categories || [];
+                // Filter for active products only
+                wholesaleCatalogState.allProducts = (productsResponse && productsResponse.products) 
+                    ? productsResponse.products.filter(p => p.is_active !== false)
+                    : [];
+                    
+                wholesaleCatalogState.categories = (categoriesResponse && categoriesResponse.categories) ? categoriesResponse.categories : [];
 
                 const categorySelect = document.getElementById('wholesale-category');
                 if (categorySelect) {
                     categorySelect.innerHTML = '<option value="">All Categories</option>' +
                         wholesaleCatalogState.categories
-                            .map(category => `<option value="${category.id}">${category.name}</option>`)
+                            .map(category => `<option value="${category.id}">${escapeHtml(category.name)}</option>`)
                             .join('');
                 }
 
@@ -2147,7 +2164,7 @@
                 console.error('Failed to load wholesale catalog:', error);
                 const container = document.getElementById('wholesale-catalog-results');
                 if (container) {
-                    container.innerHTML = '<div class="wholesale-catalog-empty"><p>Failed to load wholesale catalog. Please refresh and try again.</p></div>';
+                    container.innerHTML = '<div class="wholesale-catalog-empty"><i class="fas fa-exclamation-circle"></i><p>Failed to load wholesale catalog. Please refresh and try again.</p></div>';
                 }
             }
         }
@@ -2171,7 +2188,9 @@
                     return false;
                 }
 
-                if (!auth.isWholesale()) {
+                // Check if user is wholesale AND approved
+                if (user.role !== 'wholesale' || !user.is_approved) {
+                    console.warn('User is not approved wholesale:', { role: user.role, is_approved: user.is_approved });
                     showWholesaleGuard();
                     return false;
                 }
@@ -2179,12 +2198,32 @@
                 // Update UI to show user menu and cart
                 auth.updateUI();
                 auth.updateNavigationLinks();
-                await cart.fetch();
+                
+                // Fetch cart and delivery addresses
+                try {
+                    await cart.fetch();
+                    await auth.fetchPrimaryDeliveryAddress(true);
+                } catch (cartErr) {
+                    console.error('Failed to fetch cart/addresses:', cartErr);
+                }
 
                 // Update welcome message with user name
                 const welcomeMsg = document.getElementById('welcome-message');
                 if (welcomeMsg && user.full_name) {
                     welcomeMsg.textContent = `Welcome back, ${user.full_name}. Manage your bulk orders and access exclusive wholesale pricing.`;
+                }
+
+                // Update delivery card visibility
+                const deliveryCard = document.getElementById('wholesale-deliver-card');
+                const deliveryAddress = auth._deliveryAddressCache;
+                if (deliveryCard) {
+                    if (deliveryAddress && deliveryAddress.address_line1) {
+                        document.getElementById('wholesale-deliver-value').textContent = 
+                            `${deliveryAddress.address_line1}, ${deliveryAddress.city}, ${deliveryAddress.state} ${deliveryAddress.postal_code}`;
+                        deliveryCard.classList.remove('hidden');
+                    } else {
+                        deliveryCard.classList.add('hidden');
+                    }
                 }
 
                 return true;
@@ -2209,7 +2248,7 @@
         async function loadStats() {
             try {
                 const ordersData = await api.get('/orders');
-                const orders = ordersData.orders || [];
+                const orders = ordersData && ordersData.orders ? ordersData.orders : [];
                 
                 const totalOrders = orders.length;
                 const pendingOrders = orders.filter(o => o.status === 'pending' || o.status === 'processing').length;
@@ -2221,14 +2260,30 @@
                     .filter(o => new Date(o.created_at) >= monthStart)
                     .reduce((sum, o) => sum + parseFloat(o.total_amount || 0), 0);
 
-                document.getElementById('total-orders').textContent = totalOrders;
-                document.getElementById('pending-orders').textContent = pendingOrders;
-                document.getElementById('month-total').textContent = formatCurrency(monthTotal);
+                const totalOrdersEl = document.getElementById('total-orders');
+                const pendingOrdersEl = document.getElementById('pending-orders');
+                const monthTotalEl = document.getElementById('month-total');
+                
+                if (totalOrdersEl) totalOrdersEl.textContent = totalOrders;
+                if (pendingOrdersEl) pendingOrdersEl.textContent = pendingOrders;
+                if (monthTotalEl) monthTotalEl.textContent = formatCurrency(monthTotal);
 
-                const productsData = await api.get('/products');
-                document.getElementById('product-count').textContent = (productsData.products || []).length;
+                try {
+                    const productsData = await api.get('/products');
+                    const productCountEl = document.getElementById('product-count');
+                    if (productCountEl) {
+                        productCountEl.textContent = (productsData && productsData.products) ? productsData.products.length : 0;
+                    }
+                } catch (err) {
+                    console.error('Failed to load product count:', err);
+                }
             } catch (error) {
                 console.error('Failed to load stats:', error);
+                // Set defaults if error
+                document.getElementById('total-orders').textContent = '0';
+                document.getElementById('pending-orders').textContent = '0';
+                document.getElementById('month-total').textContent = '₹0';
+                document.getElementById('product-count').textContent = '0';
             }
         }
 
@@ -2237,7 +2292,7 @@
             const hasAccess = await checkWholesaleAccess();
             if (!hasAccess) return;
 
-            loadStats();
+            await loadStats();
             await loadWholesaleCatalog();
             initializeWholesaleViewRouting();
 
