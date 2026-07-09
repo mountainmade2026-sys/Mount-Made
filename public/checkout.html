@@ -139,7 +139,6 @@
                                 <div id="cod-pincode-display" style="font-size: 1rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.4rem;">—</div>
                                 <div id="cod-pincode-status"></div>
                             </div>
-                            <div class="form-help" id="gpay-prefill-hint">Prefilled from your Billing Management details.</div>
                         </div>
 
                     </div>
@@ -2052,7 +2051,7 @@
             const color = availability.is_serviceable ? '#22c55e' : '#ef4444';
             const icon = availability.is_serviceable ? 'check-circle' : 'times-circle';
             let html = `<span style="color: ${color}; font-size: 0.85rem;"><i class="fas fa-${icon}"></i> ${escapeHtml(availability.message)}</span>`;
-            if (!availability.is_serviceable) {
+            if (!availability.is_serviceable && availability.pin) {
                 html += '<div style="margin-top: 0.35rem; font-size: 0.85rem; color: #1d4ed8;">For delivery info, <a href="/contact" style="color: #1d4ed8; text-decoration: underline;">click here</a>.</div>';
             }
             return html;
@@ -2119,9 +2118,7 @@
 
             const availability = await fetchPincodeAvailability(normalizedPincode);
             const available = availability.is_serviceable;
-            const color = available ? '#22c55e' : '#ef4444';
-            const icon = available ? 'check-circle' : 'times-circle';
-            statusEl.innerHTML = `<span style="color: ${color}; font-size: 0.85rem;"><i class="fas fa-${icon}"></i> ${escapeHtml(availability.message)}</span>`;
+            statusEl.innerHTML = renderPincodeAvailabilityStatus(availability);
 
             return available;
         }
