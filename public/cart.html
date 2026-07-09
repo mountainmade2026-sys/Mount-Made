@@ -750,24 +750,28 @@
         const btn = e.target.closest('.qty-decrease-btn, .qty-increase-btn');
         if (!btn) return;
 
+        e.preventDefault();
+        e.stopPropagation();
+
         const itemId = parseInt(btn.dataset.itemId, 10);
         const isIncrease = btn.classList.contains('qty-increase-btn');
         const itemEl = document.querySelector(`[data-cart-item-id="${itemId}"]`);
         if (!itemEl) return;
 
         const input = itemEl.querySelector('.qty-input-professional');
-        const minQtyText = input?.getAttribute('min') || '1';
-        const maxQtyText = input?.getAttribute('max') || 'Infinity';
-        const stepText = input?.getAttribute('step') || '1';
-        
+        if (!input) return;
+
+        const minQtyText = input.getAttribute('min') || '1';
+        const maxQtyText = input.getAttribute('max') || 'Infinity';
+        const stepText = input.getAttribute('step') || '1';
+
         const minQty = parseInt(minQtyText, 10) || 1;
         const maxQty = maxQtyText === 'Infinity' ? Infinity : parseInt(maxQtyText, 10);
         const step = parseInt(stepText, 10) || 1;
-        
-        const currentQty = parseInt(input?.value || '1', 10);
-        const newQty = isIncrease ? currentQty + step : currentQty - step;
-        
-        await changeCartQuantity(itemId, 0, minQty, maxQty, { value: String(newQty) });
+        const currentQty = parseInt(input.value || '1', 10);
+        const nextQty = isIncrease ? currentQty + step : currentQty - step;
+
+        await changeCartQuantity(itemId, isIncrease ? step : -step, minQty, maxQty, input);
     }
 
     // Handle professional quantity input changes
