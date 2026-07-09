@@ -14,10 +14,11 @@ if (!process.env.DB_PASSWORD && !hasDatabaseUrl && process.env.NODE_ENV !== 'dev
 const dbName = process.env.DB_NAME || 'mountain_made';
 
 // Create pool config for the target database
+const poolMaxConnections = parseInt(process.env.DB_POOL_MAX || '30', 10);
 const poolConfig = hasDatabaseUrl
   ? {
       connectionString: DATABASE_URL,
-      max: 20,
+      max: poolMaxConnections,
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 10000,
     }
@@ -26,7 +27,7 @@ const poolConfig = hasDatabaseUrl
       port: process.env.DB_PORT || 5432,
       user: process.env.DB_USER || 'postgres',
       database: dbName,
-      max: 20,
+      max: poolMaxConnections,
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 10000,
     };
