@@ -400,17 +400,22 @@
 
         .checkout-qty-remove-wrap {
             display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.4rem;
+            flex: 0 0 auto;
+        }
+
+        .checkout-qty-controls {
+            display: flex;
             align-items: center;
             gap: 0.25rem;
-            flex: 1 1 100%;
             flex-wrap: nowrap;
-            width: 100%;
-            justify-content: space-between;
         }
 
         .checkout-remove-btn {
-            flex: 0 0 28px;
-            width: 28px;
+            flex: 0 0 100%;
+            width: 100%;
             height: 28px;
             padding: 0 !important;
             display: inline-flex;
@@ -421,9 +426,9 @@
             color: #d14343 !important;
             border: 1px solid #d14343 !important;
             cursor: pointer;
-            font-size: 0.85rem !important;
-            min-width: unset !important;
-            min-height: unset !important;
+            font-size: 0.75rem !important;
+            white-space: nowrap;
+            font-weight: 500;
         }
 
         .checkout-remove-btn:hover {
@@ -1435,20 +1440,22 @@
                                 return weightLabel ? `<div class="checkout-item-weight">Size: ${escapeHtml(weightLabel)}</div>` : '';
                             })()}
                             <div class="checkout-qty-remove-wrap">
-                                <label for="checkout-qty-${item.id}" class="checkout-item-qty-label">Qty</label>
-                                <div class="checkout-qty-group">
-                                    <button type="button" class="checkout-qty-btn" aria-label="Decrease quantity" onclick="event.preventDefault(); changeCheckoutQuantity(${item.id}, -1, document.getElementById('checkout-qty-${item.id}'))">−</button>
-                                    <input type="text" inputmode="numeric" class="checkout-qty-input"
-                                           id="checkout-qty-${item.id}"
-                                           value="${item.quantity}"
-                                           min="1"
-                                           max="${item.stock_quantity || ''}"
-                                           oninput="changeCheckoutQuantity(${item.id}, 0, this)"
-                                           onchange="changeCheckoutQuantity(${item.id}, 0, this)">
-                                    <button type="button" class="checkout-qty-btn" aria-label="Increase quantity" onclick="event.preventDefault(); changeCheckoutQuantity(${item.id}, 1, document.getElementById('checkout-qty-${item.id}'))" ${item.quantity >= (item.stock_quantity || 0) ? 'disabled' : ''}>+</button>
+                                <div class="checkout-qty-controls">
+                                    <label for="checkout-qty-${item.id}" class="checkout-item-qty-label">Qty</label>
+                                    <div class="checkout-qty-group">
+                                        <button type="button" class="checkout-qty-btn" aria-label="Decrease quantity" onclick="event.preventDefault(); changeCheckoutQuantity(${item.id}, -1, document.getElementById('checkout-qty-${item.id}'))">−</button>
+                                        <input type="text" inputmode="numeric" class="checkout-qty-input"
+                                               id="checkout-qty-${item.id}"
+                                               value="${item.quantity}"
+                                               min="1"
+                                               max="${item.stock_quantity || ''}"
+                                               oninput="changeCheckoutQuantity(${item.id}, 0, this)"
+                                               onchange="changeCheckoutQuantity(${item.id}, 0, this)">
+                                        <button type="button" class="checkout-qty-btn" aria-label="Increase quantity" onclick="event.preventDefault(); changeCheckoutQuantity(${item.id}, 1, document.getElementById('checkout-qty-${item.id}'))" ${item.quantity >= (item.stock_quantity || 0) ? 'disabled' : ''}>+</button>
+                                    </div>
+                                    <span class="checkout-item-unit-price">× ${priceBlock}</span>
                                 </div>
-                                <span class="checkout-item-unit-price">× ${priceBlock}</span>
-                                <button type="button" class="btn btn-secondary btn-sm checkout-remove-btn" aria-label="Remove item" onclick="event.preventDefault(); removeCheckoutItem(${item.id})"><i class="fas fa-trash"></i></button>
+                                <button type="button" class="btn btn-secondary btn-sm checkout-remove-btn" aria-label="Remove item" onclick="event.preventDefault(); removeCheckoutItem(${item.id})"><i class="fas fa-trash"></i> Remove</button>
                             </div>
                         </div>
                     </div>
@@ -1492,20 +1499,22 @@
                                 return weightLabel ? `<div class="checkout-item-weight">Size: ${escapeHtml(weightLabel)}</div>` : '';
                             })()}
                             <div class="checkout-qty-remove-wrap">
-                                <label for="checkout-qty-${item.id}" class="checkout-item-qty-label">Qty</label>
-                                <div class="checkout-qty-group">
-                                    <button type="button" class="checkout-qty-btn" aria-label="Decrease quantity" onclick="event.preventDefault(); changeCheckoutQuantity(${item.id}, -1, document.getElementById('checkout-qty-${item.id}'))">−</button>
-                                    <input type="text" inputmode="numeric" class="checkout-qty-input"
-                                           id="checkout-qty-${item.id}"
-                                           value="${toNumber(item.quantity || item.qty || 1)}"
-                                           min="1"
-                                           max="${item.stock_quantity || ''}"
-                                           oninput="changeCheckoutQuantity(${item.id}, 0, this)"
-                                           onchange="changeCheckoutQuantity(${item.id}, 0, this)">
-                                    <button type="button" class="checkout-qty-btn" aria-label="Increase quantity" onclick="event.preventDefault(); changeCheckoutQuantity(${item.id}, 1, document.getElementById('checkout-qty-${item.id}'))" ${toNumber(item.quantity || item.qty || 1) >= (item.stock_quantity || 0) ? 'disabled' : ''}>+</button>
+                                <div class="checkout-qty-controls">
+                                    <label for="checkout-qty-${item.id}" class="checkout-item-qty-label">Qty</label>
+                                    <div class="checkout-qty-group">
+                                        <button type="button" class="checkout-qty-btn" aria-label="Decrease quantity" onclick="event.preventDefault(); changeCheckoutQuantity(${item.id}, -1, document.getElementById('checkout-qty-${item.id}'))">−</button>
+                                        <input type="text" inputmode="numeric" class="checkout-qty-input"
+                                               id="checkout-qty-${item.id}"
+                                               value="${toNumber(item.quantity || item.qty || 1)}"
+                                               min="1"
+                                               max="${item.stock_quantity || ''}"
+                                               oninput="changeCheckoutQuantity(${item.id}, 0, this)"
+                                               onchange="changeCheckoutQuantity(${item.id}, 0, this)">
+                                        <button type="button" class="checkout-qty-btn" aria-label="Increase quantity" onclick="event.preventDefault(); changeCheckoutQuantity(${item.id}, 1, document.getElementById('checkout-qty-${item.id}'))" ${toNumber(item.quantity || item.qty || 1) >= (item.stock_quantity || 0) ? 'disabled' : ''}>+</button>
+                                    </div>
+                                    <span class="checkout-item-unit-price">× ${priceBlock}</span>
                                 </div>
-                                <span class="checkout-item-unit-price">× ${priceBlock}</span>
-                                <button type="button" class="btn btn-secondary btn-sm checkout-remove-btn" aria-label="Remove item" onclick="event.preventDefault(); removeCheckoutItem(${item.id})"><i class="fas fa-trash"></i></button>
+                                <button type="button" class="btn btn-secondary btn-sm checkout-remove-btn" aria-label="Remove item" onclick="event.preventDefault(); removeCheckoutItem(${item.id})"><i class="fas fa-trash"></i> Remove</button>
                             </div>
                         </div>
                     </div>
