@@ -385,149 +385,59 @@
     }
 
     async function changeCartQuantity(itemId, delta, minQty = 1, maxQty = Infinity, inputEl) {
-        if (cartQuantityLock || !inputEl) return;
-
-        cartQuantityLock = true;
+        // Use checkout-style behavior: immediate UI update, then await server.
+        if (!inputEl) return;
         const input = inputEl;
-
         try {
             const step = parseStep(minQty);
-
-            let q;
-            if (input && typeof input === 'object' && 'value' in input) {
-                q = parseInt(input.value, 10);
-                if (!Number.isFinite(q) || q <= 0) {
-                    q = step;
-                }
-                if (delta !== 0) {
-                    q += delta;
-                }
-            } else {
-                q = parseInt(input, 10);
-                if (!Number.isFinite(q) || q <= 0) {
-                    q = step;
-                }
-            }
-
-            if (!Number.isFinite(q) || q <= 0) q = step;
-            q = Math.max(step, q);
-
+            let cur = parseInt(input.value, 10);
+            if (!Number.isFinite(cur) || cur <= 0) cur = step;
+            const nextQty = delta === 0 ? cur : cur + delta;
+            let q = Math.max(step, nextQty);
             const maxParsed = parseInt(maxQty, 10);
-            const hasMax = Number.isFinite(maxParsed) && maxParsed > 0;
-            if (hasMax) q = Math.min(q, maxParsed);
+            if (Number.isFinite(maxParsed) && maxParsed > 0) q = Math.min(q, maxParsed);
 
-            if (hasMax && maxParsed < step) {
-                // Fall back to server-side value
-                cart.update(itemId, maxParsed).then(response => {
-                    if (response && Array.isArray(response.cartItems)) renderCartData(response);
-                    else loadCart();
-                }).catch(() => loadCart());
-                return;
-            }
-
-            if (step > 1) {
-                q = Math.ceil(q / step) * step;
-                if (hasMax && q > maxParsed) q = Math.floor(maxParsed / step) * step;
-                q = Math.max(step, q);
-            }
-
-            // Optimistically update UI
-            if (input && typeof input.disabled === 'boolean') input.disabled = true;
-            if (input && 'value' in input) input.value = q;
+            // Update input and UI immediately
+            input.value = String(q);
             updateLocalCartDisplay(itemId, q);
 
-            // Coalesce rapid updates per item: store latest desired qty and ensure
-            // only one background worker processes updates for this item.
-            lastDesiredQty[itemId] = q;
-            if (!pendingCartRequests[itemId]) {
-                pendingCartRequests[itemId] = (async () => {
-                    while (lastDesiredQty[itemId] != null) {
-                        const toSend = lastDesiredQty[itemId];
-                        lastDesiredQty[itemId] = null;
-                        const token = ++cartTokenCounter;
-                        lastSentToken[itemId] = token;
-                        try {
-                            const response = await cart.update(itemId, toSend);
-                            // Only apply server response if it's for the most recent sent token
-                            if (lastSentToken[itemId] === token) {
-                                if (response && Array.isArray(response.cartItems)) {
-                                    reconcileCartData(response);
-                                } else {
-                                    await loadCart();
-                                }
-                            }
-                        } catch (e) {
-                            console.warn('Background cart update failed for', itemId, e);
-                            await loadCart();
-                        }
-                    }
-                    delete pendingCartRequests[itemId];
-                })();
+            // Persist to server and refresh from server response
+            try {
+                const response = await cart.update(itemId, q);
+                if (response && Array.isArray(response.cartItems)) renderCartData(response);
+                else await loadCart();
+            } catch (err) {
+                console.error('Failed to update cart quantity:', err);
+                await loadCart();
             }
-
-            // allow immediate further interaction; worker will reconcile
-            if (input && typeof input.disabled === 'boolean') input.disabled = false;
-            cartQuantityLock = false;
         } catch (err) {
             console.warn('changeCartQuantity error:', err);
-            if (input && typeof input.disabled === 'boolean') input.disabled = false;
-            cartQuantityLock = false;
-            // Fallback: reload cart
             await loadCart();
         }
     }
 
     async function updateQuantity(itemId, quantity, minQty = 1, maxQty = Infinity) {
+        // Mirror checkout's updateCheckoutQuantity: optimistic UI update, then await server.
         const parsedMin = parseInt(minQty, 10);
         const step = Number.isFinite(parsedMin) && parsedMin > 0 ? parsedMin : 1;
 
         let q = parseInt(quantity, 10);
         if (!Number.isFinite(q) || q <= 0) q = step;
-
         q = Math.max(step, q);
 
         const maxParsed = parseInt(maxQty, 10);
-        const hasMax = Number.isFinite(maxParsed) && maxParsed > 0;
-        if (hasMax) {
-            q = Math.min(q, maxParsed);
-        }
+        if (Number.isFinite(maxParsed) && maxParsed > 0) q = Math.min(q, maxParsed);
 
-        if (hasMax && maxParsed < step) {
-            await cart.update(itemId, maxParsed);
-            loadCart();
-            return;
-        }
-
-        if (step > 1) {
-            q = Math.ceil(q / step) * step;
-            if (hasMax && q > maxParsed) {
-                q = Math.floor(maxParsed / step) * step;
-            }
-            q = Math.max(step, q);
-        }
-        // Optimistic update: adjust local display then schedule background sync
+        // Update UI immediately
         updateLocalCartDisplay(itemId, q);
-        lastDesiredQty[itemId] = q;
-        if (!pendingCartRequests[itemId]) {
-            pendingCartRequests[itemId] = (async () => {
-                while (lastDesiredQty[itemId] != null) {
-                    const toSend = lastDesiredQty[itemId];
-                    lastDesiredQty[itemId] = null;
-                    const token = ++cartTokenCounter;
-                    lastSentToken[itemId] = token;
-                    try {
-                        const response = await cart.update(itemId, toSend);
-                        if (lastSentToken[itemId] === token) {
-                            if (response && Array.isArray(response.cartItems)) reconcileCartData(response);
-                            else await loadCart();
-                        }
-                    } catch (e) {
-                        console.warn('Background cart update failed for', itemId, e);
-                        await loadCart();
-                    }
-                }
-                delete pendingCartRequests[itemId];
-            })();
+
+        try {
+            const response = await cart.update(itemId, q);
+            if (response && Array.isArray(response.cartItems)) renderCartData(response);
+            else await loadCart();
+        } catch (err) {
+            console.error('Failed to update quantity:', err);
+            await loadCart();
         }
     }
 
