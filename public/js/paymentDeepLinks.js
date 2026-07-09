@@ -110,10 +110,12 @@
     if (!link) return false;
 
     const ua = global.navigator?.userAgent || '';
-    const tryBrowserOpen = () => {
+    const activeLink = String(link || '').trim();
+
+    const tryExternalOpen = (targetUrl) => {
       try {
         if (global.Capacitor?.Plugins?.Browser?.open) {
-          global.Capacitor.Plugins.Browser.open({ url: link, presentationStyle: 'popover' });
+          global.Capacitor.Plugins.Browser.open({ url: targetUrl, presentationStyle: 'popover' });
           return true;
         }
       } catch (e) {
@@ -121,45 +123,43 @@
       }
 
       try {
-        if (global.open(link, '_blank', 'noopener,noreferrer')) return true;
+        const popup = global.open(targetUrl, '_system', 'noopener,noreferrer');
+        if (popup) return true;
       } catch (e) {
         // ignore
       }
 
       try {
-        global.location.href = link;
+        const anchor = global.document.createElement('a');
+        anchor.href = targetUrl;
+        anchor.target = '_system';
+        anchor.rel = 'noopener noreferrer';
+        anchor.style.display = 'none';
+        global.document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        return true;
+      } catch (e) {
+        // ignore
+      }
+
+      try {
+        global.location.href = targetUrl;
         return true;
       } catch (e) {
         return false;
       }
     };
 
-    if (/Android/i.test(ua)) {
-      const intentUrl = buildAndroidIntentUrl(link, provider);
-      try {
-        global.location.href = intentUrl;
-        return true;
-      } catch (e) {
-        // fall through
-      }
-
-      try {
-        if (global.open(intentUrl, '_blank', 'noopener,noreferrer')) return true;
-      } catch (e) {
-        // fall through
+    if (/Android/i.test(ua) || isCapacitorNative()) {
+      const intentUrl = buildAndroidIntentUrl(activeLink, provider);
+      if (intentUrl) {
+        const intentOpened = tryExternalOpen(intentUrl);
+        if (intentOpened) return true;
       }
     }
 
-    if (isCapacitorNative()) {
-      return tryBrowserOpen();
-    }
-
-    try {
-      global.location.href = link;
-      return true;
-    } catch (e) {
-      return tryBrowserOpen();
-    }
+    return tryExternalOpen(activeLink);
   }
 
   const api = {

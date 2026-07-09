@@ -186,6 +186,7 @@
                 <div class="qr-countdown" id="qr-countdown">Time remaining: 09:00</div>
 
                 <div class="button-row">
+                    <button type="button" class="btn btn-primary" id="qr-open-app-button"><i class="fas fa-external-link-alt"></i> Open payment app</button>
                     <button type="button" class="btn btn-secondary" id="qr-cancel-button"><i class="fas fa-times"></i> Cancel payment</button>
                 </div>
 
@@ -315,14 +316,23 @@
                 setTimeout(() => {
                     try {
                         container.style.cursor = 'pointer';
-                        container.addEventListener('click', () => openUpiLink(upiLink));
-                        container.addEventListener('touchend', () => openUpiLink(upiLink));
+                        const triggerOpen = (event) => {
+                            if (event) {
+                                event.preventDefault();
+                                event.stopPropagation();
+                            }
+                            openUpiLink(upiLink);
+                        };
+                        ['click', 'touchend', 'pointerup', 'mousedown'].forEach((type) => {
+                            container.addEventListener(type, triggerOpen);
+                        });
                         // Also attach to any child img/canvas/svg created by the library
                         const child = container.querySelector('img,canvas,svg');
                         if (child) {
                             child.style.cursor = 'pointer';
-                            child.addEventListener('click', (e) => { e.stopPropagation(); openUpiLink(upiLink); });
-                            child.addEventListener('touchend', (e) => { e.stopPropagation(); openUpiLink(upiLink); });
+                            ['click', 'touchend', 'pointerup', 'mousedown'].forEach((type) => {
+                                child.addEventListener(type, (e) => { e.preventDefault(); e.stopPropagation(); openUpiLink(upiLink); });
+                            });
                         }
                     } catch (e) { /* ignore */ }
                 }, 0);
@@ -449,6 +459,21 @@
             }
 
             renderQrContent(payload, qrPaidLink);
+
+            const openAppButton = document.getElementById('qr-open-app-button');
+            if (openAppButton) {
+                openAppButton.addEventListener('click', () => {
+                    if (paymentMethod === 'phonepe') {
+                        const phonepeLink = buildPhonePeLink(payload);
+                        if (phonepeLink) openUpiLink(phonepeLink, 'phonepe');
+                    } else if (paymentMethod === 'paytm') {
+                        const paytmLink = buildPaytmLink(payload);
+                        if (paytmLink) openUpiLink(paytmLink, 'paytm');
+                    } else if (qrPaidLink) {
+                        openUpiLink(qrPaidLink, 'gpay');
+                    }
+                });
+            }
 
             document.getElementById('qr-cancel-button').addEventListener('click', () => {
                 clearPendingPayment();
