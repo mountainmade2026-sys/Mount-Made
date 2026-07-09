@@ -222,7 +222,7 @@
             sessionStorage.removeItem('checkoutPendingPayment');
         }
 
-        function renderQrContent(payload) {
+        function renderQrContent(payload, upiLink) {
             if (!payload) return;
 
             const methodLabelMap = {
@@ -249,7 +249,6 @@
             const qrContainer = document.getElementById('qr-image');
             qrContainer.innerHTML = '';
 
-            const upiLink = buildGpayUpiLink(payload);
             if (upiLink) {
                 generateDynamicQr('qr-image', upiLink);
             } else if (payload.qrImageUrl) {
@@ -261,12 +260,10 @@
                 img.style.objectFit = 'contain';
                 img.style.cursor = 'pointer';
                 img.addEventListener('click', () => {
-                    const fallbackLink = buildGpayUpiLink(payload);
-                    if (fallbackLink) openUpiLink(fallbackLink);
+                    if (upiLink) openUpiLink(upiLink);
                 });
                 img.addEventListener('touchend', () => {
-                    const fallbackLink = buildGpayUpiLink(payload);
-                    if (fallbackLink) openUpiLink(fallbackLink);
+                    if (upiLink) openUpiLink(upiLink);
                 });
                 qrContainer.appendChild(img);
             } else {
@@ -501,6 +498,9 @@
                     try { console.info('fallback upiLink:', qrPaidLink); } catch (e) {}
                 }
             }
+
+            renderQrContent(payload, qrPaidLink);
+
             if (qrPaidButton) {
                 if (!qrPaidLink) {
                     qrPaidButton.disabled = true;
