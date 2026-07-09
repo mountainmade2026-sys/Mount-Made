@@ -196,6 +196,7 @@
         </div>
     </div>
 
+    <script src="/js/paymentDeepLinks.js"></script>
     <script>
         function formatCurrency(amount) {
             const value = Number(amount || 0);
@@ -294,57 +295,7 @@
 
         function buildGpayUpiLink(payload) {
             if (!payload) return null;
-
-            const rawValue = normalizeUpiRecipient(payload.paymentValue);
-            const upiId = normalizeUpiRecipient(payload.upiId);
-            const phone = String(payload.phoneNumber || '').trim();
-
-            let recipient = rawValue;
-            if (/^https?:\/\//i.test(rawValue) || /^data:/i.test(rawValue) || /^file:\/\//i.test(rawValue) || /^[\/\\]/.test(rawValue) || rawValue.includes('/')) {
-                recipient = upiId || phone || '';
-            }
-            if (!recipient) recipient = upiId || phone || '';
-            recipient = String(recipient || '').trim();
-            if (!recipient) return null;
-
-            if (/^upi:\/\/(pay)?/i.test(recipient)) {
-                let normalized = recipient.replace(/^upi:pay/i, 'upi://pay');
-                normalized = normalized.replace(/^upi:\/\//i, 'upi://');
-                try {
-                    const url = new URL(normalized);
-                    const params = new URLSearchParams(url.search);
-                    const payeeName = String(payload.payeeName || 'Mount Made').trim();
-                    const orderNote = `Order ${payload.orderNumber || ''}`.trim();
-                    const amount = parseUpiAmount(payload.amount);
-
-                    if (payeeName) params.set('pn', payeeName);
-                    if (orderNote) params.set('tn', orderNote);
-                    if (amount !== null) {
-                        params.set('am', amount.toFixed(2));
-                    }
-                    params.set('cu', 'INR');
-
-                    return `upi://pay?${encodeUpiQueryString(params)}`;
-                } catch (e) {
-                    return null;
-                }
-            }
-
-            if (/^[a-z][a-z0-9+.-]*:\/\//i.test(recipient)) {
-                return null;
-            }
-
-            const params = new URLSearchParams({
-                pa: recipient,
-                pn: payload.payeeName || 'Mount Made',
-                tn: `Order ${payload.orderNumber || ''}`.trim(),
-                cu: 'INR'
-            });
-            const amount = parseUpiAmount(payload.amount);
-            if (amount !== null) {
-                params.set('am', amount.toFixed(2));
-            }
-            return `upi://pay?${encodeUpiQueryString(params)}`;
+            return window.PaymentDeepLinks?.buildProviderDeepLink(payload, 'gpay') || null;
         }
 
         function generateDynamicQr(containerId, upiLink) {
@@ -425,7 +376,7 @@
             }
         }
 
-        function openUpiLink(upiLink) {
+        function openUpiLink(upiLink, provider = 'gpay') {
             if (!upiLink) return;
             if (!isMobileDevice()) {
                 const notice = document.getElementById('qr-notice');
@@ -434,31 +385,8 @@
                 return;
             }
             try {
-                const ua = navigator.userAgent || '';
-
-                const openLink = (link) => {
-                    try {
-                        window.location.href = link;
-                    } catch (e) {
-                        const anchor = document.createElement('a');
-                        anchor.href = link;
-                        anchor.style.display = 'none';
-                        document.body.appendChild(anchor);
-                        anchor.click();
-                        document.body.removeChild(anchor);
-                    }
-                };
-
-                openLink(upiLink);
-
-                if (/Android/i.test(ua)) {
-                    const q = upiLink.replace(/^upi:\/\//i, '');
-                    const intentUri = `intent://${q}#Intent;scheme=upi;package=com.google.android.apps.nbu.paisa.user;end`;
-                    setTimeout(() => {
-                        if (document.hidden) return;
-                        openLink(intentUri);
-                    }, 800);
-                }
+                const success = window.PaymentDeepLinks?.launchPaymentLink(upiLink, provider);
+                if (success) return;
             } catch (e) {
                 console.warn('Failed to open UPI link:', e);
             }
@@ -535,14 +463,14 @@
                         // Try to open PhonePe first, then fallback to UPI
                         const phonepeLink = buildPhonePeLink(payload);
                         if (phonepeLink) {
-                            openUpiLink(phonepeLink);
+                            openUpiLink(phonepeLink, 'phonepe');
                             return;
                         }
                     } else if (paymentMethod === 'paytm' && isMobileDevice()) {
                         // Try to open Paytm first, then fallback to UPI
                         const paytmLink = buildPaytmLink(payload);
                         if (paytmLink) {
-                            openUpiLink(paytmLink);
+                            openUpiLink(paytmLink, 'paytm');
                             return;
                         }
                     }
@@ -556,38 +484,12 @@
 
         function buildPhonePeLink(payload) {
             if (!payload) return null;
-            const upiId = normalizeUpiRecipient(payload.upiId);
-            if (!upiId) return null;
-            // PhonePe UPI deep link format: phonepe://upi/pay?...
-            const params = new URLSearchParams({
-                pa: upiId,
-                pn: payload.payeeName || 'Mount Made',
-                tn: `Order ${payload.orderNumber || ''}`.trim(),
-                cu: 'INR'
-            });
-            const amount = parseUpiAmount(payload.amount);
-            if (amount !== null) {
-                params.set('am', amount.toFixed(2));
-            }
-            return `upi://pay?${encodeUpiQueryString(params)}`;
+            return window.PaymentDeepLinks?.buildProviderDeepLink(payload, 'phonepe') || null;
         }
 
         function buildPaytmLink(payload) {
             if (!payload) return null;
-            const upiId = normalizeUpiRecipient(payload.upiId);
-            if (!upiId) return null;
-            // Paytm UPI deep link: same as standard UPI
-            const params = new URLSearchParams({
-                pa: upiId,
-                pn: payload.payeeName || 'Mount Made',
-                tn: `Order ${payload.orderNumber || ''}`.trim(),
-                cu: 'INR'
-            });
-            const amount = parseUpiAmount(payload.amount);
-            if (amount !== null) {
-                params.set('am', amount.toFixed(2));
-            }
-            return `upi://pay?${encodeUpiQueryString(params)}`;
+            return window.PaymentDeepLinks?.buildProviderDeepLink(payload, 'paytm') || null;
         }
 
         initPage();
