@@ -11972,12 +11972,14 @@
             await loadCategoriesForEdit();
             await loadHomepageSectionsForForms();
             
-            // Populate form with product data
-            document.getElementById('edit-product-id').value = product.id;
-            document.getElementById('edit-product-name').value = product.name || '';
-            document.getElementById('edit-product-price').value = product.price != null ? product.price : '';
-            document.getElementById('edit-product-wholesale-price').value = product.wholesale_price != null ? product.wholesale_price : '';
-            document.getElementById('edit-product-stock').value = product.stock_quantity != null ? product.stock_quantity : 0;
+            // Populate form with product data (use safe setters to avoid null refs)
+            function setVal(id, v) { const el = document.getElementById(id); if (el) el.value = (v === null || v === undefined) ? '' : v; }
+            function setChecked(id, v) { const el = document.getElementById(id); if (el) el.checked = Boolean(v); }
+            setVal('edit-product-id', product.id);
+            setVal('edit-product-name', product.name || '');
+            setVal('edit-product-price', product.price != null ? product.price : '');
+            setVal('edit-product-wholesale-price', product.wholesale_price != null ? product.wholesale_price : '');
+            setVal('edit-product-stock', product.stock_quantity != null ? product.stock_quantity : 0);
 
             // Show saved discount as the exact discounted selling price
             const editPctInput = document.getElementById('edit-product-discount-percent');
@@ -11986,16 +11988,12 @@
                 const savedDiscount = product.discount_price !== undefined && product.discount_price !== null
                     ? parseFloat(product.discount_price)
                     : NaN;
-                if (Number.isFinite(basePrice) && basePrice > 0 && Number.isFinite(savedDiscount) && savedDiscount < basePrice) {
-                    editPctInput.value = savedDiscount;
-                } else {
-                    editPctInput.value = '';
-                }
+                editPctInput.value = (Number.isFinite(basePrice) && basePrice > 0 && Number.isFinite(savedDiscount) && savedDiscount < basePrice) ? savedDiscount : '';
                 // Trigger preview immediately
                 window.calcDiscountPreview('edit-product-price', 'edit-product-discount-percent', 'edit-product-discount-preview');
             }
 
-            document.getElementById('edit-product-category').value = product.category_id || '';
+            setVal('edit-product-category', product.category_id || '');
             const sectionSelect = document.getElementById('edit-product-homepage-section');
             let selectedSectionId = (product.homepage_section_id !== null && product.homepage_section_id !== undefined)
                 ? String(product.homepage_section_id)
@@ -12015,11 +12013,11 @@
             if (sectionSelect) {
                 sectionSelect.value = selectedSectionId;
             }
-            document.getElementById('edit-product-min-wholesale').value = product.min_wholesale_qty || 10;
-            document.getElementById('edit-product-description').value = product.description || '';
-            document.getElementById('edit-product-weight').value = product.weight ?? '';
-            document.getElementById('edit-product-weight-unit').value = product.weight_unit || 'g';
-            document.getElementById('edit-product-is-weight-based').checked = Boolean(product.is_weight_based);
+            setVal('edit-product-min-wholesale', product.min_wholesale_qty || 10);
+            setVal('edit-product-description', product.description || '');
+            setVal('edit-product-weight', product.weight ?? '');
+            setVal('edit-product-weight-unit', product.weight_unit || 'g');
+            setChecked('edit-product-is-weight-based', product.is_weight_based);
             // Fixed weight display is no longer used in the admin product edit form.
             const weightOptionsText = Array.isArray(product.weight_options)
                 ? product.weight_options
@@ -12027,7 +12025,7 @@
                     .filter(Boolean)
                     .join(', ')
                 : '';
-            document.getElementById('edit-product-weight-options').value = weightOptionsText;
+            setVal('edit-product-weight-options', weightOptionsText);
             
             // Show current product images
             const currentImagesContainer = document.getElementById('edit-current-images');
