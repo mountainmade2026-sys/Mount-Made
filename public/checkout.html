@@ -2452,9 +2452,11 @@
                 throw new Error('Your cart is empty. Add items before placing an order.');
             }
 
-            const currentSubtotal = computeCartSubtotal(cartData) || checkoutCartSubtotal || 0;
-            const delivery_charge = getDeliveryChargeForSubtotal(currentSubtotal);
-            const totalAmount = Number(currentSubtotal + delivery_charge) || 0;
+            const currentSubtotal = Number(computeCartSubtotal(cartData) || checkoutCartSubtotal || 0);
+            const delivery_charge = Number(getDeliveryChargeForSubtotal(currentSubtotal) || 0);
+            const totalAmount = Number.isFinite(currentSubtotal + delivery_charge)
+                ? currentSubtotal + delivery_charge
+                : 0;
 
             let paymentDetails = ['gpay', 'phone', 'bhim'].includes(paymentMethod)
                 ? { method: gpayDetailType, value: gpayDetailValue }
