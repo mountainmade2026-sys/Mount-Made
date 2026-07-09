@@ -2052,7 +2052,7 @@
             const icon = availability.is_serviceable ? 'check-circle' : 'times-circle';
             let html = `<span style="color: ${color}; font-size: 0.85rem;"><i class="fas fa-${icon}"></i> ${escapeHtml(availability.message)}</span>`;
             if (!availability.is_serviceable && availability.pin) {
-                html += '<div style="margin-top: 0.35rem; font-size: 0.85rem; color: #1d4ed8;">For delivery info, <a href="/contact" style="color: #1d4ed8; text-decoration: underline;">click here</a>.</div>';
+                html += '<div style="margin-top: 0.35rem; font-size: 0.85rem; color: #1d4ed8;">If your delivery pincode is not available, <a href="/contact" style="color: #1d4ed8; text-decoration: underline;">contact us</a>.</div>';
             }
             return html;
         }
