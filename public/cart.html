@@ -563,18 +563,21 @@
 
         pendingCartRequests[itemId] = true;
         try {
-            while (pendingCartRequests[itemId]) {
+            while (true) {
                 const requestedQty = lastDesiredQty[itemId];
                 if (!Number.isFinite(requestedQty) || requestedQty <= 0) break;
 
                 const response = await cart.update(itemId, requestedQty);
-                if (response && Array.isArray(response.cartItems)) {
-                    reconcileCartData(response);
-                    if (lastDesiredQty[itemId] === requestedQty) break;
+
+                if (lastDesiredQty[itemId] !== requestedQty) {
                     continue;
                 }
 
-                await loadCart();
+                if (response && Array.isArray(response.cartItems)) {
+                    reconcileCartData(response);
+                } else {
+                    await loadCart();
+                }
                 break;
             }
         } catch (err) {
