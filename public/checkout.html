@@ -401,22 +401,34 @@
         .checkout-qty-remove-wrap {
             display: flex;
             align-items: center;
-            gap: 0.35rem;
-            flex: 0 1 auto;
+            gap: 0.25rem;
+            flex: 1 1 100%;
             flex-wrap: nowrap;
             width: 100%;
-            justify-content: flex-start;
+            justify-content: space-between;
         }
 
         .checkout-remove-btn {
-            flex: 0 0 auto;
-            white-space: nowrap;
-            align-self: center;
-            padding: 0.35rem 0.6rem !important;
-            font-size: 0.75rem !important;
-            min-height: 28px !important;
-            min-width: 28px !important;
-            margin-left: auto;
+            flex: 0 0 28px;
+            width: 28px;
+            height: 28px;
+            padding: 0 !important;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            background-color: #e8f0f7 !important;
+            color: #d14343 !important;
+            border: 1px solid #d14343 !important;
+            cursor: pointer;
+            font-size: 0.85rem !important;
+            min-width: unset !important;
+            min-height: unset !important;
+        }
+
+        .checkout-remove-btn:hover {
+            background-color: #d14343 !important;
+            color: #fff !important;
         }
 
         .checkout-item-weight {
@@ -426,7 +438,7 @@
         }
 
         .checkout-item-qty-label {
-            font-size: 0.82rem;
+            font-size: 0.75rem;
             color: var(--text-secondary);
             white-space: nowrap;
             flex: 0 0 auto;
@@ -436,10 +448,10 @@
             display: inline-flex;
             align-items: center;
             border: 1px solid var(--border-primary);
-            border-radius: 8px;
+            border-radius: 4px;
             overflow: hidden;
             background: var(--bg-primary);
-            min-height: 32px;
+            min-height: 28px;
             flex-wrap: nowrap;
             box-sizing: border-box;
             flex: 0 0 auto;
@@ -448,22 +460,22 @@
         .checkout-qty-btn {
             border: none;
             background: transparent;
-            padding: 0.25rem 0.4rem;
-            min-width: 30px;
-            min-height: 30px;
+            padding: 0.15rem 0.3rem;
+            min-width: 24px;
+            min-height: 24px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             color: var(--text-primary);
-            font-size: 1rem;
+            font-size: 0.9rem;
             line-height: 1;
         }
 
         .checkout-qty-input {
-            width: 42px;
-            min-width: 42px;
-            padding: 0.2rem 0.15rem;
+            width: 35px;
+            min-width: 35px;
+            padding: 0.12rem 0.1rem;
             border: none;
             text-align: center;
             background: transparent;
@@ -542,6 +554,7 @@
         .checkout-item-unit-price {
             white-space: nowrap;
             flex: 0 0 auto;
+            font-size: 0.85rem;
         }
 
         .checkout-item-price {
