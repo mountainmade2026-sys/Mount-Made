@@ -316,11 +316,11 @@
                         })()}
                         <div class="cart-item-actions">
                             <div class="quantity-controls" style="display:flex; align-items:center; border:1px solid var(--border); border-radius:8px; overflow:hidden; background: var(--bg-primary);">
-                                <button type="button" class="qty-btn" onclick="changeCartQuantity(${item.id}, -${minQty}, ${minQty}, ${item.stock_quantity}, this.closest('.cart-item-actions').querySelector('input'))" aria-label="Decrease quantity" style="border:none; background:transparent; padding:0.45rem 0.65rem; font-size:1rem; cursor:pointer; color:var(--text-primary);">−</button>
+                                <button type="button" class="qty-btn" onclick="changeCartQuantity(${item.id}, -${minQty}, ${minQty}, ${item.stock_quantity}, this.closest('.cart-item-actions').querySelector('input'))" aria-label="Decrease quantity" style="border:none; background:transparent; padding:0.45rem 0.65rem; font-size:1rem; cursor:pointer; color:var(--text-primary);" ${item.quantity <= minQty ? 'disabled' : ''}>−</button>
                                 <input type="text" inputmode="numeric" value="${item.quantity}" min="${minQty}" step="${minQty}" max="${item.stock_quantity}" 
                                        onchange="changeCartQuantity(${item.id}, 0, ${minQty}, ${item.stock_quantity}, this)"
                                        style="width: 56px; padding: 0.35rem 0.2rem; border: none; text-align:center; background:transparent; color:var(--text-primary); -moz-appearance:textfield; appearance:textfield;">
-                                <button type="button" class="qty-btn" onclick="changeCartQuantity(${item.id}, ${minQty}, ${minQty}, ${item.stock_quantity}, this.closest('.cart-item-actions').querySelector('input'))" aria-label="Increase quantity" style="border:none; background:transparent; padding:0.45rem 0.65rem; font-size:1rem; cursor:pointer; color:var(--text-primary);">+</button>
+                                <button type="button" class="qty-btn" onclick="changeCartQuantity(${item.id}, ${minQty}, ${minQty}, ${item.stock_quantity}, this.closest('.cart-item-actions').querySelector('input'))" aria-label="Increase quantity" style="border:none; background:transparent; padding:0.45rem 0.65rem; font-size:1rem; cursor:pointer; color:var(--text-primary);" ${item.quantity >= item.stock_quantity ? 'disabled' : ''}>+</button>
                             </div>
                             <button onclick="cart.remove(${item.id}); loadCart();" class="btn btn-danger btn-sm">
                                 <i class="fas fa-trash"></i> Remove
@@ -359,6 +359,31 @@
         return Number.isFinite(parsedMin) && parsedMin > 0 ? parsedMin : 1;
     }
 
+    function clampCartQuantity(quantity, minQty, maxQty) {
+        const parsedMin = parseStep(minQty);
+        let q = parseInt(quantity, 10);
+        if (!Number.isFinite(q) || q <= 0) q = parsedMin;
+        q = Math.max(parsedMin, q);
+        const parsedMax = parseInt(maxQty, 10);
+        if (Number.isFinite(parsedMax) && parsedMax > 0) q = Math.min(q, parsedMax);
+        return q;
+    }
+
+    function syncCartQuantityControls(itemId, quantity, minQty, maxQty) {
+        const itemEl = document.querySelector(`[data-cart-item-id="${itemId}"]`);
+        if (!itemEl) return;
+        const input = itemEl.querySelector('input[type="text"]');
+        const decrement = itemEl.querySelector('.qty-btn[aria-label="Decrease quantity"]');
+        const increment = itemEl.querySelector('.qty-btn[aria-label="Increase quantity"]');
+        const step = parseStep(minQty);
+        const parsedMax = parseInt(maxQty, 10);
+        const canDecrease = quantity > step;
+        const canIncrease = !Number.isFinite(parsedMax) || parsedMax <= 0 || quantity < parsedMax;
+        if (input) input.value = String(quantity);
+        if (decrement) decrement.disabled = !canDecrease;
+        if (increment) increment.disabled = !canIncrease;
+    }
+
     function updateLocalCartDisplay(itemId, newQty) {
         try {
             const itemEl = document.querySelector(`[data-cart-item-id="${itemId}"]`);
@@ -393,13 +418,19 @@
             let cur = parseInt(input.value, 10);
             if (!Number.isFinite(cur) || cur <= 0) cur = step;
             const nextQty = delta === 0 ? cur : cur + delta;
-            let q = Math.max(step, nextQty);
+            let q = clampCartQuantity(nextQty, step, maxQty);
             const maxParsed = parseInt(maxQty, 10);
-            if (Number.isFinite(maxParsed) && maxParsed > 0) q = Math.min(q, maxParsed);
+
+            if (delta !== 0 && Number.isFinite(maxParsed) && maxParsed > 0 && cur >= maxParsed && q === cur) {
+                // Already at max stock: keep the quantity frozen and avoid extra server calls.
+                input.value = String(q);
+                return;
+            }
 
             // Update input and UI immediately
             input.value = String(q);
             updateLocalCartDisplay(itemId, q);
+            syncCartQuantityControls(itemId, q, minQty, maxQty);
 
             // Persist to server and refresh from server response
             try {
@@ -418,18 +449,11 @@
 
     async function updateQuantity(itemId, quantity, minQty = 1, maxQty = Infinity) {
         // Mirror checkout's updateCheckoutQuantity: optimistic UI update, then await server.
-        const parsedMin = parseInt(minQty, 10);
-        const step = Number.isFinite(parsedMin) && parsedMin > 0 ? parsedMin : 1;
-
-        let q = parseInt(quantity, 10);
-        if (!Number.isFinite(q) || q <= 0) q = step;
-        q = Math.max(step, q);
-
-        const maxParsed = parseInt(maxQty, 10);
-        if (Number.isFinite(maxParsed) && maxParsed > 0) q = Math.min(q, maxParsed);
+        const q = clampCartQuantity(quantity, minQty, maxQty);
 
         // Update UI immediately
         updateLocalCartDisplay(itemId, q);
+        syncCartQuantityControls(itemId, q, minQty, maxQty);
 
         try {
             const response = await cart.update(itemId, q);
