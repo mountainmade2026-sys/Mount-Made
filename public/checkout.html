@@ -352,9 +352,9 @@
 
         .checkout-item-row {
             display: grid;
-            grid-template-columns: 64px 1fr auto auto;
+            grid-template-columns: 64px 1fr auto;
             gap: 0.75rem;
-            align-items: center;
+            align-items: flex-start;
             padding: 0.6rem 0;
             margin: 0.6rem 0;
             border-bottom: 1px solid var(--border-primary, rgba(15, 23, 42, 0.12));
@@ -388,35 +388,42 @@
         }
 
         .checkout-item-meta {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
+            display: grid;
+            grid-template-columns: 1fr auto;
             gap: 0.45rem;
             color: var(--text-secondary);
             font-size: 0.9rem;
             margin-top: 0.35rem;
             line-height: 1.4;
+            align-items: center;
+        }
+
+        .checkout-item-meta > div:first-child {
+            grid-column: 1 / -1;
+        }
+
+        .checkout-qty-remove-wrap {
+            display: grid;
+            grid-template-columns: auto 1fr auto auto;
+            gap: 0.45rem;
+            align-items: center;
+            grid-column: 1 / -1;
         }
 
         .checkout-remove-btn {
             flex: 0 0 auto;
             white-space: nowrap;
             align-self: center;
+            padding: 0.35rem 0.6rem !important;
+            font-size: 0.75rem !important;
+            min-height: 28px !important;
+            min-width: auto !important;
         }
 
         .checkout-item-weight {
             flex: 0 0 100%;
             font-size: 0.82rem;
             color: var(--text-secondary);
-        }
-
-        .checkout-item-qty-wrap {
-            display: flex;
-            align-items: center;
-            gap: 0.35rem;
-            flex-wrap: nowrap;
-            min-width: 0;
-            flex: 0 0 auto;
         }
 
         .checkout-item-qty-label {
@@ -503,10 +510,6 @@
             .checkout-item-weight {
                 flex: 0 0 auto;
                 font-size: 0.78rem;
-            }
-
-            .checkout-item-qty-wrap {
-                gap: 0.25rem;
             }
 
             .checkout-qty-group {
@@ -1417,7 +1420,7 @@
                                 const weightLabel = getItemWeightLabel(item);
                                 return weightLabel ? `<div class="checkout-item-weight">Size: ${escapeHtml(weightLabel)}</div>` : '';
                             })()}
-                            <div class="checkout-item-qty-wrap">
+                            <div class="checkout-qty-remove-wrap">
                                 <label for="checkout-qty-${item.id}" class="checkout-item-qty-label">Qty</label>
                                 <div class="checkout-qty-group">
                                     <button type="button" class="checkout-qty-btn" aria-label="Decrease quantity" onclick="event.preventDefault(); changeCheckoutQuantity(${item.id}, -1, document.getElementById('checkout-qty-${item.id}'))">−</button>
@@ -1430,13 +1433,13 @@
                                            onchange="changeCheckoutQuantity(${item.id}, 0, this)">
                                     <button type="button" class="checkout-qty-btn" aria-label="Increase quantity" onclick="event.preventDefault(); changeCheckoutQuantity(${item.id}, 1, document.getElementById('checkout-qty-${item.id}'))" ${item.quantity >= (item.stock_quantity || 0) ? 'disabled' : ''}>+</button>
                                 </div>
+                                <span class="checkout-item-unit-price">× ${priceBlock}</span>
+                                <button type="button" class="btn btn-secondary btn-sm checkout-remove-btn" aria-label="Remove item" onclick="event.preventDefault(); removeCheckoutItem(${item.id})"><i class="fas fa-trash"></i></button>
                             </div>
-                            <span class="checkout-item-unit-price">× ${priceBlock}</span>
                         </div>
                     </div>
                     <strong class="checkout-item-price" data-item-subtotal="${item.id}">${formatCurrency(item.price * item.quantity)}</strong>
-                </div>`;
-                updateOrderSummaryTotals();
+                </div>`;                updateOrderSummaryTotals();
                 await loadUserAddresses();
                 return;
             }
@@ -1474,7 +1477,7 @@
                                 const weightLabel = getItemWeightLabel(item);
                                 return weightLabel ? `<div class="checkout-item-weight">Size: ${escapeHtml(weightLabel)}</div>` : '';
                             })()}
-                            <div class="checkout-item-qty-wrap">
+                            <div class="checkout-qty-remove-wrap">
                                 <label for="checkout-qty-${item.id}" class="checkout-item-qty-label">Qty</label>
                                 <div class="checkout-qty-group">
                                     <button type="button" class="checkout-qty-btn" aria-label="Decrease quantity" onclick="event.preventDefault(); changeCheckoutQuantity(${item.id}, -1, document.getElementById('checkout-qty-${item.id}'))">−</button>
@@ -1487,11 +1490,11 @@
                                            onchange="changeCheckoutQuantity(${item.id}, 0, this)">
                                     <button type="button" class="checkout-qty-btn" aria-label="Increase quantity" onclick="event.preventDefault(); changeCheckoutQuantity(${item.id}, 1, document.getElementById('checkout-qty-${item.id}'))" ${toNumber(item.quantity || item.qty || 1) >= (item.stock_quantity || 0) ? 'disabled' : ''}>+</button>
                                 </div>
+                                <span class="checkout-item-unit-price">× ${priceBlock}</span>
+                                <button type="button" class="btn btn-secondary btn-sm checkout-remove-btn" aria-label="Remove item" onclick="event.preventDefault(); removeCheckoutItem(${item.id})"><i class="fas fa-trash"></i></button>
                             </div>
-                            <span class="checkout-item-unit-price">× ${priceBlock}</span>
                         </div>
                     </div>
-                    <button type="button" class="btn btn-secondary btn-sm checkout-remove-btn" aria-label="Remove item" onclick="event.preventDefault(); removeCheckoutItem(${item.id})"><i class="fas fa-trash"></i> Remove</button>
                     <strong class="checkout-item-price" data-item-subtotal="${item.id}">${formatCurrency(resolveItemSubtotal(item))}</strong>
                 </div>`;
             }).join('');
