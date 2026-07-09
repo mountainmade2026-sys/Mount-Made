@@ -237,11 +237,7 @@
                 ? escapeHtml(payload.payeeName || '—')
                 : escapeHtml(payload.paymentValue || payload.upiId || payload.phoneNumber || payload.payeeName || '—');
 
-            const hintText = payload.paymentMethod === 'phone'
-                ? 'Open PhonePe or your preferred UPI app and scan the code.'
-                : payload.paymentMethod === 'bhim'
-                    ? 'Open BHIM or your preferred UPI app and scan the code.'
-                    : 'Open Google Pay or your preferred UPI app and scan the code.';
+            const hintText = 'Scan or click the QR code to pay.';
             document.getElementById('qr-hint').textContent = hintText;
 
             const qrContainer = document.getElementById('qr-image');
