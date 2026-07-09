@@ -330,6 +330,8 @@
     let cartQuantityLock = false;
     const pendingCartRequests = {}; // itemId -> processing promise
     const lastDesiredQty = {}; // itemId -> latest desired quantity to send
+    const lastSentToken = {}; // itemId -> token of last sent request
+    let cartTokenCounter = 0;
 
     function parseStep(minQty) {
         const parsedMin = parseInt(minQty, 10);
@@ -419,20 +421,28 @@
             if (!pendingCartRequests[itemId]) {
                 pendingCartRequests[itemId] = (async () => {
                     while (lastDesiredQty[itemId] != null) {
-                        const toSend = lastDesiredQty[itemId];
-                        lastDesiredQty[itemId] = null;
-                        try {
-                            const response = await cart.update(itemId, toSend);
-                            if (response && Array.isArray(response.cartItems)) {
-                                renderCartData(response);
-                            } else {
+                            const toSend = lastDesiredQty[itemId];
+                            lastDesiredQty[itemId] = null;
+                            const token = ++cartTokenCounter;
+                            lastSentToken[itemId] = token;
+                            try {
+                                const response = await cart.update(itemId, toSend);
+                                // Only apply server response if it's for the most recent sent token
+                                if (lastSentToken[itemId] === token) {
+                                    if (response && Array.isArray(response.cartItems)) {
+                                        renderCartData(response);
+                                    } else {
+                                        await loadCart();
+                                    }
+                                } else {
+                                    // Ignore out-of-order response; newer request exists
+                                    // Do nothing - next loop iteration will send the latest
+                                }
+                            } catch (e) {
+                                console.warn('Background cart update failed for', itemId, e);
                                 await loadCart();
                             }
-                        } catch (e) {
-                            console.warn('Background cart update failed for', itemId, e);
-                            await loadCart();
                         }
-                    }
                     delete pendingCartRequests[itemId];
                 })();
             }
@@ -486,10 +496,14 @@
                 while (lastDesiredQty[itemId] != null) {
                     const toSend = lastDesiredQty[itemId];
                     lastDesiredQty[itemId] = null;
+                    const token = ++cartTokenCounter;
+                    lastSentToken[itemId] = token;
                     try {
                         const response = await cart.update(itemId, toSend);
-                        if (response && Array.isArray(response.cartItems)) renderCartData(response);
-                        else await loadCart();
+                        if (lastSentToken[itemId] === token) {
+                            if (response && Array.isArray(response.cartItems)) renderCartData(response);
+                            else await loadCart();
+                        }
                     } catch (e) {
                         console.warn('Background cart update failed for', itemId, e);
                         await loadCart();
