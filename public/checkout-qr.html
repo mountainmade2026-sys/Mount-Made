@@ -280,6 +280,12 @@
             if (/^upi:/i.test(raw)) {
                 return raw.replace(/^upi:/i, 'upi://');
             }
+            if (/^(https?:\/\/|data:|file:\/\/)/i.test(raw)) {
+                return '';
+            }
+            if (/^[\/\\]/.test(raw) || raw.includes('/')) {
+                return '';
+            }
             return raw;
         }
 
@@ -288,6 +294,11 @@
             if (!raw) return null;
             const numeric = Number(raw.replace(/[^0-9.-]/g, ''));
             return Number.isFinite(numeric) && numeric > 0 ? numeric : null;
+        }
+
+        function encodeUpiQueryString(params) {
+            const encoded = params.toString().replace(/\+/g, '%20');
+            return encoded.replace(/pa=([^&]*)/, (match, value) => 'pa=' + value.replace(/%40/g, '@'));
         }
 
         function buildGpayUpiLink(payload) {
@@ -322,7 +333,7 @@
                     }
                     params.set('cu', 'INR');
 
-                    return `upi://pay?${params.toString().replace(/\+/g, '%20')}`;
+                    return `upi://pay?${encodeUpiQueryString(params)}`;
                 } catch (e) {
                     return null;
                 }
@@ -342,7 +353,7 @@
             if (amount !== null) {
                 params.set('am', amount.toFixed(2));
             }
-            return `upi://pay?${params.toString().replace(/\+/g, '%20')}`;
+            return `upi://pay?${encodeUpiQueryString(params)}`;
         }
 
         function generateDynamicQr(containerId, upiLink) {
@@ -410,11 +421,11 @@
 
         function isMobileDevice() {
             try {
+                if (window.Capacitor && window.Capacitor.isNative) return true;
                 const ua = navigator.userAgent || '';
-                const mobileUA = /Mobi|Android|iPhone|iPad|iPod|Windows Phone/i;
+                const mobileUA = /Android|iPhone|iPad|iPod|Windows Phone/i;
                 if (mobileUA.test(ua)) return true;
                 if (navigator.maxTouchPoints && navigator.maxTouchPoints > 1) {
-                    // treat small touch devices as mobile
                     return Math.min(window.screen.width, window.screen.height) < 900;
                 }
                 return false;
@@ -434,29 +445,28 @@
             try {
                 const ua = navigator.userAgent || '';
 
-                // First try the native upi:// URI directly, which preserves amount in most UPI apps.
-                try {
-                    const nativeAnchor = document.createElement('a');
-                    nativeAnchor.style.display = 'none';
-                    nativeAnchor.href = upiLink;
-                    document.body.appendChild(nativeAnchor);
-                    nativeAnchor.click();
-                    setTimeout(() => { try { nativeAnchor.remove(); } catch (e) {} }, 1000);
-                } catch (e) {
-                    try { window.location.href = upiLink; } catch (_) {}
-                }
+                const openLink = (link) => {
+                    try {
+                        window.location.href = link;
+                    } catch (e) {
+                        const anchor = document.createElement('a');
+                        anchor.href = link;
+                        anchor.style.display = 'none';
+                        document.body.appendChild(anchor);
+                        anchor.click();
+                        document.body.removeChild(anchor);
+                    }
+                };
 
-                // On Android Chrome, use intent fallback only if native UPI didn't launch.
-                if (/Android/i.test(ua) && /Chrome/i.test(ua)) {
+                openLink(upiLink);
+
+                if (/Android/i.test(ua)) {
                     const q = upiLink.replace(/^upi:\/\//i, '');
                     const intentUri = `intent://${q}#Intent;scheme=upi;package=com.google.android.apps.nbu.paisa.user;end`;
                     setTimeout(() => {
-                        try {
-                            window.location.href = intentUri;
-                        } catch (e) {
-                            console.warn('GPay intent fallback failed:', e);
-                        }
-                    }, 600);
+                        if (document.hidden) return;
+                        openLink(intentUri);
+                    }, 800);
                 }
             } catch (e) {
                 console.warn('Failed to open UPI link:', e);
@@ -487,7 +497,7 @@
                     if (amount !== null) {
                         params.set('am', amount.toFixed(2));
                     }
-                    qrPaidLink = `upi://pay?${params.toString().replace(/\+/g, '%20')}`;
+                    qrPaidLink = `upi://pay?${encodeUpiQueryString(params)}`;
                     try { console.info('fallback upiLink:', qrPaidLink); } catch (e) {}
                 }
             }
