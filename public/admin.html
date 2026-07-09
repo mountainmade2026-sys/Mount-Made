@@ -11740,8 +11740,7 @@
                     weight: weight ? parseFloat(weight) : null,
                     weight_unit,
                     is_weight_based,
-                    weight_options,
-                    fixed_weight: String(document.getElementById('product-fixed-weight').value || '').trim() || null
+                    weight_options
                 });
 
                 if (response && (response.success || response.product || response.message)) {
@@ -12021,7 +12020,7 @@
             document.getElementById('edit-product-weight').value = product.weight ?? '';
             document.getElementById('edit-product-weight-unit').value = product.weight_unit || 'g';
             document.getElementById('edit-product-is-weight-based').checked = Boolean(product.is_weight_based);
-            document.getElementById('edit-product-fixed-weight').value = product.fixed_weight || '';
+            // Fixed weight display is no longer used in the admin product edit form.
             const weightOptionsText = Array.isArray(product.weight_options)
                 ? product.weight_options
                     .map(option => typeof option === 'string' ? option : (option.label || option.value || option.name || ''))
@@ -12361,8 +12360,7 @@
                     unit: weight_unit,
                     is_weight_based,
                     weight_unit,
-                    weight_options,
-                    fixed_weight: String(document.getElementById('edit-product-fixed-weight').value || '').trim() || null
+                    weight_options
                 };
 
                 // Upload new images if provided
