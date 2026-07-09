@@ -1420,7 +1420,7 @@
                                            max="${item.stock_quantity || ''}"
                                            oninput="changeCheckoutQuantity(${item.id}, 0, this)"
                                            onchange="changeCheckoutQuantity(${item.id}, 0, this)">
-                                    <button type="button" class="checkout-qty-btn" aria-label="Increase quantity" onclick="event.preventDefault(); changeCheckoutQuantity(${item.id}, 1, document.getElementById('checkout-qty-${item.id}'))">+</button>
+                                    <button type="button" class="checkout-qty-btn" aria-label="Increase quantity" onclick="event.preventDefault(); changeCheckoutQuantity(${item.id}, 1, document.getElementById('checkout-qty-${item.id}'))" ${item.quantity >= (item.stock_quantity || 0) ? 'disabled' : ''}>+</button>
                                 </div>
                             </div>
                             <span class="checkout-item-unit-price">× ${priceBlock}</span>
@@ -1477,7 +1477,7 @@
                                            max="${item.stock_quantity || ''}"
                                            oninput="changeCheckoutQuantity(${item.id}, 0, this)"
                                            onchange="changeCheckoutQuantity(${item.id}, 0, this)">
-                                    <button type="button" class="checkout-qty-btn" aria-label="Increase quantity" onclick="event.preventDefault(); changeCheckoutQuantity(${item.id}, 1, document.getElementById('checkout-qty-${item.id}'))">+</button>
+                                    <button type="button" class="checkout-qty-btn" aria-label="Increase quantity" onclick="event.preventDefault(); changeCheckoutQuantity(${item.id}, 1, document.getElementById('checkout-qty-${item.id}'))" ${toNumber(item.quantity || item.qty || 1) >= (item.stock_quantity || 0) ? 'disabled' : ''}>+</button>
                                 </div>
                             </div>
                             <button type="button" class="btn btn-secondary btn-sm" style="margin-left: auto;" aria-label="Remove item" onclick="event.preventDefault(); removeCheckoutItem(${item.id})"><i class="fas fa-trash"></i> Remove</button>
@@ -1534,23 +1534,39 @@
             const currentValue = currentInput ? parseInt(currentInput.value, 10) : NaN;
             const baseValue = Number.isFinite(currentValue) && currentValue > 0 ? currentValue : 1;
             const nextQty = delta === 0 ? baseValue : baseValue + delta;
-            const safeQty = Math.max(1, nextQty);
+            let safeQty = Math.max(1, nextQty);
+
+            const maxQty = currentInput ? parseInt(currentInput.max, 10) : NaN;
+            if (Number.isFinite(maxQty) && maxQty > 0) {
+                safeQty = Math.min(safeQty, maxQty);
+            }
 
             if (currentInput) {
                 currentInput.value = String(safeQty);
+            }
+
+            if (delta > 0 && Number.isFinite(maxQty) && maxQty > 0 && baseValue >= maxQty) {
+                return;
             }
 
             await updateCheckoutQuantity(itemId, safeQty);
         }
 
         async function updateCheckoutQuantity(itemId, quantity) {
-            const qty = parseInt(quantity, 10);
+            let qty = parseInt(quantity, 10);
             if (!qty || qty < 1) {
                 // Reset to current value from cartData if invalid
                 const current = cartData?.cartItems?.find(i => i.id === itemId);
                 const input = document.getElementById(`checkout-qty-${itemId}`);
                 if (current && input) input.value = current.quantity;
                 return;
+            }
+
+            const input = document.getElementById(`checkout-qty-${itemId}`);
+            const maxQty = input ? parseInt(input.max, 10) : NaN;
+            if (Number.isFinite(maxQty) && maxQty > 0 && qty > maxQty) {
+                qty = maxQty;
+                if (input) input.value = String(qty);
             }
 
             // Update UI immediately (optimistic update for both flows)
