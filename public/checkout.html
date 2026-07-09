@@ -1882,7 +1882,7 @@
                 params.set('tn', String(note).slice(0, 120));
             }
 
-            return `upi://pay?${params.toString()}`;
+            return `upi://pay?${params.toString().replace(/\+/g, '%20')}`;
         }
 
         function applyOrderPlacedUI(order) {

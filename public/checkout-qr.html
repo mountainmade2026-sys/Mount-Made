@@ -322,7 +322,7 @@
                     }
                     params.set('cu', 'INR');
 
-                    return `upi://pay?${params.toString()}`;
+                    return `upi://pay?${params.toString().replace(/\+/g, '%20')}`;
                 } catch (e) {
                     return null;
                 }
@@ -342,7 +342,7 @@
             if (amount !== null) {
                 params.set('am', amount.toFixed(2));
             }
-            return `upi://pay?${params.toString()}`;
+            return `upi://pay?${params.toString().replace(/\+/g, '%20')}`;
         }
 
         function generateDynamicQr(containerId, upiLink) {
@@ -487,7 +487,7 @@
                     if (amount !== null) {
                         params.set('am', amount.toFixed(2));
                     }
-                    qrPaidLink = `upi://pay?${params.toString()}`;
+                    qrPaidLink = `upi://pay?${params.toString().replace(/\+/g, '%20')}`;
                     try { console.info('fallback upiLink:', qrPaidLink); } catch (e) {}
                 }
             }
