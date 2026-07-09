@@ -739,7 +739,7 @@
             }
 
             .checkout-item-row {
-                grid-template-columns: 56px 1fr;
+                grid-template-columns: 56px 1fr auto;
                 gap: 0.5rem;
                 padding: 0.5rem 0;
                 margin: 0.5rem 0;
@@ -820,7 +820,13 @@
             }
 
             .checkout-item-price {
-                display: none;
+                display: block;
+                font-size: 0.95rem;
+                font-weight: 700;
+                color: var(--text-primary);
+                text-align: right;
+                margin-top: 0.3rem;
+                order: 10;
             }
 
             .checkout-item-qty-wrap {
@@ -1169,7 +1175,7 @@
         @media (max-width: 420px) {
             #order-items { gap: 0.15rem; }
             .checkout-item-row {
-                grid-template-columns: 50px 1fr;
+                grid-template-columns: 50px 1fr auto;
                 gap: 0.35rem;
                 padding: 0.4rem 0;
                 margin: 0.4rem 0;
@@ -1224,7 +1230,12 @@
             .checkout-remove-btn i {
                 display: none;
             }
-            .checkout-item-price { display: none; }
+            .checkout-item-price { 
+                font-size: 0.88rem;
+                text-align: right;
+                align-self: flex-start;
+                margin-top: 0.1rem;
+            }
             .checkout-item-unit-price { 
                 font-size: 0.75rem;
                 align-self: flex-start;
