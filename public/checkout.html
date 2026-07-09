@@ -2095,9 +2095,7 @@
             statusEl.innerHTML = '<span style="color: var(--text-secondary); font-size: 0.85rem;"><i class="fas fa-spinner fa-spin"></i> Checking availability...</span>';
 
             const availability = await fetchPincodeAvailability(pincode);
-            const color = availability.is_serviceable ? '#22c55e' : '#ef4444';
-            const icon = availability.is_serviceable ? 'check-circle' : 'times-circle';
-            statusEl.innerHTML = `<span style="color: ${color}; font-size: 0.85rem;"><i class="fas fa-${icon}"></i> ${escapeHtml(availability.message)}</span>`;
+            statusEl.innerHTML = renderPincodeAvailabilityStatus(availability);
         }
 
         async function validateDeliveryPincode() {
