@@ -186,7 +186,6 @@
                 <div class="qr-countdown" id="qr-countdown">Time remaining: 09:00</div>
 
                 <div class="button-row">
-                    <button type="button" class="btn btn-primary" id="qr-paid-button"><i class="fas fa-arrow-right"></i> Pay directly</button>
                     <button type="button" class="btn btn-secondary" id="qr-cancel-button"><i class="fas fa-times"></i> Cancel payment</button>
                 </div>
 
@@ -500,28 +499,6 @@
 
             renderQrContent(payload, qrPaidLink);
 
-            if (qrPaidButton) {
-                if (!qrPaidLink) {
-                    qrPaidButton.disabled = true;
-                    qrPaidButton.textContent = 'Scan QR to Pay';
-                }
-                qrPaidButton.addEventListener('click', () => {
-                    if (!qrPaidLink) return;
-                    openUpiLink(qrPaidLink);
-                });
-            }
-            // Wire the direct-pay button under the QR image
-            const qrDirectBtn = document.getElementById('qr-direct-pay-button');
-            if (qrDirectBtn) {
-                if (!qrPaidLink) {
-                    qrDirectBtn.disabled = true;
-                    qrDirectBtn.textContent = 'Direct Pay not available';
-                }
-                qrDirectBtn.addEventListener('click', () => {
-                    if (!qrPaidLink) return;
-                    openUpiLink(qrPaidLink);
-                });
-            }
             document.getElementById('qr-cancel-button').addEventListener('click', () => {
                 clearPendingPayment();
                 window.location.href = '/checkout.html';
