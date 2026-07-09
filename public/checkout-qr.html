@@ -526,6 +526,68 @@
                 clearPendingPayment();
                 window.location.href = '/checkout.html';
             });
+
+            // Enhance click handler for method-specific deep links on mobile
+            const qrImage = document.getElementById('qr-image');
+            if (qrImage) {
+                const originalClick = () => {
+                    if (paymentMethod === 'phonepe' && isMobileDevice()) {
+                        // Try to open PhonePe first, then fallback to UPI
+                        const phonepeLink = buildPhonePeLink(payload);
+                        if (phonepeLink) {
+                            openUpiLink(phonepeLink);
+                            return;
+                        }
+                    } else if (paymentMethod === 'paytm' && isMobileDevice()) {
+                        // Try to open Paytm first, then fallback to UPI
+                        const paytmLink = buildPaytmLink(payload);
+                        if (paytmLink) {
+                            openUpiLink(paytmLink);
+                            return;
+                        }
+                    }
+                    // Fallback to standard UPI link
+                    if (qrPaidLink) openUpiLink(qrPaidLink);
+                };
+                qrImage.addEventListener('click', originalClick);
+                qrImage.addEventListener('touchend', originalClick);
+            }
+        }
+
+        function buildPhonePeLink(payload) {
+            if (!payload) return null;
+            const upiId = normalizeUpiRecipient(payload.upiId);
+            if (!upiId) return null;
+            // PhonePe UPI deep link format: phonepe://upi/pay?...
+            const params = new URLSearchParams({
+                pa: upiId,
+                pn: payload.payeeName || 'Mount Made',
+                tn: `Order ${payload.orderNumber || ''}`.trim(),
+                cu: 'INR'
+            });
+            const amount = parseUpiAmount(payload.amount);
+            if (amount !== null) {
+                params.set('am', amount.toFixed(2));
+            }
+            return `upi://pay?${encodeUpiQueryString(params)}`;
+        }
+
+        function buildPaytmLink(payload) {
+            if (!payload) return null;
+            const upiId = normalizeUpiRecipient(payload.upiId);
+            if (!upiId) return null;
+            // Paytm UPI deep link: same as standard UPI
+            const params = new URLSearchParams({
+                pa: upiId,
+                pn: payload.payeeName || 'Mount Made',
+                tn: `Order ${payload.orderNumber || ''}`.trim(),
+                cu: 'INR'
+            });
+            const amount = parseUpiAmount(payload.amount);
+            if (amount !== null) {
+                params.set('am', amount.toFixed(2));
+            }
+            return `upi://pay?${encodeUpiQueryString(params)}`;
         }
 
         initPage();
