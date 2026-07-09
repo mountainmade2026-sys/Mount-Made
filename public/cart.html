@@ -490,11 +490,8 @@
         });
     }
 
-    let cartQuantityLock = false;
-    const pendingCartRequests = {}; // itemId -> processing promise
+    const pendingCartRequests = {}; // itemId -> request in progress
     const lastDesiredQty = {}; // itemId -> latest desired quantity to send
-    const lastSentToken = {}; // itemId -> token of last sent request
-    let cartTokenCounter = 0;
 
     function parseStep(minQty) {
         const parsedMin = parseInt(minQty, 10);
@@ -551,8 +548,44 @@
         }
     }
 
+    async function queueCartQuantityUpdate(itemId, quantity, minQty = 1, maxQty = Infinity, inputEl) {
+        const q = clampCartQuantity(quantity, minQty, maxQty);
+        lastDesiredQty[itemId] = q;
+
+        if (inputEl) {
+            inputEl.value = String(q);
+        }
+
+        updateLocalCartDisplay(itemId, q);
+        syncCartQuantityControls(itemId, q, minQty, maxQty);
+
+        if (pendingCartRequests[itemId]) return;
+
+        pendingCartRequests[itemId] = true;
+        try {
+            while (pendingCartRequests[itemId]) {
+                const requestedQty = lastDesiredQty[itemId];
+                if (!Number.isFinite(requestedQty) || requestedQty <= 0) break;
+
+                const response = await cart.update(itemId, requestedQty);
+                if (response && Array.isArray(response.cartItems)) {
+                    reconcileCartData(response);
+                    if (lastDesiredQty[itemId] === requestedQty) break;
+                    continue;
+                }
+
+                await loadCart();
+                break;
+            }
+        } catch (err) {
+            console.error('Failed to update cart quantity:', err);
+            await loadCart();
+        } finally {
+            delete pendingCartRequests[itemId];
+        }
+    }
+
     async function changeCartQuantity(itemId, delta, minQty = 1, maxQty = Infinity, inputEl) {
-        // Use checkout-style behavior: immediate UI update, then await server.
         if (!inputEl) return;
         const input = inputEl;
         try {
@@ -564,25 +597,11 @@
             const maxParsed = parseInt(maxQty, 10);
 
             if (delta !== 0 && Number.isFinite(maxParsed) && maxParsed > 0 && cur >= maxParsed && q === cur) {
-                // Already at max stock: keep the quantity frozen and avoid extra server calls.
                 input.value = String(q);
                 return;
             }
 
-            // Update input and UI immediately
-            input.value = String(q);
-            updateLocalCartDisplay(itemId, q);
-            syncCartQuantityControls(itemId, q, minQty, maxQty);
-
-            // Persist to server and refresh from server response
-            try {
-                const response = await cart.update(itemId, q);
-                if (response && Array.isArray(response.cartItems)) renderCartData(response);
-                else await loadCart();
-            } catch (err) {
-                console.error('Failed to update cart quantity:', err);
-                await loadCart();
-            }
+            await queueCartQuantityUpdate(itemId, q, minQty, maxQty, input);
         } catch (err) {
             console.warn('changeCartQuantity error:', err);
             await loadCart();
@@ -590,21 +609,7 @@
     }
 
     async function updateQuantity(itemId, quantity, minQty = 1, maxQty = Infinity) {
-        // Mirror checkout's updateCheckoutQuantity: optimistic UI update, then await server.
-        const q = clampCartQuantity(quantity, minQty, maxQty);
-
-        // Update UI immediately
-        updateLocalCartDisplay(itemId, q);
-        syncCartQuantityControls(itemId, q, minQty, maxQty);
-
-        try {
-            const response = await cart.update(itemId, q);
-            if (response && Array.isArray(response.cartItems)) renderCartData(response);
-            else await loadCart();
-        } catch (err) {
-            console.error('Failed to update quantity:', err);
-            await loadCart();
-        }
+        await queueCartQuantityUpdate(itemId, quantity, minQty, maxQty);
     }
 
     async function proceedToCheckout() {
@@ -664,11 +669,11 @@
             const id = String(el.dataset.cartItemId);
             const item = respMap.get(id);
             if (!item) return;
-            const input = el.querySelector('input');
+            const input = el.querySelector('.qty-input-professional');
             const subtotalEl = el.querySelector('[data-item-subtotal]');
             const desiredQty = Number(item.quantity || 0);
 
-            // If input is focused (user interaction), don't override it immediately
+            // If input is focused (user interaction), don't override it immediately.
             if (input && document.activeElement !== input) {
                 const cur = parseInt(input.value || '0', 10);
                 if (cur !== desiredQty) input.value = desiredQty;
@@ -682,6 +687,12 @@
                     subtotalEl.textContent = formatCurrency(newSubtotal);
                 }
             }
+
+            const minQtyText = input?.getAttribute('min') || '1';
+            const maxQtyText = input?.getAttribute('max') || 'Infinity';
+            const minQty = parseInt(minQtyText, 10) || 1;
+            const maxQty = maxQtyText === 'Infinity' ? Infinity : parseInt(maxQtyText, 10);
+            syncCartQuantityControls(id, desiredQty, minQty, maxQty);
         });
 
         // Update totals
@@ -704,7 +715,6 @@
         // Attach event listeners for professional quantity selector
         document.addEventListener('click', handleQuantityButtonClick);
         document.addEventListener('change', handleQuantityInputChange);
-        document.addEventListener('input', handleQuantityInputChange);
 
         // Account dropdown toggle
         const accountToggle = document.getElementById('account-toggle');
