@@ -166,8 +166,8 @@
     <div class="container">
         <div class="payment-card">
             <div class="payment-card-header">
-                <h1>Pay with QR Code</h1>
-                <p>Complete your payment within 9 minutes to confirm your order.</p>
+                <h1 id="payment-header-title">Pay with QR Code</h1>
+                <p id="payment-header-subtitle">Complete your payment within 9 minutes to confirm your order.</p>
             </div>
             <div class="payment-card-body">
                 <div class="payment-summary">
@@ -465,6 +465,33 @@
         }
 
         function initPage() {
+            // Get payment method from URL parameter
+            const urlParams = new URLSearchParams(window.location.search);
+            const paymentMethod = urlParams.get('method') || 'gpay';
+
+            // Update header based on payment method
+            const headerTitle = document.getElementById('payment-header-title');
+            const headerSubtitle = document.getElementById('payment-header-subtitle');
+
+            const headerMap = {
+                gpay: {
+                    title: 'Pay with Google Pay / UPI',
+                    subtitle: 'Scan the QR code using Google Pay, PhonePe, or any UPI app.'
+                },
+                phonepe: {
+                    title: 'Pay with PhonePe',
+                    subtitle: 'Scan the QR code using PhonePe or any UPI app to complete payment.'
+                },
+                paytm: {
+                    title: 'Pay with Paytm',
+                    subtitle: 'Scan the QR code using Paytm or any UPI app to complete payment.'
+                }
+            };
+
+            const header = headerMap[paymentMethod] || headerMap.gpay;
+            if (headerTitle) headerTitle.textContent = header.title;
+            if (headerSubtitle) headerSubtitle.textContent = header.subtitle;
+
             const payload = getPendingPayment();
             if (!payload) {
                 document.body.innerHTML = '<div class="container"><div class="payment-card"><div class="payment-card-body"><h2>Payment information not found.</h2><p>Please return to checkout and try again.</p><button class="btn btn-primary" onclick="window.location.href=\'/checkout.html\'">Return to Checkout</button></div></div></div>';

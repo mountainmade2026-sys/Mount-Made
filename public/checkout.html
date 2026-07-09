@@ -2739,7 +2739,16 @@
                     expiresAt: Date.now() + 9 * 60 * 1000
                 };
 
-                const redirectPath = '/checkout-qr.html';
+                // Dynamically redirect based on payment method
+                let redirectPath = '/checkout-qr.html';
+                if (paymentMethod === 'paytm') {
+                    redirectPath = '/checkout-qr.html?method=paytm';
+                } else if (paymentMethod === 'phone') {
+                    redirectPath = '/checkout-qr.html?method=phonepe';
+                } else if (paymentMethod === 'gpay') {
+                    redirectPath = '/checkout-qr.html?method=gpay';
+                }
+
                 try {
                     sessionStorage.setItem('checkoutPendingPayment', JSON.stringify(paymentRedirect));
                 } catch (storageError) {
@@ -2747,7 +2756,7 @@
                 }
                 window.location.assign(redirectPath);
                 setTimeout(() => {
-                    if (window.location.pathname !== redirectPath) {
+                    if (window.location.pathname !== redirectPath.split('?')[0]) {
                         window.location.assign(redirectPath);
                     }
                 }, 100);
