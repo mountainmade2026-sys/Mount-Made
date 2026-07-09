@@ -283,7 +283,7 @@
             })();
 
             return `
-            <div class="card" style="margin-bottom: 1rem; max-width: 700px; margin-left: auto; margin-right: auto;">
+                <div class="card" data-cart-item-id="${item.id}" data-unit-price="${(item.price != null ? parseFloat(item.price) : 0)}" style="margin-bottom: 1rem; max-width: 700px; margin-left: auto; margin-right: auto;">
                 <div class="card-content cart-item-row">
                     <img src="${item.image_url || '/images/placeholder.jpg'}" alt="${item.name}">
                     <div class="cart-item-details">
@@ -306,7 +306,7 @@
                             </button>
                         </div>
                     </div>
-                    <div class="cart-item-price"><strong>${formatCurrency(item.subtotal)}</strong></div>
+                    <div class="cart-item-price"><strong data-item-subtotal>${formatCurrency(item.subtotal)}</strong></div>
                 </div>
             </div>
             `;
@@ -329,6 +329,36 @@
 
     let cartQuantityLock = false;
 
+    function parseStep(minQty) {
+        const parsedMin = parseInt(minQty, 10);
+        return Number.isFinite(parsedMin) && parsedMin > 0 ? parsedMin : 1;
+    }
+
+    function updateLocalCartDisplay(itemId, newQty) {
+        try {
+            const itemEl = document.querySelector(`[data-cart-item-id="${itemId}"]`);
+            if (!itemEl) return;
+            const unit = parseFloat(itemEl.dataset.unitPrice || '0') || 0;
+            const subtotalEl = itemEl.querySelector('[data-item-subtotal]');
+            if (subtotalEl) {
+                const newSubtotal = unit * Number(newQty || 0);
+                subtotalEl.textContent = formatCurrency(newSubtotal);
+            }
+
+            // Recompute cart totals by summing all item subtotals
+            const subtotalEls = document.querySelectorAll('[data-item-subtotal]');
+            let total = 0;
+            subtotalEls.forEach(el => {
+                const txt = el.textContent.replace(/[^0-9.-]+/g, '') || '0';
+                total += Number.parseFloat(txt) || 0;
+            });
+            document.getElementById('cart-subtotal').textContent = formatCurrency(total);
+            document.getElementById('cart-total').textContent = formatCurrency(total);
+        } catch (e) {
+            console.warn('Failed to update local cart display:', e);
+        }
+    }
+
     async function changeCartQuantity(itemId, delta, minQty = 1, maxQty = Infinity, inputEl) {
         if (cartQuantityLock || !inputEl) return;
 
@@ -336,8 +366,7 @@
         const input = inputEl;
 
         try {
-            const parsedMin = parseInt(minQty, 10);
-            const step = Number.isFinite(parsedMin) && parsedMin > 0 ? parsedMin : 1;
+            const step = parseStep(minQty);
 
             let q;
             if (input && typeof input === 'object' && 'value' in input) {
@@ -355,48 +384,51 @@
                 }
             }
 
-            if (!Number.isFinite(q) || q <= 0) {
-                q = step;
-            }
-
+            if (!Number.isFinite(q) || q <= 0) q = step;
             q = Math.max(step, q);
 
             const maxParsed = parseInt(maxQty, 10);
             const hasMax = Number.isFinite(maxParsed) && maxParsed > 0;
-            if (hasMax) {
-                q = Math.min(q, maxParsed);
-            }
+            if (hasMax) q = Math.min(q, maxParsed);
 
             if (hasMax && maxParsed < step) {
-                const response = await cart.update(itemId, maxParsed);
-                if (response && Array.isArray(response.cartItems)) {
-                    renderCartData(response);
-                } else {
-                    await loadCart();
-                }
+                // Fall back to server-side value
+                cart.update(itemId, maxParsed).then(response => {
+                    if (response && Array.isArray(response.cartItems)) renderCartData(response);
+                    else loadCart();
+                }).catch(() => loadCart());
                 return;
             }
 
             if (step > 1) {
                 q = Math.ceil(q / step) * step;
-                if (hasMax && q > maxParsed) {
-                    q = Math.floor(maxParsed / step) * step;
-                }
+                if (hasMax && q > maxParsed) q = Math.floor(maxParsed / step) * step;
                 q = Math.max(step, q);
             }
 
-            input.disabled = true;
-            const response = await cart.update(itemId, q);
-            if (response && Array.isArray(response.cartItems)) {
-                renderCartData(response);
-            } else {
-                await loadCart();
-            }
-        } finally {
-            if (input && typeof input.disabled === 'boolean') {
-                input.disabled = false;
-            }
+            // Optimistically update UI
+            if (input && typeof input.disabled === 'boolean') input.disabled = true;
+            if (input && 'value' in input) input.value = q;
+            updateLocalCartDisplay(itemId, q);
+
+            // Send update in background; sync full cart when response arrives or on error
+            cart.update(itemId, q).then(response => {
+                if (response && Array.isArray(response.cartItems)) renderCartData(response);
+                else loadCart();
+            }).catch(() => loadCart()).finally(() => {
+                if (input && typeof input.disabled === 'boolean') input.disabled = false;
+                cartQuantityLock = false;
+            });
+
+            // Allow immediate interaction
+            if (input && typeof input.disabled === 'boolean') input.disabled = false;
             cartQuantityLock = false;
+        } catch (err) {
+            console.warn('changeCartQuantity error:', err);
+            if (input && typeof input.disabled === 'boolean') input.disabled = false;
+            cartQuantityLock = false;
+            // Fallback: reload cart
+            await loadCart();
         }
     }
 
@@ -429,8 +461,12 @@
             q = Math.max(step, q);
         }
 
-        await cart.update(itemId, q);
-        loadCart();
+        // Optimistic update: adjust local display then sync with server
+        updateLocalCartDisplay(itemId, q);
+        cart.update(itemId, q).then(response => {
+            if (response && Array.isArray(response.cartItems)) renderCartData(response);
+            else loadCart();
+        }).catch(() => loadCart());
     }
 
     async function proceedToCheckout() {
