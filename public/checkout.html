@@ -119,11 +119,11 @@
                                 <span class="pm-tile-label">PhonePe<br><small>UPI / Phone</small></span>
                                 <span class="pm-tile-check"><i class="fas fa-check-circle"></i></span>
                             </button>
-                            <button type="button" class="pm-tile" data-method="bhim">
-                                <span class="pm-tile-icon pm-bhim-bg">
+                            <button type="button" class="pm-tile" data-method="paytm">
+                                <span class="pm-tile-icon pm-paytm-bg">
                                     <i class="fas fa-wallet" style="font-size: 22px;"></i>
                                 </span>
-                                <span class="pm-tile-label">BHIM<br><small>UPI payment</small></span>
+                                <span class="pm-tile-label">Paytm<br><small>UPI payment</small></span>
                                 <span class="pm-tile-check"><i class="fas fa-check-circle"></i></span>
                             </button>
                         </div>
@@ -885,7 +885,7 @@
 
         .pm-upi-bg  { background: #ede7f6; }
         .pm-phone-bg { background: #e0f2fe; }
-        .pm-bhim-bg { background: #ecfdf5; }
+        .pm-paytm-bg { background: #ecfdf5; }
         .pm-card-bg { background: #e3f2fd; }
         .pm-cc-bg   { background: #ffebee; }
         .pm-net-bg  { background: #e8f5e9; }
@@ -1937,12 +1937,12 @@
             const labelMap = {
                 gpay: 'UPI ID',
                 phone: 'Phone Number',
-                bhim: 'BHIM ID'
+                paytm: 'Paytm ID'
             };
             const displayMethodMap = {
                 gpay: 'GPay / UPI',
                 phone: 'PhonePe',
-                bhim: 'BHIM'
+                paytm: 'Paytm'
             };
 
             label.textContent = labelMap[method] || 'UPI ID';
@@ -2400,7 +2400,7 @@
                 return;
             }
 
-            if (paymentMethod === 'gpay' || paymentMethod === 'phone' || paymentMethod === 'bhim') {
+            if (paymentMethod === 'gpay' || paymentMethod === 'phone' || paymentMethod === 'paytm') {
                 hasQr = String(checkoutGpaySettings.qrImageUrl || '').trim() !== '';
                 hasUpi = String(checkoutGpaySettings.upiId || '').trim() !== '';
                 hasPhone = String(checkoutGpaySettings.phoneNumber || '').trim() !== '';
@@ -2411,8 +2411,8 @@
                 } else if (paymentMethod === 'phone') {
                     gpayDetailType = 'phone';
                     gpayDetailValue = hasPhone ? checkoutGpaySettings.phoneNumber.trim() : checkoutGpaySettings.upiId.trim();
-                } else if (paymentMethod === 'bhim') {
-                    gpayDetailType = 'bhim';
+                } else if (paymentMethod === 'paytm') {
+                    gpayDetailType = 'paytm';
                     gpayDetailValue = hasUpi ? checkoutGpaySettings.upiId.trim() : (hasPhone ? checkoutGpaySettings.phoneNumber.trim() : '');
                 } else {
                     if (gpayDetailType === 'qr' && hasQr) {
@@ -2420,8 +2420,8 @@
                     } else if (gpayDetailType === 'phone') {
                         gpayDetailType = 'phone';
                         gpayDetailValue = hasPhone ? checkoutGpaySettings.phoneNumber.trim() : checkoutGpaySettings.upiId.trim();
-                    } else if (gpayDetailType === 'bhim') {
-                        gpayDetailType = 'bhim';
+                    } else if (gpayDetailType === 'paytm') {
+                        gpayDetailType = 'paytm';
                         gpayDetailValue = hasUpi ? checkoutGpaySettings.upiId.trim() : (hasPhone ? checkoutGpaySettings.phoneNumber.trim() : '');
                     } else if (hasUpi) {
                         gpayDetailType = 'upi';
@@ -2461,7 +2461,7 @@
                 ? currentSubtotal + delivery_charge
                 : 0;
 
-            let paymentDetails = ['gpay', 'phone', 'bhim'].includes(paymentMethod)
+            let paymentDetails = ['gpay', 'phone', 'paytm'].includes(paymentMethod)
                 ? { method: gpayDetailType, value: gpayDetailValue }
                 : null;
 
@@ -2485,7 +2485,7 @@
             const manualAddressUsed = !selectedAddressId;
             const shouldSaveAddress = manualAddressUsed || !!document.getElementById('save_address')?.checked;
 
-            if (paymentMethod === 'gpay' || paymentMethod === 'phone' || paymentMethod === 'bhim') {
+            if (paymentMethod === 'gpay' || paymentMethod === 'phone' || paymentMethod === 'paytm') {
                 // For UPI-based methods, do not wait for server order creation here.
                 // Instead, generate a client-side pending payment payload and redirect
                 // immediately to the QR page. The final order will be created when
@@ -2831,7 +2831,7 @@
                     }
 
                     const paymentMethod = document.getElementById('payment_method')?.value || '';
-                    if (['gpay', 'phone', 'bhim'].includes(paymentMethod)) {
+                    if (['gpay', 'phone', 'paytm'].includes(paymentMethod)) {
                         msg.textContent = 'Confirming order — you will be redirected to the payment QR page.';
                     } else {
                         msg.textContent = 'Confirming order — placing your order now.';
