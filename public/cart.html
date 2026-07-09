@@ -328,6 +328,8 @@
     }
 
     let cartQuantityLock = false;
+    const pendingCartRequests = {}; // itemId -> processing promise
+    const lastDesiredQty = {}; // itemId -> latest desired quantity to send
 
     function parseStep(minQty) {
         const parsedMin = parseInt(minQty, 10);
@@ -411,16 +413,31 @@
             if (input && 'value' in input) input.value = q;
             updateLocalCartDisplay(itemId, q);
 
-            // Send update in background; sync full cart when response arrives or on error
-            cart.update(itemId, q).then(response => {
-                if (response && Array.isArray(response.cartItems)) renderCartData(response);
-                else loadCart();
-            }).catch(() => loadCart()).finally(() => {
-                if (input && typeof input.disabled === 'boolean') input.disabled = false;
-                cartQuantityLock = false;
-            });
+            // Coalesce rapid updates per item: store latest desired qty and ensure
+            // only one background worker processes updates for this item.
+            lastDesiredQty[itemId] = q;
+            if (!pendingCartRequests[itemId]) {
+                pendingCartRequests[itemId] = (async () => {
+                    while (lastDesiredQty[itemId] != null) {
+                        const toSend = lastDesiredQty[itemId];
+                        lastDesiredQty[itemId] = null;
+                        try {
+                            const response = await cart.update(itemId, toSend);
+                            if (response && Array.isArray(response.cartItems)) {
+                                renderCartData(response);
+                            } else {
+                                await loadCart();
+                            }
+                        } catch (e) {
+                            console.warn('Background cart update failed for', itemId, e);
+                            await loadCart();
+                        }
+                    }
+                    delete pendingCartRequests[itemId];
+                })();
+            }
 
-            // Allow immediate interaction
+            // allow immediate further interaction; worker will reconcile
             if (input && typeof input.disabled === 'boolean') input.disabled = false;
             cartQuantityLock = false;
         } catch (err) {
@@ -461,12 +478,26 @@
             q = Math.max(step, q);
         }
 
-        // Optimistic update: adjust local display then sync with server
+        // Optimistic update: adjust local display then schedule background sync
         updateLocalCartDisplay(itemId, q);
-        cart.update(itemId, q).then(response => {
-            if (response && Array.isArray(response.cartItems)) renderCartData(response);
-            else loadCart();
-        }).catch(() => loadCart());
+        lastDesiredQty[itemId] = q;
+        if (!pendingCartRequests[itemId]) {
+            pendingCartRequests[itemId] = (async () => {
+                while (lastDesiredQty[itemId] != null) {
+                    const toSend = lastDesiredQty[itemId];
+                    lastDesiredQty[itemId] = null;
+                    try {
+                        const response = await cart.update(itemId, toSend);
+                        if (response && Array.isArray(response.cartItems)) renderCartData(response);
+                        else await loadCart();
+                    } catch (e) {
+                        console.warn('Background cart update failed for', itemId, e);
+                        await loadCart();
+                    }
+                }
+                delete pendingCartRequests[itemId];
+            })();
+        }
     }
 
     async function proceedToCheckout() {
