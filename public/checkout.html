@@ -2048,6 +2048,16 @@
             }
         }
 
+        function renderPincodeAvailabilityStatus(availability) {
+            const color = availability.is_serviceable ? '#22c55e' : '#ef4444';
+            const icon = availability.is_serviceable ? 'check-circle' : 'times-circle';
+            let html = `<span style="color: ${color}; font-size: 0.85rem;"><i class="fas fa-${icon}"></i> ${escapeHtml(availability.message)}</span>`;
+            if (!availability.is_serviceable) {
+                html += '<div style="margin-top: 0.35rem; font-size: 0.85rem; color: #1d4ed8;">For delivery info, <a href="/contact" style="color: #1d4ed8; text-decoration: underline;">click here</a>.</div>';
+            }
+            return html;
+        }
+
         async function checkCheckoutPincodeAvailability() {
             const manualPinEl = document.getElementById('checkout-pincode-input');
             const statusEl = document.getElementById('cod-pincode-status');
@@ -2067,9 +2077,7 @@
             statusEl.innerHTML = '<span style="color: var(--text-secondary); font-size: 0.85rem;"><i class="fas fa-spinner fa-spin"></i> Checking availability...</span>';
 
             const availability = await fetchPincodeAvailability(rawPin);
-            const color = availability.is_serviceable ? '#22c55e' : '#ef4444';
-            const icon = availability.is_serviceable ? 'check-circle' : 'times-circle';
-            statusEl.innerHTML = `<span style="color: ${color}; font-size: 0.85rem;"><i class="fas fa-${icon}"></i> ${escapeHtml(availability.message)}</span>`;
+            statusEl.innerHTML = renderPincodeAvailabilityStatus(availability);
         }
 
         async function updateCodPincodeCheck() {
