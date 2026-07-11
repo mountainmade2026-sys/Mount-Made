@@ -1298,11 +1298,30 @@
                             headers.Authorization = `Bearer ${token}`;
                         }
 
-                        const resp = await fetch(`${API_BASE}${endpoint}`, {
-                            ...options,
-                            headers,
-                            credentials: 'include'
-                        });
+                        // Add a network timeout and debug logging to avoid hangs
+                        const urlToFetch = `${API_BASE}${endpoint}`;
+                        console.log('api.request: fetching', urlToFetch, options && options.method ? options.method : 'GET');
+                        const controller = new AbortController();
+                        const timeoutMs = 15000; // 15s
+                        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+                        let resp;
+                        try {
+                            resp = await fetch(urlToFetch, {
+                                ...options,
+                                headers,
+                                credentials: 'include',
+                                signal: controller.signal
+                            });
+                        } catch (fetchErr) {
+                            if (fetchErr && fetchErr.name === 'AbortError') {
+                                console.error('api.request: request timed out for', urlToFetch);
+                                throw new Error('Request timed out');
+                            }
+                            console.error('api.request: fetch failed for', urlToFetch, fetchErr);
+                            throw fetchErr;
+                        } finally {
+                            clearTimeout(timeoutId);
+                        }
                         const text = await resp.text();
                         const data = text ? (() => { try { return JSON.parse(text); } catch { return null; } })() : null;
                         if (!resp.ok) throw new Error((data && data.error) || 'Request failed');
