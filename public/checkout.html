@@ -2329,6 +2329,66 @@
             }
         }
 
+        function updateCodConfirmationAfterServer(order) {
+            const content = document.getElementById('order-status-content');
+            if (!content) return;
+            const orderNumber = order?.order_number || order?.id || order?.orderId || '—';
+            content.innerHTML = `
+                <button type="button" class="order-modal-close" onclick="hideOrderStatusModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div class="order-modal-icon success">
+                    <i class="fas fa-check"></i>
+                </div>
+                <h3 class="order-modal-title">Order confirmed</h3>
+                <p class="order-modal-text">Your order has been confirmed. Order number: <strong>${orderNumber}</strong>.</p>
+                <div class="order-modal-actions">
+                    <button class="btn btn-primary" onclick="window.location.href='/orders'">
+                        <i class="fas fa-box"></i> View My Orders
+                    </button>
+                    <button class="btn btn-secondary" onclick="hideOrderStatusModal()">Close</button>
+                </div>
+            `;
+        }
+
+        function updateCodConfirmationOnError(err) {
+            const content = document.getElementById('order-status-content');
+            if (!content) return;
+            console.error('COD background order save failed:', err);
+            content.innerHTML = `
+                <button type="button" class="order-modal-close" onclick="hideOrderStatusModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div class="order-modal-icon" style="background: rgba(250, 204, 21, 0.12); color: #b45309;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <h3 class="order-modal-title">Order pending</h3>
+                <p class="order-modal-text">We could not save your order to the server right now. We'll retry automatically and email you when it's confirmed. You can also try again now.</p>
+                <div class="order-modal-actions">
+                    <button class="btn btn-primary" id="cod-retry-save-btn"><i class="fas fa-redo"></i> Retry Now</button>
+                    <button class="btn btn-secondary" onclick="hideOrderStatusModal()">Close</button>
+                </div>
+            `;
+
+            const retryBtn = document.getElementById('cod-retry-save-btn');
+            if (retryBtn) {
+                retryBtn.addEventListener('click', async () => {
+                    retryBtn.disabled = true;
+                    retryBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Retrying...';
+                    try {
+                        // Rebuild orderData from the form and trigger background save
+                        const evt = new Event('submit', { cancelable: true, bubbles: true });
+                        document.getElementById('checkout-form').dispatchEvent(evt);
+                    } catch (e) {
+                        console.error('Retry submit failed', e);
+                    } finally {
+                        retryBtn.disabled = false;
+                        retryBtn.innerHTML = '<i class="fas fa-redo"></i> Retry Now';
+                    }
+                });
+            }
+        }
+
         const checkoutPincodeCache = {};
 
         function normalizeCheckoutPincode(value) {
@@ -2951,11 +3011,26 @@
 
                 const result = await api.post('/orders', orderData);
                 console.log('checkout: order response', result);
-                applyOrderPlacedUI(result.order);
+                if (paymentMethod === 'cod') {
+                    // For COD: we already showed an immediate friendly confirmation.
+                    // Update that confirmation when the server returns the real order.
+                    try {
+                        updateCodConfirmationAfterServer(result && result.order ? result.order : null);
+                    } catch (e) {
+                        console.warn('Failed updating COD confirmation UI:', e);
+                    }
+                } else {
+                    applyOrderPlacedUI(result.order);
+                }
             } catch (error) {
-                setPlaceOrderButtonState(false);
-                console.error('Checkout submit failed:', error);
-                showAlert(error.message || 'Failed to place order', 'error');
+                if (paymentMethod === 'cod') {
+                    // Keep the immediate confirmation visible but notify user we'll retry.
+                    try { updateCodConfirmationOnError(error); } catch (e) { console.error(e); }
+                } else {
+                    setPlaceOrderButtonState(false);
+                    console.error('Checkout submit failed:', error);
+                    showAlert(error.message || 'Failed to place order', 'error');
+                }
             }
         } catch (err) {
             console.error('Checkout submit handler error:', err);
