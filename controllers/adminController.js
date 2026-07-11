@@ -2354,6 +2354,10 @@ exports.updateSiteSettings = async (req, res) => {
       standard_delivery_enabled,
       standard_delivery_charge,
       standard_delivery_free_above,
+      payment_gpay_enabled,
+      payment_phonepe_enabled,
+      payment_paytm_enabled,
+      payment_cod_enabled,
       gpay_enabled,
       gpay_payee_name,
       gpay_upi_id,
@@ -2385,6 +2389,12 @@ exports.updateSiteSettings = async (req, res) => {
       gpay_bank_name !== undefined ||
       gpay_qr_image_url !== undefined;
 
+    const hasPaymentMethodSetting =
+      payment_gpay_enabled !== undefined ||
+      payment_phonepe_enabled !== undefined ||
+      payment_paytm_enabled !== undefined ||
+      payment_cod_enabled !== undefined;
+
     const hasAdminManageablePincodeSetting = req.body?.cod_available_pincodes !== undefined;
 
     if (hasLicenseChange && req.user?.role !== 'super_admin') {
@@ -2393,6 +2403,10 @@ exports.updateSiteSettings = async (req, res) => {
 
     if (hasSuperAdminOnlyCommerceSetting && req.user?.role !== 'super_admin') {
       return res.status(403).json({ error: 'Only super admin can manage Business Email and GPay settings.' });
+    }
+
+    if (hasPaymentMethodSetting && !['admin', 'super_admin'].includes(req.user?.role)) {
+      return res.status(403).json({ error: 'Only admins can manage payment method settings.' });
     }
 
     if (hasAdminManageablePincodeSetting && !['admin', 'super_admin'].includes(req.user?.role)) {
@@ -2622,6 +2636,38 @@ exports.updateSiteSettings = async (req, res) => {
       updates.push({ key: 'standard_delivery_free_above', value: parsed.toFixed(2) });
       // Also update legacy key for backward compatibility
       updates.push({ key: 'fast_delivery_free_above', value: parsed.toFixed(2) });
+    }
+
+    if (payment_gpay_enabled !== undefined && payment_gpay_enabled !== null) {
+      const enabledValue =
+        typeof payment_gpay_enabled === 'boolean'
+          ? payment_gpay_enabled
+          : String(payment_gpay_enabled).toLowerCase() === 'true';
+      updates.push({ key: 'payment_gpay_enabled', value: enabledValue ? 'true' : 'false' });
+    }
+
+    if (payment_phonepe_enabled !== undefined && payment_phonepe_enabled !== null) {
+      const enabledValue =
+        typeof payment_phonepe_enabled === 'boolean'
+          ? payment_phonepe_enabled
+          : String(payment_phonepe_enabled).toLowerCase() === 'true';
+      updates.push({ key: 'payment_phonepe_enabled', value: enabledValue ? 'true' : 'false' });
+    }
+
+    if (payment_paytm_enabled !== undefined && payment_paytm_enabled !== null) {
+      const enabledValue =
+        typeof payment_paytm_enabled === 'boolean'
+          ? payment_paytm_enabled
+          : String(payment_paytm_enabled).toLowerCase() === 'true';
+      updates.push({ key: 'payment_paytm_enabled', value: enabledValue ? 'true' : 'false' });
+    }
+
+    if (payment_cod_enabled !== undefined && payment_cod_enabled !== null) {
+      const enabledValue =
+        typeof payment_cod_enabled === 'boolean'
+          ? payment_cod_enabled
+          : String(payment_cod_enabled).toLowerCase() === 'true';
+      updates.push({ key: 'payment_cod_enabled', value: enabledValue ? 'true' : 'false' });
     }
 
     if (gpay_enabled !== undefined && gpay_enabled !== null) {

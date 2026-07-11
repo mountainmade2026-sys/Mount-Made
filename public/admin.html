@@ -2842,6 +2842,49 @@
                     </div>
                 </div>
 
+                <div id="ss-sub-payments" class="data-table-container" style="margin-top: 1.5rem;">
+                    <div class="table-header">
+                        <h3>Payment Methods</h3>
+                    </div>
+                    <div style="padding: 2rem;">
+                        <p style="color: var(--text-muted); margin-bottom: 1rem;">
+                            Enable or disable checkout payment methods dynamically. These settings apply instantly to the checkout page.
+                        </p>
+
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <label class="form-label" style="display:flex; align-items:center; gap:0.5rem;">
+                                <input type="checkbox" id="payment-gpay-enabled" style="width:auto;">
+                                Enable GPay / UPI at checkout
+                            </label>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <label class="form-label" style="display:flex; align-items:center; gap:0.5rem;">
+                                <input type="checkbox" id="payment-phonepe-enabled" style="width:auto;">
+                                Enable PhonePe at checkout
+                            </label>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <label class="form-label" style="display:flex; align-items:center; gap:0.5rem;">
+                                <input type="checkbox" id="payment-paytm-enabled" style="width:auto;">
+                                Enable Paytm at checkout
+                            </label>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <label class="form-label" style="display:flex; align-items:center; gap:0.5rem;">
+                                <input type="checkbox" id="payment-cod-enabled" style="width:auto;">
+                                Enable Cash on Delivery at checkout
+                            </label>
+                        </div>
+
+                        <button class="btn btn-primary" onclick="savePaymentMethodSettings()">
+                            <i class="fas fa-toggle-on"></i> Save Payment Methods
+                        </button>
+                    </div>
+                </div>
+
                 <div id="ss-sub-gpay" class="data-table-container" style="margin-top: 1.5rem;">
                     <div class="table-header">
                         <h3>Google Pay Integration</h3>
@@ -4580,6 +4623,7 @@
                 { id: 'ss-sub-about',     label: 'About Us' },
                 { id: 'ss-sub-contact',   label: 'Contact Info' },
                 { id: 'ss-sub-email',     label: 'Business Email' },
+                { id: 'ss-sub-payments',  label: 'Payment Methods' },
                 { id: 'ss-sub-gpay',      label: 'Google Pay' },
                 { id: 'ss-sub-cod',       label: 'Delivery Pincodes' },
                 { id: 'ss-sub-notice',    label: 'Site Notice' }
@@ -8133,6 +8177,24 @@
                 }
                 updateProductCardImageRatioPreview();
 
+                const paymentGpayEnabledEl = document.getElementById('payment-gpay-enabled');
+                const paymentPhonepeEnabledEl = document.getElementById('payment-phonepe-enabled');
+                const paymentPaytmEnabledEl = document.getElementById('payment-paytm-enabled');
+                const paymentCodEnabledEl = document.getElementById('payment-cod-enabled');
+
+                if (paymentGpayEnabledEl) {
+                    paymentGpayEnabledEl.checked = String(settings.payment_gpay_enabled ?? settings.gpay_enabled ?? 'true').toLowerCase() === 'true';
+                }
+                if (paymentPhonepeEnabledEl) {
+                    paymentPhonepeEnabledEl.checked = String(settings.payment_phonepe_enabled ?? 'true').toLowerCase() === 'true';
+                }
+                if (paymentPaytmEnabledEl) {
+                    paymentPaytmEnabledEl.checked = String(settings.payment_paytm_enabled ?? 'true').toLowerCase() === 'true';
+                }
+                if (paymentCodEnabledEl) {
+                    paymentCodEnabledEl.checked = String(settings.payment_cod_enabled ?? 'true').toLowerCase() === 'true';
+                }
+
                 const aboutDescriptionEl = document.getElementById('about-us-description');
                 const aboutPageTitleEl = document.getElementById('about-page-title');
                 const faqPageTitleEl = document.getElementById('faq-page-title');
@@ -9228,6 +9290,32 @@
             previewImg.src = finalUrl;
             previewWrap.style.display = 'block';
         }
+
+        window.savePaymentMethodSettings = async function() {
+            if (!_canManageDeliveryPincodes()) {
+                showAlert('Only admins can update payment methods.', 'error');
+                return;
+            }
+            try {
+                const payload = {
+                    payment_gpay_enabled: !!document.getElementById('payment-gpay-enabled')?.checked,
+                    payment_phonepe_enabled: !!document.getElementById('payment-phonepe-enabled')?.checked,
+                    payment_paytm_enabled: !!document.getElementById('payment-paytm-enabled')?.checked,
+                    payment_cod_enabled: !!document.getElementById('payment-cod-enabled')?.checked
+                };
+
+                const response = await api.post('/admin/settings', payload);
+                if (response && (response.success || response.message)) {
+                    showAlert('Payment methods saved successfully!', 'success');
+                    await loadSiteSettings();
+                } else {
+                    throw new Error(response?.error || 'Failed to save payment methods');
+                }
+            } catch (error) {
+                console.error('Save payment method settings error:', error);
+                showAlert(error.message || 'Failed to save payment methods', 'error');
+            }
+        };
 
         window.saveGpayIntegrationSettings = async function() {
             if (!_isSuperAdminUser()) {

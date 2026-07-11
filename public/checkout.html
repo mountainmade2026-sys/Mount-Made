@@ -126,7 +126,15 @@
                                 <span class="pm-tile-label">Paytm<br><small>UPI payment</small></span>
                                 <span class="pm-tile-check"><i class="fas fa-check-circle"></i></span>
                             </button>
+                            <button type="button" class="pm-tile" data-method="cod">
+                                <span class="pm-tile-icon pm-cod-bg">
+                                    <i class="fas fa-money-bill-wave" style="font-size: 22px;"></i>
+                                </span>
+                                <span class="pm-tile-label">Cash on Delivery<br><small>Pay on delivery</small></span>
+                                <span class="pm-tile-check"><i class="fas fa-check-circle"></i></span>
+                            </button>
                         </div>
+                        <div id="payment-method-status" class="form-help" style="display:none; margin-top:0.75rem;"></div>
 
                         <!-- UPI / GPay details panel -->
                         <div id="gpay-details" class="pm-detail-panel">
@@ -1371,6 +1379,12 @@
             bankName: '',
             qrImageUrl: ''
         };
+        let checkoutPaymentSettings = {
+            gpayEnabled: true,
+            phonepeEnabled: true,
+            paytmEnabled: true,
+            codEnabled: true
+        };
         // COD pincode list – empty = available everywhere
         let checkoutCodPincodes = [];
 
@@ -2162,18 +2176,45 @@
             }
         }
 
+        function getEnabledPaymentMethods() {
+            const methods = [];
+            if (checkoutPaymentSettings.gpayEnabled) methods.push('gpay');
+            if (checkoutPaymentSettings.phonepeEnabled) methods.push('phone');
+            if (checkoutPaymentSettings.paytmEnabled) methods.push('paytm');
+            if (checkoutPaymentSettings.codEnabled) methods.push('cod');
+            return methods;
+        }
+
         function selectPaymentMethod(method) {
+            const availableMethods = getEnabledPaymentMethods();
+            const normalizedMethod = String(method || 'gpay').toLowerCase();
+            const safeMethod = availableMethods.includes(normalizedMethod)
+                ? normalizedMethod
+                : (availableMethods[0] || 'cod');
             const hidden = document.getElementById('payment_method');
-            if (hidden) hidden.value = method || 'gpay';
+            if (hidden) hidden.value = safeMethod;
 
             document.querySelectorAll('.pm-tile').forEach(t => {
-                t.classList.toggle('pm-tile-selected', t.dataset.method === method);
+                const enabled = availableMethods.includes(t.dataset.method);
+                t.style.display = enabled ? '' : 'none';
+                t.classList.toggle('pm-tile-selected', t.dataset.method === safeMethod);
             });
+
+            const statusEl = document.getElementById('payment-method-status');
+            if (statusEl) {
+                if (availableMethods.length === 0) {
+                    statusEl.textContent = 'No payment methods are currently available.';
+                    statusEl.style.display = 'block';
+                } else {
+                    statusEl.textContent = '';
+                    statusEl.style.display = 'none';
+                }
+            }
 
             const gpaySection = document.getElementById('gpay-details');
             if (gpaySection) gpaySection.classList.remove('hidden');
 
-            updateGpayLabelAndPrefill();
+            updateGpayLabelAndPrefill(safeMethod);
             updateCodPincodeCheck();
         }
 
@@ -2420,7 +2461,12 @@
                 checkoutSettings.standardDeliveryCharge = charge;
                 checkoutSettings.standardDeliveryFreeAbove = freeAbove;
 
-                checkoutGpaySettings.enabled = String(settings.gpay_enabled || 'false').toLowerCase() === 'true';
+                checkoutPaymentSettings.gpayEnabled = String(settings.payment_gpay_enabled ?? settings.gpay_enabled ?? 'true').toLowerCase() === 'true';
+                checkoutPaymentSettings.phonepeEnabled = String(settings.payment_phonepe_enabled ?? 'true').toLowerCase() === 'true';
+                checkoutPaymentSettings.paytmEnabled = String(settings.payment_paytm_enabled ?? 'true').toLowerCase() === 'true';
+                checkoutPaymentSettings.codEnabled = String(settings.payment_cod_enabled ?? 'true').toLowerCase() === 'true';
+
+                checkoutGpaySettings.enabled = checkoutPaymentSettings.gpayEnabled;
                 checkoutGpaySettings.payeeName = String(settings.gpay_payee_name || 'Mount Made').trim();
                 checkoutGpaySettings.upiId = String(settings.gpay_upi_id || '').trim();
                 checkoutGpaySettings.phoneNumber = String(settings.gpay_phone_number || '').trim();
@@ -2445,6 +2491,7 @@
 
                 updateOrderSummaryTotals();
                 updateGpayLabelAndPrefill();
+                selectPaymentMethod(document.getElementById('payment_method')?.value || 'gpay');
             } catch (error) {
                 console.error('Failed to load checkout settings:', error);
                 // On error, keep defaults (standard delivery free)
@@ -2636,6 +2683,13 @@
                     setPlaceOrderButtonState(false);
                     return;
                 }
+            }
+
+            const availableMethods = getEnabledPaymentMethods();
+            if (!availableMethods.includes(paymentMethod)) {
+                showAlert('Selected payment method is not available right now.', 'error');
+                setPlaceOrderButtonState(false);
+                return;
             }
 
             const userNotes = document.getElementById('notes')?.value || '';
