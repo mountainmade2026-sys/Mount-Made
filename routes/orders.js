@@ -77,6 +77,34 @@ router.post('/', async (req, res) => {
       total_amount: totalAmount
     };
 
+    const paymentMethod = String(req.body?.payment_method || '').toLowerCase();
+    const isCodOrder = paymentMethod === 'cod' || paymentMethod === 'cash_on_delivery';
+
+    if (isCodOrder) {
+      const order = await Order.create(orderData);
+      const capturedUserId = req.user.id;
+      const capturedOrderId = order.id;
+      Promise.resolve().then(async () => {
+        try {
+          const [userResult, itemsResult] = await Promise.all([
+            db.query('SELECT full_name, phone FROM users WHERE id = $1', [capturedUserId]),
+            db.query(
+              'SELECT product_name, quantity, price FROM order_items WHERE order_id = $1',
+              [capturedOrderId]
+            )
+          ]);
+          const customer = userResult.rows[0] || {};
+          const items = itemsResult.rows || [];
+          await sendOrderNotificationToAdmin(order, customer, items);
+          await notifyOrderPlaced(customer.phone, customer.full_name || 'Customer', order.order_number, order.total_amount);
+        } catch (notifyErr) {
+          console.error('[EMAIL] COD order notification failed:', notifyErr.message, notifyErr.stack);
+        }
+      }).catch(err => console.error('[EMAIL] Unhandled COD notification error:', err.message));
+
+      return res.status(201).json({ message: 'Order placed successfully.', order });
+    }
+
     // Enqueue the order for background processing to avoid DB contention under spikes
     try {
       const { orderQueue } = require('../queues/orderQueue');
