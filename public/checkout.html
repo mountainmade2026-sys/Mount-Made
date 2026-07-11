@@ -2214,6 +2214,7 @@
             const gpaySection = document.getElementById('gpay-details');
             if (gpaySection) gpaySection.classList.remove('hidden');
 
+            setConfirmOrderButtonLabel(safeMethod);
             updateGpayLabelAndPrefill(safeMethod);
             updateCodPincodeCheck();
         }
@@ -2221,6 +2222,58 @@
         function toggleGpayDetails() {
             const hidden = document.getElementById('payment_method');
             if (hidden) selectPaymentMethod(hidden.value);
+        }
+
+        function setConfirmOrderButtonLabel(method) {
+            const button = document.getElementById('confirm-order-btn');
+            const label = button?.querySelector('.confirm-order-label');
+            const icon = button?.querySelector('i');
+            const normalizedMethod = String(method || '').toLowerCase();
+            const isCod = normalizedMethod === 'cod';
+
+            if (!button || !label) return;
+            if (button.dataset.orderPlaced === 'true') return;
+
+            label.textContent = isCod ? 'Place Order' : 'Confirm Order';
+            if (icon) {
+                icon.className = isCod ? 'fas fa-money-bill-wave' : 'fas fa-check';
+            }
+        }
+
+        function showCodOrderConfirmationDialog(onConfirm) {
+            const existing = document.getElementById('cod-order-confirm-modal');
+            if (existing) existing.remove();
+
+            const overlay = document.createElement('div');
+            overlay.id = 'cod-order-confirm-modal';
+            overlay.style.cssText = 'position:fixed; inset:0; background:rgba(15,23,42,0.65); display:flex; align-items:center; justify-content:center; padding:1rem; z-index:1100;';
+            overlay.innerHTML = `
+                <div style="background:#fff; border-radius:16px; max-width:440px; width:100%; padding:1.4rem 1.4rem 1.2rem; box-shadow:0 20px 60px rgba(0,0,0,0.22);">
+                    <div style="display:flex; align-items:center; gap:0.65rem; margin-bottom:0.8rem;">
+                        <div style="width:44px; height:44px; border-radius:12px; background:linear-gradient(135deg,#065f46,#10b981); color:#fff; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                        <div>
+                            <h3 style="margin:0; font-size:1.04rem; color:#111827;">Confirm Cash on Delivery Order</h3>
+                            <p style="margin:0.2rem 0 0; font-size:0.9rem; color:#6b7280;">Your order will be placed and shared with our team for confirmation.</p>
+                        </div>
+                    </div>
+                    <div style="padding:0.85rem 0 1rem; color:#374151; font-size:0.95rem; line-height:1.5;">
+                        Please review your address and order details before continuing. Once placed, our team will process the COD order and it will appear in the customer orders section for admins.
+                    </div>
+                    <div style="display:flex; justify-content:flex-end; gap:0.6rem;">
+                        <button type="button" id="cod-order-cancel-btn" class="btn btn-secondary btn-sm">Cancel</button>
+                        <button type="button" id="cod-order-confirm-btn" class="btn btn-primary btn-sm">Place Order</button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(overlay);
+            overlay.querySelector('#cod-order-cancel-btn').addEventListener('click', () => overlay.remove());
+            overlay.querySelector('#cod-order-confirm-btn').addEventListener('click', () => {
+                overlay.remove();
+                if (typeof onConfirm === 'function') onConfirm();
+            });
         }
 
         const checkoutPincodeCache = {};
@@ -3071,8 +3124,29 @@
                 confirmBtn.addEventListener('click', (evt) => {
                     evt.preventDefault();
 
-                    confirmBtn.disabled = true;
+                    const form = document.getElementById('checkout-form');
+                    const paymentMethod = document.getElementById('payment_method')?.value || '';
                     const label = confirmBtn.querySelector('.confirm-order-label');
+                    const icon = confirmBtn.querySelector('i');
+
+                    if (paymentMethod === 'cod') {
+                        showCodOrderConfirmationDialog(() => {
+                            confirmBtn.disabled = true;
+                            if (label) label.textContent = 'Placing Order...';
+                            if (icon) icon.className = 'fas fa-spinner fa-spin';
+                            showOrderProcessing();
+                            setTimeout(() => {
+                                if (form && typeof form.requestSubmit === 'function') {
+                                    form.requestSubmit();
+                                } else if (form) {
+                                    form.submit();
+                                }
+                            }, 180);
+                        });
+                        return;
+                    }
+
+                    confirmBtn.disabled = true;
                     if (label) label.textContent = 'Confirming...';
 
                     let msg = document.getElementById('order-confirmation-msg');
@@ -3085,14 +3159,12 @@
                         else document.body.appendChild(msg);
                     }
 
-                    const paymentMethod = document.getElementById('payment_method')?.value || '';
                     if (['gpay', 'phone', 'paytm'].includes(paymentMethod)) {
                         msg.textContent = 'Confirming order — you will be redirected to the payment QR page.';
                     } else {
                         msg.textContent = 'Confirming order — placing your order now.';
                     }
 
-                    const form = document.getElementById('checkout-form');
                     if (form && typeof form.requestSubmit === 'function') {
                         form.requestSubmit();
                     } else if (form) {
