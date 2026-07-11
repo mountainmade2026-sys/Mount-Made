@@ -2613,8 +2613,10 @@
 
         document.getElementById('checkout-form').addEventListener('submit', async (e) => {
                     e.preventDefault();
+                    console.log('checkout: submit handler entered');
                     setPlaceOrderButtonState(true);
                     try {
+                        console.log('checkout: starting submit flow');
                         let shippingAddress;
 
                         if (selectedAddressId) {
@@ -2663,6 +2665,7 @@
                 setPlaceOrderButtonState(true);
 
                 const paymentMethod = document.getElementById('payment_method').value;
+                console.log('checkout: paymentMethod=', paymentMethod);
             let gpayDetailType = 'upi';
             let gpayDetailValue = '';
             let hasQr = false;
@@ -2686,6 +2689,7 @@
                 console.warn('Pincode validation failed:', e);
                 pincodeOk = false;
             }
+            console.log('checkout: pincodeOk=', pincodeOk);
             if (!pincodeOk) {
                 setPlaceOrderButtonState(false);
                 showAlert('Please enter a valid delivery PIN code before placing the order.', 'error');
@@ -2870,6 +2874,7 @@
                 return;
             }
             try {
+                console.log('checkout: about to submit order to server');
                 if (shouldSaveAddress) {
                     try {
                         await api.post('/addresses', {
@@ -2890,6 +2895,7 @@
                 }
 
                 const result = await api.post('/orders', orderData);
+                console.log('checkout: order response', result);
                 applyOrderPlacedUI(result.order);
             } catch (error) {
                 setPlaceOrderButtonState(false);
