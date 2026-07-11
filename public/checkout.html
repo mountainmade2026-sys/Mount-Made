@@ -3141,7 +3141,8 @@
                                 if (form && typeof form.requestSubmit === 'function') {
                                     form.requestSubmit();
                                 } else if (form) {
-                                    form.submit();
+                                    // Use dispatchEvent to ensure the JS submit handler runs
+                                    form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
                                 }
                             }, 180);
                         });
@@ -3170,7 +3171,8 @@
                     if (form && typeof form.requestSubmit === 'function') {
                         form.requestSubmit();
                     } else if (form) {
-                        form.submit();
+                        // Ensure the registered submit handler is invoked even if requestSubmit isn't available
+                        form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
                     }
                 });
             }
