@@ -2295,6 +2295,40 @@
             });
         }
 
+        function showCodImmediateConfirmation() {
+            const modal = document.getElementById('order-status-modal');
+            const content = document.getElementById('order-status-content');
+            if (!modal || !content) return;
+
+            modal.classList.remove('hidden');
+            content.innerHTML = `
+                <button type="button" class="order-modal-close" onclick="hideOrderStatusModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div class="order-modal-icon success">
+                    <i class="fas fa-check"></i>
+                </div>
+                <h3 class="order-modal-title">Order confirmed</h3>
+                <p class="order-modal-text">Your order has been confirmed. We will update you on your Gmail shortly with the order details.</p>
+                <div class="order-modal-actions">
+                    <button class="btn btn-primary" onclick="window.location.href='/orders'">
+                        <i class="fas fa-box"></i> View My Orders
+                    </button>
+                    <button class="btn btn-secondary" onclick="hideOrderStatusModal()">Close</button>
+                </div>
+            `;
+
+            const placeOrderBtn = document.getElementById('confirm-order-btn');
+            if (placeOrderBtn) {
+                placeOrderBtn.disabled = true;
+                const label = placeOrderBtn.querySelector('.confirm-order-label');
+                const icon = placeOrderBtn.querySelector('i');
+                if (label) label.textContent = 'Order Confirmed';
+                if (icon) icon.className = 'fas fa-check';
+                placeOrderBtn.dataset.orderPlaced = 'true';
+            }
+        }
+
         const checkoutPincodeCache = {};
 
         function normalizeCheckoutPincode(value) {
@@ -2631,9 +2665,10 @@
         }
 
         document.getElementById('checkout-form').addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    console.log('checkout: submit handler entered');
-                    setPlaceOrderButtonState(true);
+                e.preventDefault();
+                console.log('checkout: submit handler entered');
+                // Do not force the processing overlay for COD — COD shows an immediate confirmation dialog.
+                // For other payment methods, enable the processing indicator below after determining paymentMethod.
                     try {
                         console.log('checkout: starting submit flow');
                         let shippingAddress;
@@ -2681,9 +2716,10 @@
                     };
                 }
 
-                setPlaceOrderButtonState(true);
-
                 const paymentMethod = document.getElementById('payment_method').value;
+                if (paymentMethod !== 'cod') {
+                    setPlaceOrderButtonState(true);
+                }
                 console.log('checkout: paymentMethod=', paymentMethod);
             let gpayDetailType = 'upi';
             let gpayDetailValue = '';
@@ -3156,17 +3192,16 @@
 
                     if (paymentMethod === 'cod') {
                         showCodOrderConfirmationDialog(() => {
-                            // Ensure the place-order UI and state is set exactly like a normal place-order action
-                            try { setPlaceOrderButtonState(true); } catch (e) {}
-                            confirmBtn.disabled = true;
-                            if (label) label.textContent = 'Placing Order...';
-                            if (icon) icon.className = 'fas fa-spinner fa-spin';
-                            showOrderProcessing();
+                            // Immediately show a friendly confirmation for COD and send order in background
+                            try { confirmBtn.disabled = true; } catch (e) {}
+                            if (label) label.textContent = 'Order Confirmed';
+                            if (icon) icon.className = 'fas fa-check';
+                            showCodImmediateConfirmation();
+                            // Submit the form so the normal order creation flow runs, but do not show the old processing overlay
                             setTimeout(() => {
                                 if (form && typeof form.requestSubmit === 'function') {
                                     form.requestSubmit();
                                 } else if (form) {
-                                    // Use dispatchEvent to ensure the JS submit handler runs
                                     form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
                                 }
                             }, 180);
