@@ -3131,6 +3131,8 @@
 
                     if (paymentMethod === 'cod') {
                         showCodOrderConfirmationDialog(() => {
+                            // Ensure the place-order UI and state is set exactly like a normal place-order action
+                            try { setPlaceOrderButtonState(true); } catch (e) {}
                             confirmBtn.disabled = true;
                             if (label) label.textContent = 'Placing Order...';
                             if (icon) icon.className = 'fas fa-spinner fa-spin';
