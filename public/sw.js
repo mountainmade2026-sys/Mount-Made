@@ -21,15 +21,8 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // For navigations/documents, provide an offline-friendly fallback text.
+  // Do not intercept navigation requests. Let the browser load page routes directly.
   if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request).catch(() => {
-        return new Response('Offline - Please check your connection', {
-          headers: { 'Content-Type': 'text/plain' }
-        });
-      })
-    );
     return;
   }
 
