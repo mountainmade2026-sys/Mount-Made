@@ -33,6 +33,14 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Static assets: network-first, but do not replace errors with custom text.
-  event.respondWith(fetch(request));
+  // Static assets: network-first, but handle network failures gracefully.
+  event.respondWith(
+    fetch(request).catch((err) => {
+      console.error('Service Worker fetch failed for', request.url, err);
+      return new Response('Network Error', {
+        status: 502,
+        headers: { 'Content-Type': 'text/plain' }
+      });
+    })
+  );
 });
