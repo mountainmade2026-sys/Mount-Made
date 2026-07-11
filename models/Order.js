@@ -125,8 +125,9 @@ class Order {
         }
       }
       
-      // Insert order first, then set a stable business order number based on ID
+      // Insert order first with a temporary non-null order number, then set a stable business order number based on ID.
       const orderBase = this.buildOrderNumberBase(new Date());
+      const tempOrderNumber = `${orderBase}TMP${String(Math.floor(Math.random() * 1000000)).padStart(6, '0')}`;
       const insertQuery = `
         INSERT INTO orders (
           user_id,
@@ -148,12 +149,13 @@ class Order {
           delivery_speed,
           delivery_charge
         )
-        VALUES ($1, NULL, $2, $3, $4, $5, COALESCE($6, 'unpaid'), $7, $8, $9, $10, $11, $12, $13, $14, 'pending', $15, $16)
+        VALUES ($1, $2, $3, $4, $5, $6, COALESCE($7, 'unpaid'), $8, $9, $10, $11, $12, $13, $14, $15, 'pending', $16, $17)
         RETURNING *
       `;
 
       const insertResult = await client.query(insertQuery, [
         user_id,
+        tempOrderNumber,
         total_amount,
         JSON.stringify(shipping_address),
         payment_method,
