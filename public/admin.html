@@ -4218,68 +4218,91 @@
 
                 <div style="padding: 1rem;">
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-                        <!-- Editor Panel -->
+                        <!-- Editor Panel (simplified) -->
                         <div style="border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; background: var(--bg-card);">
                             <h3 style="margin-bottom: 1rem; color: var(--text-dark);">Edit Invoice Details</h3>
-                            
+
                             <input type="hidden" id="invoice-editor-order-id">
-                            
-                            <div style="margin-bottom: 1rem;">
-                                <label class="form-label">Invoice Number</label>
-                                <input type="text" id="invoice-editor-number" class="form-input" oninput="updateInvoicePreview()">
-                            </div>
-                            
-                            <div style="margin-bottom: 1rem;">
-                                <label class="form-label">Company Name</label>
-                                <input type="text" id="invoice-editor-company" class="form-input" value="Mount Made" oninput="updateInvoicePreview()">
-                            </div>
-                            
-                            <div style="margin-bottom: 1rem;">
-                                <label class="form-label">Customer Name</label>
-                                <input type="text" id="invoice-editor-customer" class="form-input" oninput="updateInvoicePreview()">
-                            </div>
-                            
-                            <div style="margin-bottom: 1rem;">
-                                <label class="form-label">Customer Email</label>
-                                <input type="email" id="invoice-editor-email" class="form-input" oninput="updateInvoicePreview()">
-                            </div>
-                            
-                            <div style="margin-bottom: 1rem;">
-                                <label class="form-label">Customer Phone</label>
-                                <input type="text" id="invoice-editor-phone" class="form-input" oninput="updateInvoicePreview()">
-                            </div>
-                            
-                            <div style="margin-bottom: 1rem;">
-                                <label class="form-label">Delivery Address</label>
-                                <textarea id="invoice-editor-address" class="form-textarea" rows="3" oninput="updateInvoicePreview()"></textarea>
-                            </div>
-                            
+
                             <div style="margin-bottom: 1rem;">
                                 <label class="form-label">Thank You Message</label>
-                                <textarea id="invoice-editor-thankyou" class="form-textarea" rows="2" placeholder="Thank you for shopping with Mount Made!" oninput="updateInvoicePreview()">Thank you for shopping with Mount Made!</textarea>
+                                <textarea id="invoice-editor-thankyou" class="form-textarea" rows="4" placeholder="Thank you for shopping with Mount Made!" oninput="updateInvoicePreview()">Thank you for shopping with Mount Made!</textarea>
                             </div>
-                            
-                            <h4 style="margin-top: 1.5rem; margin-bottom: 1rem; color: var(--text-dark);">Invoice Items</h4>
-                            <div id="invoice-editor-items" style="margin-bottom: 1rem;"></div>
-                            
-                            <button type="button" class="btn btn-secondary btn-sm" onclick="addInvoiceItem()" style="margin-bottom: 1rem;">
-                                <i class="fas fa-plus"></i> Add Item
-                            </button>
-                            
-                            <div style="margin-bottom: 1rem; padding: 1rem; background: var(--bg); border-radius: 8px;">
-                                <label class="form-label">Discount (₹)</label>
-                                <input type="number" id="invoice-editor-discount" class="form-input" min="0" step="0.01" value="0" oninput="updateInvoicePreview()">
+
+                            <h4 style="margin-top: 1.25rem; margin-bottom: 0.5rem; color: var(--text-dark);">Template Controls</h4>
+                            <div style="margin-bottom: 0.75rem; font-size:0.95rem;color:var(--text-secondary);">
+                                Use the controls to select a block, adjust position/size and typography, or upload a logo. You can also drag blocks directly in the preview area.
                             </div>
-                            
-                            <div style="margin-bottom: 1rem; padding: 1rem; background: var(--bg); border-radius: 8px;">
-                                <label class="form-label">Delivery Charge (₹)</label>
-                                <input type="number" id="invoice-editor-delivery" class="form-input" min="0" step="0.01" value="0" oninput="updateInvoicePreview()">
+
+                            <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.75rem;">
+                                <label class="form-label" style="margin:0;min-width:110px;">Block</label>
+                                <select id="invoice-layout-block-select" class="form-input" onchange="selectInvoiceLayoutBlock(this.value)">
+                                    <option value="logo">Logo</option>
+                                    <option value="company">Company</option>
+                                    <option value="meta">Invoice Meta</option>
+                                    <option value="customer">Customer</option>
+                                    <option value="thankYou">Thank You</option>
+                                </select>
                             </div>
-                            
-                            <div style="margin-top: 1.5rem; padding: 1rem; background: var(--success-bg); border-radius: 8px;">
-                                <div style="font-weight: 700; font-size: 1.1rem; color: var(--text-dark);">
-                                    Total: ₹<span id="invoice-editor-total">0.00</span>
+
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.5rem;">
+                                <div>
+                                    <label class="form-label">X (px)</label>
+                                    <input type="number" id="invoice-layout-x" class="form-input" oninput="updateInvoiceLayoutControl('x', this.value)">
                                 </div>
+                                <div>
+                                    <label class="form-label">Y (px)</label>
+                                    <input type="number" id="invoice-layout-y" class="form-input" oninput="updateInvoiceLayoutControl('y', this.value)">
+                                </div>
+                                <div>
+                                    <label class="form-label">Width (px)</label>
+                                    <input type="number" id="invoice-layout-width" class="form-input" oninput="updateInvoiceLayoutControl('width', this.value)">
+                                </div>
+                                <div>
+                                    <label class="form-label">Height (px)</label>
+                                    <input type="number" id="invoice-layout-height" class="form-input" oninput="updateInvoiceLayoutControl('height', this.value)">
+                                </div>
+                            </div>
+
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.5rem;">
+                                <div>
+                                    <label class="form-label">Font Size (px)</label>
+                                    <input type="number" id="invoice-layout-font-size" class="form-input" oninput="updateInvoiceLayoutControl('fontSize', this.value)">
+                                </div>
+                                <div>
+                                    <label class="form-label">Font Weight</label>
+                                    <input type="number" id="invoice-layout-font-weight" class="form-input" oninput="updateInvoiceLayoutControl('fontWeight', this.value)">
+                                </div>
+                                <div>
+                                    <label class="form-label">Text Align</label>
+                                    <select id="invoice-layout-text-align" class="form-input" onchange="updateInvoiceLayoutControl('textAlign', this.value)">
+                                        <option value="left">Left</option>
+                                        <option value="center">Center</option>
+                                        <option value="right">Right</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="form-label">Line Height</label>
+                                    <input type="number" step="0.1" id="invoice-layout-line-height" class="form-input" oninput="updateInvoiceLayoutControl('lineHeight', this.value)">
+                                </div>
+                            </div>
+
+                            <div style="margin-bottom:0.75rem;padding:0.5rem;background:var(--bg);border-radius:6px;">
+                                <label class="form-label" style="display:block;margin-bottom:0.5rem;">Logo</label>
+                                <div style="display:flex;gap:0.5rem;align-items:center;">
+                                    <input type="file" id="invoice-logo-file" accept=".png,.jpg,.jpeg" onchange="handleInvoiceLogoUpload(event)">
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="removeInvoiceLogo()">Remove</button>
+                                    <button type="button" class="btn btn-outline btn-sm" onclick="resetInvoiceLayout()">Reset Layout</button>
+                                </div>
+                            </div>
+
+                            <div style="display:flex;gap:0.5rem;justify-content:flex-start;margin-top:0.5rem;">
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="attachInvoiceLayoutDragHandlers()">Enable Drag</button>
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="syncInvoiceLayoutControls()">Sync Controls</button>
+                            </div>
+
+                            <div style="margin-top:1rem;padding:0.75rem;background:var(--success-bg);border-radius:8px;">
+                                <div style="font-weight:700;font-size:1.05rem;color:var(--text-dark);">Total: ₹<span id="invoice-editor-total">0.00</span></div>
                             </div>
                         </div>
                         
