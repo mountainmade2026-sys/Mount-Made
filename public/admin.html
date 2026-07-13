@@ -11069,71 +11069,70 @@
         };
 
         window.renderInvoiceLayoutMarkup = function(options = {}) {
-            const company = options.company || document.getElementById('invoice-editor-company').value || 'Mount Made';
-            const invNum = options.invNum || document.getElementById('invoice-editor-number').value || 'INV-0001';
-            const customer = options.customer || document.getElementById('invoice-editor-customer').value || 'Customer';
-            const email = options.email || document.getElementById('invoice-editor-email').value || '';
-            const phone = options.phone || document.getElementById('invoice-editor-phone').value || '';
-            const address = options.address || document.getElementById('invoice-editor-address').value || '';
+            const company = options.company || document.getElementById('invoice-editor-company')?.value || 'Mount Made';
+            const invNum = options.invNum || document.getElementById('invoice-editor-number')?.value || 'INV-0001';
+            const customer = options.customer || document.getElementById('invoice-editor-customer')?.value || 'Customer';
+            const email = options.email || document.getElementById('invoice-editor-email')?.value || '';
+            const phone = options.phone || document.getElementById('invoice-editor-phone')?.value || '';
+            const address = options.address || document.getElementById('invoice-editor-address')?.value || '';
             const thankYou = options.thankYou || (document.getElementById('invoice-editor-thankyou') && document.getElementById('invoice-editor-thankyou').value) || (`Thank you for shopping with ${company}!`);
-            const layout = options.layout || window.invoiceEditorLayout || window.getInvoiceLayoutState();
+            const layout = options.layout || window.invoiceEditorLayout || (window.getInvoiceLayoutState ? window.getInvoiceLayoutState() : {});
             const selectedBlock = options.selectedBlock || window.invoiceEditorSelectedLayoutBlock || 'logo';
 
-            const companyText = `<div style="font-size:${layout.company.fontSize}px;font-weight:${layout.company.fontWeight};line-height:${layout.company.lineHeight};color:${layout.company.color};text-align:${layout.company.textAlign};">${escapeHtml(company)}</div>`;
-            const metaLines = [
-                `<div><strong>Invoice:</strong> ${escapeHtml(invNum)}</div>`,
-                `<div><strong>Date:</strong> ${new Date().toLocaleDateString('en-IN')}</div>`
-            ];
-            const customerLines = [
-                `<div><strong>Customer:</strong> ${escapeHtml(customer)}</div>`,
-                email ? `<div><strong>Email:</strong> ${escapeHtml(email)}</div>` : '',
-                phone ? `<div><strong>Phone:</strong> ${escapeHtml(phone)}</div>` : '',
-                address ? `<div><strong>Address:</strong> ${escapeHtml(address).replace(/\n/g, '<br>')}</div>` : ''
-            ].filter(Boolean);
+            const companyText = `<div style="font-size:${layout.company?.fontSize ?? 16}px;font-weight:${layout.company?.fontWeight ?? 700};line-height:${layout.company?.lineHeight ?? 1};color:${layout.company?.color || '#111'};text-align:${layout.company?.textAlign || 'left'};">${escapeHtml(company)}</div>`;
+            const metaLines = [`<div><strong>Invoice:</strong> ${escapeHtml(invNum)}</div>`, `<div><strong>Date:</strong> ${new Date().toLocaleDateString('en-IN')}</div>`];
+            const customerLines = [`<div><strong>Customer:</strong> ${escapeHtml(customer)}</div>`, email ? `<div><strong>Email:</strong> ${escapeHtml(email)}</div>` : '', phone ? `<div><strong>Phone:</strong> ${escapeHtml(phone)}</div>` : '', address ? `<div><strong>Address:</strong> ${escapeHtml(address).replace(/\n/g, '<br>')}</div>` : ''].filter(Boolean);
 
             const renderBlock = (blockKey, content, extraCss = '') => {
                 const cfg = layout[blockKey] || {};
-                const isSelected = selectedBlock === blockKey;
-                // Remove visible selection border (no blue square) in preview/editor
                 const borderStyle = 'border: none;';
                 return `
-                    <div data-block="${blockKey}" style="position:absolute; left:${cfg.x || 0}px; top:${cfg.y || 0}px; width:${cfg.width || 160}px; height:${cfg.height || 60}px; ${borderStyle} ${extraCss}; box-sizing:border-box; padding: 0.25rem; overflow:hidden; cursor:move;">
+                    <div data-block="${blockKey}" style="position:absolute; left:${cfg.x || 0}px; top:${cfg.y || 0}px; width:${cfg.width || 160}px; height:${cfg.height || 60}px; ${borderStyle} ${extraCss}; box-sizing:border-box; padding: 0.25rem; overflow:hidden;">
                         ${content}
                     </div>
                 `;
             };
 
             let siteLogoSrc = null;
-            try {
-                const siteLogoEl = document.querySelector('.navbar-brand img.site-logo-dynamic');
-                if (siteLogoEl && siteLogoEl.src) siteLogoSrc = siteLogoEl.src;
-            } catch (e) {}
+            try { const siteLogoEl = document.querySelector('.navbar-brand img.site-logo-dynamic'); if (siteLogoEl && siteLogoEl.src) siteLogoSrc = siteLogoEl.src; } catch (e) {}
             const chosenLogo = (layout && layout.logo && layout.logo.logoDataUrl) ? layout.logo.logoDataUrl : siteLogoSrc;
-            const logoMarkup = chosenLogo
-                ? `<img src="${chosenLogo}" alt="Invoice Logo" style="max-width:100%; max-height:100%; object-fit:contain; width:100%; height:100%; display:block;">`
-                : `<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-weight:700;color:#1a4731;">${escapeHtml(company)}</div>`;
+            const logoMarkup = chosenLogo ? `<img src="${chosenLogo}" alt="Invoice Logo" style="max-width:100%; max-height:100%; object-fit:contain; width:100%; height:100%; display:block;">` : `<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-weight:700;color:#1a4731;">${escapeHtml(company)}</div>`;
 
             const blocks = [
                 renderBlock('logo', logoMarkup, 'display:flex;align-items:center;justify-content:center;'),
                 renderBlock('company', companyText, 'display:flex;align-items:center;justify-content:flex-start;'),
-                renderBlock('meta', `<div style="font-size:${layout.meta.fontSize}px;font-weight:${layout.meta.fontWeight};line-height:${layout.meta.lineHeight};color:${layout.meta.color};text-align:${layout.meta.textAlign};">${metaLines.join('')}</div>`, 'display:flex;align-items:flex-start;justify-content:flex-start;'),
-                renderBlock('customer', `<div style="font-size:${layout.customer.fontSize}px;font-weight:${layout.customer.fontWeight};line-height:${layout.customer.lineHeight};color:${layout.customer.color};text-align:${layout.customer.textAlign};">${customerLines.join('')}</div>`, 'display:flex;align-items:flex-start;justify-content:flex-start;'),
-                renderBlock('thankYou', `<div style="font-size:${layout.thankYou.fontSize}px;font-weight:${layout.thankYou.fontWeight};line-height:${layout.thankYou.lineHeight};color:${layout.thankYou.color};text-align:${layout.thankYou.textAlign};">${escapeHtml(thankYou).replace(/\n/g, '<br>')}</div>`, 'display:flex;align-items:center;justify-content:center;')
+                renderBlock('meta', `<div style="font-size:${layout.meta?.fontSize ?? 12}px;color:${layout.meta?.color || '#666'};">${metaLines.join('')}</div>`, 'display:flex;align-items:flex-start;justify-content:flex-start;'),
+                renderBlock('customer', `<div style="font-size:${layout.customer?.fontSize ?? 12}px;color:${layout.customer?.color || '#333'};">${customerLines.join('')}</div>`, 'display:flex;align-items:flex-start;justify-content:flex-start;'),
+                renderBlock('thankYou', `<div style="font-size:${layout.thankYou?.fontSize ?? 13}px;color:${layout.thankYou?.color || '#666'};text-align:${layout.thankYou?.textAlign || 'center'};">${escapeHtml(thankYou).replace(/\n/g, '<br>')}</div>`, 'display:flex;align-items:center;justify-content:center;')
             ].join('');
 
             const itemsList = Array.isArray(options.items) ? options.items : (window.invoiceEditorData && Array.isArray(window.invoiceEditorData.items) ? window.invoiceEditorData.items : []);
             const productCatalog = Array.isArray(window._productsCache) ? window._productsCache : [];
+
             let subtotal = 0;
             const normalizedRows = itemsList.map(item => {
                 const qty = Number.isFinite(Number(item.quantity)) ? Number(item.quantity) : 1;
                 const price = Number.isFinite(Number(item.price)) ? Number(item.price) : 0;
                 const lineTotal = price * qty;
                 subtotal += lineTotal;
+
+                let originalPrice = null;
+                if (item.original_price != null && Number.isFinite(Number(item.original_price))) originalPrice = Number(item.original_price);
+                else if (item.base_price != null && Number.isFinite(Number(item.base_price))) originalPrice = Number(item.base_price);
+                else {
+                    const product = productCatalog.find(p => String(p.id) === String(item.product_id || item.id));
+                    if (product && Number.isFinite(Number(product.price))) originalPrice = Number(product.price);
+                }
+
+                const perItemDiscount = (originalPrice != null && originalPrice > price) ? (originalPrice - price) : 0;
+                const discountForLine = perItemDiscount * qty;
+
                 return `
                     <tr style="border: 1px solid #ddd;">
                         <td style="padding: 0.5rem 0.75rem; border-right: 1px solid #ddd;">${escapeHtml(item.name || item.product_name || '')}</td>
                         <td style="padding: 0.5rem 0.75rem; text-align: center; border-right: 1px solid #ddd;">${qty}</td>
                         <td style="padding: 0.5rem 0.75rem; text-align: right; border-right: 1px solid #ddd;">₹${price.toFixed(2)}</td>
+                        <td style="padding: 0.5rem 0.75rem; text-align: right; border-right: 1px solid #ddd;">${perItemDiscount > 0 ? `-₹${discountForLine.toFixed(2)}` : '—'}</td>
                         <td style="padding: 0.5rem 0.75rem; text-align: right;">₹${lineTotal.toFixed(2)}</td>
                     </tr>
                 `;
@@ -11143,67 +11142,43 @@
                 : Number.isFinite(Number(options.discount_amount)) ? Number(options.discount_amount)
                 : Number.isFinite(Number(options.discount_price)) ? Number(options.discount_price)
                 : Number.isFinite(Number(options.discountPrice)) ? Number(options.discountPrice)
-                : (window.invoiceEditorData && Number.isFinite(Number(window.invoiceEditorData.discount)) ? Number(window.invoiceEditorData.discount) : null);
+                : (window.invoiceEditorData && Number.isFinite(Number(window.invoiceEditorData.discount)) ? Number(window.invoiceEditorData.discount) : 0);
             const delivery = Number.isFinite(Number(options.delivery)) ? Number(options.delivery)
                 : Number.isFinite(Number(options.deliveryCharge)) ? Number(options.deliveryCharge)
                 : Number.isFinite(Number(options.delivery_charge)) ? Number(options.delivery_charge)
                 : (window.invoiceEditorData && Number.isFinite(Number(window.invoiceEditorData.deliveryCharge)) ? Number(window.invoiceEditorData.deliveryCharge) : 0);
+
             let discount = Number.isFinite(explicitDiscount) ? explicitDiscount : 0;
 
-            const inferredCatalogDiscount = itemsList.reduce((sum, item) => {
-                const qty = Number.isFinite(Number(item.quantity)) ? Number(item.quantity) : 1;
-                const itemPrice = Number.isFinite(Number(item.price)) ? Number(item.price) : 0;
-                let originalPrice = null;
-
-                if (item.original_price != null && Number.isFinite(Number(item.original_price))) {
-                    originalPrice = Number(item.original_price);
-                } else if (item.base_price != null && Number.isFinite(Number(item.base_price))) {
-                    originalPrice = Number(item.base_price);
-                } else {
-                    const product = productCatalog.find(p => String(p.id) === String(item.product_id || item.id));
-                    if (product && Number.isFinite(Number(product.price))) {
-                        originalPrice = Number(product.price);
-                    }
-                }
-
-                if (originalPrice != null && originalPrice > itemPrice) {
-                    return sum + (originalPrice - itemPrice) * qty;
-                }
-                return sum;
-            }, 0);
-
+            // If total provided, infer discount
             if ((!Number.isFinite(discount) || discount <= 0) && Number.isFinite(Number(options.total))) {
                 const impliedDiscount = subtotal + delivery - Number(options.total);
-                if (impliedDiscount > 0.004) {
-                    discount = impliedDiscount;
-                }
+                if (impliedDiscount > 0.004) discount = impliedDiscount;
             }
-            if (discount <= 0 && inferredCatalogDiscount > 0.004) {
-                discount = inferredCatalogDiscount;
-            }
+
             discount = Number.isFinite(Number(discount)) ? Number(discount.toFixed(2)) : 0;
             const total = subtotal - discount + delivery;
 
             const footerRows = `
                 <tfoot>
                     <tr style="background: white;">
-                        <td colspan="3" style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;">Subtotal</td>
+                        <td colspan="4" style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;font-weight:700;">Subtotal</td>
                         <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;font-weight:700;">₹${subtotal.toFixed(2)}</td>
                     </tr>
                     ${discount > 0 ? `
                         <tr style="background:#f8fff9;">
-                            <td colspan="3" style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;">Discount</td>
+                            <td colspan="4" style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;">Discount</td>
                             <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;font-weight:700;color:#10b981;">-₹${discount.toFixed(2)}</td>
                         </tr>
                     ` : ''}
                     ${delivery > 0 ? `
                         <tr style="background: white;">
-                            <td colspan="3" style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;">Delivery</td>
+                            <td colspan="4" style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;">Delivery</td>
                             <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;font-weight:700;">+₹${delivery.toFixed(2)}</td>
                         </tr>
                     ` : ''}
                     <tr style="background:#f0fdf4;">
-                        <td colspan="3" style="border:1px solid #ddd;padding:0.75rem;text-align:right;font-weight:700;">TOTAL</td>
+                        <td colspan="4" style="border:1px solid #ddd;padding:0.75rem;text-align:right;font-weight:700;">TOTAL</td>
                         <td style="border:1px solid #ddd;padding:0.75rem;text-align:right;color:#1a4731;font-weight:800;">₹${total.toFixed(2)}</td>
                     </tr>
                 </tfoot>
@@ -11219,6 +11194,7 @@
                                     <th style="padding:0.5rem 0.75rem;border:1px solid #ddd;text-align:left;font-weight:700;">Product</th>
                                     <th style="padding:0.5rem 0.75rem;border:1px solid #ddd;text-align:center;font-weight:700;">Qty</th>
                                     <th style="padding:0.5rem 0.75rem;border:1px solid #ddd;text-align:right;font-weight:700;">Unit Price</th>
+                                    <th style="padding:0.5rem 0.75rem;border:1px solid #ddd;text-align:right;font-weight:700;">Discount</th>
                                     <th style="padding:0.5rem 0.75rem;border:1px solid #ddd;text-align:right;font-weight:700;">Subtotal</th>
                                 </tr>
                             </thead>
@@ -11345,6 +11321,21 @@
             const itemRows = window.invoiceEditorData.items.map(item => {
                 const lineTotal = item.price * item.quantity;
                 subtotal += lineTotal;
+
+                let originalPrice = null;
+                if (item.original_price != null && Number.isFinite(Number(item.original_price))) {
+                    originalPrice = Number(item.original_price);
+                } else if (item.base_price != null && Number.isFinite(Number(item.base_price))) {
+                    originalPrice = Number(item.base_price);
+                } else {
+                    const product = productCatalog.find(p => String(p.id) === String(item.product_id || item.id));
+                    if (product && Number.isFinite(Number(product.price))) {
+                        originalPrice = Number(product.price);
+                    }
+                }
+                const perItemDiscount = (originalPrice != null && originalPrice > item.price) ? (originalPrice - item.price) : 0;
+                const discountForLine = perItemDiscount * item.quantity;
+
                 return `
                     <tr>
                         <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;vertical-align:top;">
@@ -11352,6 +11343,7 @@
                         </td>
                         <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:center;vertical-align:middle;">${item.quantity}</td>
                         <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;vertical-align:middle;">&#8377;${item.price.toFixed(2)}</td>
+                        <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;vertical-align:middle;">${perItemDiscount > 0 ? `-&#8377;${discountForLine.toFixed(2)}` : '—'}</td>
                         <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;vertical-align:middle;">&#8377;${lineTotal.toFixed(2)}</td>
                     </tr>
                 `;
@@ -11380,27 +11372,27 @@
                 ${phone ? `<strong>Phone:</strong> ${escapeHtml(phone)}<br>` : ''}
                 ${address ? `<strong>Address:</strong><br>${escapeHtml(address).replace(/\n/g, '<br>')}` : ''}
             </div>
-            <table><thead><tr><th>Product</th><th>Qty</th><th>Unit Price</th><th>Subtotal</th></tr></thead>
+            <table><thead><tr><th>Product</th><th>Qty</th><th>Unit Price</th><th>Discount</th><th>Subtotal</th></tr></thead>
             <tbody>${itemRows}</tbody>
             <tfoot>
                 <tr style="background: white;">
-                    <td colspan="3" style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;">Subtotal</td>
+                    <td colspan="4" style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;">Subtotal</td>
                     <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;font-weight:700;">&#8377;${subtotal.toFixed(2)}</td>
                 </tr>
                 ${discount > 0 ? `
                     <tr style="background: #f0f9ff;">
-                        <td colspan="3" style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;">Discount</td>
+                        <td colspan="4" style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;">Discount</td>
                         <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;font-weight:700;color:#10b981;">-&#8377;${discount.toFixed(2)}</td>
                     </tr>
                 ` : ''}
                 ${delivery > 0 ? `
                     <tr style="background: white;">
-                        <td colspan="3" style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;">Delivery Charge</td>
+                        <td colspan="4" style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;">Delivery Charge</td>
                         <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;font-weight:700;">+&#8377;${delivery.toFixed(2)}</td>
                     </tr>
                 ` : ''}
                 <tr class="total-row" style="background: #f0fdf4;">
-                    <td colspan="3" style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;">Order Total</td>
+                    <td colspan="4" style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;">Order Total</td>
                     <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;color:#1a4731;font-size:1.1rem;">&#8377;${total.toFixed(2)}</td>
                 </tr>
             </tfoot></table>
