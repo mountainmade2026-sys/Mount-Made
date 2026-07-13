@@ -10844,6 +10844,23 @@
             if (!stored) return base;
             try {
                 const parsed = JSON.parse(stored);
+                // If a logo is referenced but URL is not present (stored in IDB), fetch it asynchronously
+                if (parsed.logo && parsed.logo.logoKey && !parsed.logo.logoDataUrl) {
+                    (async function() {
+                        try {
+                            const data = await window.adminIdbGet('blobs', parsed.logo.logoKey);
+                            if (data) {
+                                if (!window.invoiceEditorLayout) window.invoiceEditorLayout = base;
+                                if (!window.invoiceEditorLayout.logo) window.invoiceEditorLayout.logo = {};
+                                window.invoiceEditorLayout.logo.logoDataUrl = data;
+                                // re-render preview with logo
+                                try { updateInvoicePreview(); } catch (e) {}
+                            }
+                        } catch (e) {
+                            console.warn('failed to fetch logo from idb', e);
+                        }
+                    })();
+                }
                 return {
                     ...base,
                     ...parsed,
@@ -10871,7 +10888,17 @@
                     thankYou: { ...window.invoiceEditorLayout.thankYou, ...(layout.thankYou || {}) }
                 };
             }
-            localStorage.setItem('mount-made-invoice-layout', JSON.stringify(window.invoiceEditorLayout));
+            try {
+                localStorage.setItem('mount-made-invoice-layout', JSON.stringify(window.invoiceEditorLayout));
+            } catch (e) {
+                // if localStorage fails during set state, persist trimmed copy to IDB
+                try {
+                    const copy = JSON.parse(JSON.stringify(window.invoiceEditorLayout));
+                    if (copy.logo && copy.logo.logoDataUrl) delete copy.logo.logoDataUrl;
+                    if (copy.logo && window.invoiceEditorLayout.logo && window.invoiceEditorLayout.logo.logoKey) copy.logo.logoKey = window.invoiceEditorLayout.logo.logoKey;
+                    window.adminIdbPut('layouts', 'mount-made-invoice-layout', copy).catch(err=>console.warn('idb write failed', err));
+                } catch (er) { console.warn('idb fallback failed', er); }
+            }
             return window.invoiceEditorLayout;
         };
 
@@ -10880,12 +10907,63 @@
             const current = window.invoiceEditorLayout[block] || {};
             window.invoiceEditorLayout[block] = { ...current, ...overrides };
             if (!options.skipLocalStorage) {
-                localStorage.setItem('mount-made-invoice-layout', JSON.stringify(window.invoiceEditorLayout));
+                try {
+                    localStorage.setItem('mount-made-invoice-layout', JSON.stringify(window.invoiceEditorLayout));
+                } catch (err) {
+                    // Quota exceeded: persist layout without large blobs to IndexedDB
+                    try {
+                        const copy = JSON.parse(JSON.stringify(window.invoiceEditorLayout));
+                        if (copy.logo && copy.logo.logoDataUrl) delete copy.logo.logoDataUrl;
+                        // mark that logo is stored externally
+                        if (window.invoiceEditorLayout.logo && window.invoiceEditorLayout.logo.logoKey) copy.logo = { ...(copy.logo || {}), logoKey: window.invoiceEditorLayout.logo.logoKey, logoStoredInDB: true };
+                        window.adminIdbPut('layouts', 'mount-made-invoice-layout', copy).catch(e=>console.warn('idb layout write failed', e));
+                    } catch (e) {
+                        console.warn('persist fallback failed', e);
+                    }
+                }
             }
             if (!options.skipRender) {
                 updateInvoicePreview();
             }
             return window.invoiceEditorLayout[block];
+        };
+
+        // Minimal IndexedDB helper for larger blobs (logos/templates/layouts)
+        window.adminOpenDB = function() {
+            return new Promise((resolve, reject) => {
+                if (window._adminDB) return resolve(window._adminDB);
+                const req = indexedDB.open('mountmade-admin', 1);
+                req.onupgradeneeded = function(ev) {
+                    const db = ev.target.result;
+                    if (!db.objectStoreNames.contains('blobs')) db.createObjectStore('blobs');
+                    if (!db.objectStoreNames.contains('layouts')) db.createObjectStore('layouts');
+                    if (!db.objectStoreNames.contains('templates')) db.createObjectStore('templates');
+                };
+                req.onsuccess = function() { window._adminDB = req.result; resolve(window._adminDB); };
+                req.onerror = function(e) { reject(e); };
+            });
+        };
+
+        window.adminIdbPut = async function(store, key, value) {
+            const db = await window.adminOpenDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction([store], 'readwrite');
+                const s = tx.objectStore(store);
+                const r = s.put(value, key);
+                r.onsuccess = () => resolve(true);
+                r.onerror = (e) => reject(e);
+            });
+        };
+
+        window.adminIdbGet = async function(store, key) {
+            const db = await window.adminOpenDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction([store], 'readonly');
+                const s = tx.objectStore(store);
+                const r = s.get(key);
+                r.onsuccess = () => resolve(r.result);
+                r.onerror = (e) => reject(e);
+            });
         };
 
         window.selectInvoiceLayoutBlock = function(block) {
@@ -10928,8 +11006,25 @@
             const reader = new FileReader();
             reader.onload = function() {
                 if (!window.invoiceEditorLayout) window.invoiceEditorLayout = window.getInvoiceLayoutState();
-                window.invoiceEditorLayout.logo = { ...(window.invoiceEditorLayout.logo || {}), logoDataUrl: reader.result, visible: true };
-                localStorage.setItem('mount-made-invoice-layout', JSON.stringify(window.invoiceEditorLayout));
+                // store data URL in-memory for immediate preview, but avoid storing large data URLs to localStorage
+                const logoKey = 'logo-' + Date.now();
+                window.invoiceEditorLayout.logo = { ...(window.invoiceEditorLayout.logo || {}), logoDataUrl: reader.result, logoKey: logoKey, visible: true };
+                try {
+                    // try saving to localStorage; if it fails we'll persist blobs separately
+                    localStorage.setItem('mount-made-invoice-layout', JSON.stringify(window.invoiceEditorLayout));
+                } catch (err) {
+                    // remove logoDataUrl from the saved copy and mark logo as stored in DB
+                    try {
+                        const copy = JSON.parse(JSON.stringify(window.invoiceEditorLayout));
+                        if (copy.logo) {
+                            delete copy.logo.logoDataUrl;
+                            copy.logo.logoStoredInDB = true;
+                        }
+                        window.adminIdbPut('layouts', 'mount-made-invoice-layout', copy).catch(e=>console.warn('idb layout write failed', e));
+                        // store blob separately
+                        window.adminIdbPut('blobs', logoKey, reader.result).catch(e=>console.warn('idb blob write failed', e));
+                    } catch (e) { console.warn('logo persistence fallback failed', e); }
+                }
                 updateInvoicePreview();
                 try { syncInvoiceLayoutControls(); } catch (e) {}
                 try { window.attachInvoiceLayoutDragHandlers(); } catch (e) {}
@@ -11272,10 +11367,31 @@
                 } else {
                     // No order selected — save as global template locally and persist layout
                     try {
-                        localStorage.setItem('mount-made-invoice-template', JSON.stringify(payload));
-                        // also persist layout separately for legacy reads
-                        localStorage.setItem('mount-made-invoice-layout', JSON.stringify(payload.layout || {}));
-                        showAlert('Invoice template saved locally (no order).', 'success');
+                        try {
+                            localStorage.setItem('mount-made-invoice-template', JSON.stringify(payload));
+                            // also persist layout separately for legacy reads
+                            localStorage.setItem('mount-made-invoice-layout', JSON.stringify(payload.layout || {}));
+                            showAlert('Invoice template saved locally (no order).', 'success');
+                        } catch (lsErr) {
+                            // fallback to IndexedDB for large payloads
+                            await window.adminIdbPut('templates', 'mount-made-invoice-template', payload);
+                            if (payload.layout) {
+                                const layoutCopy = JSON.parse(JSON.stringify(payload.layout));
+                                if (layoutCopy.logo && layoutCopy.logo.logoDataUrl) {
+                                    const logoKey = layoutCopy.logo.logoKey || ('logo-' + Date.now());
+                                    // remove data URL from layout copy and store blob separately
+                                    const logoData = layoutCopy.logo.logoDataUrl;
+                                    delete layoutCopy.logo.logoDataUrl;
+                                    layoutCopy.logo.logoKey = logoKey;
+                                    layoutCopy.logo.logoStoredInDB = true;
+                                    await window.adminIdbPut('layouts', 'mount-made-invoice-layout', layoutCopy);
+                                    await window.adminIdbPut('blobs', logoKey, logoData);
+                                } else {
+                                    await window.adminIdbPut('layouts', 'mount-made-invoice-layout', layoutCopy);
+                                }
+                            }
+                            showAlert('Invoice template saved locally (no order).', 'success');
+                        }
                     } catch (e) {
                         console.error('Local save failed', e);
                         showAlert('Failed to save template locally', 'error');
