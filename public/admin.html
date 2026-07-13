@@ -11096,10 +11096,12 @@
             ].join('');
 
             const itemsList = Array.isArray(options.items) ? options.items : (window.invoiceEditorData && Array.isArray(window.invoiceEditorData.items) ? window.invoiceEditorData.items : []);
-            const itemRows = itemsList.map(item => {
+            let subtotal = 0;
+            const normalizedRows = itemsList.map(item => {
                 const qty = Number.isFinite(Number(item.quantity)) ? Number(item.quantity) : 1;
                 const price = Number.isFinite(Number(item.price)) ? Number(item.price) : 0;
                 const lineTotal = price * qty;
+                subtotal += lineTotal;
                 return `
                     <tr style="border: 1px solid #ddd;">
                         <td style="padding: 0.5rem 0.75rem; border-right: 1px solid #ddd;">${escapeHtml(item.name || item.product_name || '')}</td>
@@ -11110,10 +11112,40 @@
                 `;
             }).join('');
 
+            // allow options to override discount/delivery
+            const discount = Number.isFinite(Number(options.discount)) ? Number(options.discount) : (window.invoiceEditorData && Number.isFinite(Number(window.invoiceEditorData.discount)) ? Number(window.invoiceEditorData.discount) : 0);
+            const delivery = Number.isFinite(Number(options.delivery)) ? Number(options.delivery) : (window.invoiceEditorData && Number.isFinite(Number(window.invoiceEditorData.deliveryCharge)) ? Number(window.invoiceEditorData.deliveryCharge) : 0);
+            const total = subtotal - discount + delivery;
+
+            const footerRows = `
+                <tfoot>
+                    <tr style="background: white;">
+                        <td colspan="3" style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;">Subtotal</td>
+                        <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;font-weight:700;">₹${subtotal.toFixed(2)}</td>
+                    </tr>
+                    ${discount > 0 ? `
+                        <tr style="background:#f8fff9;">
+                            <td colspan="3" style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;">Discount</td>
+                            <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;font-weight:700;color:#10b981;">-₹${discount.toFixed(2)}</td>
+                        </tr>
+                    ` : ''}
+                    ${delivery > 0 ? `
+                        <tr style="background: white;">
+                            <td colspan="3" style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;">Delivery</td>
+                            <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;font-weight:700;">+₹${delivery.toFixed(2)}</td>
+                        </tr>
+                    ` : ''}
+                    <tr style="background:#f0fdf4;">
+                        <td colspan="3" style="border:1px solid #ddd;padding:0.75rem;text-align:right;font-weight:700;">TOTAL</td>
+                        <td style="border:1px solid #ddd;padding:0.75rem;text-align:right;color:#1a4731;font-weight:800;">₹${total.toFixed(2)}</td>
+                    </tr>
+                </tfoot>
+            `;
+
             return `
                 <div data-invoice-canvas="1" style="position:relative; min-height:760px; border: 1px solid #ddd; border-radius: 8px; padding: 1rem; background: white; font-family: Arial, sans-serif; font-size: 13px; overflow: hidden;">
                     ${blocks}
-                    <div style="position:absolute; left:20px; top:260px; right:20px; bottom:160px;">
+                    <div style="position:absolute; left:20px; top:260px; right:20px; bottom:160px; overflow:auto;">
                         <table style="width:100%; border-collapse:collapse; margin-bottom:1rem;">
                             <thead>
                                 <tr style="background:#f0fdf4;">
@@ -11123,7 +11155,8 @@
                                     <th style="padding:0.5rem 0.75rem;border:1px solid #ddd;text-align:right;font-weight:700;">Subtotal</th>
                                 </tr>
                             </thead>
-                            <tbody>${itemRows}</tbody>
+                            <tbody>${normalizedRows}</tbody>
+                            ${footerRows}
                         </table>
                     </div>
                 </div>
