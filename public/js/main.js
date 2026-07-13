@@ -1158,6 +1158,16 @@ function createAlertContainer() { /* legacy — replaced by mm-toast-container *
               <span class="mm-ps-item-label">My Addresses</span>
               <i class="fas fa-chevron-right mm-ps-chevron"></i>
             </a>
+            <a href="/about" class="mm-ps-item" id="mm-ps-about-us-link">
+              <span class="mm-ps-item-icon"><i class="fas fa-info-circle"></i></span>
+              <span class="mm-ps-item-label">About Us</span>
+              <i class="fas fa-chevron-right mm-ps-chevron"></i>
+            </a>
+            <a href="/contact" class="mm-ps-item" id="mm-ps-contact-us-link">
+              <span class="mm-ps-item-icon"><i class="fas fa-envelope"></i></span>
+              <span class="mm-ps-item-label">Contact Us</span>
+              <i class="fas fa-chevron-right mm-ps-chevron"></i>
+            </a>
             <button class="mm-ps-item" id="mm-ps-change-password">
               <span class="mm-ps-item-icon"><i class="fas fa-key"></i></span>
               <span class="mm-ps-item-label">Change Password</span>
@@ -2175,24 +2185,31 @@ async function initApp() {
 
     if (existingAbout || existingContact) return;
 
-    const themeToggle = document.getElementById('theme-toggle');
-    const groupParent = themeToggle?.closest('.accd-group');
-    if (!groupParent || !groupParent.parentElement) return;
+    const createLink = (href, id, iconClass, label) => {
+      const link = document.createElement('a');
+      link.href = href;
+      link.className = 'accd-item';
+      link.id = id;
+      link.innerHTML = `<span class="accd-icon"><i class="${iconClass}"></i></span>${label}`;
+      return link;
+    };
 
-    const aboutLink = document.createElement('a');
-    aboutLink.href = '/about';
-    aboutLink.className = 'accd-item';
-    aboutLink.id = aboutLinkId;
-    aboutLink.innerHTML = '<span class="accd-icon"><i class="fas fa-info-circle"></i></span>About Us';
+    const aboutLink = createLink('/about', aboutLinkId, 'fas fa-info-circle', 'About Us');
+    const contactLink = createLink('/contact', contactLinkId, 'fas fa-envelope', 'Contact Us');
 
-    const contactLink = document.createElement('a');
-    contactLink.href = '/contact';
-    contactLink.className = 'accd-item';
-    contactLink.id = contactLinkId;
-    contactLink.innerHTML = '<span class="accd-icon"><i class="fas fa-envelope"></i></span>Contact Us';
+    const themeToggle = accountDropdown.querySelector('#theme-toggle');
+    const groupNode = themeToggle ? themeToggle.closest('.accd-group') : null;
+    const insertBefore = groupNode && groupNode.parentElement ? groupNode : null;
+    const parent = insertBefore ? insertBefore.parentElement : accountDropdown.querySelector('.accd-group')?.parentElement;
+    if (!parent) return;
 
-    groupParent.parentElement.insertBefore(aboutLink, groupParent);
-    groupParent.parentElement.insertBefore(contactLink, groupParent);
+    if (insertBefore) {
+      parent.insertBefore(contactLink, insertBefore);
+      parent.insertBefore(aboutLink, insertBefore);
+    } else {
+      parent.appendChild(aboutLink);
+      parent.appendChild(contactLink);
+    }
   }
 
   addMobileProfileLinksToDropdown();
