@@ -714,6 +714,10 @@
         }
 
         @media (max-width: 768px) {
+            .mobile-menu-toggle {
+                display: none !important;
+            }
+
             .checkout-layout {
                 gap: 1.25rem;
             }
@@ -788,6 +792,10 @@
         }
 
         @media (max-width: 600px) {
+            .mobile-menu-toggle {
+                display: none !important;
+            }
+
             .checkout-layout {
                 gap: 1rem;
             }
@@ -1160,6 +1168,10 @@
         }
 
         @media (max-width: 480px) {
+            .mobile-menu-toggle {
+                display: none !important;
+            }
+
             .checkout-steps {
                 gap: 0.35rem;
                 margin-bottom: 1rem;
@@ -3959,6 +3971,48 @@
                     }
                 });
             }
+
+            // Add About Us and Contact Us to profile menu on mobile
+            function addMobileProfileLinks() {
+                const isMobile = window.innerWidth <= 768;
+                const accdGroup = document.querySelector('.accd-group');
+                if (!accdGroup || !isMobile) return;
+
+                // Check if links already exist
+                if (document.getElementById('mobile-about-us-link')) return;
+
+                // Find the first accd-group to insert links before theme toggle
+                const themeToggle = document.getElementById('theme-toggle');
+                const groupParent = themeToggle?.closest('.accd-group');
+                
+                if (groupParent) {
+                    // Create About Us link
+                    const aboutLink = document.createElement('a');
+                    aboutLink.href = '/about';
+                    aboutLink.className = 'accd-item';
+                    aboutLink.id = 'mobile-about-us-link';
+                    aboutLink.innerHTML = '<span class="accd-icon"><i class="fas fa-info-circle"></i></span>About Us';
+
+                    // Create Contact Us link
+                    const contactLink = document.createElement('a');
+                    contactLink.href = '/contact';
+                    contactLink.className = 'accd-item';
+                    contactLink.id = 'mobile-contact-us-link';
+                    contactLink.innerHTML = '<span class="accd-icon"><i class="fas fa-envelope"></i></span>Contact Us';
+
+                    // Insert before theme toggle group
+                    groupParent.parentElement.insertBefore(aboutLink, groupParent);
+                    groupParent.parentElement.insertBefore(contactLink, groupParent);
+                }
+            }
+
+            // Call on load and on resize
+            addMobileProfileLinks();
+            window.addEventListener('resize', () => {
+                // Debounce resize to avoid excessive calls
+                clearTimeout(window.mobileProfileLinksTimeout);
+                window.mobileProfileLinksTimeout = setTimeout(addMobileProfileLinks, 250);
+            });
         })();
     </script>
 </body>
