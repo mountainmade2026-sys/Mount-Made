@@ -10651,7 +10651,7 @@
             const deliveryAddressHtml = deliveryAddress
                 ? `<br><strong>Delivery Address:</strong><br>${escapeHtml(deliveryAddress).replace(/\n/g, '<br>')}`
                 : '';
-            const discount = Number.isFinite(Number(edited.discount)) ? Number(edited.discount) : 0;
+            let discount = Number.isFinite(Number(edited.discount)) ? Number(edited.discount) : 0;
             const deliveryCharge = Number.isFinite(Number(edited.delivery)) ? Number(edited.delivery) : Number.parseFloat(o.delivery_charge || 0) || 0;
 
             const rows = items.map(it => {
@@ -10676,6 +10676,13 @@
                 const price = Number.isFinite(Number(it.price)) ? Number(it.price) : 0;
                 subtotal += qty * price;
             });
+            if (discount <= 0 && Number.isFinite(Number(o.total_amount))) {
+                const expectedOrderAmount = Number.parseFloat(o.total_amount);
+                const impliedDiscount = subtotal + deliveryCharge - expectedOrderAmount;
+                if (impliedDiscount > 0.004) {
+                    discount = Number(impliedDiscount.toFixed(2));
+                }
+            }
             const total = subtotal - discount + deliveryCharge;
             const thankYouVal = edited.thankYou || `Thank you for shopping with ${company}!`;
             const layout = (edited.layout && typeof edited.layout === 'object') ? edited.layout : (window.getInvoiceLayoutState ? window.getInvoiceLayoutState() : {});
@@ -10737,6 +10744,15 @@
                     price: parseFloat(it.price || 0)
                 }));
 
+            const itemsSubtotal = invoiceItems.reduce((sum, item) => {
+                const qty = Number.isFinite(Number(item.quantity)) ? Number(item.quantity) : 1;
+                const price = Number.isFinite(Number(item.price)) ? Number(item.price) : 0;
+                return sum + qty * price;
+            }, 0);
+            const savedDiscount = Number.isFinite(Number(edited.discount)) ? Number(edited.discount) : 0;
+            const defaultDeliveryCharge = Number.isFinite(Number(edited.delivery)) ? Number(edited.delivery) : Number.parseFloat(order.delivery_charge || 0) || 0;
+            const fallbackDiscount = (Number.isFinite(Number(order.total_amount)) ? Math.max(0, itemsSubtotal + defaultDeliveryCharge - Number.parseFloat(order.total_amount || 0)) : 0);
+
             window.invoiceEditorData = {
                 orderId: orderId,
                 items: invoiceItems.map(item => ({
@@ -10745,8 +10761,8 @@
                     quantity: Number.isFinite(Number(item.quantity)) ? Number(item.quantity) : 1,
                     price: Number.isFinite(Number(item.price)) ? Number(item.price) : 0
                 })),
-                discount: Number.isFinite(Number(edited.discount)) ? Number(edited.discount) : 0,
-                deliveryCharge: Number.isFinite(Number(edited.delivery)) ? Number(edited.delivery) : Number.parseFloat(order.delivery_charge || 0) || 0
+                discount: savedDiscount > 0 ? savedDiscount : fallbackDiscount,
+                deliveryCharge: defaultDeliveryCharge
             };
             window.setInvoiceLayoutState(edited.layout || null);
 
