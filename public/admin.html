@@ -4223,6 +4223,18 @@
                             <h3 style="margin-bottom: 1rem; color: var(--text-dark);">Edit Invoice Details</h3>
 
                             <input type="hidden" id="invoice-editor-order-id">
+                            <!-- Hidden legacy inputs required by existing editor scripts (kept for compatibility) -->
+                            <div style="display:none;" aria-hidden="true">
+                                <input type="text" id="invoice-editor-number" class="form-input">
+                                <input type="text" id="invoice-editor-company" class="form-input" value="Mount Made">
+                                <input type="text" id="invoice-editor-customer" class="form-input">
+                                <input type="email" id="invoice-editor-email" class="form-input">
+                                <input type="text" id="invoice-editor-phone" class="form-input">
+                                <textarea id="invoice-editor-address" class="form-textarea"></textarea>
+                                <div id="invoice-editor-items"></div>
+                                <input type="number" id="invoice-editor-discount" class="form-input" value="0">
+                                <input type="number" id="invoice-editor-delivery" class="form-input" value="0">
+                            </div>
 
                             <div style="margin-bottom: 1rem;">
                                 <label class="form-label">Thank You Message</label>
@@ -10916,9 +10928,11 @@
             const reader = new FileReader();
             reader.onload = function() {
                 if (!window.invoiceEditorLayout) window.invoiceEditorLayout = window.getInvoiceLayoutState();
-                window.invoiceEditorLayout.logo = { ...(window.invoiceEditorLayout.logo || {}), logoDataUrl: reader.result };
+                window.invoiceEditorLayout.logo = { ...(window.invoiceEditorLayout.logo || {}), logoDataUrl: reader.result, visible: true };
                 localStorage.setItem('mount-made-invoice-layout', JSON.stringify(window.invoiceEditorLayout));
                 updateInvoicePreview();
+                try { syncInvoiceLayoutControls(); } catch (e) {}
+                try { window.attachInvoiceLayoutDragHandlers(); } catch (e) {}
             };
             reader.readAsDataURL(file);
         };
