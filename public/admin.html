@@ -11505,10 +11505,11 @@
                     syncOrderCache(window._ordersCache);
                     syncOrderCache(window._customerOrdersCache);
 
-                    if (window._currentSection === 'order-history') {
-                        if (typeof filterOrders === 'function') {
-                            filterOrders();
-                        }
+                    if (typeof filterOrders === 'function') {
+                        filterOrders();
+                    }
+                    if (window._currentSection === 'customers-orders' && typeof renderCustomerOrdersList === 'function') {
+                        renderCustomerOrdersList(window._customerOrdersCache || []);
                     }
                 } else {
                     // No order selected — save as global template locally and persist layout
