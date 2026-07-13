@@ -11058,6 +11058,10 @@
                     const stop = () => {
                         document.removeEventListener('mousemove', move);
                         document.removeEventListener('mouseup', stop);
+                        // finalize position: render preview and persist layout
+                        try { window.setInvoiceLayoutBlockValue(blockKey, {}, { skipRender: false, skipLocalStorage: false }); } catch (e) {}
+                        try { syncInvoiceLayoutControls(); } catch (e) {}
+                        try { updateInvoicePreview(); } catch (e) {}
                     };
                     document.addEventListener('mousemove', move);
                     document.addEventListener('mouseup', stop);
@@ -11231,8 +11235,8 @@
 
         window.saveEditedInvoice = async function() {
             const btn = document.getElementById('invoice-editor-save-btn');
-            const orderId = document.getElementById('invoice-editor-order-id').value;
-            if (!orderId) { showAlert('No order selected', 'error'); return; }
+            const orderId = String(document.getElementById('invoice-editor-order-id').value || '').trim();
+            const isOrder = !!orderId;
 
             const payload = {
                 invoice_number: document.getElementById('invoice-editor-number').value || null,
@@ -11250,18 +11254,31 @@
 
             try {
                 if (btn) { btn.disabled = true; }
-                const resp = await api.put(`/admin/orders/${orderId}/invoice`, payload);
-                showAlert(resp.message || 'Invoice saved', 'success');
+                if (isOrder) {
+                    const resp = await api.put(`/admin/orders/${orderId}/invoice`, payload);
+                    showAlert(resp.message || 'Invoice saved', 'success');
 
-                const orders = window._ordersCache || [];
-                const idx = orders.findIndex(o => String(o.id) === String(orderId));
-                if (idx >= 0) {
-                    orders[idx].edited_invoice = payload;
-                    if (payload.delivery != null) {
-                        orders[idx].delivery_charge = payload.delivery;
+                    const orders = window._ordersCache || [];
+                    const idx = orders.findIndex(o => String(o.id) === String(orderId));
+                    if (idx >= 0) {
+                        orders[idx].edited_invoice = payload;
+                        if (payload.delivery != null) {
+                            orders[idx].delivery_charge = payload.delivery;
+                        }
+                        if (window._currentSection === 'order-history') {
+                            filterOrders();
+                        }
                     }
-                    if (window._currentSection === 'order-history') {
-                        filterOrders();
+                } else {
+                    // No order selected — save as global template locally and persist layout
+                    try {
+                        localStorage.setItem('mount-made-invoice-template', JSON.stringify(payload));
+                        // also persist layout separately for legacy reads
+                        localStorage.setItem('mount-made-invoice-layout', JSON.stringify(payload.layout || {}));
+                        showAlert('Invoice template saved locally (no order).', 'success');
+                    } catch (e) {
+                        console.error('Local save failed', e);
+                        showAlert('Failed to save template locally', 'error');
                     }
                 }
 
