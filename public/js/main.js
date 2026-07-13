@@ -2283,13 +2283,13 @@ function applySiteLogo(logoUrl, logoSizeValue, logoSizeMobileValue) {
     const logoHtml = normalizedLogo
       ? `<img src="${normalizedLogo}" alt="Mount Made" class="site-logo-dynamic" decoding="async">`
       : '';
+    const brandTextHtml = normalizedLogo ? '' : '<span class="navbar-brand-text">Mount Made</span>';
 
     brand.innerHTML = `
       <span class="navbar-brand-main" style="display:inline-flex; align-items:center; gap:0.5rem; white-space:nowrap;">
         ${logoHtml}
-        <span class="navbar-brand-text">Mount Made</span>
+        ${brandTextHtml}
       </span>
-      <span class="navbar-tagline">GOURMET GROCERIES</span>
     `;
   });
 
