@@ -11444,13 +11444,24 @@
                         const idx = ordersCache.findIndex(o => String(o.id) === String(orderId));
                         if (idx < 0) return;
 
-                        const existing = ordersCache[idx];
+                        const existing = ordersCache[idx] || {};
+                        // Prefer server-returned order if present, but ensure edited_invoice is a parsed object
+                        const serverOrder = (resp && resp.order) ? resp.order : {};
+                        let serverEdited = serverOrder.edited_invoice;
+                        try {
+                            if (serverEdited && typeof serverEdited === 'string') {
+                                serverEdited = JSON.parse(serverEdited);
+                            }
+                        } catch (e) { serverEdited = serverEdited || null; }
+
+                        const finalEdited = serverEdited || payload || null;
+
                         ordersCache[idx] = {
                             ...existing,
-                            ...((resp && resp.order) ? resp.order : {}),
-                            edited_invoice: payload,
+                            ...serverOrder,
+                            edited_invoice: finalEdited,
                             delivery_charge: payloadDelivery,
-                            total_amount: payload.items && payload.items.length ? payloadTotal : existing.total_amount
+                            total_amount: payload.items && payload.items.length ? payloadTotal : (existing.total_amount || serverOrder.total_amount)
                         };
                     };
 
