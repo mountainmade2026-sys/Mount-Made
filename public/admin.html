@@ -4405,11 +4405,31 @@
             });
         };
 
+        window.normalizeDiscountPriceValue = function(basePrice, rawValue) {
+            const parsedBasePrice = parseFloat(basePrice);
+            if (!Number.isFinite(parsedBasePrice) || parsedBasePrice <= 0) return null;
+
+            const trimmedValue = String(rawValue ?? '').trim();
+            if (trimmedValue === '') return null;
+
+            const parsedValue = parseFloat(trimmedValue);
+            if (!Number.isFinite(parsedValue) || parsedValue === 0) return null;
+
+            if (parsedValue < 0) {
+                const calculatedPrice = parsedBasePrice + parsedValue;
+                return Number.isFinite(calculatedPrice) && calculatedPrice > 0 && calculatedPrice < parsedBasePrice
+                    ? calculatedPrice
+                    : null;
+            }
+
+            return parsedValue > 0 && parsedValue < parsedBasePrice ? parsedValue : null;
+        };
+
         window.updateDiscountFromMainPrice = function() { /* legacy no-op */ };
 
         window.calcDiscountPreview = function(priceId, amtId, previewId) {
             const price = parseFloat(document.getElementById(priceId)?.value || '');
-            const discountPrice = parseFloat(document.getElementById(amtId)?.value || '');
+            const discountPrice = window.normalizeDiscountPriceValue(price, document.getElementById(amtId)?.value);
             const preview = document.getElementById(previewId);
             if (!preview) return;
             if (!Number.isFinite(price) || price <= 0 || !Number.isFinite(discountPrice) || discountPrice <= 0 || discountPrice >= price) {
@@ -12264,10 +12284,8 @@
             try {
                 const name = document.getElementById('product-name').value;
                 const price = document.getElementById('product-price').value;
-                const discountPriceInput = parseFloat(document.getElementById('product-discount-percent').value || '');
-                const discount_price = (Number.isFinite(discountPriceInput) && discountPriceInput > 0 && discountPriceInput < parseFloat(price))
-                    ? discountPriceInput
-                    : null;
+                const parsedPrice = parseFloat(price);
+                const discount_price = window.normalizeDiscountPriceValue(parsedPrice, document.getElementById('product-discount-percent').value);
                 const stock = document.getElementById('product-stock').value;
                 const category_id = document.getElementById('product-category').value;
                 let homepage_section_id = document.getElementById('product-homepage-section').value || null;
@@ -12295,7 +12313,7 @@
                     return;
                 }
 
-                if (discount_price !== null && (!Number.isFinite(discount_price) || discount_price >= parseFloat(price))) {
+                if (discount_price !== null && (!Number.isFinite(discount_price) || discount_price >= parsedPrice)) {
                     showAlert('Discount price must be less than the product price.', 'error');
                     return;
                 }
@@ -12919,14 +12937,8 @@
                 const weight_unit = document.getElementById('edit-product-weight-unit').value || 'g';
                 const is_weight_based = document.getElementById('edit-product-is-weight-based').checked;
                 const weight_options = document.getElementById('edit-product-weight-options').value;
-                const discountPriceInput = document.getElementById('edit-product-discount-percent')?.value;
                 const parsedPrice = parseFloat(price);
-                const parsedDiscountPrice = discountPriceInput !== null && discountPriceInput !== ''
-                    ? parseFloat(discountPriceInput)
-                    : null;
-                const discountToSave = Number.isFinite(parsedDiscountPrice) && parsedDiscountPrice > 0 && parsedDiscountPrice < parsedPrice
-                    ? parsedDiscountPrice
-                    : null;
+                const discountToSave = window.normalizeDiscountPriceValue(parsedPrice, document.getElementById('edit-product-discount-percent')?.value);
                 const min_wholesale_qty = document.getElementById('edit-product-min-wholesale').value || 10;
                 const imageFiles = editProductSelectedImages;
 
