@@ -11478,14 +11478,35 @@
                     const resp = await api.put(`/admin/orders/${orderId}/invoice`, payload);
                     showAlert(resp.message || 'Invoice saved', 'success');
 
-                    const orders = window._ordersCache || [];
-                    const idx = orders.findIndex(o => String(o.id) === String(orderId));
-                    if (idx >= 0) {
-                        orders[idx].edited_invoice = payload;
-                        if (payload.delivery != null) {
-                            orders[idx].delivery_charge = payload.delivery;
-                        }
-                        if (window._currentSection === 'order-history') {
+                    const payloadSubtotal = (payload.items || []).reduce((sum, item) => {
+                        const qty = Number.isFinite(Number(item.quantity)) ? Number(item.quantity) : 1;
+                        const price = Number.isFinite(Number(item.price)) ? Number(item.price) : 0;
+                        return sum + qty * price;
+                    }, 0);
+                    const payloadDiscount = Number.isFinite(Number(payload.discount)) ? Number(payload.discount) : 0;
+                    const payloadDelivery = Number.isFinite(Number(payload.delivery)) ? Number(payload.delivery) : 0;
+                    const payloadTotal = payloadSubtotal - payloadDiscount + payloadDelivery;
+
+                    const syncOrderCache = (ordersCache) => {
+                        if (!Array.isArray(ordersCache)) return;
+                        const idx = ordersCache.findIndex(o => String(o.id) === String(orderId));
+                        if (idx < 0) return;
+
+                        const existing = ordersCache[idx];
+                        ordersCache[idx] = {
+                            ...existing,
+                            ...((resp && resp.order) ? resp.order : {}),
+                            edited_invoice: payload,
+                            delivery_charge: payloadDelivery,
+                            total_amount: payload.items && payload.items.length ? payloadTotal : existing.total_amount
+                        };
+                    };
+
+                    syncOrderCache(window._ordersCache);
+                    syncOrderCache(window._customerOrdersCache);
+
+                    if (window._currentSection === 'order-history') {
+                        if (typeof filterOrders === 'function') {
                             filterOrders();
                         }
                     }
