@@ -10643,53 +10643,36 @@
             });
             const total = subtotal - discount + deliveryCharge;
             const thankYouVal = edited.thankYou || `Thank you for shopping with ${company}!`;
+            const layout = (edited.layout && typeof edited.layout === 'object') ? edited.layout : (window.getInvoiceLayoutState ? window.getInvoiceLayoutState() : {});
+            const invoiceMarkup = window.renderInvoiceLayoutMarkup ? window.renderInvoiceLayoutMarkup({
+                company,
+                invNum: invoiceNumber,
+                customer: customerName,
+                email,
+                phone,
+                address: deliveryAddress,
+                thankYou: thankYouVal,
+                layout,
+                selectedBlock: 'logo'
+            }) : '';
 
             const html = `<!DOCTYPE html><html><head><title>Invoice ${escapeHtml(invoiceNumber)}</title>
-            <style>body{font-family:Arial,sans-serif;max-width:700px;margin:40px auto;color:#222;font-size:14px;}
-            .hdr{display:flex;justify-content:space-between;padding-bottom:1rem;border-bottom:2px solid #1a4731;margin-bottom:1.5rem;}
-            .brand{font-size:1.6rem;font-weight:800;color:#1a4731;}
+            <style>body{font-family:Arial,sans-serif;max-width:760px;margin:40px auto;color:#222;font-size:14px;}
             table{width:100%;border-collapse:collapse;margin-top:1rem;}
             th{background:#f0fdf4;padding:0.5rem 0.75rem;border:1px solid #ddd;font-weight:700;text-align:left;}
             .total-row td{font-weight:700;}
             @media print{body{margin:20px;}.no-print{display:none}}</style></head><body>
-            <div class="hdr">
-                <div><div class="brand">${escapeHtml(company)}</div><div style="color:#666;">Tax Invoice</div></div>
-                <div style="text-align:right;">
-                    <div><strong>Invoice:</strong> ${escapeHtml(invoiceNumber)}</div>
-                    <div><strong>Date:</strong> ${formatDate(o.created_at)}</div>
+            <div style="border:1px solid #ddd;border-radius:10px;padding:1rem;background:#fff;">
+                ${invoiceMarkup}
+                <div style="margin-top:1rem;display:flex;justify-content:flex-end;">
+                    <div style="width:300px;">
+                        <div style="display:flex;justify-content:space-between;padding:0.5rem 0.75rem;border-bottom:1px solid #ddd;"><span>Subtotal</span><span style="font-weight:700;">&#8377;${subtotal.toFixed(2)}</span></div>
+                        ${discount > 0 ? `<div style="display:flex;justify-content:space-between;padding:0.5rem 0.75rem;border-bottom:1px solid #ddd;color:#10b981;"><span>Discount</span><span style="font-weight:700;">-&#8377;${discount.toFixed(2)}</span></div>` : ''}
+                        ${deliveryCharge > 0 ? `<div style="display:flex;justify-content:space-between;padding:0.5rem 0.75rem;border-bottom:1px solid #ddd;"><span>Delivery Charge</span><span style="font-weight:700;">+&#8377;${deliveryCharge.toFixed(2)}</span></div>` : ''}
+                        <div style="display:flex;justify-content:space-between;padding:0.75rem;background:#f0fdf4;font-weight:700;font-size:1.1rem;border-radius:4px;margin-top:0.5rem;"><span>Order Total</span><span style="color:#1a4731;">&#8377;${total.toFixed(2)}</span></div>
+                    </div>
                 </div>
             </div>
-            <div style="margin-bottom:1.5rem;">
-                <strong>Customer:</strong> ${escapeHtml(customerName)}<br>
-                <strong>Email:</strong> ${escapeHtml(email)}
-                ${phone ? `<br><strong>Phone:</strong> ${escapeHtml(phone)}` : ''}
-                ${deliveryAddressHtml}
-            </div>
-            <table><thead><tr><th>Product</th><th>Qty</th><th>Unit Price</th><th>Subtotal</th></tr></thead>
-            <tbody>${rows}</tbody>
-            <tfoot>
-                <tr style="background: white;">
-                    <td colspan="3" style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;">Subtotal</td>
-                    <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;font-weight:700;">&#8377;${subtotal.toFixed(2)}</td>
-                </tr>
-                ${discount > 0 ? `
-                    <tr style="background: #f0f9ff;">
-                        <td colspan="3" style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;">Discount</td>
-                        <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;font-weight:700;color:#10b981;">-&#8377;${discount.toFixed(2)}</td>
-                    </tr>
-                ` : ''}
-                ${deliveryCharge > 0 ? `
-                    <tr style="background: white;">
-                        <td colspan="3" style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;">Delivery Charge</td>
-                        <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;font-weight:700;">+&#8377;${deliveryCharge.toFixed(2)}</td>
-                    </tr>
-                ` : ''}
-                <tr class="total-row" style="background: #f0fdf4;">
-                    <td colspan="3" style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;">Order Total</td>
-                    <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;color:#1a4731;font-size:1.1rem;">&#8377;${total.toFixed(2)}</td>
-                </tr>
-            </tfoot></table>
-            <div style="margin-top:2rem;color:#666;font-size:0.85rem;"><p>${escapeHtml(thankYouVal).replace(/\n/g, '<br>')}</p></div>
             <div class="no-print" style="margin-top:1.5rem;"><button onclick="window.print()" style="padding:0.5rem 1rem;background:#1a4731;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:1rem;">&#128424; Print / Save PDF</button></div>
             </body></html>`;
             const w = window.open('', '_blank', 'width=760,height=920');
@@ -10735,6 +10718,7 @@
                 discount: Number.isFinite(Number(edited.discount)) ? Number(edited.discount) : 0,
                 deliveryCharge: Number.isFinite(Number(edited.delivery)) ? Number(edited.delivery) : Number.parseFloat(order.delivery_charge || 0) || 0
             };
+            window.setInvoiceLayoutState(edited.layout || null);
 
             document.getElementById('invoice-editor-order-id').value = orderId;
             document.getElementById('invoice-editor-number').value = edited.invoice_number || order.order_number || String(orderId);
@@ -10809,6 +10793,242 @@
             }
         };
 
+        window.invoiceEditorLayoutDefaults = {
+            logo: { x: 20, y: 20, width: 140, height: 70, visible: true },
+            company: { x: 220, y: 28, width: 300, height: 58, fontSize: 24, fontWeight: 800, textAlign: 'left', lineHeight: 1.2, color: '#1a4731' },
+            meta: { x: 470, y: 24, width: 220, height: 84, fontSize: 13, fontWeight: 400, textAlign: 'right', lineHeight: 1.35, color: '#222' },
+            customer: { x: 20, y: 120, width: 330, height: 120, fontSize: 13, fontWeight: 400, textAlign: 'left', lineHeight: 1.4, color: '#222' },
+            thankYou: { x: 20, y: 640, width: 660, height: 70, fontSize: 13, fontWeight: 400, textAlign: 'center', lineHeight: 1.5, color: '#666' }
+        };
+
+        window.invoiceEditorSelectedLayoutBlock = 'logo';
+
+        window.getInvoiceLayoutState = function() {
+            const base = JSON.parse(JSON.stringify(window.invoiceEditorLayoutDefaults));
+            const stored = localStorage.getItem('mount-made-invoice-layout');
+            if (!stored) return base;
+            try {
+                const parsed = JSON.parse(stored);
+                return {
+                    ...base,
+                    ...parsed,
+                    logo: { ...base.logo, ...(parsed.logo || {}) },
+                    company: { ...base.company, ...(parsed.company || {}) },
+                    meta: { ...base.meta, ...(parsed.meta || {}) },
+                    customer: { ...base.customer, ...(parsed.customer || {}) },
+                    thankYou: { ...base.thankYou, ...(parsed.thankYou || {}) }
+                };
+            } catch (e) {
+                return base;
+            }
+        };
+
+        window.setInvoiceLayoutState = function(layout) {
+            window.invoiceEditorLayout = window.getInvoiceLayoutState();
+            if (layout) {
+                window.invoiceEditorLayout = {
+                    ...window.invoiceEditorLayout,
+                    ...layout,
+                    logo: { ...window.invoiceEditorLayout.logo, ...(layout.logo || {}) },
+                    company: { ...window.invoiceEditorLayout.company, ...(layout.company || {}) },
+                    meta: { ...window.invoiceEditorLayout.meta, ...(layout.meta || {}) },
+                    customer: { ...window.invoiceEditorLayout.customer, ...(layout.customer || {}) },
+                    thankYou: { ...window.invoiceEditorLayout.thankYou, ...(layout.thankYou || {}) }
+                };
+            }
+            localStorage.setItem('mount-made-invoice-layout', JSON.stringify(window.invoiceEditorLayout));
+            return window.invoiceEditorLayout;
+        };
+
+        window.setInvoiceLayoutBlockValue = function(block, overrides, options = {}) {
+            if (!window.invoiceEditorLayout) window.invoiceEditorLayout = window.getInvoiceLayoutState();
+            const current = window.invoiceEditorLayout[block] || {};
+            window.invoiceEditorLayout[block] = { ...current, ...overrides };
+            if (!options.skipLocalStorage) {
+                localStorage.setItem('mount-made-invoice-layout', JSON.stringify(window.invoiceEditorLayout));
+            }
+            if (!options.skipRender) {
+                updateInvoicePreview();
+            }
+            return window.invoiceEditorLayout[block];
+        };
+
+        window.selectInvoiceLayoutBlock = function(block) {
+            window.invoiceEditorSelectedLayoutBlock = block;
+            syncInvoiceLayoutControls();
+            updateInvoicePreview();
+        };
+
+        window.syncInvoiceLayoutControls = function() {
+            const block = window.invoiceEditorSelectedLayoutBlock || 'logo';
+            const layout = window.invoiceEditorLayout || window.getInvoiceLayoutState();
+            const target = layout[block] || {};
+            const select = document.getElementById('invoice-layout-block-select');
+            if (select) select.value = block;
+            document.getElementById('invoice-layout-x').value = target.x ?? 0;
+            document.getElementById('invoice-layout-y').value = target.y ?? 0;
+            document.getElementById('invoice-layout-width').value = target.width ?? 140;
+            document.getElementById('invoice-layout-height').value = target.height ?? 70;
+            document.getElementById('invoice-layout-font-size').value = target.fontSize ?? 13;
+            document.getElementById('invoice-layout-font-weight').value = target.fontWeight ?? 400;
+            document.getElementById('invoice-layout-text-align').value = target.textAlign || 'left';
+            document.getElementById('invoice-layout-line-height').value = target.lineHeight ?? 1.3;
+        };
+
+        window.updateInvoiceLayoutControl = function(key, value) {
+            const block = window.invoiceEditorSelectedLayoutBlock || 'logo';
+            const nextValue = key === 'fontSize' || key === 'fontWeight' || key === 'x' || key === 'y' || key === 'width' || key === 'height'
+                ? Number(value)
+                : value;
+            window.setInvoiceLayoutBlockValue(block, { [key]: nextValue });
+        };
+
+        window.handleInvoiceLogoUpload = function(event) {
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+            if (!/\.(jpg|jpeg|png)$/i.test(file.name)) {
+                showAlert('Please choose a JPG or PNG logo image.', 'warning');
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function() {
+                if (!window.invoiceEditorLayout) window.invoiceEditorLayout = window.getInvoiceLayoutState();
+                window.invoiceEditorLayout.logo = { ...(window.invoiceEditorLayout.logo || {}), logoDataUrl: reader.result };
+                localStorage.setItem('mount-made-invoice-layout', JSON.stringify(window.invoiceEditorLayout));
+                updateInvoicePreview();
+            };
+            reader.readAsDataURL(file);
+        };
+
+        window.removeInvoiceLogo = function() {
+            if (!window.invoiceEditorLayout) window.invoiceEditorLayout = window.getInvoiceLayoutState();
+            const logo = window.invoiceEditorLayout.logo || {};
+            delete logo.logoDataUrl;
+            window.invoiceEditorLayout.logo = { ...logo, visible: false };
+            localStorage.setItem('mount-made-invoice-layout', JSON.stringify(window.invoiceEditorLayout));
+            updateInvoicePreview();
+        };
+
+        window.resetInvoiceLayout = function() {
+            window.invoiceEditorLayout = JSON.parse(JSON.stringify(window.invoiceEditorLayoutDefaults));
+            localStorage.setItem('mount-made-invoice-layout', JSON.stringify(window.invoiceEditorLayout));
+            syncInvoiceLayoutControls();
+            updateInvoicePreview();
+        };
+
+        window.renderInvoiceLayoutMarkup = function(options = {}) {
+            const company = options.company || document.getElementById('invoice-editor-company').value || 'Mount Made';
+            const invNum = options.invNum || document.getElementById('invoice-editor-number').value || 'INV-0001';
+            const customer = options.customer || document.getElementById('invoice-editor-customer').value || 'Customer';
+            const email = options.email || document.getElementById('invoice-editor-email').value || '';
+            const phone = options.phone || document.getElementById('invoice-editor-phone').value || '';
+            const address = options.address || document.getElementById('invoice-editor-address').value || '';
+            const thankYou = options.thankYou || (document.getElementById('invoice-editor-thankyou') && document.getElementById('invoice-editor-thankyou').value) || (`Thank you for shopping with ${company}!`);
+            const layout = options.layout || window.invoiceEditorLayout || window.getInvoiceLayoutState();
+            const selectedBlock = options.selectedBlock || window.invoiceEditorSelectedLayoutBlock || 'logo';
+
+            const companyText = `<div style="font-size:${layout.company.fontSize}px;font-weight:${layout.company.fontWeight};line-height:${layout.company.lineHeight};color:${layout.company.color};text-align:${layout.company.textAlign};">${escapeHtml(company)}</div>`;
+            const metaLines = [
+                `<div><strong>Invoice:</strong> ${escapeHtml(invNum)}</div>`,
+                `<div><strong>Date:</strong> ${new Date().toLocaleDateString('en-IN')}</div>`
+            ];
+            const customerLines = [
+                `<div><strong>Customer:</strong> ${escapeHtml(customer)}</div>`,
+                email ? `<div><strong>Email:</strong> ${escapeHtml(email)}</div>` : '',
+                phone ? `<div><strong>Phone:</strong> ${escapeHtml(phone)}</div>` : '',
+                address ? `<div><strong>Address:</strong> ${escapeHtml(address).replace(/\n/g, '<br>')}</div>` : ''
+            ].filter(Boolean);
+
+            const renderBlock = (blockKey, content, extraCss = '') => {
+                const cfg = layout[blockKey] || {};
+                const isSelected = selectedBlock === blockKey;
+                const borderStyle = isSelected ? 'border: 2px dashed #2563eb;' : 'border: 1px dashed transparent;';
+                return `
+                    <div data-block="${blockKey}" style="position:absolute; left:${cfg.x || 0}px; top:${cfg.y || 0}px; width:${cfg.width || 160}px; height:${cfg.height || 60}px; ${borderStyle} ${extraCss}; box-sizing:border-box; padding: 0.25rem; overflow:hidden; cursor:move;">
+                        ${content}
+                    </div>
+                `;
+            };
+
+            const logoMarkup = layout.logo && layout.logo.logoDataUrl
+                ? `<img src="${layout.logo.logoDataUrl}" alt="Invoice Logo" style="max-width:100%; max-height:100%; object-fit:contain; width:100%; height:100%; display:block;">`
+                : `<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-weight:700;color:#1a4731;">${escapeHtml(company)}</div>`;
+
+            const blocks = [
+                renderBlock('logo', logoMarkup, 'display:flex;align-items:center;justify-content:center;'),
+                renderBlock('company', companyText, 'display:flex;align-items:center;justify-content:flex-start;'),
+                renderBlock('meta', `<div style="font-size:${layout.meta.fontSize}px;font-weight:${layout.meta.fontWeight};line-height:${layout.meta.lineHeight};color:${layout.meta.color};text-align:${layout.meta.textAlign};">${metaLines.join('')}</div>`, 'display:flex;align-items:flex-start;justify-content:flex-start;'),
+                renderBlock('customer', `<div style="font-size:${layout.customer.fontSize}px;font-weight:${layout.customer.fontWeight};line-height:${layout.customer.lineHeight};color:${layout.customer.color};text-align:${layout.customer.textAlign};">${customerLines.join('')}</div>`, 'display:flex;align-items:flex-start;justify-content:flex-start;'),
+                renderBlock('thankYou', `<div style="font-size:${layout.thankYou.fontSize}px;font-weight:${layout.thankYou.fontWeight};line-height:${layout.thankYou.lineHeight};color:${layout.thankYou.color};text-align:${layout.thankYou.textAlign};">${escapeHtml(thankYou).replace(/\n/g, '<br>')}</div>`, 'display:flex;align-items:center;justify-content:center;')
+            ].join('');
+
+            const itemRows = window.invoiceEditorData.items.map(item => {
+                const lineTotal = item.price * item.quantity;
+                return `
+                    <tr style="border: 1px solid #ddd;">
+                        <td style="padding: 0.5rem 0.75rem; border-right: 1px solid #ddd;">${escapeHtml(item.name)}</td>
+                        <td style="padding: 0.5rem 0.75rem; text-align: center; border-right: 1px solid #ddd;">${item.quantity}</td>
+                        <td style="padding: 0.5rem 0.75rem; text-align: right; border-right: 1px solid #ddd;">₹${item.price.toFixed(2)}</td>
+                        <td style="padding: 0.5rem 0.75rem; text-align: right;">₹${lineTotal.toFixed(2)}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            return `
+                <div data-invoice-canvas="1" style="position:relative; min-height:760px; border: 1px solid #ddd; border-radius: 8px; padding: 1rem; background: white; font-family: Arial, sans-serif; font-size: 13px; overflow: hidden;">
+                    ${blocks}
+                    <div style="position:absolute; left:20px; top:260px; right:20px; bottom:160px;">
+                        <table style="width:100%; border-collapse:collapse; margin-bottom:1rem;">
+                            <thead>
+                                <tr style="background:#f0fdf4;">
+                                    <th style="padding:0.5rem 0.75rem;border:1px solid #ddd;text-align:left;font-weight:700;">Product</th>
+                                    <th style="padding:0.5rem 0.75rem;border:1px solid #ddd;text-align:center;font-weight:700;">Qty</th>
+                                    <th style="padding:0.5rem 0.75rem;border:1px solid #ddd;text-align:right;font-weight:700;">Unit Price</th>
+                                    <th style="padding:0.5rem 0.75rem;border:1px solid #ddd;text-align:right;font-weight:700;">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>${itemRows}</tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        };
+
+        window.attachInvoiceLayoutDragHandlers = function() {
+            const preview = document.getElementById('invoice-editor-preview');
+            if (!preview) return;
+            const canvas = preview.querySelector('[data-invoice-canvas]');
+            if (!canvas) return;
+            preview.querySelectorAll('[data-block]').forEach(block => {
+                block.addEventListener('mousedown', function(event) {
+                    const blockKey = block.getAttribute('data-block');
+                    window.invoiceEditorSelectedLayoutBlock = blockKey;
+                    syncInvoiceLayoutControls();
+                    const startX = event.clientX;
+                    const startY = event.clientY;
+                    const startLeft = parseFloat(block.style.left || 0);
+                    const startTop = parseFloat(block.style.top || 0);
+                    const move = (moveEvent) => {
+                        const deltaX = moveEvent.clientX - startX;
+                        const deltaY = moveEvent.clientY - startY;
+                        const nextX = Math.max(0, Math.round(startLeft + deltaX));
+                        const nextY = Math.max(0, Math.round(startTop + deltaY));
+                        block.style.left = `${nextX}px`;
+                        block.style.top = `${nextY}px`;
+                        window.setInvoiceLayoutBlockValue(blockKey, { x: nextX, y: nextY }, { skipRender: true, skipLocalStorage: false });
+                        syncInvoiceLayoutControls();
+                    };
+                    const stop = () => {
+                        document.removeEventListener('mousemove', move);
+                        document.removeEventListener('mouseup', stop);
+                    };
+                    document.addEventListener('mousemove', move);
+                    document.addEventListener('mouseup', stop);
+                    event.preventDefault();
+                });
+            });
+        };
+
         window.updateInvoicePreview = function() {
             const company = document.getElementById('invoice-editor-company').value || 'Mount Made';
             const invNum = document.getElementById('invoice-editor-number').value || 'INV-0001';
@@ -10823,6 +11043,8 @@
             window.invoiceEditorData.discount = discount;
             window.invoiceEditorData.deliveryCharge = delivery;
 
+            if (!window.invoiceEditorLayout) window.invoiceEditorLayout = window.getInvoiceLayoutState();
+            const layout = window.invoiceEditorLayout;
             let subtotal = 0;
             const itemRows = window.invoiceEditorData.items.map(item => {
                 const lineTotal = item.price * item.quantity;
@@ -10841,39 +11063,18 @@
 
             const html = `
                 <div style="border: 1px solid #ddd; border-radius: 8px; padding: 1rem; background: white; font-family: Arial, sans-serif;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 1rem; border-bottom: 2px solid #1a4731; padding-bottom: 0.75rem;">
-                        <div>
-                            <div style="font-size: 1.3rem; font-weight: 800; color: #1a4731;">${escapeHtml(company)}</div>
-                            <div style="color: #666; font-size: 0.85rem;">Tax Invoice</div>
-                        </div>
-                        <div style="text-align: right;">
-                            <div style="font-weight: 700;">Invoice: ${escapeHtml(invNum)}</div>
-                            <div style="font-size: 0.85rem; color: #666;">${new Date().toLocaleDateString('en-IN')}</div>
-                        </div>
-                    </div>
-                    
-                    <div style="margin-bottom: 1rem; font-size: 0.9rem;">
-                        <div><strong>Customer:</strong> ${escapeHtml(customer)}</div>
-                        ${email ? `<div><strong>Email:</strong> ${escapeHtml(email)}</div>` : ''}
-                        ${phone ? `<div><strong>Phone:</strong> ${escapeHtml(phone)}</div>` : ''}
-                        ${address ? `<div><strong>Address:</strong> ${escapeHtml(address).replace(/\n/g, '<br>')}</div>` : ''}
-                    </div>
-                    
-                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 1rem;">
-                        <thead>
-                            <tr style="background: #f0fdf4;">
-                                <th style="padding: 0.5rem 0.75rem; border: 1px solid #ddd; text-align: left; font-weight: 700;">Product</th>
-                                <th style="padding: 0.5rem 0.75rem; border: 1px solid #ddd; text-align: center; font-weight: 700;">Qty</th>
-                                <th style="padding: 0.5rem 0.75rem; border: 1px solid #ddd; text-align: right; font-weight: 700;">Unit Price</th>
-                                <th style="padding: 0.5rem 0.75rem; border: 1px solid #ddd; text-align: right; font-weight: 700;">Subtotal</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${itemRows}
-                        </tbody>
-                    </table>
-                    
-                    <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
+                    <div style="font-size: 0.85rem; color: #666; margin-bottom: 0.5rem;">Drag the blocks to place them anywhere on the invoice.</div>
+                    ${window.renderInvoiceLayoutMarkup({
+                        company,
+                        invNum,
+                        customer,
+                        email,
+                        phone,
+                        address,
+                        thankYou,
+                        selectedBlock: window.invoiceEditorSelectedLayoutBlock || 'logo'
+                    })}
+                    <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
                         <div style="width: 300px;">
                             <div style="display: flex; justify-content: space-between; padding: 0.5rem 0.75rem; border-bottom: 1px solid #ddd;">
                                 <span>Subtotal:</span>
@@ -10897,15 +11098,13 @@
                             </div>
                         </div>
                     </div>
-                    
-                    <div style="margin-top: 1rem; color: #666; font-size: 0.8rem; text-align: center;">
-                        <p>${(thankYou ? escapeHtml(thankYou).replace(/\n/g, '<br>') : `Thank you for shopping with ${escapeHtml(company)}!`)}</p>
-                    </div>
                 </div>
             `;
 
             document.getElementById('invoice-editor-preview').innerHTML = html;
             document.getElementById('invoice-editor-total').textContent = total.toFixed(2);
+            window.syncInvoiceLayoutControls();
+            window.attachInvoiceLayoutDragHandlers();
         };
 
         window.printEditedInvoice = function() {
@@ -11008,7 +11207,8 @@
                 thankYou: document.getElementById('invoice-editor-thankyou')?.value || null,
                 items: window.invoiceEditorData.items || [],
                 discount: Number.isFinite(Number(document.getElementById('invoice-editor-discount').value)) ? Number(document.getElementById('invoice-editor-discount').value) : 0,
-                delivery: Number.isFinite(Number(document.getElementById('invoice-editor-delivery').value)) ? Number(document.getElementById('invoice-editor-delivery').value) : 0
+                delivery: Number.isFinite(Number(document.getElementById('invoice-editor-delivery').value)) ? Number(document.getElementById('invoice-editor-delivery').value) : 0,
+                layout: window.invoiceEditorLayout || window.getInvoiceLayoutState()
             };
 
             try {
