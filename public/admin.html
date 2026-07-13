@@ -11094,13 +11094,16 @@
                 renderBlock('thankYou', `<div style="font-size:${layout.thankYou.fontSize}px;font-weight:${layout.thankYou.fontWeight};line-height:${layout.thankYou.lineHeight};color:${layout.thankYou.color};text-align:${layout.thankYou.textAlign};">${escapeHtml(thankYou).replace(/\n/g, '<br>')}</div>`, 'display:flex;align-items:center;justify-content:center;')
             ].join('');
 
-            const itemRows = window.invoiceEditorData.items.map(item => {
-                const lineTotal = item.price * item.quantity;
+            const itemsList = Array.isArray(options.items) ? options.items : (window.invoiceEditorData && Array.isArray(window.invoiceEditorData.items) ? window.invoiceEditorData.items : []);
+            const itemRows = itemsList.map(item => {
+                const qty = Number.isFinite(Number(item.quantity)) ? Number(item.quantity) : 1;
+                const price = Number.isFinite(Number(item.price)) ? Number(item.price) : 0;
+                const lineTotal = price * qty;
                 return `
                     <tr style="border: 1px solid #ddd;">
-                        <td style="padding: 0.5rem 0.75rem; border-right: 1px solid #ddd;">${escapeHtml(item.name)}</td>
-                        <td style="padding: 0.5rem 0.75rem; text-align: center; border-right: 1px solid #ddd;">${item.quantity}</td>
-                        <td style="padding: 0.5rem 0.75rem; text-align: right; border-right: 1px solid #ddd;">₹${item.price.toFixed(2)}</td>
+                        <td style="padding: 0.5rem 0.75rem; border-right: 1px solid #ddd;">${escapeHtml(item.name || item.product_name || '')}</td>
+                        <td style="padding: 0.5rem 0.75rem; text-align: center; border-right: 1px solid #ddd;">${qty}</td>
+                        <td style="padding: 0.5rem 0.75rem; text-align: right; border-right: 1px solid #ddd;">₹${price.toFixed(2)}</td>
                         <td style="padding: 0.5rem 0.75rem; text-align: right;">₹${lineTotal.toFixed(2)}</td>
                     </tr>
                 `;
