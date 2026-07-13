@@ -10653,10 +10653,22 @@
                 : '';
             let discount = Number.isFinite(Number(edited.discount)) ? Number(edited.discount) : 0;
             const deliveryCharge = Number.isFinite(Number(edited.delivery)) ? Number(edited.delivery) : Number.parseFloat(o.delivery_charge || 0) || 0;
+            const productCatalog = Array.isArray(window._productsCache) ? window._productsCache : [];
+            const catalogDiscount = items.reduce((sum, it) => {
+                const product = productCatalog.find(p => String(p.id) === String(it.product_id || it.id));
+                const listPrice = product && Number.isFinite(Number(product.price)) ? Number(product.price) : null;
+                const itemPrice = Number.isFinite(Number(it.price)) ? Number(it.price) : 0;
+                return sum + ((listPrice != null && listPrice > itemPrice) ? (listPrice - itemPrice) : 0);
+            }, 0);
 
             const rows = items.map(it => {
                 const qty = Number.isFinite(Number(it.quantity)) ? Number(it.quantity) : 1;
                 const price = Number.isFinite(Number(it.price)) ? Number(it.price) : 0;
+                const product = productCatalog.find(p => String(p.id) === String(it.product_id || it.id));
+                const originalPrice = product && Number.isFinite(Number(product.price)) ? Number(product.price) : null;
+                const priceHtml = originalPrice && originalPrice > price
+                    ? `<div style="color:#6b7280;font-size:0.85rem;text-decoration:line-through;margin-bottom:0.1rem;">₹${originalPrice.toFixed(2)}</div><div>₹${price.toFixed(2)}</div>`
+                    : `₹${price.toFixed(2)}`;
                 const subtotal = qty * price;
                 const label = escapeHtml(it.product_name || it.name || 'Item');
                 return `
@@ -10665,7 +10677,7 @@
                         <div style="font-weight:600;color:#111827;">${label}</div>
                     </td>
                     <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:center;vertical-align:middle;">${qty}</td>
-                    <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;vertical-align:middle;">&#8377;${price.toFixed(2)}</td>
+                    <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;vertical-align:middle;">${priceHtml}</td>
                     <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;vertical-align:middle;">&#8377;${subtotal.toFixed(2)}</td>
                 </tr>`;
             }).join('');
@@ -10676,11 +10688,13 @@
                 const price = Number.isFinite(Number(it.price)) ? Number(it.price) : 0;
                 subtotal += qty * price;
             });
-            if (discount <= 0 && Number.isFinite(Number(o.total_amount))) {
-                const expectedOrderAmount = Number.parseFloat(o.total_amount);
-                const impliedDiscount = subtotal + deliveryCharge - expectedOrderAmount;
-                if (impliedDiscount > 0.004) {
-                    discount = Number(impliedDiscount.toFixed(2));
+            if (discount <= 0) {
+                const impliedDiscount = Number.isFinite(Number(o.total_amount))
+                    ? subtotal + deliveryCharge - Number.parseFloat(o.total_amount)
+                    : 0;
+                const correctedDiscount = Math.max(impliedDiscount, catalogDiscount, 0);
+                if (correctedDiscount > 0.004) {
+                    discount = Number(correctedDiscount.toFixed(2));
                 }
             }
             const total = subtotal - discount + deliveryCharge;
@@ -10744,6 +10758,7 @@
                     price: parseFloat(it.price || 0)
                 }));
 
+            const products = Array.isArray(window._productsCache) ? window._productsCache : [];
             const itemsSubtotal = invoiceItems.reduce((sum, item) => {
                 const qty = Number.isFinite(Number(item.quantity)) ? Number(item.quantity) : 1;
                 const price = Number.isFinite(Number(item.price)) ? Number(item.price) : 0;
@@ -10751,7 +10766,16 @@
             }, 0);
             const savedDiscount = Number.isFinite(Number(edited.discount)) ? Number(edited.discount) : 0;
             const defaultDeliveryCharge = Number.isFinite(Number(edited.delivery)) ? Number(edited.delivery) : Number.parseFloat(order.delivery_charge || 0) || 0;
-            const fallbackDiscount = (Number.isFinite(Number(order.total_amount)) ? Math.max(0, itemsSubtotal + defaultDeliveryCharge - Number.parseFloat(order.total_amount || 0)) : 0);
+            const catalogDiscount = invoiceItems.reduce((sum, item) => {
+                const product = products.find(p => String(p.id) === String(item.product_id || item.id));
+                const listPrice = product && Number.isFinite(Number(product.price)) ? Number(product.price) : null;
+                const itemPrice = Number.isFinite(Number(item.price)) ? Number(item.price) : 0;
+                return sum + ((listPrice != null && listPrice > itemPrice) ? (listPrice - itemPrice) : 0);
+            }, 0);
+            const fallbackDiscount = Number.isFinite(Number(order.total_amount))
+                ? Math.max(0, itemsSubtotal + defaultDeliveryCharge - Number.parseFloat(order.total_amount || 0))
+                : 0;
+            const effectiveDiscount = savedDiscount > 0 ? savedDiscount : Math.max(fallbackDiscount, catalogDiscount, 0);
 
             window.invoiceEditorData = {
                 orderId: orderId,
@@ -10761,7 +10785,7 @@
                     quantity: Number.isFinite(Number(item.quantity)) ? Number(item.quantity) : 1,
                     price: Number.isFinite(Number(item.price)) ? Number(item.price) : 0
                 })),
-                discount: savedDiscount > 0 ? savedDiscount : fallbackDiscount,
+                discount: effectiveDiscount,
                 deliveryCharge: defaultDeliveryCharge
             };
             window.setInvoiceLayoutState(edited.layout || null);
