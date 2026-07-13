@@ -10700,14 +10700,6 @@
             @media print{body{margin:20px;}.no-print{display:none}}</style></head><body>
             <div style="border:1px solid #ddd;border-radius:10px;padding:1rem;background:#fff;">
                 ${invoiceMarkup}
-                <div style="margin-top:1rem;display:flex;justify-content:flex-end;">
-                    <div style="width:300px;">
-                        <div style="display:flex;justify-content:space-between;padding:0.5rem 0.75rem;border-bottom:1px solid #ddd;"><span>Subtotal</span><span style="font-weight:700;">&#8377;${subtotal.toFixed(2)}</span></div>
-                        ${discount > 0 ? `<div style="display:flex;justify-content:space-between;padding:0.5rem 0.75rem;border-bottom:1px solid #ddd;color:#10b981;"><span>Discount</span><span style="font-weight:700;">-&#8377;${discount.toFixed(2)}</span></div>` : ''}
-                        ${deliveryCharge > 0 ? `<div style="display:flex;justify-content:space-between;padding:0.5rem 0.75rem;border-bottom:1px solid #ddd;"><span>Delivery Charge</span><span style="font-weight:700;">+&#8377;${deliveryCharge.toFixed(2)}</span></div>` : ''}
-                        <div style="display:flex;justify-content:space-between;padding:0.75rem;background:#f0fdf4;font-weight:700;font-size:1.1rem;border-radius:4px;margin-top:0.5rem;"><span>Order Total</span><span style="color:#1a4731;">&#8377;${total.toFixed(2)}</span></div>
-                    </div>
-                </div>
             </div>
             <div class="no-print" style="margin-top:1.5rem;"><button onclick="window.print()" style="padding:0.5rem 1rem;background:#1a4731;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:1rem;">&#128424; Print / Save PDF</button></div>
             </body></html>`;
@@ -11245,32 +11237,10 @@
                         phone,
                         address,
                         thankYou,
+                        discount,
+                        delivery,
                         selectedBlock: window.invoiceEditorSelectedLayoutBlock || 'logo'
                     })}
-                    <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
-                        <div style="width: 300px;">
-                            <div style="display: flex; justify-content: space-between; padding: 0.5rem 0.75rem; border-bottom: 1px solid #ddd;">
-                                <span>Subtotal:</span>
-                                <span style="font-weight: 700;">₹${subtotal.toFixed(2)}</span>
-                            </div>
-                            ${discount > 0 ? `
-                                <div style="display: flex; justify-content: space-between; padding: 0.5rem 0.75rem; border-bottom: 1px solid #ddd; color: var(--success);">
-                                    <span>Discount:</span>
-                                    <span style="font-weight: 700;">-₹${discount.toFixed(2)}</span>
-                                </div>
-                            ` : ''}
-                            ${delivery > 0 ? `
-                                <div style="display: flex; justify-content: space-between; padding: 0.5rem 0.75rem; border-bottom: 1px solid #ddd;">
-                                    <span>Delivery:</span>
-                                    <span style="font-weight: 700;">+₹${delivery.toFixed(2)}</span>
-                                </div>
-                            ` : ''}
-                            <div style="display: flex; justify-content: space-between; padding: 0.75rem; background: #f0fdf4; font-weight: 700; font-size: 1.1rem; border-radius: 4px; margin-top: 0.5rem;">
-                                <span>TOTAL:</span>
-                                <span style="color: #1a4731;">₹${total.toFixed(2)}</span>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             `;
 
