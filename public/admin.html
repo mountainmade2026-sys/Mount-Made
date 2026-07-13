@@ -4217,7 +4217,7 @@
                 </div>
 
                 <div style="padding: 1rem;">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 1.5rem;">
                         <!-- Editor Panel (simplified) -->
                         <div style="border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; background: var(--bg-card);">
                             <h3 style="margin-bottom: 1rem; color: var(--text-dark);">Edit Invoice Details</h3>
@@ -4244,13 +4244,12 @@
                             <div style="margin-top:1rem;">
                                 <div style="font-size:0.95rem;color:var(--text-secondary);margin-bottom:0.5rem;">Only the Thank You message is editable here. The site homepage logo will be used automatically on printed invoices.</div>
                                 <div style="margin-bottom: 0.5rem;">
-                                    <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('invoice-editor-thankyou').value='Thank you for shopping with Mount Made!'; updateInvoicePreview();">Reset Thank You</button>
+                                    <!-- Reset Thank You button removed as per request -->
                                 </div>
                             </div>
                         </div>
                         
-                        <!-- Preview Panel -->
-                        <div id="invoice-editor-preview" style="border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; background: var(--bg-card); overflow-y: auto; max-height: 70vh; font-family: Arial, sans-serif; font-size: 13px;"></div>
+                        <!-- Preview Panel removed as requested -->
                     </div>
 
                     <div style="display:flex; justify-content:flex-end; gap:0.75rem; margin-top:1rem;">
@@ -11095,7 +11094,8 @@
             const renderBlock = (blockKey, content, extraCss = '') => {
                 const cfg = layout[blockKey] || {};
                 const isSelected = selectedBlock === blockKey;
-                const borderStyle = isSelected ? 'border: 2px dashed #2563eb;' : 'border: 1px dashed transparent;';
+                // Remove visible selection border (no blue square) in preview/editor
+                const borderStyle = 'border: none;';
                 return `
                     <div data-block="${blockKey}" style="position:absolute; left:${cfg.x || 0}px; top:${cfg.y || 0}px; width:${cfg.width || 160}px; height:${cfg.height || 60}px; ${borderStyle} ${extraCss}; box-sizing:border-box; padding: 0.25rem; overflow:hidden; cursor:move;">
                         ${content}
@@ -11319,10 +11319,14 @@
                 </div>
             `;
 
-            document.getElementById('invoice-editor-preview').innerHTML = html;
-            document.getElementById('invoice-editor-total').textContent = total.toFixed(2);
-            window.syncInvoiceLayoutControls();
-            window.attachInvoiceLayoutDragHandlers();
+            const previewEl = document.getElementById('invoice-editor-preview');
+            if (previewEl) {
+                previewEl.innerHTML = html;
+                try { window.syncInvoiceLayoutControls(); } catch (e) {}
+                try { window.attachInvoiceLayoutDragHandlers(); } catch (e) {}
+            }
+            const totalEl = document.getElementById('invoice-editor-total');
+            if (totalEl) totalEl.textContent = total.toFixed(2);
         };
 
         window.printEditedInvoice = function() {
