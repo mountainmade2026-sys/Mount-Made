@@ -2157,6 +2157,50 @@ async function initApp() {
     });
   }
 
+  function addMobileProfileLinksToDropdown() {
+    const isMobile = window.innerWidth <= 768;
+    const accountDropdown = document.getElementById('account-dropdown');
+    if (!accountDropdown) return;
+
+    const aboutLinkId = 'mobile-account-about-us-link';
+    const contactLinkId = 'mobile-account-contact-us-link';
+    const existingAbout = document.getElementById(aboutLinkId);
+    const existingContact = document.getElementById(contactLinkId);
+
+    if (!isMobile) {
+      if (existingAbout) existingAbout.remove();
+      if (existingContact) existingContact.remove();
+      return;
+    }
+
+    if (existingAbout || existingContact) return;
+
+    const themeToggle = document.getElementById('theme-toggle');
+    const groupParent = themeToggle?.closest('.accd-group');
+    if (!groupParent || !groupParent.parentElement) return;
+
+    const aboutLink = document.createElement('a');
+    aboutLink.href = '/about';
+    aboutLink.className = 'accd-item';
+    aboutLink.id = aboutLinkId;
+    aboutLink.innerHTML = '<span class="accd-icon"><i class="fas fa-info-circle"></i></span>About Us';
+
+    const contactLink = document.createElement('a');
+    contactLink.href = '/contact';
+    contactLink.className = 'accd-item';
+    contactLink.id = contactLinkId;
+    contactLink.innerHTML = '<span class="accd-icon"><i class="fas fa-envelope"></i></span>Contact Us';
+
+    groupParent.parentElement.insertBefore(aboutLink, groupParent);
+    groupParent.parentElement.insertBefore(contactLink, groupParent);
+  }
+
+  addMobileProfileLinksToDropdown();
+  window.addEventListener('resize', () => {
+    clearTimeout(window.mobileProfileLinksTimeout);
+    window.mobileProfileLinksTimeout = setTimeout(addMobileProfileLinksToDropdown, 250);
+  });
+
   // Hardware back button — works in Capacitor APK (including remote-URL / Render mode)
   // NOTE: IS_NATIVE_CAPACITOR is evaluated at parse time and may be false when loading from a
   // remote server URL, so we check Capacitor availability at runtime here instead.
