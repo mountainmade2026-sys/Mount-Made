@@ -12285,7 +12285,9 @@
                 const name = document.getElementById('product-name').value;
                 const price = document.getElementById('product-price').value;
                 const parsedPrice = parseFloat(price);
-                const discount_price = window.normalizeDiscountPriceValue(parsedPrice, document.getElementById('product-discount-percent').value);
+                const rawDiscountInput = document.getElementById('product-discount-percent')?.value;
+                const discount_price = window.normalizeDiscountPriceValue(parsedPrice, rawDiscountInput);
+                const discount_adjust = (String(rawDiscountInput || '').trim().startsWith('-')) ? String(rawDiscountInput).trim() : null;
                 const stock = document.getElementById('product-stock').value;
                 const category_id = document.getElementById('product-category').value;
                 let homepage_section_id = document.getElementById('product-homepage-section').value || null;
@@ -12356,6 +12358,7 @@
                     price: parseFloat(price),
                     wholesale_price: wholesale_price !== null && wholesale_price !== '' ? parseFloat(wholesale_price) : null,
                     discount_price: discount_price !== null && discount_price !== '' ? parseFloat(discount_price) : null,
+                    discount_adjust: discount_adjust !== undefined ? discount_adjust : null,
                     stock_quantity: parseInt(stock),
                     min_wholesale_qty: parseInt(min_wholesale_qty),
                     image_url,
@@ -12608,10 +12611,15 @@
             const editPctInput = document.getElementById('edit-product-discount-percent');
             if (editPctInput) {
                 const basePrice = parseFloat(product.price || '');
+                const savedAdjust = product.discount_adjust !== undefined && product.discount_adjust !== null
+                    ? String(product.discount_adjust)
+                    : '';
                 const savedDiscount = product.discount_price !== undefined && product.discount_price !== null
                     ? parseFloat(product.discount_price)
                     : NaN;
-                editPctInput.value = (Number.isFinite(basePrice) && basePrice > 0 && Number.isFinite(savedDiscount) && savedDiscount < basePrice) ? savedDiscount : '';
+                // Prefer showing the raw adjustment (e.g. "-32") if the admin originally entered it,
+                // otherwise show the explicit saved discount price.
+                editPctInput.value = savedAdjust ? savedAdjust : ((Number.isFinite(basePrice) && basePrice > 0 && Number.isFinite(savedDiscount) && savedDiscount < basePrice) ? savedDiscount : '');
                 // Trigger preview immediately
                 window.calcDiscountPreview('edit-product-price', 'edit-product-discount-percent', 'edit-product-discount-preview');
             }
@@ -12938,7 +12946,9 @@
                 const is_weight_based = document.getElementById('edit-product-is-weight-based').checked;
                 const weight_options = document.getElementById('edit-product-weight-options').value;
                 const parsedPrice = parseFloat(price);
-                const discountToSave = window.normalizeDiscountPriceValue(parsedPrice, document.getElementById('edit-product-discount-percent')?.value);
+                const rawEditDiscountInput = document.getElementById('edit-product-discount-percent')?.value;
+                const discountToSave = window.normalizeDiscountPriceValue(parsedPrice, rawEditDiscountInput);
+                const edit_discount_adjust = (String(rawEditDiscountInput || '').trim().startsWith('-')) ? String(rawEditDiscountInput).trim() : null;
                 const min_wholesale_qty = document.getElementById('edit-product-min-wholesale').value || 10;
                 const imageFiles = editProductSelectedImages;
 
@@ -12968,7 +12978,7 @@
                     price: priceToSave,
                     wholesale_price: wholesale_price !== null && wholesale_price !== '' ? parseFloat(wholesale_price) : null,
                     discount_price: discountToSave,
-                    discount_adjust: null,
+                    discount_adjust: edit_discount_adjust,
                     stock_quantity: parseInt(stock),
                     min_wholesale_qty: parseInt(min_wholesale_qty),
                     weight: weight ? parseFloat(weight) : null,
