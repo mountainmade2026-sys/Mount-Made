@@ -2281,16 +2281,15 @@ function applySiteLogo(logoUrl, logoSizeValue, logoSizeMobileValue) {
   const navbarBrands = document.querySelectorAll('.navbar-brand');
   navbarBrands.forEach(brand => {
     const logoHtml = normalizedLogo
-      ? `<img src="${normalizedLogo}" alt="Site Logo" class="site-logo-dynamic" decoding="async">`
+      ? `<img src="${normalizedLogo}" alt="Mount Made" class="site-logo-dynamic" decoding="async">`
       : '';
 
-    const brandTextHtml = '';
-
     brand.innerHTML = `
-      <span class="navbar-brand-main" style="display:inline-flex; align-items:center; gap:0.15rem; white-space:nowrap;">
+      <span class="navbar-brand-main" style="display:inline-flex; align-items:center; gap:0.5rem; white-space:nowrap;">
         ${logoHtml}
-        ${brandTextHtml}
+        <span class="navbar-brand-text">Mount Made</span>
       </span>
+      <span class="navbar-tagline">GOURMET GROCERIES</span>
     `;
   });
 
