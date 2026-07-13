@@ -10651,8 +10651,32 @@
             const deliveryAddressHtml = deliveryAddress
                 ? `<br><strong>Delivery Address:</strong><br>${escapeHtml(deliveryAddress).replace(/\n/g, '<br>')}`
                 : '';
-            let discount = Number.isFinite(Number(edited.discount)) ? Number(edited.discount) : 0;
-            const deliveryCharge = Number.isFinite(Number(edited.delivery)) ? Number(edited.delivery) : Number.parseFloat(o.delivery_charge || 0) || 0;
+            const explicitDiscount = Number.isFinite(Number(edited.discount))
+                ? Number(edited.discount)
+                : Number.isFinite(Number(edited.discount_amount))
+                    ? Number(edited.discount_amount)
+                    : Number.isFinite(Number(edited.discount_price))
+                        ? Number(edited.discount_price)
+                        : Number.isFinite(Number(edited.discountPrice))
+                            ? Number(edited.discountPrice)
+                            : 0;
+            const orderLevelDiscount = Number.isFinite(Number(o.discount))
+                ? Number(o.discount)
+                : Number.isFinite(Number(o.discount_amount))
+                    ? Number(o.discount_amount)
+                    : Number.isFinite(Number(o.discount_price))
+                        ? Number(o.discount_price)
+                        : Number.isFinite(Number(o.discountPrice))
+                            ? Number(o.discountPrice)
+                            : 0;
+            let discount = Math.max(explicitDiscount, orderLevelDiscount, 0);
+            const deliveryCharge = Number.isFinite(Number(edited.delivery))
+                ? Number(edited.delivery)
+                : Number.isFinite(Number(edited.deliveryCharge))
+                    ? Number(edited.deliveryCharge)
+                    : Number.isFinite(Number(edited.delivery_charge))
+                        ? Number(edited.delivery_charge)
+                        : Number.parseFloat(o.delivery_charge || 0) || 0;
             const productCatalog = Array.isArray(window._productsCache) ? window._productsCache : [];
             const catalogDiscount = items.reduce((sum, it) => {
                 const product = productCatalog.find(p => String(p.id) === String(it.product_id || it.id));
@@ -10710,6 +10734,7 @@
                 items: items,
                 discount,
                 delivery: deliveryCharge,
+                total,
                 thankYou: thankYouVal,
                 layout,
                 selectedBlock: 'logo'
@@ -10764,8 +10789,18 @@
                 const price = Number.isFinite(Number(item.price)) ? Number(item.price) : 0;
                 return sum + qty * price;
             }, 0);
-            const savedDiscount = Number.isFinite(Number(edited.discount)) ? Number(edited.discount) : 0;
-            const defaultDeliveryCharge = Number.isFinite(Number(edited.delivery)) ? Number(edited.delivery) : Number.parseFloat(order.delivery_charge || 0) || 0;
+            const savedDiscount = Number.isFinite(Number(edited.discount))
+                ? Number(edited.discount)
+                : Number.isFinite(Number(edited.discount_amount))
+                    ? Number(edited.discount_amount)
+                    : Number.isFinite(Number(edited.discountPrice))
+                        ? Number(edited.discountPrice)
+                        : 0;
+            const defaultDeliveryCharge = Number.isFinite(Number(edited.delivery))
+                ? Number(edited.delivery)
+                : Number.isFinite(Number(edited.deliveryCharge))
+                    ? Number(edited.deliveryCharge)
+                    : Number.parseFloat(order.delivery_charge || 0) || 0;
             const catalogDiscount = invoiceItems.reduce((sum, item) => {
                 const product = products.find(p => String(p.id) === String(item.product_id || item.id));
                 const listPrice = product && Number.isFinite(Number(product.price)) ? Number(product.price) : null;
@@ -11130,6 +11165,7 @@
             ].join('');
 
             const itemsList = Array.isArray(options.items) ? options.items : (window.invoiceEditorData && Array.isArray(window.invoiceEditorData.items) ? window.invoiceEditorData.items : []);
+            const productCatalog = Array.isArray(window._productsCache) ? window._productsCache : [];
             let subtotal = 0;
             const normalizedRows = itemsList.map(item => {
                 const qty = Number.isFinite(Number(item.quantity)) ? Number(item.quantity) : 1;
@@ -11146,9 +11182,49 @@
                 `;
             }).join('');
 
-            // allow options to override discount/delivery
-            const discount = Number.isFinite(Number(options.discount)) ? Number(options.discount) : (window.invoiceEditorData && Number.isFinite(Number(window.invoiceEditorData.discount)) ? Number(window.invoiceEditorData.discount) : 0);
-            const delivery = Number.isFinite(Number(options.delivery)) ? Number(options.delivery) : (window.invoiceEditorData && Number.isFinite(Number(window.invoiceEditorData.deliveryCharge)) ? Number(window.invoiceEditorData.deliveryCharge) : 0);
+            const explicitDiscount = Number.isFinite(Number(options.discount)) ? Number(options.discount)
+                : Number.isFinite(Number(options.discount_amount)) ? Number(options.discount_amount)
+                : Number.isFinite(Number(options.discount_price)) ? Number(options.discount_price)
+                : Number.isFinite(Number(options.discountPrice)) ? Number(options.discountPrice)
+                : (window.invoiceEditorData && Number.isFinite(Number(window.invoiceEditorData.discount)) ? Number(window.invoiceEditorData.discount) : null);
+            const delivery = Number.isFinite(Number(options.delivery)) ? Number(options.delivery)
+                : Number.isFinite(Number(options.deliveryCharge)) ? Number(options.deliveryCharge)
+                : Number.isFinite(Number(options.delivery_charge)) ? Number(options.delivery_charge)
+                : (window.invoiceEditorData && Number.isFinite(Number(window.invoiceEditorData.deliveryCharge)) ? Number(window.invoiceEditorData.deliveryCharge) : 0);
+            let discount = Number.isFinite(explicitDiscount) ? explicitDiscount : 0;
+
+            const inferredCatalogDiscount = itemsList.reduce((sum, item) => {
+                const qty = Number.isFinite(Number(item.quantity)) ? Number(item.quantity) : 1;
+                const itemPrice = Number.isFinite(Number(item.price)) ? Number(item.price) : 0;
+                let originalPrice = null;
+
+                if (item.original_price != null && Number.isFinite(Number(item.original_price))) {
+                    originalPrice = Number(item.original_price);
+                } else if (item.base_price != null && Number.isFinite(Number(item.base_price))) {
+                    originalPrice = Number(item.base_price);
+                } else {
+                    const product = productCatalog.find(p => String(p.id) === String(item.product_id || item.id));
+                    if (product && Number.isFinite(Number(product.price))) {
+                        originalPrice = Number(product.price);
+                    }
+                }
+
+                if (originalPrice != null && originalPrice > itemPrice) {
+                    return sum + (originalPrice - itemPrice) * qty;
+                }
+                return sum;
+            }, 0);
+
+            if ((!Number.isFinite(discount) || discount <= 0) && Number.isFinite(Number(options.total))) {
+                const impliedDiscount = subtotal + delivery - Number(options.total);
+                if (impliedDiscount > 0.004) {
+                    discount = impliedDiscount;
+                }
+            }
+            if (discount <= 0 && inferredCatalogDiscount > 0.004) {
+                discount = inferredCatalogDiscount;
+            }
+            discount = Number.isFinite(Number(discount)) ? Number(discount.toFixed(2)) : 0;
             const total = subtotal - discount + delivery;
 
             const footerRows = `
