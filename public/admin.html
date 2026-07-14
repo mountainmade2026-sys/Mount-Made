@@ -11176,20 +11176,15 @@
             }
 
             discount = Number.isFinite(Number(discount)) ? Number(discount.toFixed(2)) : 0;
-            const total = grossSubtotal - discount + delivery;
+            // Use paidSubtotal as the displayed subtotal so we don't double-count discounts.
+            const total = paidSubtotal + delivery;
 
             const footerRows = `
                 <tfoot>
                     <tr style="background: white;">
                         <td colspan="4" style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;font-weight:700;">Subtotal</td>
-                        <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;font-weight:700;">₹${grossSubtotal.toFixed(2)}</td>
+                        <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;font-weight:700;">₹${paidSubtotal.toFixed(2)}</td>
                     </tr>
-                    ${discount > 0 ? `
-                        <tr style="background:#f8fff9;">
-                            <td colspan="4" style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;">Discount</td>
-                            <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;font-weight:700;color:#10b981;">-₹${discount.toFixed(2)}</td>
-                        </tr>
-                    ` : ''}
                     ${delivery > 0 ? `
                         <tr style="background: white;">
                             <td colspan="4" style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;">Delivery</td>
@@ -11336,10 +11331,12 @@
             const discount = parseFloat(document.getElementById('invoice-editor-discount').value || 0);
             const delivery = parseFloat(document.getElementById('invoice-editor-delivery').value || 0);
 
-            let subtotal = 0;
+            // compute gross (list) subtotal and paid subtotal to avoid duplicate discount rows
+            let grossSubtotal = 0;
+            let paidSubtotal = 0;
             const itemRows = window.invoiceEditorData.items.map(item => {
-                const lineTotal = item.price * item.quantity;
-                subtotal += lineTotal;
+                const qty = Number.isFinite(Number(item.quantity)) ? Number(item.quantity) : 1;
+                const paidPrice = Number.isFinite(Number(item.price)) ? Number(item.price) : 0;
 
                 let originalPrice = null;
                 if (item.original_price != null && Number.isFinite(Number(item.original_price))) {
@@ -11352,23 +11349,35 @@
                         originalPrice = Number(product.price);
                     }
                 }
-                const perItemDiscount = (originalPrice != null && originalPrice > item.price) ? (originalPrice - item.price) : 0;
-                const discountForLine = perItemDiscount * item.quantity;
+
+                const unitPriceDisplayed = (originalPrice != null && originalPrice > 0) ? originalPrice : paidPrice;
+                const perItemDiscount = (unitPriceDisplayed > paidPrice) ? (unitPriceDisplayed - paidPrice) : 0;
+                const discountForLine = perItemDiscount * qty;
+                const paidLineTotal = paidPrice * qty;
+
+                grossSubtotal += unitPriceDisplayed * qty;
+                paidSubtotal += paidLineTotal;
 
                 return `
                     <tr>
                         <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;vertical-align:top;">
                             <div style="font-weight:600;color:#111827;">${escapeHtml(item.name)}</div>
                         </td>
-                        <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:center;vertical-align:middle;">${item.quantity}</td>
-                        <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;vertical-align:middle;">&#8377;${item.price.toFixed(2)}</td>
+                        <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:center;vertical-align:middle;">${qty}</td>
+                        <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;vertical-align:middle;">&#8377;${unitPriceDisplayed.toFixed(2)}</td>
                         <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;vertical-align:middle;">${perItemDiscount > 0 ? `-&#8377;${discountForLine.toFixed(2)}` : '—'}</td>
-                        <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;vertical-align:middle;">&#8377;${lineTotal.toFixed(2)}</td>
+                        <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;vertical-align:middle;">&#8377;${paidLineTotal.toFixed(2)}</td>
                     </tr>
                 `;
             }).join('');
 
-            const total = subtotal - discount + delivery;
+            // infer discount if not explicitly provided
+            let inferredDiscount = discount;
+            if (!Number.isFinite(inferredDiscount) || inferredDiscount <= 0) {
+                inferredDiscount = Math.max(0, grossSubtotal - paidSubtotal);
+            }
+            inferredDiscount = Number.isFinite(Number(inferredDiscount)) ? Number(inferredDiscount.toFixed(2)) : 0;
+            const total = paidSubtotal + delivery;
 
             const html = `<!DOCTYPE html><html><head><title>Invoice ${escapeHtml(invNum)}</title>
             <style>body{font-family:Arial,sans-serif;max-width:700px;margin:40px auto;color:#222;font-size:14px;}
@@ -11395,15 +11404,9 @@
             <tbody>${itemRows}</tbody>
             <tfoot>
                 <tr style="background: white;">
-                    <td colspan="4" style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;">Subtotal</td>
-                    <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;font-weight:700;">&#8377;${subtotal.toFixed(2)}</td>
+                    <td colspan="4" style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;font-weight:700;">Subtotal</td>
+                    <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;font-weight:700;">&#8377;${paidSubtotal.toFixed(2)}</td>
                 </tr>
-                ${discount > 0 ? `
-                    <tr style="background: #f0f9ff;">
-                        <td colspan="4" style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;">Discount</td>
-                        <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;font-weight:700;color:#10b981;">-&#8377;${discount.toFixed(2)}</td>
-                    </tr>
-                ` : ''}
                 ${delivery > 0 ? `
                     <tr style="background: white;">
                         <td colspan="4" style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;">Delivery Charge</td>
