@@ -93,9 +93,7 @@ class Return {
     try {
       let query = `
         SELECT r.*, o.order_number, o.total_amount, 
-               u.email, u.phone, 
-               COALESCE(u.first_name, '') as first_name, 
-               COALESCE(u.last_name, '') as last_name
+               u.email, u.phone, u.full_name
         FROM returns r
         LEFT JOIN orders o ON r.order_id = o.id
         LEFT JOIN users u ON r.user_id = u.id
@@ -130,10 +128,10 @@ class Return {
   static async getById(returnId) {
     try {
       const result = await db.query(
-        `SELECT r.*, o.order_number, o.total_amount, o.items, u.email, u.phone, u.first_name
+        `SELECT r.*, o.order_number, o.total_amount, o.items, u.email, u.phone, u.full_name
          FROM returns r
-         JOIN orders o ON r.order_id = o.id
-         JOIN users u ON r.user_id = u.id
+         LEFT JOIN orders o ON r.order_id = o.id
+         LEFT JOIN users u ON r.user_id = u.id
          WHERE r.id = $1`,
         [returnId]
       );

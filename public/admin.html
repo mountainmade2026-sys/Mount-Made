@@ -7885,7 +7885,7 @@
                             <div>
                                 <strong style="font-size: 1.1rem;">Order #${escapeHtml(ret.order_number)} - Return #${ret.id}</strong>
                                 <div style="color: var(--text-light); font-size: 0.9rem; margin-top: 0.3rem;">
-                                    Customer: ${escapeHtml(ret.first_name + ' ' + ret.last_name)} (${escapeHtml(ret.email)})
+                                    Customer: ${escapeHtml(ret.full_name || 'Unknown')} (${escapeHtml(ret.email)})
                                 </div>
                             </div>
                             <div style="text-align: right;">
@@ -7958,9 +7958,10 @@
             const status = (document.getElementById('returns-status-filter') || {}).value;
 
             const filtered = (window._returnsCache || []).filter(ret => {
+                const name = (ret.full_name || '').toLowerCase();
                 const matchesSearch = !search || 
                     ret.order_number.toString().includes(search) ||
-                    (ret.first_name + ' ' + ret.last_name).toLowerCase().includes(search) ||
+                    name.includes(search) ||
                     ret.email.toLowerCase().includes(search);
                 const matchesStatus = !status || ret.return_status === status;
                 return matchesSearch && matchesStatus;
@@ -8008,7 +8009,7 @@
                             </div>
                             <div>
                                 <span style="color: var(--text-light); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">Customer</span>
-                                <div style="font-weight: 600;">${escapeHtml(ret.first_name + ' ' + ret.last_name)}</div>
+                                <div style="font-weight: 600;">${escapeHtml(ret.full_name || 'Unknown')}</div>
                             </div>
                             <div>
                                 <span style="color: var(--text-light); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em;">Email</span>
