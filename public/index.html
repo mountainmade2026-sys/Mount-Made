@@ -110,6 +110,11 @@
             display: none !important;
         }
 
+        /* Blinking cursor for animated hero text */
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+
         /* Content sits above slides */
         .search-container {
             max-width: 980px;
@@ -1535,6 +1540,11 @@
         <div class="search-container">
             <div id="search-hero-heading" class="search-heading hidden">
                 <h1 id="homepage-hero-title-text"></h1>
+                <div id="homepage-hero-animated" style="margin-top:0.5rem;">
+                    <span id="homepage-hero-animated-prefix" style="opacity:0.9;">&nbsp;</span>
+                    <span id="homepage-hero-animated-text" style="font-weight:800;color:#fff;"></span>
+                    <span id="homepage-hero-animated-cursor" style="display:inline-block; width:2px; background:#fff; margin-left:6px; vertical-align:middle; animation: blink 1s steps(2,start) infinite;"></span>
+                </div>
                 <p id="homepage-hero-subtitle-text"></p>
             </div>
             <div class="search-input-zone">
@@ -1884,6 +1894,75 @@
             }
         }
 
+        // Animated hero text (typing effect) — configurable via Site Settings
+        window.heroAnimatedTimer = window.heroAnimatedTimer || null;
+        function startHeroAnimatedText(settings) {
+            try {
+                if (window.heroAnimatedTimer) { clearTimeout(window.heroAnimatedTimer); window.heroAnimatedTimer = null; }
+                const enabled = String((settings && settings.homepage_hero_animated_enabled) || 'false').toLowerCase() === 'true';
+                const raw = (settings && settings.homepage_hero_animated_texts) || '';
+                const texts = String(raw || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+                const color = (settings && settings.homepage_hero_animated_color) || '#ffffff';
+                const speed = Math.max(30, parseInt((settings && settings.homepage_hero_animated_speed) || '80', 10) || 80);
+
+                const container = document.getElementById('search-hero-heading');
+                const animatedTextEl = document.getElementById('homepage-hero-animated-text');
+                const cursorEl = document.getElementById('homepage-hero-animated-cursor');
+
+                if (!container || !animatedTextEl) return;
+
+                if (!enabled || texts.length === 0) {
+                    // Hide animated area but keep regular hero title/subtitle behavior
+                    container.classList.toggle('hidden', !(settings && (settings.homepage_hero_title || settings.homepage_hero_subtitle)));
+                    animatedTextEl.textContent = '';
+                    if (cursorEl) cursorEl.style.display = 'none';
+                    return;
+                }
+
+                container.classList.remove('hidden');
+                if (cursorEl) cursorEl.style.display = '';
+                animatedTextEl.style.color = color;
+                if (cursorEl) cursorEl.style.background = color;
+
+                let i = 0; // phrase index
+                let j = 0; // char index
+                let deleting = false;
+
+                const type = () => {
+                    const current = texts[i];
+                    if (!deleting) {
+                        // type forward
+                        animatedTextEl.textContent = current.slice(0, j + 1);
+                        j += 1;
+                        if (j >= current.length) {
+                            // pause before deleting
+                            window.heroAnimatedTimer = setTimeout(() => { deleting = true; type(); }, 1000);
+                        } else {
+                            window.heroAnimatedTimer = setTimeout(type, speed);
+                        }
+                    } else {
+                        // deleting
+                        animatedTextEl.textContent = current.slice(0, j - 1);
+                        j -= 1;
+                        if (j <= 0) {
+                            deleting = false;
+                            i = (i + 1) % texts.length;
+                            window.heroAnimatedTimer = setTimeout(type, 300);
+                        } else {
+                            window.heroAnimatedTimer = setTimeout(type, Math.max(30, Math.floor(speed / 1.6)));
+                        }
+                    }
+                };
+
+                // Start
+                j = 0; deleting = false; i = 0;
+                type();
+
+            } catch (err) {
+                console.warn('startHeroAnimatedText error', err);
+            }
+        }
+
         /* ── Flip Cards Section ── */
         const FLIP_CTA_COLORS = [
             'linear-gradient(90deg,#1e88e5,#1565c0)',
@@ -2000,6 +2079,7 @@
             }
             // Always init the hero slider and flip cards with whatever settings we have
             initHeroSlider(settings);
+            try { startHeroAnimatedText(settings); } catch(e) { console.warn('startHeroAnimatedText failed', e); }
             initFlipCards(settings);
 
             // Apply hero heading text immediately from settings

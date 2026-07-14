@@ -2440,6 +2440,27 @@ exports.updateSiteSettings = async (req, res) => {
     if (homepage_hero_subtitle !== undefined) {
       updates.push({ key: 'homepage_hero_subtitle', value: homepage_hero_subtitle });
     }
+    // Hero animated text settings
+    if (req.body.homepage_hero_animated_enabled !== undefined) {
+      const enabled = typeof req.body.homepage_hero_animated_enabled === 'boolean'
+        ? req.body.homepage_hero_animated_enabled
+        : String(req.body.homepage_hero_animated_enabled).toLowerCase() === 'true';
+      updates.push({ key: 'homepage_hero_animated_enabled', value: enabled ? 'true' : 'false' });
+    }
+    if (req.body.homepage_hero_animated_texts !== undefined) {
+      // Store as a trimmed string (admin will provide one phrase per line)
+      updates.push({ key: 'homepage_hero_animated_texts', value: String(req.body.homepage_hero_animated_texts || '').trim() });
+    }
+    if (req.body.homepage_hero_animated_color !== undefined) {
+      updates.push({ key: 'homepage_hero_animated_color', value: String(req.body.homepage_hero_animated_color || '').trim() });
+    }
+    if (req.body.homepage_hero_animated_speed !== undefined) {
+      const parsed = parseInt(req.body.homepage_hero_animated_speed, 10);
+      if (Number.isNaN(parsed) || parsed < 30 || parsed > 2000) {
+        return res.status(400).json({ error: 'Animated speed must be a number between 30 and 2000 milliseconds.' });
+      }
+      updates.push({ key: 'homepage_hero_animated_speed', value: String(parsed) });
+    }
     if (homepage_hero_image_url !== undefined) {
       updates.push({ key: 'homepage_hero_image_url', value: homepage_hero_image_url });
     }

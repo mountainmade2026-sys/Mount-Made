@@ -2258,6 +2258,45 @@
                     </div>
                 </div>
 
+                <!-- Homepage Hero Animated Text Editor -->
+                <div id="ss-sub-hero-animated" class="data-table-container" style="margin-top: 1.5rem;">
+                    <div class="table-header">
+                        <h3><i class="fas fa-font"></i> Homepage Hero Animated Text</h3>
+                    </div>
+                    <div style="padding: 1.25rem;">
+                        <p style="color: var(--text-muted); margin-bottom: 1rem;">Create a stylish animated typing text for the hero slider. Enter one phrase per line. Use the preview to check appearance, then save.</p>
+                        <div style="display:grid;gap:0.75rem;max-width:760px;">
+                            <div style="display:flex;align-items:center;gap:0.75rem;">
+                                <label class="form-label" style="margin:0;">Enable Animated Text</label>
+                                <input type="checkbox" id="homepage-hero-animated-enabled" style="width:18px;height:18px;">
+                            </div>
+                            <div>
+                                <label class="form-label" for="homepage-hero-animated-texts">Animated Phrases (one per line)</label>
+                                <textarea id="homepage-hero-animated-texts" class="form-input" rows="6" placeholder="Fresh spices\nOrganic herbs\nFarm to table"></textarea>
+                                <small style="color:var(--text-muted);display:block;margin-top:0.35rem;">Use up to 8 phrases. Keep each line short for best effect.</small>
+                            </div>
+                            <div style="display:flex;gap:0.75rem;align-items:center;">
+                                <div style="flex:1;min-width:140px;">
+                                    <label class="form-label">Text Color</label>
+                                    <input type="color" id="homepage-hero-animated-color" value="#ffffff" style="width:100%;height:36px;padding:4px;border-radius:6px;border:1px solid var(--border);">
+                                </div>
+                                <div style="width:160px;">
+                                    <label class="form-label">Typing Speed (ms)</label>
+                                    <input type="number" id="homepage-hero-animated-speed" class="form-input" min="30" max="2000" value="80">
+                                </div>
+                                <div style="flex:1;min-width:120px;">
+                                    <label class="form-label">Preview</label>
+                                    <div id="homepage-hero-animated-preview" style="background: #0f3823; padding:0.75rem 1rem; border-radius:8px; color:#fff; min-height:44px; display:flex;align-items:center;"></div>
+                                </div>
+                            </div>
+                            <div style="display:flex;gap:0.5rem;">
+                                <button class="btn btn-primary" onclick="saveHeroAnimatedSettings()"><i class="fas fa-save"></i> Save Animated Text</button>
+                                <button class="btn btn-secondary" onclick="previewHeroAnimated()"><i class="fas fa-play"></i> Preview</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div id="ss-sub-product-card" class="data-table-container" style="margin-top: 1.5rem;">
                     <div class="table-header">
                         <h3><i class="fas fa-th-large"></i> Product Card Image Ratio</h3>
@@ -8238,6 +8277,18 @@
                 if (aboutParagraph1El) aboutParagraph1El.value = settings.about_us_paragraph_1 || '';
                 if (aboutParagraph2El) aboutParagraph2El.value = settings.about_us_paragraph_2 || '';
                 if (aboutParagraph3El) aboutParagraph3El.value = settings.about_us_paragraph_3 || '';
+                // Homepage hero animated text settings
+                const heroAnimatedEnabledEl = document.getElementById('homepage-hero-animated-enabled');
+                const heroAnimatedTextsEl = document.getElementById('homepage-hero-animated-texts');
+                const heroAnimatedColorEl = document.getElementById('homepage-hero-animated-color');
+                const heroAnimatedSpeedEl = document.getElementById('homepage-hero-animated-speed');
+                const heroAnimatedPreview = document.getElementById('homepage-hero-animated-preview');
+
+                if (heroAnimatedEnabledEl) heroAnimatedEnabledEl.checked = String(settings.homepage_hero_animated_enabled || 'false').toLowerCase() === 'true';
+                if (heroAnimatedTextsEl) heroAnimatedTextsEl.value = settings.homepage_hero_animated_texts || '';
+                if (heroAnimatedColorEl) heroAnimatedColorEl.value = settings.homepage_hero_animated_color || '#ffffff';
+                if (heroAnimatedSpeedEl) heroAnimatedSpeedEl.value = settings.homepage_hero_animated_speed || '80';
+                if (heroAnimatedPreview) heroAnimatedPreview.textContent = '';
                 if (aboutParagraph4El) aboutParagraph4El.value = settings.about_us_paragraph_4 || '';
                 if (aboutParagraph5El) aboutParagraph5El.value = settings.about_us_paragraph_5 || '';
 
@@ -8744,6 +8795,43 @@
             } catch (error) {
                 console.error('Save product card image ratio error:', error);
                 showAlert(error.message || 'Failed to save product card image ratio', 'error');
+            }
+        };
+
+        window.previewHeroAnimated = function() {
+            try {
+                const preview = document.getElementById('homepage-hero-animated-preview');
+                const texts = (document.getElementById('homepage-hero-animated-texts')?.value || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+                const color = document.getElementById('homepage-hero-animated-color')?.value || '#fff';
+                preview.style.color = color;
+                preview.textContent = texts.length ? texts[0] : '';
+            } catch (e) { console.warn(e); }
+        };
+
+        window.saveHeroAnimatedSettings = async function() {
+            try {
+                const enabled = !!document.getElementById('homepage-hero-animated-enabled')?.checked;
+                const texts = document.getElementById('homepage-hero-animated-texts')?.value || '';
+                const color = document.getElementById('homepage-hero-animated-color')?.value || '#ffffff';
+                const speed = document.getElementById('homepage-hero-animated-speed')?.value || '80';
+
+                showAlert('Saving hero animated settings...', 'info');
+                const response = await api.post('/admin/settings', {
+                    homepage_hero_animated_enabled: enabled,
+                    homepage_hero_animated_texts: texts,
+                    homepage_hero_animated_color: color,
+                    homepage_hero_animated_speed: speed
+                });
+
+                if (response && (response.success || response.message)) {
+                    showAlert('Hero animated text saved!', 'success');
+                    await loadSiteSettings();
+                } else {
+                    throw new Error(response.error || 'Failed to save hero animated settings');
+                }
+            } catch (error) {
+                console.error('Save hero animated settings error:', error);
+                showAlert(error.message || 'Failed to save hero animated settings', 'error');
             }
         };
 
