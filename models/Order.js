@@ -225,16 +225,18 @@ class Order {
     const query = `
       SELECT o.*, 
              (SELECT r.status FROM returns r WHERE r.order_id = o.id AND r.status != 'rejected' ORDER BY r.created_at DESC LIMIT 1) AS return_status,
-             json_agg(
-               json_build_object(
-                 'id', oi.id,
-                 'product_id', oi.product_id,
-                 'product_name', oi.product_name,
-                 'quantity', oi.quantity,
-                 'price', oi.price,
-                 'subtotal', oi.subtotal
-               )
-             ) as items
+            json_agg(
+                     json_build_object(
+                       'id', oi.id,
+                       'product_id', oi.product_id,
+                       'product_name', oi.product_name,
+                       'quantity', oi.quantity,
+                       'price', oi.price,
+                       'subtotal', oi.subtotal,
+                       'original_price', p.price,
+                       'product_discount_price', p.discount_price
+                     )
+                   ) as items
       FROM orders o
       LEFT JOIN order_items oi ON o.id = oi.order_id
       LEFT JOIN products p ON oi.product_id = p.id
@@ -257,7 +259,9 @@ class Order {
                  'product_name', oi.product_name,
                  'quantity', oi.quantity,
                  'price', oi.price,
-                 'subtotal', oi.subtotal
+                 'subtotal', oi.subtotal,
+                 'original_price', p.price,
+                 'product_discount_price', p.discount_price
                )
              ) as items
       FROM orders o
@@ -300,7 +304,9 @@ class Order {
                    'product_name', oi.product_name,
                    'quantity', oi.quantity,
                    'price', oi.price,
-                   'subtotal', oi.subtotal
+                   'subtotal', oi.subtotal,
+                   'original_price', p.price,
+                   'product_discount_price', p.discount_price
                  )
                ) FILTER (WHERE oi.id IS NOT NULL),
                '[]'
