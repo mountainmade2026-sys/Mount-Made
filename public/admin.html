@@ -702,6 +702,18 @@
             font-size: 0.875rem;
             background: transparent;
             color: var(--text-dark);
+            caret-color: var(--text-dark);
+        }
+
+        #stock-search {
+            background: var(--bg-card);
+            color: var(--text-dark);
+            caret-color: var(--text-dark);
+        }
+
+        #stock-search:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(45,122,79,0.10);
         }
 
         .search-box input::placeholder { color: var(--text-subtle); }
@@ -1844,24 +1856,11 @@
                     </button>
                 </div>
 
-                <div class="controls">
-                    <div style="display:flex;gap:0.5rem;align-items:center;">
-                        <div class="search-box" style="flex:1;">
-                            <i class="fas fa-search"></i>
-                            <input type="text" id="stock-search" placeholder="Search products..." oninput="filterStockReports()" onkeyup="filterStockReports()">
-                        </div>
-                        <div style="flex:0 0 180px;">
-                            <select id="stock-search-mode" class="form-input" onchange="filterStockReports()" style="width:100%;">
-                                <option value="any">Any (ID or Name)</option>
-                                <option value="id">ID only</option>
-                                <option value="name">Name only</option>
-                            </select>
-                        </div>
-                    </div>
+                <div class="controls" style="align-items:flex-start; gap:1rem;">
                     <button type="button" class="btn btn-secondary btn-sm filter-toggle" onclick="toggleFilters(this)">
                         <i class="fas fa-filter"></i> <span class="hide-mobile">Filters</span>
                     </button>
-                    <div class="filter-group">
+                    <div class="filter-group" style="flex-wrap:wrap; gap:0.75rem;">
                         <select class="filter-select" id="stock-status-filter" onchange="filterStockReports()">
                             <option value="">All Status</option>
                             <option value="in-stock">In Stock</option>
@@ -6765,9 +6764,29 @@
                 return;
             }
 
+            const currentSearchValue = (document.getElementById('stock-search')?.value || '');
+            const currentSearchMode = (document.getElementById('stock-search-mode')?.value || 'any');
             let html = '<div class="data-table-container">';
             html += '<div class="table-header"><h3>Product Stock Overview</h3></div>';
-            // Inner scroll wrapper — allows horizontal scroll on mobile while keeping card border-radius
+            html += '<div style="padding: 0 1rem 1rem;">';
+            html += '<div style="display:flex;flex-wrap:wrap;gap:0.75rem;align-items:center;">';
+            html += '<div style="flex:1;min-width:240px;">';
+            html += '<label for="stock-search" style="display:block;margin-bottom:0.35rem;font-size:0.82rem;color:var(--text-muted);">Search by ID or name</label>';
+            html += '<div class="search-box" style="width:100%;">';
+            html += '<i class="fas fa-search"></i>';
+            html += `<input type="text" id="stock-search" placeholder="Search products by ID or name..." oninput="filterStockReports()" onkeyup="filterStockReports()" value="${escapeHtml(currentSearchValue)}">`;
+            html += '</div>';
+            html += '</div>';
+            html += '<div style="flex:0 0 220px;min-width:180px;">';
+            html += '<label for="stock-search-mode" style="display:block;margin-bottom:0.35rem;font-size:0.82rem;color:var(--text-muted);">Search mode</label>';
+            html += '<select id="stock-search-mode" class="form-input" onchange="filterStockReports()" style="width:100%;">';
+            html += `<option value="any" ${currentSearchMode === 'any' ? 'selected' : ''}>Any (ID or Name)</option>`;
+            html += `<option value="id" ${currentSearchMode === 'id' ? 'selected' : ''}>ID only</option>`;
+            html += `<option value="name" ${currentSearchMode === 'name' ? 'selected' : ''}>Name only</option>`;
+            html += '</select>';
+            html += '</div>';
+            html += '</div>';
+            html += '</div>';
             html += '<div class="data-table-scroll">';
             html += '<table class="data-table stock-table" style="min-width:980px"><thead><tr>' +
                 '<th>Product</th>' +
