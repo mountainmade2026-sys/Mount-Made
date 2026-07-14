@@ -10640,8 +10640,8 @@
                 const price = Number.isFinite(Number(it.price)) ? Number(it.price) : 0;
                 const product = productCatalog.find(p => String(p.id) === String(it.product_id || it.id));
                 const originalPrice = product && Number.isFinite(Number(product.price)) ? Number(product.price) : null;
-                const priceHtml = originalPrice && originalPrice > price
-                    ? `<div style="color:#6b7280;font-size:0.85rem;text-decoration:line-through;margin-bottom:0.1rem;">₹${originalPrice.toFixed(2)}</div><div>₹${price.toFixed(2)}</div>`
+                const unitPriceHtml = (originalPrice != null && originalPrice > 0)
+                    ? `₹${originalPrice.toFixed(2)}`
                     : `₹${price.toFixed(2)}`;
                 const subtotal = qty * price;
                 const label = escapeHtml(it.product_name || it.name || 'Item');
@@ -10651,7 +10651,7 @@
                         <div style="font-weight:600;color:#111827;">${label}</div>
                     </td>
                     <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:center;vertical-align:middle;">${qty}</td>
-                    <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;vertical-align:middle;">${priceHtml}</td>
+                    <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;vertical-align:middle;">${unitPriceHtml}</td>
                     <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;vertical-align:middle;">&#8377;${subtotal.toFixed(2)}</td>
                 </tr>`;
             }).join('');
@@ -11109,13 +11109,15 @@
             const itemsList = Array.isArray(options.items) ? options.items : (window.invoiceEditorData && Array.isArray(window.invoiceEditorData.items) ? window.invoiceEditorData.items : []);
             const productCatalog = Array.isArray(window._productsCache) ? window._productsCache : [];
 
-            let subtotal = 0;
+            // grossSubtotal: sum of main (original) unit prices
+            // paidSubtotal: sum of actual paid prices (after per-item discounts)
+            let grossSubtotal = 0;
+            let paidSubtotal = 0;
             const normalizedRows = itemsList.map(item => {
                 const qty = Number.isFinite(Number(item.quantity)) ? Number(item.quantity) : 1;
-                const price = Number.isFinite(Number(item.price)) ? Number(item.price) : 0;
-                const lineTotal = price * qty;
-                subtotal += lineTotal;
+                const paidPrice = Number.isFinite(Number(item.price)) ? Number(item.price) : 0;
 
+                // determine main/original unit price (fallback to paidPrice)
                 let originalPrice = null;
                 if (item.original_price != null && Number.isFinite(Number(item.original_price))) originalPrice = Number(item.original_price);
                 else if (item.base_price != null && Number.isFinite(Number(item.base_price))) originalPrice = Number(item.base_price);
@@ -11123,17 +11125,22 @@
                     const product = productCatalog.find(p => String(p.id) === String(item.product_id || item.id));
                     if (product && Number.isFinite(Number(product.price))) originalPrice = Number(product.price);
                 }
+                const unitPriceDisplayed = (originalPrice != null && originalPrice > 0) ? originalPrice : paidPrice;
 
-                const perItemDiscount = (originalPrice != null && originalPrice > price) ? (originalPrice - price) : 0;
+                const perItemDiscount = (unitPriceDisplayed > paidPrice) ? (unitPriceDisplayed - paidPrice) : 0;
                 const discountForLine = perItemDiscount * qty;
+                const paidLineTotal = paidPrice * qty; // what customer actually paid for this line
+
+                grossSubtotal += unitPriceDisplayed * qty;
+                paidSubtotal += paidLineTotal;
 
                 return `
                     <tr style="border: 1px solid #ddd;">
                         <td style="padding: 0.5rem 0.75rem; border-right: 1px solid #ddd;">${escapeHtml(item.name || item.product_name || '')}</td>
                         <td style="padding: 0.5rem 0.75rem; text-align: center; border-right: 1px solid #ddd;">${qty}</td>
-                        <td style="padding: 0.5rem 0.75rem; text-align: right; border-right: 1px solid #ddd;">₹${price.toFixed(2)}</td>
+                        <td style="padding: 0.5rem 0.75rem; text-align: right; border-right: 1px solid #ddd;">₹${unitPriceDisplayed.toFixed(2)}</td>
                         <td style="padding: 0.5rem 0.75rem; text-align: right; border-right: 1px solid #ddd;">${perItemDiscount > 0 ? `-₹${discountForLine.toFixed(2)}` : '—'}</td>
-                        <td style="padding: 0.5rem 0.75rem; text-align: right;">₹${lineTotal.toFixed(2)}</td>
+                        <td style="padding: 0.5rem 0.75rem; text-align: right;">₹${paidLineTotal.toFixed(2)}</td>
                     </tr>
                 `;
             }).join('');
@@ -11150,20 +11157,22 @@
 
             let discount = Number.isFinite(explicitDiscount) ? explicitDiscount : 0;
 
-            // If total provided, infer discount
-            if ((!Number.isFinite(discount) || discount <= 0) && Number.isFinite(Number(options.total))) {
-                const impliedDiscount = subtotal + delivery - Number(options.total);
-                if (impliedDiscount > 0.004) discount = impliedDiscount;
+            // If no explicit discount provided, infer from gross vs paid amounts or from options.total
+            if (!Number.isFinite(discount) || discount <= 0) {
+                const impliedFromTotal = Number.isFinite(Number(options.total)) ? (grossSubtotal + delivery - Number(options.total)) : 0;
+                const impliedFromLines = Math.max(0, grossSubtotal - paidSubtotal);
+                const inferred = Math.max(impliedFromTotal, impliedFromLines, catalogDiscount, 0);
+                if (inferred > 0.004) discount = inferred;
             }
 
             discount = Number.isFinite(Number(discount)) ? Number(discount.toFixed(2)) : 0;
-            const total = subtotal - discount + delivery;
+            const total = grossSubtotal - discount + delivery;
 
             const footerRows = `
                 <tfoot>
                     <tr style="background: white;">
                         <td colspan="4" style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;font-weight:700;">Subtotal</td>
-                        <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;font-weight:700;">₹${subtotal.toFixed(2)}</td>
+                        <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;font-weight:700;">₹${grossSubtotal.toFixed(2)}</td>
                     </tr>
                     ${discount > 0 ? `
                         <tr style="background:#f8fff9;">
