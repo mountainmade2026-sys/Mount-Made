@@ -1730,10 +1730,7 @@ function ensureProfileModal() {
 }
 
 function shouldRequireOldPasswordForPasswordChange(user = {}) {
-  if (user?.password_set === false) return false;
-
-  const provider = String(user?.auth_provider || 'password').trim().toLowerCase();
-  return !['google', 'phone', 'phone_signup', 'passwordless', 'social'].includes(provider);
+  return user?.password_set !== false;
 }
 
 function ensureAccountManagementModal() {
