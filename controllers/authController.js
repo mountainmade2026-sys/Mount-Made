@@ -526,8 +526,8 @@ exports.googleAuth = async (req, res) => {
         return res.status(403).json({ error: 'Your account has been blocked. Please contact support.' });
       }
 
-      const updateAuthState = existingUser.auth_provider !== 'google' || existingUser.password_set !== false;
-      if (updateAuthState) {
+      const shouldMarkGooglePasswordless = existingUser.password_set === false && existingUser.auth_provider !== 'google';
+      if (shouldMarkGooglePasswordless) {
         await db.query(
           'UPDATE users SET auth_provider = $1, password_set = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3',
           ['google', false, existingUser.id]
@@ -545,8 +545,8 @@ exports.googleAuth = async (req, res) => {
           full_name: existingUser.full_name,
           role: existingUser.role,
           is_approved: existingUser.is_approved,
-          auth_provider: 'google',
-          password_set: false,
+          auth_provider: existingUser.auth_provider || 'google',
+          password_set: existingUser.password_set !== false,
           profile_photo: existingUser.profile_photo
         }
       });
