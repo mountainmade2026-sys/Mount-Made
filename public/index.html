@@ -1978,38 +1978,70 @@
                 }
 
                 container.classList.remove('hidden');
-                if (cursorEl) cursorEl.style.display = '';
+                if (cursorEl) cursorEl.style.display = effect === 'typing' ? '' : 'none';
 
                 let i = 0; // phrase index
-                let j = 0; // char index
-                let deleting = false;
 
-                const type = () => {
+                const showSlideText = (text) => {
+                    animatedTextEl.style.transition = 'none';
+                    animatedTextEl.style.transform = 'translateX(100%)';
+                    animatedTextEl.style.opacity = '0';
+                    animatedTextEl.textContent = text;
+                    requestAnimationFrame(() => {
+                        animatedTextEl.style.transition = 'transform 0.8s ease, opacity 0.8s ease';
+                        animatedTextEl.style.transform = 'translateX(0)';
+                        animatedTextEl.style.opacity = '1';
+                    });
+                };
+
+                const slideOut = (next) => {
+                    animatedTextEl.style.transition = 'transform 0.8s ease, opacity 0.8s ease';
+                    animatedTextEl.style.transform = 'translateX(-100%)';
+                    animatedTextEl.style.opacity = '0';
+                    window.heroAnimatedTimer = setTimeout(() => {
+                        i = next;
+                        showSlideText(texts[i]);
+                        window.heroAnimatedTimer = setTimeout(() => slideOut((i + 1) % texts.length), 2200);
+                    }, 800);
+                };
+
+                const typeEffect = () => {
+                    let j = 0;
+                    let deleting = false;
                     const current = texts[i];
-                    if (!deleting) {
+
+                    const type = () => {
                         animatedTextEl.textContent = current.slice(0, j + 1);
                         j += 1;
                         if (j >= current.length) {
-                            window.heroAnimatedTimer = setTimeout(() => { deleting = true; type(); }, effect === 'cursive' ? 1200 : 1000);
+                            window.heroAnimatedTimer = setTimeout(() => { deleting = true; type(); }, 1000);
                         } else {
-                            window.heroAnimatedTimer = setTimeout(type, effect === 'cursive' ? Math.max(30, speed + 40) : speed);
+                            window.heroAnimatedTimer = setTimeout(type, speed);
                         }
-                    } else {
+                    };
+
+                    const hide = () => {
                         animatedTextEl.textContent = current.slice(0, j - 1);
                         j -= 1;
                         if (j <= 0) {
                             deleting = false;
                             i = (i + 1) % texts.length;
-                            window.heroAnimatedTimer = setTimeout(type, 300);
+                            window.heroAnimatedTimer = setTimeout(typeEffect, 300);
                         } else {
-                            window.heroAnimatedTimer = setTimeout(type, Math.max(30, Math.floor(effect === 'cursive' ? speed + 20 : speed / 1.6)));
+                            window.heroAnimatedTimer = setTimeout(hide, Math.max(30, Math.floor(speed / 1.6)));
                         }
-                    }
+                    };
+
+                    j = 0;
+                    type();
                 };
 
-                // Start
-                j = 0; deleting = false; i = 0;
-                type();
+                if (effect === 'cursive') {
+                    showSlideText(texts[i]);
+                    window.heroAnimatedTimer = setTimeout(() => slideOut((i + 1) % texts.length), 2200);
+                } else {
+                    typeEffect();
+                }
 
             } catch (err) {
                 console.warn('startHeroAnimatedText error', err);
