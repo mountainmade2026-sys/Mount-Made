@@ -8,97 +8,7 @@ const { adminCheck } = require('../middleware/adminCheck');
 // Initialize returns table on startup
 Return.initializeSchema();
 
-// Customer: Create return request
-router.post('/request', authenticateToken, async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const { orderId, reason, description, quantity } = req.body;
-
-    if (!orderId || !reason) {
-      return res.status(400).json({ error: 'Order ID and return reason are required' });
-    }
-
-    // Verify the order belongs to the user
-    const orderResult = await db.query(
-      'SELECT id FROM orders WHERE id = $1 AND user_id = $2',
-      [orderId, userId]
-    );
-
-    if (orderResult.rows.length === 0) {
-      return res.status(403).json({ error: 'Order not found' });
-    }
-
-    // Check if return already exists for this order
-    const existingReturn = await db.query(
-      'SELECT id FROM returns WHERE order_id = $1',
-      [orderId]
-    );
-
-    if (existingReturn.rows.length > 0) {
-      return res.status(400).json({ error: 'A return request already exists for this order' });
-    }
-
-    const returnRequest = await Return.create(
-      userId,
-      orderId,
-      reason,
-      description || '',
-      quantity || 1
-    );
-
-    res.json({
-      success: true,
-      message: 'Return request created successfully',
-      return: returnRequest
-    });
-  } catch (error) {
-    console.error('Error creating return request:', error);
-    res.status(500).json({ error: 'Failed to create return request' });
-  }
-});
-
-// Customer: Get their returns
-router.get('/my-returns', authenticateToken, async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const returns = await Return.getByUserId(userId);
-
-    res.json({
-      success: true,
-      returns
-    });
-  } catch (error) {
-    console.error('Error fetching user returns:', error);
-    res.status(500).json({ error: 'Failed to fetch returns' });
-  }
-});
-
-// Customer: Get single return
-router.get('/:returnId', authenticateToken, async (req, res) => {
-  try {
-    const { returnId } = req.params;
-    const userId = req.user.id;
-
-    const returnData = await Return.getById(returnId);
-
-    if (!returnData) {
-      return res.status(404).json({ error: 'Return not found' });
-    }
-
-    // Verify ownership
-    if (returnData.user_id !== userId && req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Access denied' });
-    }
-
-    res.json({
-      success: true,
-      return: returnData
-    });
-  } catch (error) {
-    console.error('Error fetching return:', error);
-    res.status(500).json({ error: 'Failed to fetch return' });
-  }
-});
+// ─────────────────────────────────────────── ADMIN ROUTES (Must come first!) ─────────────────────────────────────────
 
 // Admin: Get all returns with optional filtering
 router.get('/admin/all', authenticateToken, adminCheck, async (req, res) => {
@@ -119,7 +29,7 @@ router.get('/admin/all', authenticateToken, adminCheck, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching returns:', error);
-    res.status(500).json({ error: 'Failed to fetch returns' });
+    res.status(500).json({ error: 'Failed to fetch returns', details: error.message });
   }
 });
 
@@ -250,6 +160,100 @@ router.delete('/:returnId', authenticateToken, adminCheck, async (req, res) => {
   } catch (error) {
     console.error('Error deleting return:', error);
     res.status(500).json({ error: 'Failed to delete return' });
+  }
+});
+
+// ─────────────────────────────────────────── CUSTOMER ROUTES ─────────────────────────────────────────
+
+// Customer: Create return request
+router.post('/request', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { orderId, reason, description, quantity } = req.body;
+
+    if (!orderId || !reason) {
+      return res.status(400).json({ error: 'Order ID and return reason are required' });
+    }
+
+    // Verify the order belongs to the user
+    const orderResult = await db.query(
+      'SELECT id FROM orders WHERE id = $1 AND user_id = $2',
+      [orderId, userId]
+    );
+
+    if (orderResult.rows.length === 0) {
+      return res.status(403).json({ error: 'Order not found' });
+    }
+
+    // Check if return already exists for this order
+    const existingReturn = await db.query(
+      'SELECT id FROM returns WHERE order_id = $1',
+      [orderId]
+    );
+
+    if (existingReturn.rows.length > 0) {
+      return res.status(400).json({ error: 'A return request already exists for this order' });
+    }
+
+    const returnRequest = await Return.create(
+      userId,
+      orderId,
+      reason,
+      description || '',
+      quantity || 1
+    );
+
+    res.json({
+      success: true,
+      message: 'Return request created successfully',
+      return: returnRequest
+    });
+  } catch (error) {
+    console.error('Error creating return request:', error);
+    res.status(500).json({ error: 'Failed to create return request' });
+  }
+});
+
+// Customer: Get their returns
+router.get('/my-returns', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const returns = await Return.getByUserId(userId);
+
+    res.json({
+      success: true,
+      returns
+    });
+  } catch (error) {
+    console.error('Error fetching user returns:', error);
+    res.status(500).json({ error: 'Failed to fetch returns' });
+  }
+});
+
+// Customer: Get single return
+router.get('/:returnId', authenticateToken, async (req, res) => {
+  try {
+    const { returnId } = req.params;
+    const userId = req.user.id;
+
+    const returnData = await Return.getById(returnId);
+
+    if (!returnData) {
+      return res.status(404).json({ error: 'Return not found' });
+    }
+
+    // Verify ownership
+    if (returnData.user_id !== userId && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    res.json({
+      success: true,
+      return: returnData
+    });
+  } catch (error) {
+    console.error('Error fetching return:', error);
+    res.status(500).json({ error: 'Failed to fetch return' });
   }
 });
 

@@ -35,12 +35,13 @@ class Return {
           CREATE INDEX IF NOT EXISTS idx_returns_status ON returns(return_status);
         `);
 
-        console.log('✓ Returns table initialized');
+        console.log('✓ Returns table initialized successfully');
       } finally {
         client.release();
       }
     } catch (error) {
-      console.error('Failed to initialize returns schema:', error);
+      console.error('Warning: Returns table initialization issue:', error.message);
+      // Don't throw - allow app to continue even if table already exists
     }
   }
 
@@ -82,10 +83,13 @@ class Return {
   static async getAll(filter = {}) {
     try {
       let query = `
-        SELECT r.*, o.order_number, o.total_amount, u.email, u.phone, u.first_name, u.last_name
+        SELECT r.*, o.order_number, o.total_amount, 
+               u.email, u.phone, 
+               COALESCE(u.first_name, '') as first_name, 
+               COALESCE(u.last_name, '') as last_name
         FROM returns r
-        JOIN orders o ON r.order_id = o.id
-        JOIN users u ON r.user_id = u.id
+        LEFT JOIN orders o ON r.order_id = o.id
+        LEFT JOIN users u ON r.user_id = u.id
         WHERE 1=1
       `;
       const params = [];
@@ -174,14 +178,18 @@ class Return {
   // Mark as shipped
   static async markShipped(returnId, adminNotes = '') {
     try {
+      const notesText = adminNotes ? (adminNotes + '\n' + new Date().toLocaleString()) : '';
       const result = await db.query(
         `UPDATE returns
          SET return_status = 'shipped',
-             admin_notes = CONCAT(COALESCE(admin_notes, ''), $2),
+             admin_notes = CASE 
+               WHEN admin_notes IS NULL OR admin_notes = '' THEN $2
+               ELSE admin_notes || E'\n---\n' || $2
+             END,
              updated_at = CURRENT_TIMESTAMP
          WHERE id = $1
          RETURNING *`,
-        [returnId, adminNotes]
+        [returnId, notesText]
       );
       return result.rows[0];
     } catch (error) {
@@ -193,15 +201,19 @@ class Return {
   // Complete return
   static async complete(returnId, adminNotes = '') {
     try {
+      const notesText = adminNotes ? (adminNotes + '\n' + new Date().toLocaleString()) : '';
       const result = await db.query(
         `UPDATE returns
          SET return_status = 'completed',
-             admin_notes = CONCAT(COALESCE(admin_notes, ''), $2),
+             admin_notes = CASE 
+               WHEN admin_notes IS NULL OR admin_notes = '' THEN $2
+               ELSE admin_notes || E'\n---\n' || $2
+             END,
              completed_at = CURRENT_TIMESTAMP,
              updated_at = CURRENT_TIMESTAMP
          WHERE id = $1
          RETURNING *`,
-        [returnId, adminNotes]
+        [returnId, notesText]
       );
       return result.rows[0];
     } catch (error) {
@@ -233,14 +245,29 @@ class Return {
          GROUP BY return_status
          ORDER BY return_status`
       );
-      const counts = {};
+      const counts = {
+        pending: 0,
+        approved: 0,
+        rejected: 0,
+        shipped: 0,
+        completed: 0
+      };
       result.rows.forEach(row => {
-        counts[row.return_status] = parseInt(row.count, 10);
+        if (row.return_status in counts) {
+          counts[row.return_status] = parseInt(row.count, 10);
+        }
       });
       return counts;
     } catch (error) {
       console.error('Error counting returns:', error);
-      throw error;
+      // Return empty counts instead of failing
+      return {
+        pending: 0,
+        approved: 0,
+        rejected: 0,
+        shipped: 0,
+        completed: 0
+      };
     }
   }
 }
