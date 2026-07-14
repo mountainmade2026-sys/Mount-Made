@@ -7982,7 +7982,7 @@
             renderReturns(window._returnsCache || []);
         }
 
-        function viewReturnDetails(returnId) {
+        window.viewReturnDetails = function(returnId) {
             const ret = (window._returnsCache || []).find(r => r.id === returnId);
             if (!ret) {
                 showAlert('Return not found', 'error');
@@ -8077,7 +8077,7 @@
             return s;
         }
 
-        function openApproveReturnModal(returnId) {
+        window.openApproveReturnModal = function(returnId) {
             const ret = (window._returnsCache || []).find(r => r.id === returnId);
             if (!ret) return;
 
@@ -8110,7 +8110,7 @@
             document.body.appendChild(modal);
         }
 
-        async function approveReturn(returnId) {
+        window.approveReturn = async function(returnId) {
             try {
                 const refundAmount = document.getElementById('refund-amount').value;
                 const adminNotes = document.getElementById('approve-notes').value;
@@ -8133,7 +8133,7 @@
             }
         }
 
-        async function rejectReturn(returnId) {
+        window.rejectReturn = async function(returnId) {
             const ret = (window._returnsCache || []).find(r => r.id === returnId);
             const reason = prompt('Enter reason for rejection:', '');
             if (reason === null) return;
@@ -8150,7 +8150,7 @@
             }
         }
 
-        async function markReturnShipped(returnId) {
+        window.markReturnShipped = async function(returnId) {
             const notes = prompt('Add shipping notes (optional):', '');
             if (notes === null) return;
 
@@ -8166,7 +8166,7 @@
             }
         }
 
-        async function completeReturn(returnId) {
+        window.completeReturn = async function(returnId) {
             const notes = prompt('Add completion notes (optional):', '');
             if (notes === null) return;
 
@@ -8182,7 +8182,7 @@
             }
         }
 
-        async function deleteReturn(returnId) {
+        window.deleteReturn = async function(returnId) {
             if (!confirm('Are you sure you want to delete this return request?')) return;
 
             try {

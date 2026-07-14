@@ -10,40 +10,35 @@
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
     <style>
         .about-page-hero {
-            padding: 1.1rem 1rem 0.75rem;
-            text-align: var(--about-us-text-align, center);
-            background: linear-gradient(180deg, #f6fff8 0%, #ffffff 100%);
-            border-bottom: 1px solid rgba(34, 197, 94, 0.12);
-            font-family: var(--about-us-font-family, 'Segoe UI', Arial, sans-serif);
+            padding: 2rem 1rem 1.2rem;
+            text-align: center;
+            background: linear-gradient(180deg, #ecfdf5 0%, #ffffff 100%);
+            border-bottom: 1px solid rgba(34, 197, 94, 0.14);
+            font-family: 'Segoe UI', Arial, sans-serif;
         }
 
         .about-page-hero h1 {
             margin: 0;
-            font-size: clamp(2rem, 4vw, 2.75rem);
-            color: #14532d;
-            letter-spacing: -0.02em;
-            font-family: var(--about-us-font-family, 'Segoe UI', Arial, sans-serif);
+            font-size: clamp(2rem, 4vw, 3rem);
+            color: #0f5132;
+            letter-spacing: -0.03em;
+            font-weight: 800;
         }
 
         .about-page-hero p {
-            margin: 0.45rem auto 0;
-            max-width: 900px;
-            color: #4b5563;
-            line-height: 1.6;
+            margin: 0.9rem auto 0;
+            max-width: 820px;
+            color: #334155;
+            line-height: 1.75;
             font-size: 1rem;
-            font-family: var(--about-us-font-family, 'Segoe UI', Arial, sans-serif);
-            text-align: var(--about-us-text-align, center);
+            opacity: 0.95;
         }
 
         .about-page-wrap {
-            width: min(100% - 1rem, 1180px);
-            margin: 0 auto 1.5rem;
+            width: min(100% - 1.5rem, 1160px);
+            margin: 2rem auto 3rem;
             display: grid;
-            gap: 0.9rem;
-            align-items: start;
-            align-content: start;
-            font-family: var(--about-us-font-family, 'Segoe UI', Arial, sans-serif);
-            text-align: var(--about-us-text-align, left);
+            gap: 1rem;
             padding-bottom: 0;
         }
 
@@ -127,32 +122,32 @@
         }
 
         .about-card p {
-            color: var(--text-secondary);
+            color: #334155;
         }
 
         .about-list {
             margin: 0;
-            padding-left: 0;
-            list-style: none;
+            padding-left: 1.15rem;
+            color: #334155;
         }
 
         .about-list li {
-            color: rgba(255,255,255,0.97);
             line-height: 1.68;
             display: flex;
             gap: 0.45rem;
             align-items: flex-start;
+            color: #334155;
         }
 
         .about-list li::before {
             content: '✔';
             font-weight: 700;
-            margin-top: 0.02rem;
-            color: #fef08a;
+            margin-top: 0.05rem;
+            color: #16a34a;
         }
 
         .about-list li + li {
-            margin-top: 0.35rem;
+            margin-top: 0.4rem;
         }
 
         .about-empty {
@@ -251,14 +246,13 @@
 
     <section class="about-page-hero">
         <h1 id="about-page-title">About Us</h1>
-        <p id="about-description">Discover Mount Made’s story, values, and commitment to fresh, trustworthy grocery experiences.</p>
     </section>
 
     <main class="container about-page-wrap">
         <section class="about-panel">
             <h2 id="about-intro-title" class="about-panel-title">Welcome to Mount Made</h2>
             <p id="about-intro-subtitle" class="about-intro-subtitle">Fresh essentials, quality you can trust, and a shopping experience built for everyday convenience.</p>
-            <div id="about-intro-content" class="about-intro-content"><p>Mount Made brings premium, carefully sourced groceries and household staples to your doorstep with a simple, reliable experience.</p></div>
+            <div id="about-intro-content" class="about-intro-content"></div>
         </section>
 
         <section class="about-panel">
@@ -398,7 +392,6 @@
 
         async function loadAboutUsContent() {
             const pageTitleEl = document.getElementById('about-page-title');
-            const descEl = document.getElementById('about-description');
             const introTitleEl = document.getElementById('about-intro-title');
             const missionVisionTitleEl = document.getElementById('about-mission-vision-title');
             const introSubtitleEl = document.getElementById('about-intro-subtitle');
@@ -414,8 +407,9 @@
                 const aboutPageTitle = (settings.about_page_title || '').trim() || 'About Us';
                 const aboutIntroTitle = (settings.about_intro_title || '').trim() || 'Welcome to Mount Made';
                 const missionVisionTitle = (settings.about_mission_vision_title || '').trim() || 'Our Mission & Vision';
-                const description = (settings.about_us_description || '').trim() || 'Discover Mount Made\'s story, values, and commitment to fresh, trustworthy grocery experiences.';
+                const description = (settings.about_us_description || '').trim();
                 const descriptionShape = getBoxShape(settings.about_us_description_box_shape);
+                const defaultIntroSubtitle = 'Fresh essentials, quality you can trust, and a shopping experience built for everyday convenience.';
 
                 // Load all 5 paragraph blocks
                 const blocks = [1, 2, 3, 4, 5].map((idx) => ({
@@ -424,13 +418,12 @@
                     index: idx
                 })).filter((item) => item.paragraph);
 
-                // Update page title and header
+                // Update page title
                 if (pageTitleEl) pageTitleEl.textContent = aboutPageTitle;
-                if (descEl) descEl.textContent = description;
 
                 // Update intro section
                 if (introTitleEl) introTitleEl.textContent = aboutIntroTitle;
-                if (introSubtitleEl) introSubtitleEl.textContent = description;
+                if (introSubtitleEl) introSubtitleEl.textContent = defaultIntroSubtitle;
 
                 // Render intro content box with the description
                 if (introContentEl) {
@@ -439,7 +432,7 @@
                     introContentEl.style.background = 'linear-gradient(180deg, #ffffff, #f7fff9)';
                     introContentEl.style.padding = '0.9rem 1rem';
                     introContentEl.style.boxShadow = '0 8px 18px rgba(15, 23, 42, 0.06)';
-                    introContentEl.innerHTML = description 
+                    introContentEl.innerHTML = description
                         ? renderBlock(description)
                         : '<p>Mount Made brings premium, carefully sourced groceries and household staples to your doorstep with a simple, reliable experience.</p>';
                 }
@@ -482,9 +475,6 @@
 
             } catch (error) {
                 console.error('Failed to load About Us content:', error);
-                if (descEl) {
-                    descEl.textContent = 'Discover Mount Made\'s story, values, and commitment to fresh, trustworthy grocery experiences.';
-                }
                 // Render default placeholder cards on error
                 if (gridEl) {
                     gridEl.innerHTML = `
