@@ -1894,6 +1894,21 @@
             }
         }
 
+        function getHeroFontFamily(style) {
+            switch (String(style || 'default').trim().toLowerCase()) {
+                case 'cursive':
+                    return 'Brush Script MT, Lucida Handwriting, cursive';
+                case 'handwriting':
+                    return 'Segoe Script, Bradley Hand, cursive';
+                case 'serif':
+                    return 'Georgia, Times New Roman, serif';
+                case 'elegant':
+                    return 'Palatino Linotype, Book Antiqua, serif';
+                default:
+                    return 'inherit';
+            }
+        }
+
         // Animated hero text (typing effect) — configurable via Site Settings
         window.heroAnimatedTimer = window.heroAnimatedTimer || null;
         function startHeroAnimatedText(settings) {
