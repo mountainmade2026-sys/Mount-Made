@@ -807,21 +807,28 @@
                 });
                 // Agreement gate: block Google overlay click if checkbox is unchecked
                 const agreementGate = document.createElement('div');
-                agreementGate.style.cssText = 'position:absolute;inset:0;z-index:2;cursor:pointer;';
+                const cb = document.getElementById('agree-terms');
+                
+                // Set initial pointer-events based on checkbox state
+                agreementGate.style.cssText = `position:absolute;inset:0;z-index:2;cursor:pointer;pointer-events:${cb?.checked ? 'none' : 'auto'};`;
+                
                 agreementGate.addEventListener('click', (e) => {
-                    const cb = document.getElementById('agree-terms');
                     if (!cb || !cb.checked) {
                         e.stopPropagation();
                         e.preventDefault();
                         document.getElementById('agreement-error')?.classList.add('visible');
                         document.getElementById('agreement-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                         showAlert('Please agree to the Terms & Privacy Policy first.', 'error');
-                    } else {
-                        // Let click pass through to Google overlay
-                        agreementGate.style.pointerEvents = 'none';
-                        setTimeout(() => { agreementGate.style.pointerEvents = ''; }, 500);
                     }
                 });
+                
+                // Update agreement gate pointer-events when checkbox changes
+                if (cb) {
+                    cb.addEventListener('change', () => {
+                        agreementGate.style.pointerEvents = cb.checked ? 'none' : 'auto';
+                    });
+                }
+                
                 googleSignupBtn.appendChild(overlay);
                 googleSignupBtn.appendChild(agreementGate);
                 googleOverlayRendered = true;
