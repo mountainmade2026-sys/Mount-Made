@@ -6767,6 +6767,21 @@
 
             let html = '<div class="data-table-container">';
             html += '<div class="table-header"><h3>Product Stock Overview</h3></div>';
+            
+            // Search field below header
+            html += '<div style="padding: 1rem; background: #f8f9fa; border-bottom: 1px solid var(--border);">';
+            html += '<div style="display: flex; gap: 1rem; flex-wrap: wrap;">';
+            html += '<div style="flex: 1; min-width: 250px;">';
+            html += '<label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.35rem; color: var(--text-muted);">Search by ID</label>';
+            html += '<input type="text" id="stock-table-search-id" placeholder="Enter product ID..." style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px; font-size: 0.9rem;" oninput="filterStockReportsTable()">';
+            html += '</div>';
+            html += '<div style="flex: 1; min-width: 250px;">';
+            html += '<label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.35rem; color: var(--text-muted);">Search by Name</label>';
+            html += '<input type="text" id="stock-table-search-name" placeholder="Enter product name..." style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px; font-size: 0.9rem;" oninput="filterStockReportsTable()">';
+            html += '</div>';
+            html += '</div>';
+            html += '</div>';
+            
             // Inner scroll wrapper — allows horizontal scroll on mobile while keeping card border-radius
             html += '<div class="data-table-scroll">';
             html += '<table class="data-table stock-table" style="min-width:980px"><thead><tr>' +
@@ -6882,6 +6897,52 @@
             // to reflect the filtered dataset.
             updateStockStatistics(filtered);
             renderStockReportsTable(filtered);
+        }
+
+        // Filter table rows based on ID and Name search in the table header
+        window.filterStockReportsTable = function() {
+            const searchId = (document.getElementById('stock-table-search-id')?.value || '').toLowerCase().trim();
+            const searchName = (document.getElementById('stock-table-search-name')?.value || '').toLowerCase().trim();
+
+            const rows = document.querySelectorAll('.stock-table tbody tr');
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                // Get product ID from the row (should be in first column ID text)
+                const idCell = row.querySelector('td:first-child');
+                const idText = idCell ? idCell.textContent.toLowerCase() : '';
+                
+                // Get product name from the first column
+                const nameDiv = row.querySelector('td:first-child div:nth-child(2) div:first-child');
+                const nameText = nameDiv ? nameDiv.textContent.toLowerCase() : '';
+
+                // Check if row matches both ID and Name filters (both must match if provided)
+                const matchesId = !searchId || idText.includes(searchId);
+                const matchesName = !searchName || nameText.includes(searchName);
+
+                if (matchesId && matchesName) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            // Show "no results" if all rows are hidden
+            const tbody = document.querySelector('.stock-table tbody');
+            if (visibleCount === 0 && tbody && tbody.children.length > 0) {
+                // Create empty state if needed
+                if (!document.querySelector('.stock-table-no-results')) {
+                    const noResultsRow = document.createElement('tr');
+                    noResultsRow.className = 'stock-table-no-results';
+                    noResultsRow.innerHTML = '<td colspan="12" style="text-align: center; padding: 2rem; color: var(--text-muted);">No products match your search criteria</td>';
+                    tbody.appendChild(noResultsRow);
+                }
+            } else {
+                // Remove empty state row if results found
+                const noResultsRow = document.querySelector('.stock-table-no-results');
+                if (noResultsRow) noResultsRow.remove();
+            }
         }
 
         // View stock transaction history for a single product
