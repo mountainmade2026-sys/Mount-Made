@@ -998,6 +998,53 @@ async function uploadProductImage(fileOrInput) {
 
 function createAlertContainer() { /* legacy — replaced by mm-toast-container */ return document.createElement('div'); }
 
+// Mobile hero heading mover: place the hero heading inside the slider on small screens
+(function () {
+  function debounce(fn, wait = 120) {
+    let t = null;
+    return function (...args) {
+      clearTimeout(t);
+      t = setTimeout(() => fn.apply(this, args), wait);
+    };
+  }
+
+  function moveHeroHeadingForMobile() {
+    try {
+      const heading = document.getElementById('search-hero-heading');
+      const heroSlides = document.getElementById('hero-slides-container');
+      const searchContainer = document.querySelector('.search-container');
+      if (!heading || !heroSlides || !searchContainer) return;
+
+      const isMobile = window.innerWidth <= 768;
+      if (isMobile) {
+        if (!heroSlides.contains(heading)) {
+          // Preserve original hidden state so we can restore it on desktop
+          heading.dataset._origHidden = heading.classList.contains('hidden') ? '1' : '0';
+          heading.classList.remove('hidden');
+          heading.classList.add('moved-to-hero');
+          heroSlides.appendChild(heading);
+        }
+      } else {
+        if (!searchContainer.contains(heading)) {
+          heading.classList.remove('moved-to-hero');
+          // Restore original hidden state if known
+          if (heading.dataset._origHidden === '1') heading.classList.add('hidden');
+          else heading.classList.remove('hidden');
+          searchContainer.insertBefore(heading, searchContainer.firstChild);
+        }
+      }
+    } catch (e) {
+      // silent
+    }
+  }
+
+  const debounced = debounce(moveHeroHeadingForMobile, 140);
+  document.addEventListener('DOMContentLoaded', moveHeroHeadingForMobile);
+  window.addEventListener('resize', debounced);
+  // also attempt shortly after load in case images change layout
+  window.addEventListener('load', () => setTimeout(moveHeroHeadingForMobile, 200));
+})();
+
 // ─── Mobile Bottom Navigation Bar ────────────────────────────────────────────
 (function () {
   const EXCLUDED_PAGES = ['/login', '/register', '/admin', '/admin_backup', '/wholesale'];

@@ -2811,6 +2811,44 @@ exports.updateSiteSettings = async (req, res) => {
       updates.push({ key: 'mobile_hero_bg', value: mbUrl });
     }
 
+    // Mobile-specific hero animated text settings
+    if (req.body.homepage_hero_animated_mobile_enabled !== undefined) {
+      const enabled = typeof req.body.homepage_hero_animated_mobile_enabled === 'boolean'
+        ? req.body.homepage_hero_animated_mobile_enabled
+        : String(req.body.homepage_hero_animated_mobile_enabled).toLowerCase() === 'true';
+      updates.push({ key: 'homepage_hero_animated_mobile_enabled', value: enabled ? 'true' : 'false' });
+    }
+    if (req.body.homepage_hero_animated_mobile_texts !== undefined) {
+      updates.push({ key: 'homepage_hero_animated_mobile_texts', value: String(req.body.homepage_hero_animated_mobile_texts || '').trim() });
+    }
+    if (req.body.homepage_hero_animated_mobile_color !== undefined) {
+      updates.push({ key: 'homepage_hero_animated_mobile_color', value: String(req.body.homepage_hero_animated_mobile_color || '').trim() });
+    }
+    if (req.body.homepage_hero_animated_mobile_font_size !== undefined) {
+      const parsed = parseInt(req.body.homepage_hero_animated_mobile_font_size, 10);
+      if (Number.isNaN(parsed) || parsed < 14 || parsed > 72) {
+        return res.status(400).json({ error: 'Animated mobile font size must be a number between 14 and 72.' });
+      }
+      updates.push({ key: 'homepage_hero_animated_mobile_font_size', value: String(parsed) });
+    }
+    if (req.body.homepage_hero_animated_mobile_font_style !== undefined) {
+      const allowedStyles = ['default', 'cursive', 'handwriting', 'serif', 'elegant'];
+      const style = String(req.body.homepage_hero_animated_mobile_font_style || 'default').trim().toLowerCase();
+      updates.push({ key: 'homepage_hero_animated_mobile_font_style', value: allowedStyles.includes(style) ? style : 'default' });
+    }
+    if (req.body.homepage_hero_animated_mobile_effect !== undefined) {
+      const allowedEffects = ['typing', 'cursive'];
+      const effect = String(req.body.homepage_hero_animated_mobile_effect || 'typing').trim().toLowerCase();
+      updates.push({ key: 'homepage_hero_animated_mobile_effect', value: allowedEffects.includes(effect) ? effect : 'typing' });
+    }
+    if (req.body.homepage_hero_animated_mobile_speed !== undefined) {
+      const parsed = parseInt(req.body.homepage_hero_animated_mobile_speed, 10);
+      if (Number.isNaN(parsed) || parsed < 30 || parsed > 2000) {
+        return res.status(400).json({ error: 'Animated mobile speed must be a number between 30 and 2000 milliseconds.' });
+      }
+      updates.push({ key: 'homepage_hero_animated_mobile_speed', value: String(parsed) });
+    }
+
     // Section banners: section_pc_banners_{id} / section_mobile_banners_{id}
     // Accepts new single-object format {url, shape} OR legacy array-of-URLs format OR 'null'/'null'
     const sectionBannerRe = /^section_(pc|mobile)_banners_(\d+)$/;

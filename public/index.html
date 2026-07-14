@@ -1116,7 +1116,8 @@
             */
             #search-hero-heading {
                 position: absolute;
-                top: 26%;
+                top: 50%;
+                transform: translateY(-50%);
                 left: 0;
                 right: 0;
                 z-index: 5;
@@ -1152,6 +1153,42 @@
                 text-overflow: ellipsis;
                 width: 100%;
                 max-width: 100%;
+            }
+
+            #search-hero-heading h1 {
+                width: min(100%, 92vw);
+                flex-wrap: wrap;
+                justify-content: center;
+                white-space: normal;
+            }
+
+            #homepage-hero-animated-text {
+                display: inline-block;
+                white-space: normal;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 100%;
+                word-break: break-word;
+            }
+
+            /* When JS moves the heading into the hero slides container, center it over the image */
+            .moved-to-hero {
+                position: absolute !important;
+                top: 50% !important;
+                left: 50% !important;
+                transform: translate(-50%, -50%) !important;
+                z-index: 6 !important;
+                width: 92% !important;
+                pointer-events: none !important;
+                text-align: center !important;
+            }
+
+            .moved-to-hero h1 {
+                margin: 0 !important;
+                font-size: clamp(1.4rem, 5.5vw, 2.6rem) !important;
+                line-height: 1.05 !important;
+                white-space: normal !important;
+                overflow-wrap: anywhere !important;
             }
 
             #homepage-hero-animated-text {
@@ -1947,14 +1984,28 @@
         function startHeroAnimatedText(settings) {
             try {
                 if (window.heroAnimatedTimer) { clearTimeout(window.heroAnimatedTimer); window.heroAnimatedTimer = null; }
-                const enabled = String((settings && settings.homepage_hero_animated_enabled) || 'false').toLowerCase() === 'true';
-                const raw = (settings && settings.homepage_hero_animated_texts) || '';
-                const texts = String(raw || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean);
-                const color = (settings && settings.homepage_hero_animated_color) || '#ffffff';
-                const fontSize = Math.max(18, Math.min(120, parseInt((settings && settings.homepage_hero_animated_font_size) || '40', 10) || 40));
-                const fontStyle = String((settings && settings.homepage_hero_animated_font_style) || 'default').trim().toLowerCase();
-                const effect = String((settings && settings.homepage_hero_animated_effect) || 'typing').trim().toLowerCase();
-                const speed = Math.max(30, parseInt((settings && settings.homepage_hero_animated_speed) || '80', 10) || 80);
+                // Prefer mobile-specific settings when on narrow viewports
+                const isMobileView = window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
+                let enabled, texts, color, fontSize, fontStyle, effect, speed;
+                if (isMobileView && settings && String(settings.homepage_hero_animated_mobile_enabled || 'false').toLowerCase() === 'true') {
+                    enabled = true;
+                    const rawMobile = settings.homepage_hero_animated_mobile_texts || '';
+                    texts = String(rawMobile || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+                    color = (settings && settings.homepage_hero_animated_mobile_color) || '#ffffff';
+                    fontSize = Math.max(14, Math.min(72, parseInt((settings && settings.homepage_hero_animated_mobile_font_size) || '28', 10) || 28));
+                    fontStyle = String((settings && settings.homepage_hero_animated_mobile_font_style) || 'default').trim().toLowerCase();
+                    effect = String((settings && settings.homepage_hero_animated_mobile_effect) || 'typing').trim().toLowerCase();
+                    speed = Math.max(30, parseInt((settings && settings.homepage_hero_animated_mobile_speed) || '80', 10) || 80);
+                } else {
+                    enabled = String((settings && settings.homepage_hero_animated_enabled) || 'false').toLowerCase() === 'true';
+                    const raw = (settings && settings.homepage_hero_animated_texts) || '';
+                    texts = String(raw || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+                    color = (settings && settings.homepage_hero_animated_color) || '#ffffff';
+                    fontSize = Math.max(18, Math.min(120, parseInt((settings && settings.homepage_hero_animated_font_size) || '40', 10) || 40));
+                    fontStyle = String((settings && settings.homepage_hero_animated_font_style) || 'default').trim().toLowerCase();
+                    effect = String((settings && settings.homepage_hero_animated_effect) || 'typing').trim().toLowerCase();
+                    speed = Math.max(30, parseInt((settings && settings.homepage_hero_animated_speed) || '80', 10) || 80);
+                }
 
                 const container = document.getElementById('search-hero-heading');
                 const animatedTextEl = document.getElementById('homepage-hero-animated-text');
@@ -1968,6 +2019,14 @@
                 animatedTextEl.style.letterSpacing = effect === 'cursive' ? '0.04em' : 'normal';
                 animatedTextEl.style.color = color;
                 if (cursorEl) cursorEl.style.background = color;
+                // Ensure wrapping/overflow is relaxed on mobile so text doesn't vanish
+                if (isMobileView) {
+                    animatedTextEl.style.whiteSpace = 'normal';
+                    animatedTextEl.style.maxWidth = '92%';
+                } else {
+                    animatedTextEl.style.whiteSpace = 'nowrap';
+                    animatedTextEl.style.maxWidth = '';
+                }
 
                 if (!enabled || texts.length === 0) {
                     // Hide animated area but keep regular hero title/subtitle behavior
@@ -1984,14 +2043,24 @@
 
                 const showSlideText = (text) => {
                     animatedTextEl.style.transition = 'none';
-                    animatedTextEl.style.transform = 'translateX(100%)';
-                    animatedTextEl.style.opacity = '0';
-                    animatedTextEl.textContent = text;
-                    requestAnimationFrame(() => {
-                        animatedTextEl.style.transition = 'transform 0.8s ease, opacity 0.8s ease';
-                        animatedTextEl.style.transform = 'translateX(0)';
-                        animatedTextEl.style.opacity = '1';
-                    });
+                    // On mobile prefer a fade-in rather than translate (prevents clipping/wrap issues)
+                    if (isMobileView) {
+                        animatedTextEl.style.opacity = '0';
+                        animatedTextEl.textContent = text;
+                        requestAnimationFrame(() => {
+                            animatedTextEl.style.transition = 'opacity 0.45s ease';
+                            animatedTextEl.style.opacity = '1';
+                        });
+                    } else {
+                        animatedTextEl.style.transform = 'translateX(100%)';
+                        animatedTextEl.style.opacity = '0';
+                        animatedTextEl.textContent = text;
+                        requestAnimationFrame(() => {
+                            animatedTextEl.style.transition = 'transform 0.8s ease, opacity 0.8s ease';
+                            animatedTextEl.style.transform = 'translateX(0)';
+                            animatedTextEl.style.opacity = '1';
+                        });
+                    }
                 };
 
                 const slideOut = (next) => {
@@ -2165,18 +2234,36 @@
             // Always init the hero slider and flip cards with whatever settings we have
             initHeroSlider(settings);
             try { startHeroAnimatedText(settings); } catch(e) { console.warn('startHeroAnimatedText failed', e); }
+            // Expose current homepage settings for runtime updates (resize, preview)
+            window._homepageSettings = settings;
+            // Re-run hero animated text on resize (debounced) so mobile settings apply when viewport changes
+            (function() {
+                let _t = null;
+                window.addEventListener('resize', function() {
+                    clearTimeout(_t);
+                    _t = setTimeout(function() {
+                        try { startHeroAnimatedText(window._homepageSettings || {}); } catch(e) { console.warn('startHeroAnimatedText failed on resize', e); }
+                    }, 140);
+                });
+            })();
             initFlipCards(settings);
 
             // Apply hero heading text immediately from settings
-            try {
+                try {
                 const heroWrap0 = document.getElementById('search-hero-heading');
                 const heroTitleEl0 = document.getElementById('homepage-hero-title-text');
                 const heroSubtitleEl0 = document.getElementById('homepage-hero-subtitle-text');
                 const heroTitle0 = (settings.homepage_hero_title || '').trim();
                 const heroSubtitle0 = (settings.homepage_hero_subtitle || '').trim();
                 if (heroWrap0 && heroTitleEl0 && heroSubtitleEl0) {
-                    const heroAnimatedEnabled = String((settings.homepage_hero_animated_enabled || 'false')).toLowerCase() === 'true';
-                    const heroAnimatedTexts = String(settings.homepage_hero_animated_texts || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+                    const isMobileViewLocal = window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
+                    let heroAnimatedEnabled = String((settings.homepage_hero_animated_enabled || 'false')).toLowerCase() === 'true';
+                    let heroAnimatedTexts = String(settings.homepage_hero_animated_texts || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+                    // If on mobile and mobile-specific animated text is enabled, prefer that
+                    if (isMobileViewLocal && String((settings.homepage_hero_animated_mobile_enabled || 'false')).toLowerCase() === 'true') {
+                        heroAnimatedEnabled = true;
+                        heroAnimatedTexts = String(settings.homepage_hero_animated_mobile_texts || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+                    }
                     heroTitleEl0.textContent = heroTitle0;
                     heroSubtitleEl0.textContent = heroSubtitle0;
                     if (heroTitle0 || heroSubtitle0 || (heroAnimatedEnabled && heroAnimatedTexts.length > 0)) {
