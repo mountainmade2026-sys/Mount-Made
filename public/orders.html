@@ -789,7 +789,10 @@
                     ? `<button class="btn btn-danger btn-sm" onclick="cancelOrder(${order.id})"><i class="fas fa-times"></i> Cancel Order</button>`
                     : '';
 
-                const returnBtn = order.status === 'delivered'
+                const normReturn = normalizeReturnStatus(order.return_status || order.returnStatus || order.returnStatusRaw || null);
+                const hasActiveReturn = normReturn && normReturn !== 'rejected' && normReturn !== '';
+
+                const returnBtn = (order.status === 'delivered' && !hasActiveReturn)
                     ? `<button class="btn btn-secondary btn-sm" onclick="openReturnModal(${order.id}, '${order.order_number}')"><i class="fas fa-undo"></i> Return Items</button>`
                     : '';
 
