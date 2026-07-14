@@ -16343,5 +16343,19 @@ ${docHtml.outerHTML}
         })();
     })();
     </script>
+    <script>
+        // Ensure return-related handlers are available on the window object
+        try {
+            if (typeof viewReturnDetails === 'function') window.viewReturnDetails = viewReturnDetails;
+            if (typeof openApproveReturnModal === 'function') window.openApproveReturnModal = openApproveReturnModal;
+            if (typeof approveReturn === 'function') window.approveReturn = approveReturn;
+            if (typeof rejectReturn === 'function') window.rejectReturn = rejectReturn;
+            if (typeof markReturnShipped === 'function') window.markReturnShipped = markReturnShipped;
+            if (typeof completeReturn === 'function') window.completeReturn = completeReturn;
+            if (typeof deleteReturn === 'function') window.deleteReturn = deleteReturn;
+        } catch (e) {
+            console.warn('Failed to attach return handlers to window:', e);
+        }
+    </script>
 </body>
 </html>
