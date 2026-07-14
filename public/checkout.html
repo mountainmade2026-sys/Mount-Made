@@ -104,40 +104,121 @@
                         <!-- Hidden input carries the real value for form submit -->
                         <input type="hidden" id="payment_method" name="payment_method" value="gpay">
 
-                        <div class="pm-grid" id="pm-grid">
-                            <button type="button" class="pm-tile pm-tile-selected" data-method="gpay">
-                                <span class="pm-tile-icon pm-upi-bg">
-                                    <i class="fab fa-google-pay" style="font-size: 24px;"></i>
-                                </span>
-                                <span class="pm-tile-label">UPI / GPay<br><small>GPay only</small></span>
-                                <span class="pm-tile-check"><i class="fas fa-check-circle"></i></span>
-                            </button>
-                            <button type="button" class="pm-tile" data-method="phone">
-                                <span class="pm-tile-icon pm-phone-bg">
-                                    <i class="fas fa-mobile-alt" style="font-size: 22px;"></i>
-                                </span>
-                                <span class="pm-tile-label">PhonePe<br><small>UPI / Phone</small></span>
-                                <span class="pm-tile-check"><i class="fas fa-check-circle"></i></span>
-                            </button>
-                            <button type="button" class="pm-tile" data-method="paytm">
-                                <span class="pm-tile-icon pm-paytm-bg">
-                                    <i class="fas fa-wallet" style="font-size: 22px;"></i>
-                                </span>
-                                <span class="pm-tile-label">Paytm<br><small>UPI payment</small></span>
-                                <span class="pm-tile-check"><i class="fas fa-check-circle"></i></span>
-                            </button>
-                            <button type="button" class="pm-tile" data-method="cod">
-                                <span class="pm-tile-icon pm-cod-bg">
-                                    <i class="fas fa-money-bill-wave" style="font-size: 22px;"></i>
-                                </span>
-                                <span class="pm-tile-label">Cash on Delivery<br><small>Pay on delivery</small></span>
-                                <span class="pm-tile-check"><i class="fas fa-check-circle"></i></span>
-                            </button>
+                        <!-- Payment Method Groups -->
+                        <div class="payment-groups-container">
+                            <!-- UPI / Digital Payments Group -->
+                            <div class="payment-group-wrapper">
+                                <button type="button" class="payment-group-header" id="upi-group-toggle">
+                                    <span class="group-header-left">
+                                        <i class="fas fa-mobile-alt" style="margin-right: 0.6rem;"></i>
+                                        <strong>UPI / Digital Payments</strong>
+                                        <span class="group-subtitle">(GPay, PhonePe, Paytm)</span>
+                                    </span>
+                                    <span class="group-toggle-icon">
+                                        <i class="fas fa-chevron-down"></i>
+                                    </span>
+                                </button>
+                                <div class="payment-group-content" id="upi-group-content" style="display: grid;">
+                                    <div class="pm-grid" id="pm-grid-upi">
+                                        <button type="button" class="pm-tile pm-tile-selected" data-method="gpay" data-group="upi">
+                                            <span class="pm-tile-icon pm-upi-bg">
+                                                <i class="fab fa-google-pay" style="font-size: 24px;"></i>
+                                            </span>
+                                            <span class="pm-tile-label">Google Pay<br><small>UPI payments</small></span>
+                                            <span class="pm-tile-check"><i class="fas fa-check-circle"></i></span>
+                                        </button>
+                                        <button type="button" class="pm-tile" data-method="phone" data-group="upi">
+                                            <span class="pm-tile-icon pm-phone-bg">
+                                                <i class="fas fa-mobile-alt" style="font-size: 22px;"></i>
+                                            </span>
+                                            <span class="pm-tile-label">PhonePe<br><small>UPI payments</small></span>
+                                            <span class="pm-tile-check"><i class="fas fa-check-circle"></i></span>
+                                        </button>
+                                        <button type="button" class="pm-tile" data-method="paytm" data-group="upi">
+                                            <span class="pm-tile-icon pm-paytm-bg">
+                                                <i class="fas fa-wallet" style="font-size: 22px;"></i>
+                                            </span>
+                                            <span class="pm-tile-label">Paytm<br><small>UPI payments</small></span>
+                                            <span class="pm-tile-check"><i class="fas fa-check-circle"></i></span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Banking Group -->
+                            <div class="payment-group-wrapper">
+                                <button type="button" class="payment-group-header" id="bank-group-toggle">
+                                    <span class="group-header-left">
+                                        <i class="fas fa-building" style="margin-right: 0.6rem;"></i>
+                                        <strong>Banking</strong>
+                                        <span class="group-subtitle">(Cards & Net Banking)</span>
+                                    </span>
+                                    <span class="group-toggle-icon">
+                                        <i class="fas fa-chevron-down"></i>
+                                    </span>
+                                </button>
+                                <div class="payment-group-content" id="bank-group-content" style="display: none;">
+                                    <div class="pm-grid" id="pm-grid-bank">
+                                        <button type="button" class="pm-tile" data-method="debit" data-group="bank">
+                                            <span class="pm-tile-icon pm-card-bg">
+                                                <i class="fas fa-credit-card" style="font-size: 24px;"></i>
+                                            </span>
+                                            <span class="pm-tile-label">Debit Card<br><small>Secure payment</small></span>
+                                            <span class="pm-tile-check"><i class="fas fa-check-circle"></i></span>
+                                        </button>
+                                        <button type="button" class="pm-tile" data-method="credit" data-group="bank">
+                                            <span class="pm-tile-icon pm-cc-bg">
+                                                <i class="fas fa-credit-card" style="font-size: 24px;"></i>
+                                            </span>
+                                            <span class="pm-tile-label">Credit Card<br><small>Secure payment</small></span>
+                                            <span class="pm-tile-check"><i class="fas fa-check-circle"></i></span>
+                                        </button>
+                                        <button type="button" class="pm-tile" data-method="netbank" data-group="bank">
+                                            <span class="pm-tile-icon pm-net-bg">
+                                                <i class="fas fa-university" style="font-size: 24px;"></i>
+                                            </span>
+                                            <span class="pm-tile-label">Net Banking<br><small>All major banks</small></span>
+                                            <span class="pm-tile-check"><i class="fas fa-check-circle"></i></span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Cash on Delivery -->
+                            <div class="payment-group-wrapper">
+                                <button type="button" class="payment-group-header" id="cod-group-toggle">
+                                    <span class="group-header-left">
+                                        <i class="fas fa-money-bill-wave" style="margin-right: 0.6rem;"></i>
+                                        <strong>Cash on Delivery</strong>
+                                        <span class="group-subtitle">(Pay when you receive)</span>
+                                    </span>
+                                    <span class="group-toggle-icon">
+                                        <i class="fas fa-chevron-down"></i>
+                                    </span>
+                                </button>
+                                <div class="payment-group-content" id="cod-group-content" style="display: none;">
+                                    <div class="pm-grid" id="pm-grid-cod">
+                                        <button type="button" class="pm-tile" data-method="cod" data-group="cod">
+                                            <span class="pm-tile-icon pm-cod-bg">
+                                                <i class="fas fa-money-bill-wave" style="font-size: 24px;"></i>
+                                            </span>
+                                            <span class="pm-tile-label">Cash on Delivery<br><small>Pay on delivery</small></span>
+                                            <span class="pm-tile-check"><i class="fas fa-check-circle"></i></span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
+
                         <div id="payment-method-status" class="form-help" style="display:none; margin-top:0.75rem;"></div>
 
-                        <!-- UPI / GPay details panel -->
-                        <div id="gpay-details" class="pm-detail-panel">
+                        <!-- Payment Details Panel (dynamic based on selected method) -->
+                        <div id="payment-details-panel" class="pm-detail-panel" style="display: none; margin-top: 1rem;">
+                            <div id="payment-details-content"></div>
+                        </div>
+
+                        <!-- UPI / GPay details panel (legacy - will be replaced by payment-details-panel) -->
+                        <div id="gpay-details" class="pm-detail-panel" style="display: none;">
                             <div class="form-group">
                                 <label class="form-label">Delivery PIN Code</label>
                                 <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.5rem;">
@@ -1099,7 +1180,100 @@
             cursor: pointer;
         }
 
-        /* Payment Method Tiles */
+        /* Payment Method Groups */
+        .payment-groups-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .payment-group-wrapper {
+            border: 1px solid var(--border-primary);
+            border-radius: 12px;
+            background: var(--bg-primary);
+            overflow: hidden;
+            transition: border-color 0.18s, box-shadow 0.18s;
+        }
+
+        .payment-group-wrapper:hover {
+            border-color: var(--border);
+        }
+
+        .payment-group-header {
+            width: 100%;
+            border: none;
+            background: transparent;
+            padding: 1rem 1.1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            transition: background-color 0.18s;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-align: left;
+        }
+
+        .payment-group-header:hover {
+            background: var(--bg-secondary);
+        }
+
+        .payment-group-header:active {
+            background: rgba(44, 95, 45, 0.08);
+        }
+
+        .group-header-left {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .group-subtitle {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 400;
+            color: var(--text-secondary);
+            margin-top: 0.2rem;
+        }
+
+        .group-toggle-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            color: var(--text-secondary);
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            flex-shrink: 0;
+        }
+
+        .payment-group-wrapper.expanded .group-toggle-icon {
+            transform: rotate(180deg);
+        }
+
+        .payment-group-content {
+            padding: 0.75rem;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-primary);
+            max-height: 500px;
+            overflow-y: auto;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .payment-group-content.collapsed {
+            display: none !important;
+        }
+
+        /* Payment Method Tiles Grid within groups */
+        .payment-group-content .pm-grid {
+            margin-bottom: 0;
+        }
+
         .pm-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -1183,6 +1357,187 @@
             color: var(--text-secondary);
             line-height: 1.5;
         }
+
+        /* Tablet optimizations */
+        @media (max-width: 768px) {
+            .payment-group-header {
+                padding: 0.85rem 1rem;
+                font-size: 0.95rem;
+            }
+
+            .group-header-left {
+                gap: 0.5rem;
+            }
+
+            .group-header-left i {
+                font-size: 1.1rem;
+            }
+
+            .group-subtitle {
+                font-size: 0.75rem;
+                margin-top: 0.15rem;
+            }
+
+            .payment-group-content {
+                padding: 0.6rem;
+            }
+
+            .pm-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.6rem;
+                margin-bottom: 0.9rem;
+            }
+
+            .pm-tile {
+                padding: 0.7rem 0.4rem 0.6rem;
+                gap: 0.35rem;
+                font-size: 0.78rem;
+                min-height: 105px;
+                max-width: 100% !important;
+            }
+
+            .pm-tile-icon {
+                width: 40px;
+                height: 40px;
+            }
+
+            .pm-tile-icon i {
+                font-size: 19px !important;
+            }
+
+            .pm-tile-label {
+                line-height: 1.25;
+            }
+
+            .pm-tile-label small {
+                font-size: 0.7rem;
+            }
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 600px) {
+            .payment-group-header {
+                padding: 0.75rem 0.9rem;
+                font-size: 0.92rem;
+                gap: 0.6rem;
+            }
+
+            .group-header-left i {
+                font-size: 1rem;
+            }
+
+            .group-subtitle {
+                font-size: 0.7rem;
+                margin-top: 0.1rem;
+            }
+
+            .group-toggle-icon {
+                width: 22px;
+                height: 22px;
+            }
+
+            .group-toggle-icon i {
+                font-size: 0.9rem;
+            }
+
+            .payment-group-content {
+                padding: 0.5rem;
+            }
+
+            .pm-grid {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+                margin-bottom: 0.8rem;
+            }
+
+            .pm-tile {
+                padding: 0.6rem 0.35rem 0.5rem;
+                gap: 0.3rem;
+                font-size: 0.7rem;
+                min-height: 90px;
+                max-width: 100% !important;
+            }
+
+            .pm-tile-icon {
+                width: 36px;
+                height: 36px;
+            }
+
+            .pm-tile-icon i {
+                font-size: 16px !important;
+            }
+
+            .pm-tile-label {
+                line-height: 1.2;
+            }
+
+            .pm-tile-label small {
+                font-size: 0.65rem;
+            }
+
+            .pm-detail-panel {
+                padding: 0.85rem;
+            }
+        }
+
+        /* Extra small screens */
+        @media (max-width: 480px) {
+            .payment-group-header {
+                padding: 0.65rem 0.8rem;
+                font-size: 0.88rem;
+            }
+
+            .group-subtitle {
+                display: none;
+            }
+
+            .group-header-left i {
+                font-size: 0.95rem;
+                margin-right: 0.4rem;
+            }
+
+            .payment-groups-container {
+                gap: 0.6rem;
+            }
+
+            .pm-grid {
+                grid-template-columns: 1fr;
+                gap: 0.45rem;
+                margin-bottom: 0.85rem;
+            }
+
+            .pm-tile {
+                padding: 0.55rem 0.3rem 0.45rem;
+                font-size: 0.68rem;
+                gap: 0.25rem;
+                min-height: 85px;
+            }
+
+            .pm-tile-icon {
+                width: 34px;
+                height: 34px;
+            }
+
+            .pm-tile-icon i {
+                font-size: 15px !important;
+            }
+
+            .pm-tile-label {
+                line-height: 1.15;
+            }
+
+            .pm-tile-label small {
+                font-size: 0.6rem;
+            }
+
+            .pm-detail-panel {
+                padding: 0.75rem;
+                margin-bottom: 0.75rem;
+                border-radius: 8px;
+            }
+        }
+
+        /* Payment Tiles (legacy - kept for backward compatibility) */
 
         @media (max-width: 480px) {
             .mobile-menu-toggle {
@@ -1916,7 +2271,7 @@
     </style>
 
     <script src="/js/main.js?v=20260223"></script>
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script src="https://sdk.idfcbank.com/idealweb/production/js/IDFCBANK_SDK.js"></script>
     <script>
         // Fallbacks: if main.js is stale/blocked, keep checkout functional.
         (function ensureCheckoutDependencies() {
@@ -2865,7 +3220,77 @@
             if (checkoutPaymentSettings.phonepeEnabled) methods.push('phone');
             if (checkoutPaymentSettings.paytmEnabled) methods.push('paytm');
             if (checkoutPaymentSettings.codEnabled) methods.push('cod');
+            // Add banking methods as available
+            methods.push('debit', 'credit', 'netbank');
             return methods;
+        }
+
+        function getPaymentMethodGroup(method) {
+            const groupMap = {
+                'gpay': 'upi',
+                'phone': 'upi',
+                'paytm': 'upi',
+                'debit': 'bank',
+                'credit': 'bank',
+                'netbank': 'bank',
+                'cod': 'cod'
+            };
+            return groupMap[String(method || '').toLowerCase()] || 'upi';
+        }
+
+        function togglePaymentGroup(groupId) {
+            const wrapper = document.querySelector(`[id="${groupId}-group-toggle"]`)?.closest('.payment-group-wrapper');
+            if (!wrapper) return;
+
+            const content = wrapper.querySelector('.payment-group-content');
+            const isExpanded = wrapper.classList.contains('expanded');
+
+            if (isExpanded) {
+                wrapper.classList.remove('expanded');
+                content.classList.add('collapsed');
+                content.style.display = 'none';
+            } else {
+                // Collapse all other groups
+                document.querySelectorAll('.payment-group-wrapper.expanded').forEach(w => {
+                    w.classList.remove('expanded');
+                    w.querySelector('.payment-group-content').classList.add('collapsed');
+                    w.querySelector('.payment-group-content').style.display = 'none';
+                });
+
+                // Expand this group
+                wrapper.classList.add('expanded');
+                content.classList.remove('collapsed');
+                content.style.display = 'grid';
+            }
+        }
+
+        function initializePaymentGroupToggles() {
+            // UPI Group
+            const upiToggle = document.getElementById('upi-group-toggle');
+            if (upiToggle) {
+                upiToggle.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    togglePaymentGroup('upi');
+                });
+            }
+
+            // Banking Group
+            const bankToggle = document.getElementById('bank-group-toggle');
+            if (bankToggle) {
+                bankToggle.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    togglePaymentGroup('bank');
+                });
+            }
+
+            // COD Group
+            const codToggle = document.getElementById('cod-group-toggle');
+            if (codToggle) {
+                codToggle.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    togglePaymentGroup('cod');
+                });
+            }
         }
 
         function selectPaymentMethod(method) {
@@ -2877,6 +3302,14 @@
             const hidden = document.getElementById('payment_method');
             if (hidden) hidden.value = safeMethod;
 
+            // Expand the group that contains the selected method
+            const groupId = getPaymentMethodGroup(safeMethod);
+            const wrapper = document.querySelector(`[id="${groupId}-group-toggle"]`)?.closest('.payment-group-wrapper');
+            if (wrapper && !wrapper.classList.contains('expanded')) {
+                togglePaymentGroup(groupId);
+            }
+
+            // Update all tiles
             document.querySelectorAll('.pm-tile').forEach(t => {
                 const enabled = availableMethods.includes(t.dataset.method);
                 t.style.display = enabled ? '' : 'none';
@@ -2894,12 +3327,76 @@
                 }
             }
 
-            const gpaySection = document.getElementById('gpay-details');
-            if (gpaySection) gpaySection.classList.remove('hidden');
-
             setConfirmOrderButtonLabel(safeMethod);
+            updatePaymentDetailsPanel(safeMethod);
             updateGpayLabelAndPrefill(safeMethod);
             updateCodPincodeCheck();
+        }
+
+        function updatePaymentDetailsPanel(method) {
+            const panel = document.getElementById('payment-details-panel');
+            const content = document.getElementById('payment-details-content');
+            const normalizedMethod = String(method || '').toLowerCase();
+
+            if (!panel || !content) return;
+
+            // Show/hide based on method type
+            if (normalizedMethod === 'cod') {
+                // For COD, show the pincode details
+                const gpaySection = document.getElementById('gpay-details');
+                if (gpaySection) {
+                    gpaySection.style.display = 'block';
+                    gpaySection.classList.remove('hidden');
+                }
+                panel.style.display = 'none';
+                panel.classList.add('hidden');
+            } else if (['gpay', 'phone', 'paytm'].includes(normalizedMethod)) {
+                // For UPI methods, show payment details
+                const gpaySection = document.getElementById('gpay-details');
+                if (gpaySection) {
+                    gpaySection.style.display = 'block';
+                    gpaySection.classList.remove('hidden');
+                }
+                panel.style.display = 'none';
+                panel.classList.add('hidden');
+            } else if (['debit', 'credit', 'netbank'].includes(normalizedMethod)) {
+                // For banking methods
+                const methodLabels = {
+                    'debit': 'Debit Card',
+                    'credit': 'Credit Card',
+                    'netbank': 'Net Banking'
+                };
+
+                content.innerHTML = `
+                    <div class="pm-info-box" style="margin-bottom: 0.75rem;">
+                        <i class="fas fa-info-circle" style="margin-right: 0.4rem; color: var(--primary);"></i>
+                        <strong>${methodLabels[normalizedMethod] || 'Bank Payment'}</strong>
+                    </div>
+                    <p class="pm-info-box">After placing the order, you will be redirected to a secure payment gateway to complete your payment. Your transaction is encrypted and safe.</p>
+                    <div style="display: grid; gap: 0.6rem; margin-top: 1rem;">
+                        <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
+                            <i class="fas fa-check-circle" style="color: var(--primary); margin-top: 0.15rem; flex-shrink: 0;"></i>
+                            <span class="pm-info-box">Secure SSL encryption</span>
+                        </div>
+                        <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
+                            <i class="fas fa-check-circle" style="color: var(--primary); margin-top: 0.15rem; flex-shrink: 0;"></i>
+                            <span class="pm-info-box">Multiple bank support</span>
+                        </div>
+                        <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
+                            <i class="fas fa-check-circle" style="color: var(--primary); margin-top: 0.15rem; flex-shrink: 0;"></i>
+                            <span class="pm-info-box">Instant confirmation</span>
+                        </div>
+                    </div>
+                `;
+
+                const gpaySection = document.getElementById('gpay-details');
+                if (gpaySection) {
+                    gpaySection.style.display = 'none';
+                    gpaySection.classList.add('hidden');
+                }
+                panel.style.display = 'block';
+                panel.classList.remove('hidden');
+            }
         }
 
         function toggleGpayDetails() {
@@ -2913,13 +3410,20 @@
             const icon = button?.querySelector('i');
             const normalizedMethod = String(method || '').toLowerCase();
             const isCod = normalizedMethod === 'cod';
+            const isBanking = ['debit', 'credit', 'netbank'].includes(normalizedMethod);
 
             if (!button || !label) return;
             if (button.dataset.orderPlaced === 'true') return;
 
-            label.textContent = isCod ? 'Place Order' : 'Confirm Order';
-            if (icon) {
-                icon.className = isCod ? 'fas fa-money-bill-wave' : 'fas fa-check';
+            if (isCod) {
+                label.textContent = 'Place Order';
+                if (icon) icon.className = 'fas fa-money-bill-wave';
+            } else if (isBanking) {
+                label.textContent = 'Proceed to Payment';
+                if (icon) icon.className = 'fas fa-credit-card';
+            } else {
+                label.textContent = 'Confirm Order';
+                if (icon) icon.className = 'fas fa-check';
             }
         }
 
@@ -3197,6 +3701,9 @@
         }
 
         function wireBillingUI() {
+            // Initialize payment group toggles
+            initializePaymentGroupToggles();
+
             // Wire payment method tiles
             document.querySelectorAll('.pm-tile').forEach(tile => {
                 tile.addEventListener('click', () => selectPaymentMethod(tile.dataset.method));
@@ -3566,6 +4073,129 @@
 
             const manualAddressUsed = !selectedAddressId;
             const shouldSaveAddress = manualAddressUsed || !!document.getElementById('save_address')?.checked;
+
+            // Handle Banking Methods (Debit, Credit, Net Banking) via IDFC
+            if (['debit', 'credit', 'netbank'].includes(paymentMethod)) {
+                console.log('checkout: handling banking payment via IDFC');
+                
+                // First, create the order on the server
+                try {
+                    if (shouldSaveAddress) {
+                        try {
+                            await api.post('/addresses', {
+                                label: 'Home',
+                                full_name: shippingAddress.full_name,
+                                phone: shippingAddress.phone,
+                                address_line1: shippingAddress.address_line1,
+                                address_line2: shippingAddress.address_line2,
+                                city: shippingAddress.city,
+                                state: shippingAddress.state,
+                                postal_code: shippingAddress.postal_code,
+                                country: shippingAddress.country,
+                                is_default: userAddresses.length === 0
+                            });
+                        } catch (addrError) {
+                            console.warn('Failed to save address before order:', addrError);
+                        }
+                    }
+
+                    // Create order on server
+                    const serverOrder = await api.post('/orders', orderData);
+                    console.log('checkout: server order created for banking', serverOrder);
+
+                    if (!serverOrder || !serverOrder.order) {
+                        throw new Error('Failed to create order on server');
+                    }
+
+                    const orderId = serverOrder.order.id || serverOrder.order._id;
+                    const orderNumber = serverOrder.order.order_number || serverOrder.order.id;
+
+                    // Prepare IDFC payment parameters
+                    const bankingMethodMap = {
+                        'debit': 'DEBIT_CARD',
+                        'credit': 'CREDIT_CARD',
+                        'netbank': 'NETBANKING'
+                    };
+
+                    // Generate transaction reference
+                    const txnRef = `MM${Date.now()}${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+                    
+                    // IDFC payment initiation
+                    const idfcPaymentData = {
+                        merchantId: serverOrder.idfc_merchant_id || window.IDFC_MERCHANT_ID,
+                        orderId: orderId,
+                        amount: Math.round(totalAmount * 100), // In paisa
+                        currency: 'INR',
+                        txnRef: txnRef,
+                        customerName: shippingAddress.full_name,
+                        customerEmail: auth?.currentUser?.email || '',
+                        customerMobile: shippingAddress.phone,
+                        paymentMode: bankingMethodMap[paymentMethod],
+                        description: `Order #${orderNumber} - Mount Made`,
+                        returnUrl: `${window.location.origin}/payment-callback`,
+                        notifyUrl: `${window.location.origin}/api/payments/idfc/webhook`,
+                        udf1: orderNumber,
+                        udf2: paymentMethod,
+                        udf3: orderId
+                    };
+
+                    // Request IDFC payment session from server
+                    try {
+                        const paymentSession = await api.post('/payments/idfc/initiate', {
+                            order: serverOrder.order,
+                            amount: totalAmount,
+                            paymentMethod: paymentMethod,
+                            customerDetails: {
+                                name: shippingAddress.full_name,
+                                email: auth?.currentUser?.email || '',
+                                phone: shippingAddress.phone
+                            }
+                        });
+
+                        if (!paymentSession || !paymentSession.sessionId) {
+                            throw new Error('Failed to create IDFC payment session');
+                        }
+
+                        // Initialize IDFC payment
+                        if (window.IDFCBANK && typeof window.IDFCBANK.redirectToPaymentGateway === 'function') {
+                            window.IDFCBANK.redirectToPaymentGateway({
+                                sessionId: paymentSession.sessionId,
+                                merchantId: paymentSession.merchantId,
+                                onSuccess: function(response) {
+                                    console.log('IDFC Payment successful:', response);
+                                    // Payment gateway redirects to returnUrl
+                                },
+                                onFailure: function(error) {
+                                    console.error('IDFC Payment failed:', error);
+                                    setPlaceOrderButtonState(false);
+                                    showOrderFailed(`Payment failed: ${error.message}`);
+                                },
+                                onCancel: function() {
+                                    console.log('IDFC Payment cancelled');
+                                    setPlaceOrderButtonState(false);
+                                    showAlert('Payment was cancelled. Please try again.', 'info');
+                                }
+                            });
+                        } else {
+                            // Fallback: Redirect to payment gateway URL
+                            if (paymentSession.paymentUrl) {
+                                window.location.href = paymentSession.paymentUrl;
+                            } else {
+                                throw new Error('IDFC payment gateway not available');
+                            }
+                        }
+                    } catch (sessionError) {
+                        console.error('Failed to create IDFC payment session:', sessionError);
+                        setPlaceOrderButtonState(false);
+                        showAlert(`Payment session error: ${sessionError.message}`, 'error');
+                    }
+                } catch (error) {
+                    console.error('Banking payment error:', error);
+                    setPlaceOrderButtonState(false);
+                    showAlert(`Payment error: ${error.message}`, 'error');
+                }
+                return;
+            }
 
             if (paymentMethod === 'gpay' || paymentMethod === 'phone' || paymentMethod === 'paytm') {
                 // For UPI-based methods, do not wait for server order creation here.

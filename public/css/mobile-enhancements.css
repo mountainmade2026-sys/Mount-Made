@@ -331,6 +331,15 @@
     font-size: 0.86rem !important;
   }
 
+  /* Mobile footer - remove white gap */
+  .footer {
+    margin-bottom: 0 !important;
+    margin-top: 0 !important;
+  }
+
+  body {
+    margin-bottom: 0 !important;
+  }
 
   
   /* Authentication forms */

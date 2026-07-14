@@ -519,6 +519,9 @@ app.use('/api/email-actions', require('./routes/emailActions'));
 app.use('/api/whatsapp', require('./routes/whatsapp'));
 app.use('/api/delivery', require('./routes/delivery'));
 
+// Payment Callback Routes (Public - no auth required)
+app.use('/', require('./routes/paymentCallback'));
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Server is running' });
