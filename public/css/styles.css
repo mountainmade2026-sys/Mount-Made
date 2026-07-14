@@ -2265,6 +2265,10 @@ html[data-theme="dark"] .accd-item-danger:hover .accd-icon { background: rgba(24
 /* Desktop-only dropdown items (hidden on mobile) */
 @media (max-width: 768px) {
   .accd-desktop-only { display: none !important; }
+  .accd-mobile-only  { display: flex !important; }
+}
+@media (min-width: 769px) {
+  .accd-mobile-only  { display: none !important; }
 }
 
 /* ══════════════════════════════════════════
