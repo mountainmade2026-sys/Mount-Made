@@ -9,164 +9,630 @@
     <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
     <style>
-        .about-page-hero {
-            padding: 2rem 1rem 1.2rem;
-            text-align: center;
-            background: linear-gradient(180deg, #ecfdf5 0%, #ffffff 100%);
-            border-bottom: 1px solid rgba(34, 197, 94, 0.14);
-            font-family: 'Segoe UI', Arial, sans-serif;
+        :root {
+            --about-green: #0f5132;
+            --about-green-mid: #16a34a;
+            --about-green-light: #22c55e;
+            --about-green-pale: #dcfce7;
+            --about-ink: #0f172a;
+            --about-muted: #475569;
+            --about-border: rgba(34,197,94,0.18);
+            --about-shadow: 0 20px 48px rgba(15,23,42,0.10);
+            --about-radius: 22px;
         }
 
-        .about-page-hero h1 {
-            margin: 0;
-            font-size: clamp(2rem, 4vw, 3rem);
-            color: #0f5132;
-            letter-spacing: -0.03em;
-            font-weight: 800;
-        }
-
-        .about-page-hero p {
-            margin: 0.9rem auto 0;
-            max-width: 820px;
-            color: #334155;
-            line-height: 1.75;
-            font-size: 1rem;
-            opacity: 0.95;
-        }
-
-        .about-page-wrap {
-            width: min(100% - 1.5rem, 1160px);
-            margin: 2rem auto 3rem;
-            display: grid;
-            gap: 1rem;
-            padding-bottom: 0;
-        }
-
-        .about-panel {
-            background: #ffffff;
-            border: 1px solid var(--border-primary);
-            border-radius: 14px;
-            box-shadow: none;
-            padding: 1rem;
-            font-family: var(--about-us-font-family, 'Segoe UI', Arial, sans-serif);
-            text-align: var(--about-us-text-align, left);
+        /* ── HERO ── */
+        .ab-hero {
+            position: relative;
             overflow: hidden;
-            height: auto;
-            min-height: 0;
-            align-self: start;
-        }
-
-        .about-panel-title {
-            margin: 0;
-            color: #14532d;
-            font-size: 1.15rem;
-            font-weight: 800;
-            border-bottom: 1px solid rgba(34, 197, 94, 0.25);
-            padding-bottom: 0.55rem;
-            letter-spacing: -0.015em;
-            font-family: var(--about-us-font-family, 'Segoe UI', Arial, sans-serif);
-            text-align: var(--about-us-text-align, left);
-        }
-
-        .about-intro-subtitle {
-            margin: 0.8rem 0 0.45rem;
-            color: var(--text-primary);
-            font-weight: 700;
-            line-height: 1.5;
-        }
-
-        .about-intro-content p,
-        .about-card p {
-            margin: 0;
-            color: var(--text-secondary);
-            line-height: 1.72;
-            font-size: 0.98rem;
-        }
-
-        .about-intro-content p + p,
-        .about-card p + p {
-            margin-top: 0.5rem;
-        }
-
-        .about-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
-            gap: 0.9rem;
-            margin-top: 0.75rem;
-            align-items: start;
-            align-content: start;
-            height: auto;
-            min-height: 0;
-        }
-
-        .about-card {
-            background: linear-gradient(180deg, #ffffff, #f7fff9);
-            border: 1px solid rgba(34, 197, 94, 0.18);
-            border-radius: 14px;
-            padding: 1rem 1rem 1.05rem;
-            color: var(--text-primary);
-            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
-            height: auto;
-            min-height: 0;
-            align-self: start;
-            font-family: var(--about-us-font-family, 'Segoe UI', Arial, sans-serif);
-            text-align: var(--about-us-text-align, left);
-        }
-
-        .about-card-title {
-            margin: 0 0 0.45rem;
-            font-size: 1.02rem;
-            font-weight: 800;
-            color: #14532d;
-            letter-spacing: -0.01em;
-        }
-
-        .about-card p {
-            color: #334155;
-        }
-
-        .about-list {
-            margin: 0;
-            padding-left: 1.15rem;
-            color: #334155;
-        }
-
-        .about-list li {
-            line-height: 1.68;
-            display: flex;
-            gap: 0.45rem;
-            align-items: flex-start;
-            color: #334155;
-        }
-
-        .about-list li::before {
-            content: '✔';
-            font-weight: 700;
-            margin-top: 0.05rem;
-            color: #16a34a;
-        }
-
-        .about-list li + li {
-            margin-top: 0.4rem;
-        }
-
-        .about-empty {
+            background: linear-gradient(135deg, #052e16 0%, #064e3b 40%, #0f5132 70%, #14532d 100%);
+            padding: 5rem 1.5rem 4.5rem;
             text-align: center;
-            color: var(--text-secondary);
-            border: 1px dashed rgba(34, 197, 94, 0.35);
-            border-radius: 14px;
-            background: linear-gradient(135deg, rgba(247,255,248,0.92), rgba(255,255,255,0.98));
-            padding: 1rem;
-            margin-top: 0.7rem;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
+            color: #fff;
+        }
+        .ab-hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(34,197,94,0.18) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .ab-hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(34,197,94,0.18);
+            border: 1px solid rgba(34,197,94,0.35);
+            color: #6ee7b7;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            padding: 0.35rem 0.9rem;
+            border-radius: 100px;
+            margin-bottom: 1.25rem;
+        }
+        .ab-hero h1 {
+            margin: 0 auto 1.1rem;
+            font-size: clamp(2.4rem, 5vw, 4rem);
+            font-weight: 900;
+            letter-spacing: -0.04em;
+            line-height: 1.1;
+            max-width: 800px;
+            color: #fff;
+        }
+        .ab-hero h1 em {
+            font-style: normal;
+            color: #6ee7b7;
+        }
+        .ab-hero-sub {
+            margin: 0 auto 2rem;
+            max-width: 640px;
+            font-size: 1.1rem;
+            line-height: 1.7;
+            color: rgba(255,255,255,0.78);
+        }
+        .ab-hero-ctas {
+            display: flex;
+            gap: 0.85rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .ab-btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            background: #16a34a;
+            color: #fff;
+            font-weight: 700;
+            font-size: 0.95rem;
+            padding: 0.75rem 1.6rem;
+            border-radius: 12px;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            transition: background 0.18s, transform 0.13s;
+            box-shadow: 0 4px 18px rgba(22,163,74,0.38);
+        }
+        .ab-btn-primary:hover { background: #15803d; transform: translateY(-1px); }
+        .ab-btn-ghost {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            background: rgba(255,255,255,0.08);
+            color: #fff;
+            font-weight: 700;
+            font-size: 0.95rem;
+            padding: 0.75rem 1.6rem;
+            border-radius: 12px;
+            text-decoration: none;
+            border: 1px solid rgba(255,255,255,0.22);
+            cursor: pointer;
+            transition: background 0.18s, transform 0.13s;
+        }
+        .ab-btn-ghost:hover { background: rgba(255,255,255,0.14); transform: translateY(-1px); }
+        .ab-hero-scroll {
+            position: absolute;
+            bottom: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.3rem;
+            color: rgba(255,255,255,0.45);
+            font-size: 0.7rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            animation: bounceY 1.8s infinite;
+        }
+        @keyframes bounceY { 0%,100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(6px); } }
+
+        /* ── STATS RIBBON ── */
+        .ab-stats {
+            background: linear-gradient(90deg, #052e16, #064e3b, #052e16);
+            padding: 2.5rem 1.5rem;
+        }
+        .ab-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .ab-stat-item {
+            text-align: center;
+            padding: 0.5rem 1rem;
+            border-right: 1px solid rgba(34,197,94,0.2);
+        }
+        .ab-stat-item:last-child { border-right: none; }
+        .ab-stat-number {
+            font-size: clamp(1.8rem, 3vw, 2.8rem);
+            font-weight: 900;
+            color: #6ee7b7;
+            letter-spacing: -0.03em;
+            line-height: 1;
+            margin-bottom: 0.3rem;
+        }
+        .ab-stat-label {
+            font-size: 0.82rem;
+            color: rgba(255,255,255,0.6);
+            font-weight: 500;
+            letter-spacing: 0.05em;
         }
 
-        @media (max-width: 768px) {
-            .about-page-hero { padding: 1.15rem 0.75rem 0.9rem; }
-            .about-page-hero h1 { font-size: 1.7rem; }
-            .about-page-wrap { width: min(100% - 0.75rem, 1180px); gap: 0.9rem; }
-            .about-panel { border-radius: 14px; padding: 0.85rem; }
+        /* ── STORY ── */
+        .ab-section {
+            padding: 5rem 1.5rem;
         }
+        .ab-section-inner {
+            max-width: 1160px;
+            margin: 0 auto;
+        }
+        .ab-section-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: var(--about-green-pale);
+            color: var(--about-green);
+            font-size: 0.76rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            padding: 0.3rem 0.85rem;
+            border-radius: 100px;
+            margin-bottom: 1rem;
+        }
+        .ab-section-title {
+            margin: 0 0 1rem;
+            font-size: clamp(1.75rem, 3.5vw, 2.75rem);
+            font-weight: 900;
+            color: var(--about-ink);
+            letter-spacing: -0.03em;
+            line-height: 1.15;
+        }
+        .ab-section-title em {
+            font-style: normal;
+            color: var(--about-green);
+        }
+
+        .ab-story-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3.5rem;
+            align-items: center;
+        }
+        .ab-story-text p {
+            color: var(--about-muted);
+            line-height: 1.85;
+            font-size: 1rem;
+            margin: 0 0 1rem;
+        }
+        .ab-story-text p:last-child { margin-bottom: 0; }
+        .ab-story-visual {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        .ab-story-card {
+            background: linear-gradient(135deg, #fff 0%, #f0fdf4 100%);
+            border: 1px solid var(--about-border);
+            border-radius: 18px;
+            padding: 1.5rem 1.25rem;
+            box-shadow: var(--about-shadow);
+            text-align: center;
+        }
+        .ab-story-card:nth-child(1) { grid-column: 1 / -1; background: linear-gradient(135deg, #052e16, #0f5132); color: #fff; }
+        .ab-story-card:nth-child(1) .ab-story-card-title { color: #6ee7b7; }
+        .ab-story-card:nth-child(1) .ab-story-card-text { color: rgba(255,255,255,0.75); }
+        .ab-story-card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            background: rgba(34,197,94,0.12);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 0.75rem;
+            font-size: 1.3rem;
+            color: var(--about-green-mid);
+        }
+        .ab-story-card:nth-child(1) .ab-story-card-icon { background: rgba(110,231,183,0.18); color: #6ee7b7; }
+        .ab-story-card-title {
+            font-weight: 800;
+            font-size: 0.95rem;
+            color: var(--about-ink);
+            margin-bottom: 0.35rem;
+        }
+        .ab-story-card-text {
+            font-size: 0.87rem;
+            color: var(--about-muted);
+            line-height: 1.55;
+        }
+
+        /* ── STORY PARAGRAPHS (horizontal unlimited) ── */
+        .ab-story-header {
+            max-width: 800px;
+            margin-bottom: 2.5rem;
+        }
+        .ab-story-source {
+            display: grid;
+            gap: 1.1rem;
+        }
+        .ab-story-source p {
+            margin: 0;
+            color: var(--about-muted);
+            font-size: 1rem;
+            line-height: 1.8;
+        }
+        .ab-story-paragraphs {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            margin-top: 2rem;
+        }
+        .ab-story-para-card {
+            padding: 1.5rem 1.75rem;
+            border-left: 4px solid #16a34a;
+            border-radius: 0 12px 12px 0;
+            background: #fff;
+            box-shadow: 0 2px 12px rgba(15,23,42,0.06);
+            transition: box-shadow 0.18s;
+            position: relative;
+        }
+        .ab-story-para-card:hover { box-shadow: 0 6px 24px rgba(15,23,42,0.10); }
+        .ab-story-para-number {
+            font-size: 1.4rem;
+            font-weight: 900;
+            color: rgba(34,197,94,0.22);
+            letter-spacing: -0.04em;
+            margin-bottom: 0.6rem;
+            line-height: 1;
+        }
+        .ab-story-para-title {
+            font-size: 1rem;
+            font-weight: 800;
+            color: #14532d;
+            margin: 0 0 0.5rem;
+        }
+        .ab-story-para-text {
+            font-size: 0.93rem;
+            color: #475569;
+            line-height: 1.72;
+            margin: 0;
+        }
+        @media (max-width: 680px) {
+            .ab-story-para-card { padding: 1.1rem 1.25rem; }
+        }
+
+        /* ── VALUES ── */
+        .ab-values-bg { background: #f8fafc; }
+        .ab-values-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-top: 3rem;
+        }
+        .ab-value-card {
+            background: #fff;
+            border: 1px solid var(--about-border);
+            border-radius: var(--about-radius);
+            padding: 2rem 1.5rem;
+            box-shadow: 0 8px 28px rgba(15,23,42,0.06);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .ab-value-card:hover { transform: translateY(-4px); box-shadow: 0 20px 44px rgba(15,23,42,0.10); }
+        .ab-value-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: var(--about-green);
+            margin-bottom: 1.25rem;
+        }
+        .ab-value-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--about-ink);
+            margin: 0 0 0.65rem;
+        }
+        .ab-value-text {
+            font-size: 0.95rem;
+            color: var(--about-muted);
+            line-height: 1.7;
+            margin: 0;
+        }
+
+        /* ── WHY-US ROWS ── */
+        .ab-why-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3.5rem;
+            align-items: center;
+            margin-bottom: 4rem;
+        }
+        .ab-why-row:last-child { margin-bottom: 0; }
+        .ab-why-row.reverse { direction: rtl; }
+        .ab-why-row.reverse > * { direction: ltr; }
+        .ab-why-visual {
+            border-radius: var(--about-radius);
+            overflow: hidden;
+            background: linear-gradient(135deg, #052e16, #0f5132);
+            padding: 2.5rem 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            min-height: 280px;
+            justify-content: center;
+        }
+        .ab-why-icon-big {
+            font-size: 3rem;
+            color: #6ee7b7;
+        }
+        .ab-why-visual-title {
+            font-size: 1.4rem;
+            font-weight: 900;
+            color: #fff;
+            letter-spacing: -0.02em;
+        }
+        .ab-why-visual-sub {
+            font-size: 0.95rem;
+            color: rgba(255,255,255,0.65);
+            line-height: 1.65;
+        }
+        .ab-why-badge-row {
+            display: flex;
+            gap: 0.55rem;
+            flex-wrap: wrap;
+            margin-top: 0.25rem;
+        }
+        .ab-why-badge {
+            background: rgba(110,231,183,0.18);
+            border: 1px solid rgba(110,231,183,0.3);
+            color: #6ee7b7;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            padding: 0.25rem 0.7rem;
+            border-radius: 100px;
+        }
+        .ab-why-text h3 {
+            font-size: clamp(1.35rem, 2.5vw, 1.9rem);
+            font-weight: 900;
+            color: var(--about-ink);
+            letter-spacing: -0.025em;
+            margin: 0 0 1rem;
+        }
+        .ab-why-text h3 em { font-style: normal; color: var(--about-green); }
+        .ab-why-text p {
+            font-size: 1rem;
+            color: var(--about-muted);
+            line-height: 1.8;
+            margin: 0 0 0.9rem;
+        }
+        .ab-why-text p:last-child { margin: 0; }
+        .ab-check-list {
+            list-style: none;
+            margin: 1rem 0 0;
+            padding: 0;
+            display: grid;
+            gap: 0.5rem;
+        }
+        .ab-check-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.55rem;
+            font-size: 0.95rem;
+            color: var(--about-muted);
+            line-height: 1.55;
+        }
+        .ab-check-list li::before {
+            content: '';
+            flex-shrink: 0;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--about-green-pale);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%2316a34a'%3E%3Cpath fill-rule='evenodd' d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z' clip-rule='evenodd'/%3E%3C/svg%3E");
+            background-size: 12px;
+            background-position: center;
+            background-repeat: no-repeat;
+            margin-top: 1px;
+        }
+
+        /* ── PROMISE BANNER ── */
+        .ab-promise {
+            background: linear-gradient(135deg, #052e16 0%, #064e3b 50%, #0f5132 100%);
+            padding: 4rem 1.5rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .ab-promise::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse 70% 80% at 50% 100%, rgba(34,197,94,0.15) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .ab-promise-inner {
+            position: relative;
+            z-index: 1;
+            max-width: 780px;
+            margin: 0 auto;
+        }
+        .ab-promise-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 24px;
+            background: rgba(110,231,183,0.14);
+            border: 1px solid rgba(110,231,183,0.28);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: #6ee7b7;
+            margin: 0 auto 1.5rem;
+        }
+        .ab-promise h2 {
+            font-size: clamp(1.75rem, 3.5vw, 2.8rem);
+            font-weight: 900;
+            color: #fff;
+            letter-spacing: -0.03em;
+            margin: 0 0 0.9rem;
+        }
+        .ab-promise p {
+            font-size: 1.05rem;
+            color: rgba(255,255,255,0.72);
+            line-height: 1.75;
+            margin: 0 0 2rem;
+        }
+
+        /* ── FEATURES STRIP ── */
+        .ab-features-strip {
+            background: #fff;
+            border-top: 1px solid var(--about-border);
+            border-bottom: 1px solid var(--about-border);
+            padding: 1.75rem 1.5rem;
+        }
+        .ab-features-strip-inner {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0;
+        }
+        .ab-feature-chip {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 1.25rem;
+            border-right: 1px solid var(--about-border);
+        }
+        .ab-feature-chip:last-child { border-right: none; }
+        .ab-feature-chip-icon {
+            font-size: 1.3rem;
+            color: var(--about-green-mid);
+            flex-shrink: 0;
+        }
+        .ab-feature-chip-title {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--about-ink);
+        }
+        .ab-feature-chip-sub {
+            font-size: 0.78rem;
+            color: var(--about-muted);
+        }
+
+        /* ── DYNAMIC CONTENT BLOCKS ── */
+        .ab-dynamic-section { padding: 4.5rem 1.5rem; background: #f8fafc; }
+        .ab-dynamic-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.25rem;
+            margin-top: 2.5rem;
+        }
+        .ab-dynamic-card {
+            background: #fff;
+            border: 1px solid var(--about-border);
+            border-radius: 18px;
+            padding: 1.75rem 1.5rem;
+            box-shadow: 0 6px 22px rgba(15,23,42,0.06);
+        }
+        .ab-dynamic-card-number {
+            font-size: 2rem;
+            font-weight: 900;
+            color: var(--about-green-pale);
+            letter-spacing: -0.04em;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+        }
+        .ab-dynamic-card-title {
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: var(--about-ink);
+            margin: 0 0 0.6rem;
+        }
+        .ab-dynamic-card-text {
+            font-size: 0.93rem;
+            color: var(--about-muted);
+            line-height: 1.7;
+            margin: 0;
+        }
+
+        /* ── CTA ── */
+        .ab-cta {
+            padding: 5rem 1.5rem;
+            text-align: center;
+            background: #fff;
+        }
+        .ab-cta h2 {
+            font-size: clamp(1.75rem, 3.5vw, 2.6rem);
+            font-weight: 900;
+            color: var(--about-ink);
+            letter-spacing: -0.03em;
+            margin: 0 0 0.85rem;
+        }
+        .ab-cta h2 em { font-style: normal; color: var(--about-green); }
+        .ab-cta p {
+            font-size: 1.05rem;
+            color: var(--about-muted);
+            line-height: 1.7;
+            max-width: 560px;
+            margin: 0 auto 2rem;
+        }
+        .ab-cta-btns {
+            display: flex;
+            gap: 0.85rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 900px) {
+            .ab-stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .ab-stat-item { border-right: none; border-bottom: 1px solid rgba(34,197,94,0.2); padding: 1rem; }
+            .ab-stat-item:nth-child(odd) { border-right: 1px solid rgba(34,197,94,0.2); }
+            .ab-stat-item:last-child { border-bottom: none; }
+            .ab-stat-item:nth-last-child(2):nth-child(odd) { border-bottom: none; }
+            .ab-story-grid { grid-template-columns: 1fr; gap: 2.5rem; }
+            .ab-values-grid { grid-template-columns: 1fr 1fr; }
+            .ab-why-row { grid-template-columns: 1fr; gap: 2rem; }
+            .ab-why-row.reverse { direction: ltr; }
+            .ab-features-strip-inner { grid-template-columns: repeat(2, 1fr); }
+            .ab-feature-chip { border-right: none; border-bottom: 1px solid var(--about-border); }
+            .ab-feature-chip:nth-child(odd) { border-right: 1px solid var(--about-border); }
+            .ab-feature-chip:last-child, .ab-feature-chip:nth-last-child(2) { border-bottom: none; }
+        }
+        @media (max-width: 560px) {
+            .ab-hero { padding: 3.5rem 1rem 3rem; }
+            .ab-section { padding: 3.5rem 1rem; }
+            .ab-values-grid { grid-template-columns: 1fr; }
+            .ab-stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .ab-story-visual { grid-template-columns: 1fr; }
+            .ab-story-card:nth-child(1) { grid-column: 1; }
+            .ab-features-strip-inner { grid-template-columns: 1fr; }
+            .ab-feature-chip { border-right: none; border-bottom: 1px solid var(--about-border); }
+            .ab-feature-chip:last-child { border-bottom: none; }
+            .ab-feature-chip:nth-child(odd) { border-right: none; }
+        }
+
+        /* ── LOADING SKELETON ── */
+        .ab-skeleton {
+            background: linear-gradient(90deg, #f0fdf4 25%, #dcfce7 50%, #f0fdf4 75%);
+            background-size: 200% 100%;
+            animation: abSkel 1.4s infinite;
+            border-radius: 8px;
+        }
+        @keyframes abSkel { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        /* ── COUNTER ANIMATION ── */
+        .ab-counter { display: inline-block; }
     </style>
 </head>
 <body>
@@ -184,11 +650,8 @@
                 <span class="navbar-tagline">GOURMET GROCERIES</span>
             </a>
             <ul class="navbar-menu">
-                <li><a href="/">Home</a></li>
-                <li><a href="/products">Products</a></li>
                 <li><a href="/#categories">Categories</a></li>
                 <li><a href="/about" class="active">About</a></li>
-                <li><a href="/contact">Contact Us</a></li>
                 <li id="admin-link" class="hidden"><a href="/admin">Admin</a></li>
             </ul>
             <div class="navbar-actions">
@@ -205,7 +668,7 @@
                         <button id="account-toggle" class="icon-button" title="Account">
                             <i class="fas fa-user-circle"></i>
                         </button>
-                                                <div id="account-dropdown" class="account-dropdown hidden">
+                        <div id="account-dropdown" class="account-dropdown hidden">
                             <div class="accd-header">
                                 <div class="accd-avatar" id="account-avatar">U</div>
                                 <div class="accd-user">
@@ -244,46 +707,269 @@
         </div>
     </nav>
 
-    <section class="about-page-hero">
-        <h1 id="about-page-title">About Us</h1>
-    </section>
+    <!-- ── HERO ── -->
+    <header class="ab-hero" id="ab-hero">
+        <div class="ab-hero-badge"><i class="fas fa-leaf"></i> <span id="ab-hero-badge-txt">Est. 2020 &bull; Manipur, India</span></div>
+        <h1 id="ab-hero-title">We bring the <em>mountains</em> to your table</h1>
+        <p class="ab-hero-sub" id="ab-hero-sub">Mount Made is your trusted source for premium organic groceries, fresh mountain-grown produce, and pantry essentials delivered straight to your doorstep.</p>
+        <div class="ab-hero-ctas">
+            <a href="/products" class="ab-btn-primary"><i class="fas fa-shopping-basket"></i> Shop Now</a>
+            <a href="/contact" class="ab-btn-ghost"><i class="fas fa-envelope"></i> Get in Touch</a>
+        </div>
+        <div class="ab-hero-scroll" aria-hidden="true">
+            <span>Scroll</span>
+            <i class="fas fa-chevron-down"></i>
+        </div>
+    </header>
 
-    <main class="container about-page-wrap">
-        <section class="about-panel">
-            <h2 id="about-intro-title" class="about-panel-title">Welcome to Mount Made</h2>
-            <p id="about-intro-subtitle" class="about-intro-subtitle">Fresh essentials, quality you can trust, and a shopping experience built for everyday convenience.</p>
-            <div id="about-intro-content" class="about-intro-content"></div>
-        </section>
+    <!-- ── STATS RIBBON ── -->
+    <div class="ab-stats">
+        <div class="ab-stats-grid" id="ab-stats-grid">
+            <div class="ab-stat-item">
+                <div class="ab-stat-number"><span class="ab-counter" data-target="5" data-suffix="+">5+</span></div>
+                <div class="ab-stat-label">Years serving customers</div>
+            </div>
+            <div class="ab-stat-item">
+                <div class="ab-stat-number"><span class="ab-counter" data-target="200" data-suffix="+">200+</span></div>
+                <div class="ab-stat-label">Products available</div>
+            </div>
+            <div class="ab-stat-item">
+                <div class="ab-stat-number"><span class="ab-counter" data-target="10000" data-suffix="+">10k+</span></div>
+                <div class="ab-stat-label">Happy deliveries</div>
+            </div>
+            <div class="ab-stat-item">
+                <div class="ab-stat-number"><span class="ab-counter" data-target="98" data-suffix="%">98%</span></div>
+                <div class="ab-stat-label">Customer satisfaction</div>
+            </div>
+        </div>
+    </div>
 
-        <section class="about-panel">
-            <h2 id="about-mission-vision-title" class="about-panel-title">Our Mission &amp; Vision</h2>
-            <div id="about-grid" class="about-grid"></div>
-        </section>
-
-        <section class="about-panel">
-            <h2 class="about-panel-title">Business &amp; Support Transparency</h2>
-            <div class="about-grid">
-                <div class="about-card">
-                    <h3 class="about-card-title">Why customers trust us</h3>
-                    <p>Mount Made is built around dependable delivery, clear communication, and straightforward policies so customers know what to expect before they checkout.</p>
-                    <p style="margin-top: 0.55rem;">We publish our delivery, return, refund, and cancellation terms publicly so every order is easier to understand and review.</p>
-                </div>
-                <div class="about-card">
-                    <h3 class="about-card-title">Support that stays visible</h3>
-                    <p>Customers can reach us directly for order help, delivery questions, or payment concerns through our contact page and support channels.</p>
-                    <p style="margin-top: 0.55rem;">We encourage every shopper to review our policies and contact us early if anything needs clarification.</p>
+    <!-- ── FEATURE CHIPS ── -->
+    <div class="ab-features-strip">
+        <div class="ab-features-strip-inner">
+            <div class="ab-feature-chip">
+                <div class="ab-feature-chip-icon"><i class="fas fa-seedling"></i></div>
+                <div>
+                    <div class="ab-feature-chip-title">Farm to Table</div>
+                    <div class="ab-feature-chip-sub">Direct sourcing, zero middlemen</div>
                 </div>
             </div>
-        </section>
-    </main>
+            <div class="ab-feature-chip">
+                <div class="ab-feature-chip-icon"><i class="fas fa-shield-alt"></i></div>
+                <div>
+                    <div class="ab-feature-chip-title">Quality Assured</div>
+                    <div class="ab-feature-chip-sub">Inspected before every shipment</div>
+                </div>
+            </div>
+            <div class="ab-feature-chip">
+                <div class="ab-feature-chip-icon"><i class="fas fa-truck-fast"></i></div>
+                <div>
+                    <div class="ab-feature-chip-title">Swift Delivery</div>
+                    <div class="ab-feature-chip-sub">Fast, tracked and reliable</div>
+                </div>
+            </div>
+            <div class="ab-feature-chip">
+                <div class="ab-feature-chip-icon"><i class="fas fa-headset"></i></div>
+                <div>
+                    <div class="ab-feature-chip-title">Dedicated Support</div>
+                    <div class="ab-feature-chip-sub">Real help, whenever you need it</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── OUR STORY ── -->
+    <section class="ab-section">
+        <div class="ab-section-inner">
+            <div class="ab-story-header">
+                <div class="ab-section-tag"><i class="fas fa-book-open"></i> Our Story</div>
+                <h2 class="ab-section-title" id="ab-story-title">Born in the hills, <em>built for you</em></h2>
+                <div id="ab-story-body" class="ab-story-source">
+                    <p>Mount Made started with a simple belief: that the freshest, most wholesome groceries should be available to everyone, not just those who live near the farms. We source directly from trusted growers across Manipur's rich highlands.</p>
+                    <p>Every product that reaches your door has been carefully selected, quality-checked, and packed with care. We treat every order as if we are delivering to our own family.</p>
+                    <p>Today, we are proud to serve thousands of households who count on Mount Made for their daily essentials — and we take that responsibility seriously every single day.</p>
+                </div>
+            </div>
+            <div id="ab-story-paragraphs" class="ab-story-paragraphs">
+                <div class="ab-story-para-card">
+                    <div class="ab-story-para-number">01</div>
+                    <p class="ab-story-para-text">Mount Made started with a simple belief: that the freshest, most wholesome groceries should be available to everyone, not just those who live near the farms. We source directly from trusted growers across Manipur's rich highlands.</p>
+                </div>
+                <div class="ab-story-para-card">
+                    <div class="ab-story-para-number">02</div>
+                    <p class="ab-story-para-text">Every product that reaches your door has been carefully selected, quality-checked, and packed with care. We treat every order as if we are delivering to our own family.</p>
+                </div>
+                <div class="ab-story-para-card">
+                    <div class="ab-story-para-number">03</div>
+                    <p class="ab-story-para-text">Today, we are proud to serve thousands of households who count on Mount Made for their daily essentials — and we take that responsibility seriously every single day.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── VALUES ── -->
+    <section class="ab-section ab-values-bg">
+        <div class="ab-section-inner">
+            <div style="text-align:center; max-width:640px; margin:0 auto;">
+                <div class="ab-section-tag" style="margin:0 auto 1rem;"><i class="fas fa-heart"></i> Our Values</div>
+                <h2 class="ab-section-title" id="ab-values-title">Principles that <em>guide us</em></h2>
+                <p id="ab-values-sub" style="color:var(--about-muted); font-size:1rem; line-height:1.7; margin:0 auto;">Everything we do is shaped by a commitment to freshness, transparency, and genuine care for our customers and community.</p>
+            </div>
+            <div class="ab-values-grid" id="ab-values-grid">
+                <div class="ab-value-card">
+                    <div class="ab-value-icon"><i class="fas fa-seedling"></i></div>
+                    <h3 class="ab-value-title">Freshness First</h3>
+                    <p class="ab-value-text">We never compromise on freshness. Every item is sourced on short cycles so you always get produce at its peak quality.</p>
+                </div>
+                <div class="ab-value-card">
+                    <div class="ab-value-icon"><i class="fas fa-handshake"></i></div>
+                    <h3 class="ab-value-title">Honest Pricing</h3>
+                    <p class="ab-value-text">No hidden charges, no surprise fees. What you see is what you pay — clear and straightforward every single time.</p>
+                </div>
+                <div class="ab-value-card">
+                    <div class="ab-value-icon"><i class="fas fa-users"></i></div>
+                    <h3 class="ab-value-title">Community First</h3>
+                    <p class="ab-value-text">We support local farmers, create local jobs, and reinvest in the communities that make Mount Made possible.</p>
+                </div>
+                <div class="ab-value-card">
+                    <div class="ab-value-icon"><i class="fas fa-leaf"></i></div>
+                    <h3 class="ab-value-title">Sustainable Practices</h3>
+                    <p class="ab-value-text">From biodegradable packaging to minimal food waste, we take our environmental responsibility seriously.</p>
+                </div>
+                <div class="ab-value-card">
+                    <div class="ab-value-icon"><i class="fas fa-comment-dots"></i></div>
+                    <h3 class="ab-value-title">Customer Voice</h3>
+                    <p class="ab-value-text">Your feedback shapes our product range, our policies, and how we improve. Every review and message is read and acted on.</p>
+                </div>
+                <div class="ab-value-card">
+                    <div class="ab-value-icon"><i class="fas fa-lock"></i></div>
+                    <h3 class="ab-value-title">Safe &amp; Secure</h3>
+                    <p class="ab-value-text">Your personal and payment data is handled with industry-standard security measures so you can shop with complete confidence.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── WHY CHOOSE US ── -->
+    <section class="ab-section">
+        <div class="ab-section-inner">
+            <div style="text-align:center; max-width:640px; margin:0 auto 3.5rem;">
+                <div class="ab-section-tag" style="margin:0 auto 1rem;"><i class="fas fa-star"></i> Why Choose Us</div>
+                <h2 class="ab-section-title" id="ab-why-title">The Mount Made <em>difference</em></h2>
+            </div>
+
+            <div id="ab-why-rows">
+            <div class="ab-why-row">
+                <div class="ab-why-visual">
+                    <div class="ab-why-icon-big"><i class="fas fa-tractor"></i></div>
+                    <div class="ab-why-visual-title">Direct Farm Partnerships</div>
+                    <div class="ab-why-visual-sub">We work directly with over 40 local farms across northeast India, cutting out middlemen so you get fresher produce at better prices.</div>
+                    <div class="ab-why-badge-row">
+                        <span class="ab-why-badge">40+ Farms</span>
+                        <span class="ab-why-badge">Direct Sourcing</span>
+                        <span class="ab-why-badge">Northeast India</span>
+                    </div>
+                </div>
+                <div class="ab-why-text">
+                    <h3>Farm-fresh on <em>every order</em></h3>
+                    <p>Every product is sourced from trusted farm partners we have cultivated relationships with over years. Because we source directly, we can guarantee freshness standards that supermarkets simply cannot match.</p>
+                    <p>We visit farms, audit quality, and ensure ethical growing practices are followed so you can trust what arrives at your door.</p>
+                    <ul class="ab-check-list">
+                        <li>Sourced directly from verified farms</li>
+                        <li>No cold-storage sitting for weeks</li>
+                        <li>Seasonal and available produce only</li>
+                        <li>Regular farm audits and quality checks</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="ab-why-row reverse">
+                <div class="ab-why-visual">
+                    <div class="ab-why-icon-big"><i class="fas fa-truck"></i></div>
+                    <div class="ab-why-visual-title">Reliable Last-Mile Delivery</div>
+                    <div class="ab-why-visual-sub">Tracked shipments with real-time updates, careful packaging, and on-time delivery you can count on every time.</div>
+                    <div class="ab-why-badge-row">
+                        <span class="ab-why-badge">Tracked Orders</span>
+                        <span class="ab-why-badge">Careful Packaging</span>
+                        <span class="ab-why-badge">On Time</span>
+                    </div>
+                </div>
+                <div class="ab-why-text">
+                    <h3>Delivery that <em>shows up</em></h3>
+                    <p>From the moment you confirm your order to the moment it reaches your door, we track every step. Our delivery team is trained to handle food orders with care and speed.</p>
+                    <p>We believe that fast delivery should never mean sloppy delivery — which is why we invest in proper packaging and real-time tracking for every order.</p>
+                    <ul class="ab-check-list">
+                        <li>Live order tracking updates</li>
+                        <li>Secure, tamper-proof packaging</li>
+                        <li>Flexible delivery time windows</li>
+                        <li>Hassle-free rescheduling if needed</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="ab-why-row">
+                <div class="ab-why-visual">
+                    <div class="ab-why-icon-big"><i class="fas fa-headset"></i></div>
+                    <div class="ab-why-visual-title">Human Support, Always</div>
+                    <div class="ab-why-visual-sub">When something goes wrong, a real person picks up. No automated responses for real problems — just quick, caring resolution.</div>
+                    <div class="ab-why-badge-row">
+                        <span class="ab-why-badge">Real Agents</span>
+                        <span class="ab-why-badge">Fast Resolution</span>
+                        <span class="ab-why-badge">Returns Easy</span>
+                    </div>
+                </div>
+                <div class="ab-why-text">
+                    <h3>Support you can <em>actually reach</em></h3>
+                    <p>Whether you have a question about your order, need to report a damaged item, or simply want a recommendation — we are here. Our support team is trained to resolve issues fast, not pass them around.</p>
+                    <p>We also make returns and refunds easy because we believe that trust is built when things go right and when things go wrong.</p>
+                    <ul class="ab-check-list">
+                        <li>Clear return and refund policies</li>
+                        <li>Contact us directly via email or phone</li>
+                        <li>Order issues resolved within 24 hours</li>
+                        <li>Transparent complaint resolution</li>
+                    </ul>
+                </div>
+            </div>
+            </div><!-- /ab-why-rows -->
+        </div>
+    </section>
+
+    <!-- ── PROMISE BANNER ── -->
+    <section class="ab-promise">
+        <div class="ab-promise-inner">
+            <div class="ab-promise-icon"><i class="fas fa-award"></i></div>
+            <h2 id="ab-promise-title">Our Quality <em style="font-style:normal;color:#6ee7b7;">Guarantee</em></h2>
+            <p id="ab-promise-text">Every product sold on Mount Made is quality-checked, freshness-verified, and backed by our satisfaction guarantee. If you are not happy with your order, we will make it right — no questions asked.</p>
+            <div class="ab-hero-ctas">
+                <a href="/products" class="ab-btn-primary"><i class="fas fa-shopping-basket"></i> Shop Fresh Today</a>
+                <a href="/refund-policy" class="ab-btn-ghost"><i class="fas fa-file-alt"></i> View Our Policies</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── CTA ── -->
+    <section class="ab-cta">
+        <div class="ab-section-tag" style="margin:0 auto 1rem;"><i class="fas fa-rocket"></i> Ready to start?</div>
+        <h2 id="ab-cta-title">Fresh groceries, <em>one click away</em></h2>
+        <p id="ab-cta-sub">Explore hundreds of quality products and get them delivered right to your doorstep. Join thousands of happy Mount Made customers today.</p>
+        <div class="ab-cta-btns">
+            <a href="/products" class="ab-btn-primary" style="font-size:1rem; padding:0.85rem 2rem;"><i class="fas fa-store"></i> Browse Products</a>
+            <a href="/register" class="ab-btn-ghost" style="font-size:1rem; padding:0.85rem 2rem; background:var(--about-green-pale); color:var(--about-green); border-color:var(--about-border);"><i class="fas fa-user-plus"></i> Create Free Account</a>
+        </div>
+    </section>
 
     <footer class="footer">
+        <div class="footer-trust-row">
+            <div class="trust-badge"><i class="fas fa-lock"></i><span>Safe payments</span></div>
+            <div class="trust-badge"><i class="fas fa-award"></i><span>Quality checked</span></div>
+            <div class="trust-badge"><i class="fas fa-rotate-left"></i><span>Hassle-free support</span></div>
+            <div class="trust-badge"><i class="fas fa-truck-fast"></i><span>Quick dispatch</span></div>
+        </div>
         <div class="footer-content">
             <div class="footer-section">
                 <h3>Mount Made</h3>
                 <p>Premium organic food products from mountain farms to your table.</p>
             </div>
-
             <div class="footer-section">
                 <h3>Quick Links</h3>
                 <ul>
@@ -293,7 +979,6 @@
                     <li><a href="/register?type=wholesale">Wholesale</a></li>
                 </ul>
             </div>
-
             <div class="footer-section">
                 <h3>Customer Service</h3>
                 <ul>
@@ -303,7 +988,6 @@
                     <li><a href="/faq">FAQs</a></li>
                 </ul>
             </div>
-
             <div class="footer-section">
                 <h3>Contact</h3>
                 <ul>
@@ -313,7 +997,6 @@
                 </ul>
             </div>
         </div>
-
         <div class="footer-bottom">
             <p>&copy; 2026 Mount Made. All rights reserved.</p>
         </div>
@@ -321,8 +1004,200 @@
 
     <script src="/js/main.js"></script>
     <script>
-        function escapeHtml(value) {
-            return String(value || '')
+        // ── Animated counters ──
+        function animateCounter(el) {
+            const target = parseInt(el.dataset.target, 10);
+            const suffix = el.dataset.suffix || '';
+            const duration = 1800;
+            const start = performance.now();
+            const isLarge = target >= 1000;
+            function format(n) {
+                if (n >= 1000) return (n / 1000).toFixed(0) + 'k';
+                return n.toString();
+            }
+            function step(now) {
+                const elapsed = now - start;
+                const progress = Math.min(elapsed / duration, 1);
+                const ease = 1 - Math.pow(1 - progress, 3);
+                const current = Math.floor(ease * target);
+                el.textContent = (isLarge ? format(current) : current) + suffix;
+                if (progress < 1) requestAnimationFrame(step);
+            }
+            requestAnimationFrame(step);
+        }
+
+        // Trigger counters when stats section enters viewport
+        const statsSection = document.querySelector('.ab-stats');
+        if (statsSection) {
+            const obs = new IntersectionObserver((entries) => {
+                if (entries[0].isIntersecting) {
+                    document.querySelectorAll('.ab-counter').forEach(animateCounter);
+                    obs.disconnect();
+                }
+            }, { threshold: 0.3 });
+            obs.observe(statsSection);
+        }
+
+        // ── Load and apply all About Us settings ──
+        (async function loadAboutPageData() {
+            try {
+                const resp = await api.get('/products/settings');
+                const s = (resp && resp.settings) || {};
+
+                // ── Hero ──
+                const badge = document.getElementById('ab-hero-badge-txt');
+                if (badge && s.about_hero_badge) badge.textContent = s.about_hero_badge;
+                const heroTitleEl = document.getElementById('ab-hero-title');
+                if (heroTitleEl && s.about_hero_title) heroTitleEl.textContent = s.about_hero_title;
+                const heroSubEl = document.getElementById('ab-hero-sub');
+                if (heroSubEl && s.about_hero_sub) heroSubEl.textContent = s.about_hero_sub;
+
+                // ── Stats (rebuild) ──
+                const statsGrid = document.getElementById('ab-stats-grid');
+                if (statsGrid) {
+                    const statDefaults = [
+                        { num:'5', suf:'+', label:'Years serving customers' },
+                        { num:'200', suf:'+', label:'Products available' },
+                        { num:'10000', suf:'+', label:'Happy deliveries' },
+                        { num:'98', suf:'%', label:'Customer satisfaction' },
+                    ];
+                    const stats = statDefaults.map((d, i) => ({
+                        num: (s[`about_stat_${i+1}_number`] || d.num).trim(),
+                        suf: (s[`about_stat_${i+1}_suffix`] || d.suf).trim(),
+                        label: (s[`about_stat_${i+1}_label`] || d.label).trim(),
+                    }));
+                    const hasStatSettings = [1,2,3,4].some(i => s[`about_stat_${i}_number`]);
+                    if (hasStatSettings) {
+                        statsGrid.innerHTML = stats.map(st => {
+                            const target = parseInt(st.num, 10) || 0;
+                            const display = target >= 1000 ? (target/1000).toFixed(0)+'k'+st.suf : st.num+st.suf;
+                            return `<div class="ab-stat-item"><div class="ab-stat-number"><span class="ab-counter" data-target="${target}" data-suffix="${escapeHtml(st.suf)}">${escapeHtml(display)}</span></div><div class="ab-stat-label">${escapeHtml(st.label)}</div></div>`;
+                        }).join('');
+                    }
+                }
+
+                // ── Story title & body ──
+                const storyTitleEl = document.getElementById('ab-story-title');
+                if (storyTitleEl && s.about_story_title) storyTitleEl.textContent = s.about_story_title;
+                const storyBodyEl = document.getElementById('ab-story-body');
+                if (storyBodyEl && s.about_story_body) {
+                    const storyParagraphs = s.about_story_body.split(/\n+/).map(p => p.trim()).filter(Boolean);
+                    if (storyParagraphs.length) {
+                        storyBodyEl.innerHTML = storyParagraphs.map(text => `<p>${escapeHtml(text)}</p>`).join('');
+                    }
+                }
+
+                // ── Story paragraph cards (from admin card editor) ──
+                const storyParasEl = document.getElementById('ab-story-paragraphs');
+                if (storyParasEl && s.about_story_paragraphs) {
+                    try {
+                        const paras = JSON.parse(s.about_story_paragraphs);
+                        if (Array.isArray(paras) && paras.length > 0) {
+                            storyParasEl.innerHTML = paras.map((p, i) => {
+                                const num = String(i + 1).padStart(2, '0');
+                                const titleHtml = p.title ? `<h4 class="ab-story-para-title">${escapeHtml(p.title)}</h4>` : '';
+                                return `<div class="ab-story-para-card"><div class="ab-story-para-number">${num}</div>${titleHtml}<p class="ab-story-para-text">${escapeHtml(p.text || '')}</p></div>`;
+                            }).join('');
+                        }
+                    } catch (e) { console.warn('story paragraphs parse error', e); }
+                }
+
+                // ── Values ──
+                const valuesTitleEl = document.getElementById('ab-values-title');
+                if (valuesTitleEl && s.about_values_title) valuesTitleEl.textContent = s.about_values_title;
+                const valuesSubEl = document.getElementById('ab-values-sub');
+                if (valuesSubEl && s.about_values_sub) valuesSubEl.textContent = s.about_values_sub;
+                const valuesGrid = document.getElementById('ab-values-grid');
+                if (valuesGrid) {
+                    const vIcons = ['fa-seedling','fa-handshake','fa-users','fa-leaf','fa-comment-dots','fa-lock'];
+                    const vDefaults = ['Freshness First','Honest Pricing','Community First','Sustainable Practices','Customer Voice','Safe & Secure'];
+                    const vTexts = [
+                        'We never compromise on freshness. Every item is sourced on short cycles so you always get produce at its peak quality.',
+                        'No hidden charges, no surprise fees. What you see is what you pay — clear and straightforward every single time.',
+                        'We support local farmers, create local jobs, and reinvest in the communities that make Mount Made possible.',
+                        'From biodegradable packaging to minimal food waste, we take our environmental responsibility seriously.',
+                        'Your feedback shapes our product range, our policies, and how we improve. Every review and message is read and acted on.',
+                        'Your personal and payment data is handled with industry-standard security measures so you can shop with complete confidence.',
+                    ];
+                    const hasValueSettings = [1,2,3,4,5,6].some(i => s[`about_value_${i}_title`]);
+                    if (hasValueSettings) {
+                        valuesGrid.innerHTML = vIcons.map((icon, i) => {
+                            const title = (s[`about_value_${i+1}_title`] || vDefaults[i]).trim();
+                            const text = (s[`about_value_${i+1}_text`] || vTexts[i]).trim();
+                            return `<div class="ab-value-card"><div class="ab-value-icon"><i class="fas ${icon}"></i></div><h3 class="ab-value-title">${escapeHtml(title)}</h3><p class="ab-value-text">${escapeHtml(text)}</p></div>`;
+                        }).join('');
+                    }
+                }
+
+                // ── Why Choose Us (rebuild rows) ──
+                const whyTitleEl = document.getElementById('ab-why-title');
+                if (whyTitleEl && s.about_why_title) whyTitleEl.textContent = s.about_why_title;
+                const whyRowsEl = document.getElementById('ab-why-rows');
+                if (whyRowsEl) {
+                    const whyDefs = [
+                        { icon:'fa-tractor', vtitle:'Direct Farm Partnerships', vsub:'We work directly with over 40 local farms across northeast India, cutting out middlemen so you get fresher produce at better prices.', badges:'40+ Farms,Direct Sourcing,Northeast India', heading:'Farm-fresh on every order', body:'Every product is sourced from trusted farm partners we have cultivated relationships with over years. Because we source directly, we can guarantee freshness standards that supermarkets simply cannot match.\nWe visit farms, audit quality, and ensure ethical growing practices are followed so you can trust what arrives at your door.', bullets:'Sourced directly from verified farms\nNo cold-storage sitting for weeks\nSeasonal and available produce only\nRegular farm audits and quality checks', reverse:false },
+                        { icon:'fa-truck', vtitle:'Reliable Last-Mile Delivery', vsub:'Tracked shipments with real-time updates, careful packaging, and on-time delivery you can count on every time.', badges:'Tracked Orders,Careful Packaging,On Time', heading:'Delivery that shows up', body:'From the moment you confirm your order to the moment it reaches your door, we track every step. Our delivery team is trained to handle food orders with care and speed.\nWe believe that fast delivery should never mean sloppy delivery — which is why we invest in proper packaging and real-time tracking for every order.', bullets:'Live order tracking updates\nSecure, tamper-proof packaging\nFlexible delivery time windows\nHassle-free rescheduling if needed', reverse:true },
+                        { icon:'fa-headset', vtitle:'Human Support, Always', vsub:'When something goes wrong, a real person picks up. No automated responses for real problems — just quick, caring resolution.', badges:'Real Agents,Fast Resolution,Returns Easy', heading:'Support you can actually reach', body:'Whether you have a question about your order, need to report a damaged item, or simply want a recommendation — we are here. Our support team is trained to resolve issues fast, not pass them around.\nWe also make returns and refunds easy because we believe that trust is built when things go right and when things go wrong.', bullets:'Clear return and refund policies\nContact us directly via email or phone\nOrder issues resolved within 24 hours\nTransparent complaint resolution', reverse:false },
+                    ];
+                    const hasWhySettings = [1,2,3].some(n => s[`about_why_${n}_vtitle`] || s[`about_why_${n}_heading`]);
+                    if (hasWhySettings) {
+                        whyRowsEl.innerHTML = whyDefs.map((d, i) => {
+                            const n = i + 1;
+                            const vtitle = (s[`about_why_${n}_vtitle`] || d.vtitle).trim();
+                            const vsub   = (s[`about_why_${n}_vsub`]   || d.vsub).trim();
+                            const badgesStr = (s[`about_why_${n}_badges`] || d.badges).trim();
+                            const badges = badgesStr.split(',').map(b => b.trim()).filter(Boolean);
+                            const heading = (s[`about_why_${n}_heading`] || d.heading).trim();
+                            const bodyStr = (s[`about_why_${n}_body`]    || d.body).trim();
+                            const bodyParas = bodyStr.split(/\n+/).map(p => p.trim()).filter(Boolean);
+                            const bulletsStr = (s[`about_why_${n}_bullets`] || d.bullets).trim();
+                            const bullets = bulletsStr.split('\n').map(b => b.trim()).filter(Boolean);
+                            return `
+                                <div class="ab-why-row${d.reverse ? ' reverse' : ''}">
+                                    <div class="ab-why-visual">
+                                        <div class="ab-why-icon-big"><i class="fas ${d.icon}"></i></div>
+                                        <div class="ab-why-visual-title">${escapeHtml(vtitle)}</div>
+                                        <div class="ab-why-visual-sub">${escapeHtml(vsub)}</div>
+                                        <div class="ab-why-badge-row">${badges.map(b => `<span class="ab-why-badge">${escapeHtml(b)}</span>`).join('')}</div>
+                                    </div>
+                                    <div class="ab-why-text">
+                                        <h3>${escapeHtml(heading)}</h3>
+                                        ${bodyParas.map(p => `<p>${escapeHtml(p)}</p>`).join('')}
+                                        <ul class="ab-check-list">${bullets.map(b => `<li>${escapeHtml(b)}</li>`).join('')}</ul>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
+                    }
+                }
+
+                // ── Promise banner ──
+                const promTitleEl = document.getElementById('ab-promise-title');
+                if (promTitleEl && s.about_promise_title) promTitleEl.textContent = s.about_promise_title;
+                const promTextEl  = document.getElementById('ab-promise-text');
+                if (promTextEl  && s.about_promise_text)  promTextEl.textContent  = s.about_promise_text;
+
+                // ── CTA ──
+                const ctaTitleEl = document.getElementById('ab-cta-title');
+                if (ctaTitleEl && s.about_cta_title) ctaTitleEl.textContent = s.about_cta_title;
+                const ctaSubEl   = document.getElementById('ab-cta-sub');
+                if (ctaSubEl   && s.about_cta_sub)   ctaSubEl.textContent   = s.about_cta_sub;
+
+                // ── Footer contact info ──
+                const fce = document.getElementById('footer-contact-email');
+                if (fce && s.contact_email) fce.textContent = s.contact_email;
+                const fcp = document.getElementById('footer-contact-phone');
+                if (fcp && s.contact_phone) fcp.textContent = s.contact_phone;
+                const fcl = document.getElementById('footer-contact-location');
+                if (fcl && s.contact_location) fcl.textContent = s.contact_location;
+
+            } catch (e) {
+                console.warn('About page: could not load settings', e);
+            }
+        })();
+
+        function escapeHtml(v) {
+            return String(v || '')
                 .replace(/&/g, '&amp;')
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;')
@@ -330,191 +1205,22 @@
                 .replace(/'/g, '&#39;');
         }
 
-        function getBoxShape(value) {
-            return String(value || '').trim().toLowerCase() === 'square' ? 'square' : 'rectangle';
-        }
-
-        function boxRadiusFor(shape) {
-            return getBoxShape(shape) === 'square' ? '0px' : '14px';
-        }
-
-        function renderBlock(blockText) {
-            const normalized = String(blockText || '').replace(/\r\n/g, '\n').trim();
-            if (!normalized) return '';
-
-            const lines = normalized
-                .split('\n')
-                .map((line) => line.trim())
-                .filter(Boolean);
-
-            const allNumbered = lines.length > 0 && lines.every((line) => /^\d+[.)\-\s]/.test(line));
-            if (allNumbered) {
-                const items = lines
-                    .map((line) => line.replace(/^\d+[.)\-\s]*/, '').trim())
-                    .filter(Boolean)
-                    .map((line) => `<li>${escapeHtml(line)}</li>`)
-                    .join('');
-                return `<ol class="about-list">${items}</ol>`;
-            }
-
-            return lines.map((line) => `<p>${escapeHtml(line)}</p>`).join('');
-        }
-
-        function applyAboutUsStyles(settings) {
-            const fontFamily = String(settings.about_us_font_family || 'Segoe UI').trim() || 'Segoe UI';
-            const textAlign = String(settings.about_us_text_align || 'left').trim().toLowerCase() || 'left';
-
-            document.documentElement.style.setProperty('--about-us-font-family', fontFamily);
-            document.documentElement.style.setProperty('--about-us-text-align', textAlign);
-
-            const aboutPageWrap = document.querySelector('.about-page-wrap');
-            const aboutPanel = document.querySelector('.about-panel');
-            const introContent = document.getElementById('about-intro-content');
-            const gridEl = document.getElementById('about-grid');
-
-            if (aboutPageWrap) {
-                aboutPageWrap.style.fontFamily = fontFamily;
-                aboutPageWrap.style.textAlign = textAlign;
-            }
-            if (aboutPanel) {
-                aboutPanel.style.fontFamily = fontFamily;
-                aboutPanel.style.textAlign = textAlign;
-            }
-            if (introContent) {
-                introContent.style.fontFamily = fontFamily;
-                introContent.style.textAlign = textAlign;
-            }
-            if (gridEl) {
-                gridEl.style.fontFamily = fontFamily;
-                gridEl.style.textAlign = textAlign;
-            }
-        }
-
-        async function loadAboutUsContent() {
-            const pageTitleEl = document.getElementById('about-page-title');
-            const introTitleEl = document.getElementById('about-intro-title');
-            const missionVisionTitleEl = document.getElementById('about-mission-vision-title');
-            const introSubtitleEl = document.getElementById('about-intro-subtitle');
-            const introContentEl = document.getElementById('about-intro-content');
-            const gridEl = document.getElementById('about-grid');
-
-            try {
-                const response = await api.get('/products/settings');
-                const settings = response?.settings || {};
-
-                applyAboutUsStyles(settings);
-
-                const aboutPageTitle = (settings.about_page_title || '').trim() || 'About Us';
-                const aboutIntroTitle = (settings.about_intro_title || '').trim() || 'Welcome to Mount Made';
-                const missionVisionTitle = (settings.about_mission_vision_title || '').trim() || 'Our Mission & Vision';
-                const description = (settings.about_us_description || '').trim();
-                const descriptionShape = getBoxShape(settings.about_us_description_box_shape);
-                const defaultIntroSubtitle = 'Fresh essentials, quality you can trust, and a shopping experience built for everyday convenience.';
-
-                // Load all 5 paragraph blocks
-                const blocks = [1, 2, 3, 4, 5].map((idx) => ({
-                    heading: String(settings[`about_us_heading_${idx}`] || '').trim(),
-                    paragraph: String(settings[`about_us_paragraph_${idx}`] || '').trim(),
-                    index: idx
-                })).filter((item) => item.paragraph);
-
-                // Update page title
-                if (pageTitleEl) pageTitleEl.textContent = aboutPageTitle;
-
-                // Update intro section
-                if (introTitleEl) introTitleEl.textContent = aboutIntroTitle;
-                if (introSubtitleEl) introSubtitleEl.textContent = defaultIntroSubtitle;
-
-                // Render intro content box with the description
-                if (introContentEl) {
-                    introContentEl.style.border = '1px solid rgba(34, 197, 94, 0.18)';
-                    introContentEl.style.borderRadius = boxRadiusFor(descriptionShape);
-                    introContentEl.style.background = 'linear-gradient(180deg, #ffffff, #f7fff9)';
-                    introContentEl.style.padding = '0.9rem 1rem';
-                    introContentEl.style.boxShadow = '0 8px 18px rgba(15, 23, 42, 0.06)';
-                    introContentEl.innerHTML = description
-                        ? renderBlock(description)
-                        : '<p>Mount Made brings premium, carefully sourced groceries and household staples to your doorstep with a simple, reliable experience.</p>';
-                }
-
-                // Update mission & vision title
-                if (missionVisionTitleEl) missionVisionTitleEl.textContent = missionVisionTitle;
-
-                // Render grid cards
-                if (gridEl) {
-                    if (blocks.length === 0) {
-                        // Show default placeholder cards when no content exists
-                        gridEl.innerHTML = `
-                            <article class="about-card">
-                                <h3 class="about-card-title">Quality & Sourcing</h3>
-                                <p>We carefully select each product to ensure premium quality and freshness for our customers.</p>
-                            </article>
-                            <article class="about-card">
-                                <h3 class="about-card-title">Reliability & Trust</h3>
-                                <p>Your trust is our foundation. We maintain transparent practices and honest communication.</p>
-                            </article>
-                            <article class="about-card">
-                                <h3 class="about-card-title">Convenience & Support</h3>
-                                <p>Easy ordering, fast delivery, and dedicated customer support for your everyday needs.</p>
-                            </article>
-                        `;
-                    } else {
-                        gridEl.innerHTML = blocks
-                            .map((block) => {
-                                const shape = getBoxShape(settings[`about_us_paragraph_${block.index}_box_shape`]);
-                                return `
-                                    <article class="about-card" style="border-radius:${boxRadiusFor(shape)};">
-                                        <h3 class="about-card-title">${escapeHtml(block.heading || `Section ${block.index}`)}</h3>
-                                        ${renderBlock(block.paragraph)}
-                                    </article>
-                                `;
-                            })
-                            .join('');
-                    }
-                }
-
-            } catch (error) {
-                console.error('Failed to load About Us content:', error);
-                // Render default placeholder cards on error
-                if (gridEl) {
-                    gridEl.innerHTML = `
-                        <article class="about-card">
-                            <h3 class="about-card-title">Quality & Sourcing</h3>
-                            <p>We carefully select each product to ensure premium quality and freshness for our customers.</p>
-                        </article>
-                        <article class="about-card">
-                            <h3 class="about-card-title">Reliability & Trust</h3>
-                            <p>Your trust is our foundation. We maintain transparent practices and honest communication.</p>
-                        </article>
-                        <article class="about-card">
-                            <h3 class="about-card-title">Convenience & Support</h3>
-                            <p>Easy ordering, fast delivery, and dedicated customer support for your everyday needs.</p>
-                        </article>
-                    `;
-                }
-            }
-        }
-
+        // ── Account dropdown ──
         document.addEventListener('DOMContentLoaded', () => {
-            loadAboutUsContent();
-
-            const accountToggle = document.getElementById('account-toggle');
-            const accountDropdown = document.getElementById('account-dropdown');
-            if (accountToggle && accountDropdown) {
-                accountToggle.addEventListener('click', (e) => {
+            const toggle = document.getElementById('account-toggle');
+            const dropdown = document.getElementById('account-dropdown');
+            if (toggle && dropdown) {
+                toggle.addEventListener('click', e => {
                     e.stopPropagation();
-                    accountDropdown.classList.toggle('hidden');
+                    dropdown.classList.toggle('hidden');
                 });
-                document.addEventListener('click', (e) => {
-                    if (!e.target.closest('.account-menu')) {
-                        accountDropdown.classList.add('hidden');
-                    }
+                document.addEventListener('click', e => {
+                    if (!e.target.closest('.account-menu')) dropdown.classList.add('hidden');
                 });
             }
-
-            const accountLogout = document.getElementById('account-logout');
-            if (accountLogout) {
-                accountLogout.addEventListener('click', async () => {
+            const logoutBtn = document.getElementById('account-logout');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', async () => {
                     if (await showConfirmDialog('Are you sure you want to logout?', { title: 'Logout', confirmText: 'Logout' })) {
                         await auth.logout();
                     }

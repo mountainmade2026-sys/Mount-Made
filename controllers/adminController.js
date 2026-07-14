@@ -2577,6 +2577,42 @@ exports.updateSiteSettings = async (req, res) => {
     if (about_us_paragraph_5 !== undefined) {
       updates.push({ key: 'about_us_paragraph_5', value: String(about_us_paragraph_5 || '').trim() });
     }
+
+    const aboutPageEditorKeys = new Set([
+      'about_hero_badge', 'about_hero_title', 'about_hero_sub',
+      'about_story_title', 'about_story_body', 'about_story_paragraphs',
+      'about_values_title', 'about_values_sub',
+      'about_why_title',
+      'about_promise_title', 'about_promise_text',
+      'about_cta_title', 'about_cta_sub'
+    ]);
+
+    for (let index = 1; index <= 4; index += 1) {
+      aboutPageEditorKeys.add(`about_stat_${index}_number`);
+      aboutPageEditorKeys.add(`about_stat_${index}_suffix`);
+      aboutPageEditorKeys.add(`about_stat_${index}_label`);
+    }
+
+    for (let index = 1; index <= 6; index += 1) {
+      aboutPageEditorKeys.add(`about_value_${index}_title`);
+      aboutPageEditorKeys.add(`about_value_${index}_text`);
+    }
+
+    for (let index = 1; index <= 3; index += 1) {
+      aboutPageEditorKeys.add(`about_why_${index}_vtitle`);
+      aboutPageEditorKeys.add(`about_why_${index}_vsub`);
+      aboutPageEditorKeys.add(`about_why_${index}_badges`);
+      aboutPageEditorKeys.add(`about_why_${index}_heading`);
+      aboutPageEditorKeys.add(`about_why_${index}_body`);
+      aboutPageEditorKeys.add(`about_why_${index}_bullets`);
+    }
+
+    for (const key of aboutPageEditorKeys) {
+      if (req.body?.[key] !== undefined) {
+        updates.push({ key, value: String(req.body[key] || '').trim() });
+      }
+    }
+
     if (contact_email !== undefined) {
       const val = String(contact_email || '').trim();
       if (val && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {

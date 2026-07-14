@@ -2767,131 +2767,164 @@
 
                 <div id="ss-sub-about" class="data-table-container" style="margin-top: 1.5rem;">
                     <div class="table-header">
-                        <h3>About Us Content</h3>
+                        <h3>About Us Page Editor</h3>
                     </div>
                     <div style="padding: 2rem;">
-                        <p style="color: var(--text-muted); margin-bottom: 1.5rem;">
-                            Manage the public About Us section dynamically. Add description and 5 paragraph blocks. Numbered points (1, 2, 3...) are supported.
-                        </p>
+                        <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Edit every section of the public About Us page. Leave any field blank to keep the built-in default. Save to publish changes instantly.</p>
 
-                        <div class="form-group" style="margin-bottom: 1rem;">
-                            <label class="form-label" for="about-us-description">About Us Description</label>
-                            <textarea id="about-us-description" class="form-input" rows="3" placeholder="Short intro for About Us section"></textarea>
-                            <div style="margin-top: 0.45rem;">
-                                <label class="form-label" for="about-us-description-box-shape" style="font-size: 0.88rem;">Description Box Shape</label>
-                                <select id="about-us-description-box-shape" class="form-input">
-                                    <option value="rectangle">Rectangle</option>
-                                    <option value="square">Square</option>
-                                </select>
+                        <!-- HERO -->
+                        <details open style="margin-bottom:1.5rem; border:1px solid var(--border); border-radius:10px; overflow:hidden;">
+                            <summary style="padding:0.85rem 1.2rem; font-weight:700; cursor:pointer; background:var(--bg-secondary); user-select:none;">&#127968; Hero Banner</summary>
+                            <div style="padding:1.25rem; display:grid; gap:0.75rem;">
+                                <div class="form-group"><label class="form-label" for="ab-hero-badge">Badge text</label><input type="text" id="ab-hero-badge" class="form-input" placeholder="Est. 2020 &bull; Manipur, India"></div>
+                                <div class="form-group"><label class="form-label" for="ab-hero-title">Main headline</label><input type="text" id="ab-hero-title" class="form-input" placeholder="We bring the mountains to your table"></div>
+                                <div class="form-group"><label class="form-label" for="ab-hero-sub">Subtitle paragraph</label><textarea id="ab-hero-sub" class="form-input" rows="2" placeholder="Mount Made is your trusted source..."></textarea></div>
                             </div>
-                        </div>
+                        </details>
 
-                        <div class="form-row" style="margin-bottom: 1rem;">
-                            <div>
-                                <label class="form-label" for="about-page-title">About Page Main Title</label>
-                                <input type="text" id="about-page-title" class="form-input" placeholder="e.g., About Us">
+                        <!-- STATS -->
+                        <details style="margin-bottom:1.5rem; border:1px solid var(--border); border-radius:10px; overflow:hidden;">
+                            <summary style="padding:0.85rem 1.2rem; font-weight:700; cursor:pointer; background:var(--bg-secondary); user-select:none;">&#128200; Stats Strip (4 numbers)</summary>
+                            <div style="padding:1.25rem; display:grid; gap:1rem;">
+                                <p style="color:var(--text-muted); font-size:0.88rem; margin:0;">For each stat: enter the number (e.g. 10000 → shown as 10k), the suffix (+, %, k+…), and the label below.</p>
+                                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:1rem;">
+                                    <div style="border:1px solid var(--border); border-radius:8px; padding:1rem;">
+                                        <strong style="font-size:0.82rem;">Stat 1</strong>
+                                        <div class="form-row" style="gap:0.5rem; margin-top:0.5rem;">
+                                            <div><label class="form-label" style="font-size:0.8rem;">Number</label><input type="text" id="ab-stat-1-number" class="form-input" placeholder="5"></div>
+                                            <div><label class="form-label" style="font-size:0.8rem;">Suffix</label><input type="text" id="ab-stat-1-suffix" class="form-input" placeholder="+"></div>
+                                        </div>
+                                        <div class="form-group" style="margin-top:0.5rem;"><label class="form-label" style="font-size:0.8rem;">Label</label><input type="text" id="ab-stat-1-label" class="form-input" placeholder="Years serving customers"></div>
+                                    </div>
+                                    <div style="border:1px solid var(--border); border-radius:8px; padding:1rem;">
+                                        <strong style="font-size:0.82rem;">Stat 2</strong>
+                                        <div class="form-row" style="gap:0.5rem; margin-top:0.5rem;">
+                                            <div><label class="form-label" style="font-size:0.8rem;">Number</label><input type="text" id="ab-stat-2-number" class="form-input" placeholder="200"></div>
+                                            <div><label class="form-label" style="font-size:0.8rem;">Suffix</label><input type="text" id="ab-stat-2-suffix" class="form-input" placeholder="+"></div>
+                                        </div>
+                                        <div class="form-group" style="margin-top:0.5rem;"><label class="form-label" style="font-size:0.8rem;">Label</label><input type="text" id="ab-stat-2-label" class="form-input" placeholder="Products available"></div>
+                                    </div>
+                                    <div style="border:1px solid var(--border); border-radius:8px; padding:1rem;">
+                                        <strong style="font-size:0.82rem;">Stat 3</strong>
+                                        <div class="form-row" style="gap:0.5rem; margin-top:0.5rem;">
+                                            <div><label class="form-label" style="font-size:0.8rem;">Number</label><input type="text" id="ab-stat-3-number" class="form-input" placeholder="10000"></div>
+                                            <div><label class="form-label" style="font-size:0.8rem;">Suffix</label><input type="text" id="ab-stat-3-suffix" class="form-input" placeholder="+"></div>
+                                        </div>
+                                        <div class="form-group" style="margin-top:0.5rem;"><label class="form-label" style="font-size:0.8rem;">Label</label><input type="text" id="ab-stat-3-label" class="form-input" placeholder="Happy deliveries"></div>
+                                    </div>
+                                    <div style="border:1px solid var(--border); border-radius:8px; padding:1rem;">
+                                        <strong style="font-size:0.82rem;">Stat 4</strong>
+                                        <div class="form-row" style="gap:0.5rem; margin-top:0.5rem;">
+                                            <div><label class="form-label" style="font-size:0.8rem;">Number</label><input type="text" id="ab-stat-4-number" class="form-input" placeholder="98"></div>
+                                            <div><label class="form-label" style="font-size:0.8rem;">Suffix</label><input type="text" id="ab-stat-4-suffix" class="form-input" placeholder="%"></div>
+                                        </div>
+                                        <div class="form-group" style="margin-top:0.5rem;"><label class="form-label" style="font-size:0.8rem;">Label</label><input type="text" id="ab-stat-4-label" class="form-input" placeholder="Customer satisfaction"></div>
+                                    </div>
+                                </div>
                             </div>
-                            <div>
-                                <label class="form-label" for="about-intro-title">About Intro Section Title</label>
-                                <input type="text" id="about-intro-title" class="form-input" placeholder="e.g., Welcome to Mount Made">
+                        </details>
+
+                        <!-- OUR STORY -->
+                        <details style="margin-bottom:1.5rem; border:1px solid var(--border); border-radius:10px; overflow:hidden;">
+                            <summary style="padding:0.85rem 1.2rem; font-weight:700; cursor:pointer; background:var(--bg-secondary); user-select:none;">&#128214; Our Story</summary>
+                            <div style="padding:1.25rem; display:grid; gap:0.75rem;">
+                                <div class="form-group"><label class="form-label" for="ab-story-title">Section heading</label><input type="text" id="ab-story-title" class="form-input" placeholder="Born in the hills, built for you"></div>
+                                <div class="form-group"><label class="form-label" for="ab-story-body">Story paragraphs (one per line)</label><textarea id="ab-story-body" class="form-input" rows="5" placeholder="Mount Made started with a simple belief...&#10;Every product that reaches your door...&#10;Today, we are proud to serve..."></textarea></div>
+                                <div class="form-group" style="margin-top:0.25rem;">
+                                    <label class="form-label">Story Paragraph Cards</label>
+                                    <p style="color:var(--text-muted); font-size:0.82rem; margin:0 0 0.75rem;">Each card shows horizontally on the About page below the story text. Add as many as you need.</p>
+                                    <div id="about-story-paras-list" style="display:flex; gap:0.75rem; overflow-x:auto; padding:0.1rem 0.1rem 0.75rem; align-items:flex-start; min-height:120px;"></div>
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="addStoryParaCard()" style="margin-top:0.25rem;">
+                                        <i class="fas fa-plus"></i> Add Paragraph Card
+                                    </button>
+                                </div>
                             </div>
-                        </div>
+                        </details>
 
-                        <div class="form-group" style="margin-bottom: 1rem;">
-                            <label class="form-label" for="about-mission-vision-title">Mission & Vision Section Title</label>
-                            <input type="text" id="about-mission-vision-title" class="form-input" placeholder="e.g., Our Mission & Vision">
-                        </div>
-
-                        <div class="form-row" style="margin-bottom: 1rem; align-items: end;">
-                            <div style="flex: 1; min-width: 260px;">
-                                <label class="form-label" for="about-us-font-family">About Us Font Family</label>
-                                <select id="about-us-font-family" class="form-input">
-                                    <option value="Segoe UI">Segoe UI</option>
-                                    <option value="Georgia">Georgia</option>
-                                    <option value="Arial">Arial</option>
-                                    <option value="Times New Roman">Times New Roman</option>
-                                    <option value="Poppins">Poppins</option>
-                                    <option value="Montserrat">Montserrat</option>
-                                    <option value="Merriweather">Merriweather</option>
-                                    <option value="Lora">Lora</option>
-                                    <option value="Inter">Inter</option>
-                                    <option value="Roboto">Roboto</option>
-                                </select>
+                        <!-- VALUES -->
+                        <details style="margin-bottom:1.5rem; border:1px solid var(--border); border-radius:10px; overflow:hidden;">
+                            <summary style="padding:0.85rem 1.2rem; font-weight:700; cursor:pointer; background:var(--bg-secondary); user-select:none;">&#10084;&#65039; Our Values (6 cards)</summary>
+                            <div style="padding:1.25rem; display:grid; gap:0.75rem;">
+                                <div class="form-row" style="gap:0.75rem;">
+                                    <div><label class="form-label" for="ab-values-title">Section heading</label><input type="text" id="ab-values-title" class="form-input" placeholder="Principles that guide us"></div>
+                                    <div style="flex:2;"><label class="form-label" for="ab-values-sub">Subtitle</label><input type="text" id="ab-values-sub" class="form-input" placeholder="Everything we do is shaped by a commitment to freshness..."></div>
+                                </div>
+                                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:1rem; margin-top:0.5rem;">
+                                    <div style="border:1px solid var(--border); border-radius:8px; padding:1rem;"><strong style="font-size:0.82rem;">&#127807; Value 1</strong><div class="form-group" style="margin-top:0.5rem;"><input type="text" id="ab-value-1-title" class="form-input" placeholder="Freshness First" style="margin-bottom:0.35rem;"><textarea id="ab-value-1-text" class="form-input" rows="2" placeholder="We never compromise on freshness..."></textarea></div></div>
+                                    <div style="border:1px solid var(--border); border-radius:8px; padding:1rem;"><strong style="font-size:0.82rem;">&#129309; Value 2</strong><div class="form-group" style="margin-top:0.5rem;"><input type="text" id="ab-value-2-title" class="form-input" placeholder="Honest Pricing" style="margin-bottom:0.35rem;"><textarea id="ab-value-2-text" class="form-input" rows="2" placeholder="No hidden charges..."></textarea></div></div>
+                                    <div style="border:1px solid var(--border); border-radius:8px; padding:1rem;"><strong style="font-size:0.82rem;">&#128101; Value 3</strong><div class="form-group" style="margin-top:0.5rem;"><input type="text" id="ab-value-3-title" class="form-input" placeholder="Community First" style="margin-bottom:0.35rem;"><textarea id="ab-value-3-text" class="form-input" rows="2" placeholder="We support local farmers..."></textarea></div></div>
+                                    <div style="border:1px solid var(--border); border-radius:8px; padding:1rem;"><strong style="font-size:0.82rem;">&#127807; Value 4</strong><div class="form-group" style="margin-top:0.5rem;"><input type="text" id="ab-value-4-title" class="form-input" placeholder="Sustainable Practices" style="margin-bottom:0.35rem;"><textarea id="ab-value-4-text" class="form-input" rows="2" placeholder="From biodegradable packaging..."></textarea></div></div>
+                                    <div style="border:1px solid var(--border); border-radius:8px; padding:1rem;"><strong style="font-size:0.82rem;">&#128172; Value 5</strong><div class="form-group" style="margin-top:0.5rem;"><input type="text" id="ab-value-5-title" class="form-input" placeholder="Customer Voice" style="margin-bottom:0.35rem;"><textarea id="ab-value-5-text" class="form-input" rows="2" placeholder="Your feedback shapes our product range..."></textarea></div></div>
+                                    <div style="border:1px solid var(--border); border-radius:8px; padding:1rem;"><strong style="font-size:0.82rem;">&#128274; Value 6</strong><div class="form-group" style="margin-top:0.5rem;"><input type="text" id="ab-value-6-title" class="form-input" placeholder="Safe &amp; Secure" style="margin-bottom:0.35rem;"><textarea id="ab-value-6-text" class="form-input" rows="2" placeholder="Your personal and payment data..."></textarea></div></div>
+                                </div>
                             </div>
-                            <div style="flex: 1; min-width: 260px;">
-                                <label class="form-label" for="about-us-text-align">About Us Text Alignment</label>
-                                <select id="about-us-text-align" class="form-input">
-                                    <option value="left">Left</option>
-                                    <option value="center">Center</option>
-                                    <option value="right">Right</option>
-                                    <option value="justify">Justify</option>
-                                </select>
+                        </details>
+
+                        <!-- WHY CHOOSE US -->
+                        <details style="margin-bottom:1.5rem; border:1px solid var(--border); border-radius:10px; overflow:hidden;">
+                            <summary style="padding:0.85rem 1.2rem; font-weight:700; cursor:pointer; background:var(--bg-secondary); user-select:none;">&#11088; Why Choose Us (3 rows)</summary>
+                            <div style="padding:1.25rem; display:grid; gap:1.25rem;">
+                                <div class="form-group"><label class="form-label" for="ab-why-title">Section heading</label><input type="text" id="ab-why-title" class="form-input" placeholder="The Mount Made difference"></div>
+                                <p style="color:var(--text-muted); font-size:0.85rem; margin:0;">For each row: Visual title/subtitle appear on the green panel. Heading/body/bullets appear on the right. Badges are comma-separated.</p>
+                                <!-- Row 1 -->
+                                <div style="border:1px solid var(--border); border-radius:10px; padding:1.1rem;">
+                                    <strong style="font-size:0.9rem; display:block; margin-bottom:0.85rem;">&#128668; Row 1 (Farm Partnerships)</strong>
+                                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.75rem;">
+                                        <div><label class="form-label" style="font-size:0.8rem;">Visual title</label><input type="text" id="ab-why-1-vtitle" class="form-input" placeholder="Direct Farm Partnerships"></div>
+                                        <div><label class="form-label" style="font-size:0.8rem;">Visual subtitle</label><input type="text" id="ab-why-1-vsub" class="form-input" placeholder="We work directly with over 40 local farms..."></div>
+                                        <div><label class="form-label" style="font-size:0.8rem;">Badges (comma-separated)</label><input type="text" id="ab-why-1-badges" class="form-input" placeholder="40+ Farms, Direct Sourcing, Northeast India"></div>
+                                        <div><label class="form-label" style="font-size:0.8rem;">Text heading</label><input type="text" id="ab-why-1-heading" class="form-input" placeholder="Farm-fresh on every order"></div>
+                                    </div>
+                                    <div class="form-group" style="margin-top:0.6rem;"><label class="form-label" style="font-size:0.8rem;">Body paragraphs (one per line)</label><textarea id="ab-why-1-body" class="form-input" rows="3" placeholder="Every product is sourced from trusted farm partners..."></textarea></div>
+                                    <div class="form-group"><label class="form-label" style="font-size:0.8rem;">Bullet points (one per line)</label><textarea id="ab-why-1-bullets" class="form-input" rows="4" placeholder="Sourced directly from verified farms&#10;No cold-storage sitting for weeks"></textarea></div>
+                                </div>
+                                <!-- Row 2 -->
+                                <div style="border:1px solid var(--border); border-radius:10px; padding:1.1rem;">
+                                    <strong style="font-size:0.9rem; display:block; margin-bottom:0.85rem;">&#128666; Row 2 (Delivery)</strong>
+                                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.75rem;">
+                                        <div><label class="form-label" style="font-size:0.8rem;">Visual title</label><input type="text" id="ab-why-2-vtitle" class="form-input" placeholder="Reliable Last-Mile Delivery"></div>
+                                        <div><label class="form-label" style="font-size:0.8rem;">Visual subtitle</label><input type="text" id="ab-why-2-vsub" class="form-input" placeholder="Tracked shipments with real-time updates..."></div>
+                                        <div><label class="form-label" style="font-size:0.8rem;">Badges (comma-separated)</label><input type="text" id="ab-why-2-badges" class="form-input" placeholder="Tracked Orders, Careful Packaging, On Time"></div>
+                                        <div><label class="form-label" style="font-size:0.8rem;">Text heading</label><input type="text" id="ab-why-2-heading" class="form-input" placeholder="Delivery that shows up"></div>
+                                    </div>
+                                    <div class="form-group" style="margin-top:0.6rem;"><label class="form-label" style="font-size:0.8rem;">Body paragraphs (one per line)</label><textarea id="ab-why-2-body" class="form-input" rows="3" placeholder="From the moment you confirm your order..."></textarea></div>
+                                    <div class="form-group"><label class="form-label" style="font-size:0.8rem;">Bullet points (one per line)</label><textarea id="ab-why-2-bullets" class="form-input" rows="4" placeholder="Live order tracking updates&#10;Secure, tamper-proof packaging"></textarea></div>
+                                </div>
+                                <!-- Row 3 -->
+                                <div style="border:1px solid var(--border); border-radius:10px; padding:1.1rem;">
+                                    <strong style="font-size:0.9rem; display:block; margin-bottom:0.85rem;">&#127911; Row 3 (Support)</strong>
+                                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.75rem;">
+                                        <div><label class="form-label" style="font-size:0.8rem;">Visual title</label><input type="text" id="ab-why-3-vtitle" class="form-input" placeholder="Human Support, Always"></div>
+                                        <div><label class="form-label" style="font-size:0.8rem;">Visual subtitle</label><input type="text" id="ab-why-3-vsub" class="form-input" placeholder="When something goes wrong, a real person picks up..."></div>
+                                        <div><label class="form-label" style="font-size:0.8rem;">Badges (comma-separated)</label><input type="text" id="ab-why-3-badges" class="form-input" placeholder="Real Agents, Fast Resolution, Returns Easy"></div>
+                                        <div><label class="form-label" style="font-size:0.8rem;">Text heading</label><input type="text" id="ab-why-3-heading" class="form-input" placeholder="Support you can actually reach"></div>
+                                    </div>
+                                    <div class="form-group" style="margin-top:0.6rem;"><label class="form-label" style="font-size:0.8rem;">Body paragraphs (one per line)</label><textarea id="ab-why-3-body" class="form-input" rows="3" placeholder="Whether you have a question about your order..."></textarea></div>
+                                    <div class="form-group"><label class="form-label" style="font-size:0.8rem;">Bullet points (one per line)</label><textarea id="ab-why-3-bullets" class="form-input" rows="4" placeholder="Clear return and refund policies&#10;Contact us directly via email or phone"></textarea></div>
+                                </div>
                             </div>
-                        </div>
+                        </details>
 
-                        <div class="form-group" style="margin-bottom: 1rem;">
-                            <label class="form-label">Live About Us Style Preview</label>
-                            <div id="about-style-preview" style="border:1px solid var(--border-primary); border-radius:14px; background:linear-gradient(135deg,#f8fff9 0%,#ffffff 100%); padding:1rem; box-shadow:0 10px 24px rgba(15,23,42,0.06); font-family:Segoe UI, Arial, sans-serif; text-align:left; color:var(--text-primary);">
-                                <strong>Preview:</strong> This sample text shows how your About Us section will look on the public page after you save the font and alignment settings.
+                        <!-- PROMISE BANNER -->
+                        <details style="margin-bottom:1.5rem; border:1px solid var(--border); border-radius:10px; overflow:hidden;">
+                            <summary style="padding:0.85rem 1.2rem; font-weight:700; cursor:pointer; background:var(--bg-secondary); user-select:none;">&#127942; Promise Banner</summary>
+                            <div style="padding:1.25rem; display:grid; gap:0.75rem;">
+                                <div class="form-group"><label class="form-label" for="ab-promise-title">Banner title</label><input type="text" id="ab-promise-title" class="form-input" placeholder="Our Quality Guarantee"></div>
+                                <div class="form-group"><label class="form-label" for="ab-promise-text">Banner paragraph</label><textarea id="ab-promise-text" class="form-input" rows="3" placeholder="Every product sold on Mount Made is quality-checked..."></textarea></div>
                             </div>
-                        </div>
+                        </details>
 
-                        <p style="color: var(--text-muted); margin-bottom: 1rem; font-size: 0.92rem;">
-                            These controls update the public About page font and paragraph alignment. Save the section and refresh the public page to see the changes live.
-                        </p>
-
-                        <div class="form-group" style="margin-bottom: 1rem;">
-                            <label class="form-label" for="about-us-paragraph-1">Paragraph 1</label>
-                            <input type="text" id="about-us-heading-1" class="form-input" placeholder="Heading for paragraph 1" style="margin-bottom:0.5rem;">
-                            <select id="about-us-paragraph-1-box-shape" class="form-input" style="margin-bottom:0.5rem;">
-                                <option value="rectangle">Rectangle</option>
-                                <option value="square">Square</option>
-                            </select>
-                            <textarea id="about-us-paragraph-1" class="form-input" rows="4" placeholder="Paragraph 1 content"></textarea>
-                        </div>
-
-                        <div class="form-group" style="margin-bottom: 1rem;">
-                            <label class="form-label" for="about-us-paragraph-2">Paragraph 2</label>
-                            <input type="text" id="about-us-heading-2" class="form-input" placeholder="Heading for paragraph 2" style="margin-bottom:0.5rem;">
-                            <select id="about-us-paragraph-2-box-shape" class="form-input" style="margin-bottom:0.5rem;">
-                                <option value="rectangle">Rectangle</option>
-                                <option value="square">Square</option>
-                            </select>
-                            <textarea id="about-us-paragraph-2" class="form-input" rows="4" placeholder="Paragraph 2 content"></textarea>
-                        </div>
-
-                        <div class="form-group" style="margin-bottom: 1rem;">
-                            <label class="form-label" for="about-us-paragraph-3">Paragraph 3</label>
-                            <input type="text" id="about-us-heading-3" class="form-input" placeholder="Heading for paragraph 3" style="margin-bottom:0.5rem;">
-                            <select id="about-us-paragraph-3-box-shape" class="form-input" style="margin-bottom:0.5rem;">
-                                <option value="rectangle">Rectangle</option>
-                                <option value="square">Square</option>
-                            </select>
-                            <textarea id="about-us-paragraph-3" class="form-input" rows="4" placeholder="Paragraph 3 content"></textarea>
-                        </div>
-
-                        <div class="form-group" style="margin-bottom: 1rem;">
-                            <label class="form-label" for="about-us-paragraph-4">Paragraph 4</label>
-                            <input type="text" id="about-us-heading-4" class="form-input" placeholder="Heading for paragraph 4" style="margin-bottom:0.5rem;">
-                            <select id="about-us-paragraph-4-box-shape" class="form-input" style="margin-bottom:0.5rem;">
-                                <option value="rectangle">Rectangle</option>
-                                <option value="square">Square</option>
-                            </select>
-                            <textarea id="about-us-paragraph-4" class="form-input" rows="4" placeholder="Paragraph 4 content"></textarea>
-                        </div>
-
-                        <div class="form-group" style="margin-bottom: 1rem;">
-                            <label class="form-label" for="about-us-paragraph-5">Paragraph 5</label>
-                            <input type="text" id="about-us-heading-5" class="form-input" placeholder="Heading for paragraph 5" style="margin-bottom:0.5rem;">
-                            <select id="about-us-paragraph-5-box-shape" class="form-input" style="margin-bottom:0.5rem;">
-                                <option value="rectangle">Rectangle</option>
-                                <option value="square">Square</option>
-                            </select>
-                            <textarea id="about-us-paragraph-5" class="form-input" rows="4" placeholder="Paragraph 5 content"></textarea>
-                        </div>
+                        <!-- CTA SECTION -->
+                        <details style="margin-bottom:1.5rem; border:1px solid var(--border); border-radius:10px; overflow:hidden;">
+                            <summary style="padding:0.85rem 1.2rem; font-weight:700; cursor:pointer; background:var(--bg-secondary); user-select:none;">&#128640; CTA Section</summary>
+                            <div style="padding:1.25rem; display:grid; gap:0.75rem;">
+                                <div class="form-group"><label class="form-label" for="ab-cta-title">CTA heading</label><input type="text" id="ab-cta-title" class="form-input" placeholder="Fresh groceries, one click away"></div>
+                                <div class="form-group"><label class="form-label" for="ab-cta-sub">CTA subtext</label><textarea id="ab-cta-sub" class="form-input" rows="2" placeholder="Explore hundreds of quality products..."></textarea></div>
+                            </div>
+                        </details>
 
                         <button class="btn btn-primary" onclick="saveAboutUsSettings()">
-                            <i class="fas fa-save"></i> Save About Us Content
+                            <i class="fas fa-save"></i> Save About Us Page
                         </button>
                     </div>
                 </div>
@@ -8813,31 +8846,50 @@
                     paymentCodEnabledEl.checked = String(settings.payment_cod_enabled ?? 'true').toLowerCase() === 'true';
                 }
 
-                const aboutDescriptionEl = document.getElementById('about-us-description');
-                const aboutPageTitleEl = document.getElementById('about-page-title');
                 const faqPageTitleEl = document.getElementById('faq-page-title');
                 const faqIntroTextEl = document.getElementById('faq-intro-text');
-                const aboutIntroTitleEl = document.getElementById('about-intro-title');
-                const aboutMissionVisionTitleEl = document.getElementById('about-mission-vision-title');
-                const aboutFontFamilyEl = document.getElementById('about-us-font-family');
-                const aboutTextAlignEl = document.getElementById('about-us-text-align');
-                const aboutDescriptionBoxShapeEl = document.getElementById('about-us-description-box-shape');
-                const aboutParagraph1BoxShapeEl = document.getElementById('about-us-paragraph-1-box-shape');
-                const aboutParagraph2BoxShapeEl = document.getElementById('about-us-paragraph-2-box-shape');
-                const aboutParagraph3BoxShapeEl = document.getElementById('about-us-paragraph-3-box-shape');
-                const aboutParagraph4BoxShapeEl = document.getElementById('about-us-paragraph-4-box-shape');
-                const aboutParagraph5BoxShapeEl = document.getElementById('about-us-paragraph-5-box-shape');
-                const aboutStylePreviewEl = document.getElementById('about-style-preview');
-                const aboutHeading1El = document.getElementById('about-us-heading-1');
-                const aboutHeading2El = document.getElementById('about-us-heading-2');
-                const aboutHeading3El = document.getElementById('about-us-heading-3');
-                const aboutHeading4El = document.getElementById('about-us-heading-4');
-                const aboutHeading5El = document.getElementById('about-us-heading-5');
-                const aboutParagraph1El = document.getElementById('about-us-paragraph-1');
-                const aboutParagraph2El = document.getElementById('about-us-paragraph-2');
-                const aboutParagraph3El = document.getElementById('about-us-paragraph-3');
-                const aboutParagraph4El = document.getElementById('about-us-paragraph-4');
-                const aboutParagraph5El = document.getElementById('about-us-paragraph-5');
+
+                // About Us page settings
+                const abFields = [
+                    'ab-hero-badge','ab-hero-title','ab-hero-sub',
+                    'ab-stat-1-number','ab-stat-1-suffix','ab-stat-1-label',
+                    'ab-stat-2-number','ab-stat-2-suffix','ab-stat-2-label',
+                    'ab-stat-3-number','ab-stat-3-suffix','ab-stat-3-label',
+                    'ab-stat-4-number','ab-stat-4-suffix','ab-stat-4-label',
+                    'ab-story-title','ab-story-body',
+                    'ab-values-title','ab-values-sub',
+                    'ab-value-1-title','ab-value-1-text','ab-value-2-title','ab-value-2-text',
+                    'ab-value-3-title','ab-value-3-text','ab-value-4-title','ab-value-4-text',
+                    'ab-value-5-title','ab-value-5-text','ab-value-6-title','ab-value-6-text',
+                    'ab-why-title',
+                    'ab-why-1-vtitle','ab-why-1-vsub','ab-why-1-badges','ab-why-1-heading','ab-why-1-body','ab-why-1-bullets',
+                    'ab-why-2-vtitle','ab-why-2-vsub','ab-why-2-badges','ab-why-2-heading','ab-why-2-body','ab-why-2-bullets',
+                    'ab-why-3-vtitle','ab-why-3-vsub','ab-why-3-badges','ab-why-3-heading','ab-why-3-body','ab-why-3-bullets',
+                    'ab-promise-title','ab-promise-text',
+                    'ab-cta-title','ab-cta-sub',
+                ];
+                // Map admin field id → settings key (dashes stay as-is but replace for storage)
+                const abKeyFor = id => 'about_' + id.replace(/^ab-/, '').replace(/-/g, '_');
+                abFields.forEach(fid => {
+                    const el = document.getElementById(fid);
+                    if (el) {
+                        const key = abKeyFor(fid);
+                        const hasSavedValue = Object.prototype.hasOwnProperty.call(settings, key);
+                        el.dataset.settingExists = hasSavedValue ? 'true' : 'false';
+                        el.value = hasSavedValue ? (settings[key] || '') : '';
+                    }
+                });
+                // Load story paragraph cards
+                const storyParasList = document.getElementById('about-story-paras-list');
+                if (storyParasList) {
+                    storyParasList.innerHTML = '';
+                    try {
+                        const paras = JSON.parse(settings.about_story_paragraphs || '[]');
+                        if (Array.isArray(paras) && paras.length > 0) {
+                            paras.forEach(p => addStoryParaCard(p.title || '', p.text || ''));
+                        }
+                    } catch(e) {}
+                }
                 const faqQuestion1El = document.getElementById('faq-question-1');
                 const faqQuestion2El = document.getElementById('faq-question-2');
                 const faqQuestion3El = document.getElementById('faq-question-3');
@@ -8849,28 +8901,8 @@
                 const faqAnswer4El = document.getElementById('faq-answer-4');
                 const faqAnswer5El = document.getElementById('faq-answer-5');
 
-                if (aboutDescriptionEl) aboutDescriptionEl.value = settings.about_us_description || '';
-                if (aboutPageTitleEl) aboutPageTitleEl.value = settings.about_page_title || '';
                 if (faqPageTitleEl) faqPageTitleEl.value = settings.faq_page_title || 'Frequently Asked Questions';
                 if (faqIntroTextEl) faqIntroTextEl.value = settings.faq_intro_text || '';
-                if (aboutIntroTitleEl) aboutIntroTitleEl.value = settings.about_intro_title || '';
-                if (aboutMissionVisionTitleEl) aboutMissionVisionTitleEl.value = settings.about_mission_vision_title || '';
-                if (aboutFontFamilyEl) aboutFontFamilyEl.value = settings.about_us_font_family || 'Segoe UI';
-                if (aboutTextAlignEl) aboutTextAlignEl.value = settings.about_us_text_align || 'left';
-                if (aboutDescriptionBoxShapeEl) aboutDescriptionBoxShapeEl.value = settings.about_us_description_box_shape || 'rectangle';
-                if (aboutParagraph1BoxShapeEl) aboutParagraph1BoxShapeEl.value = settings.about_us_paragraph_1_box_shape || 'rectangle';
-                if (aboutParagraph2BoxShapeEl) aboutParagraph2BoxShapeEl.value = settings.about_us_paragraph_2_box_shape || 'rectangle';
-                if (aboutParagraph3BoxShapeEl) aboutParagraph3BoxShapeEl.value = settings.about_us_paragraph_3_box_shape || 'rectangle';
-                if (aboutParagraph4BoxShapeEl) aboutParagraph4BoxShapeEl.value = settings.about_us_paragraph_4_box_shape || 'rectangle';
-                if (aboutParagraph5BoxShapeEl) aboutParagraph5BoxShapeEl.value = settings.about_us_paragraph_5_box_shape || 'rectangle';
-                if (aboutHeading1El) aboutHeading1El.value = settings.about_us_heading_1 || '';
-                if (aboutHeading2El) aboutHeading2El.value = settings.about_us_heading_2 || '';
-                if (aboutHeading3El) aboutHeading3El.value = settings.about_us_heading_3 || '';
-                if (aboutHeading4El) aboutHeading4El.value = settings.about_us_heading_4 || '';
-                if (aboutHeading5El) aboutHeading5El.value = settings.about_us_heading_5 || '';
-                if (aboutParagraph1El) aboutParagraph1El.value = settings.about_us_paragraph_1 || '';
-                if (aboutParagraph2El) aboutParagraph2El.value = settings.about_us_paragraph_2 || '';
-                if (aboutParagraph3El) aboutParagraph3El.value = settings.about_us_paragraph_3 || '';
                 // Homepage hero animated text settings
                 const heroAnimatedEnabledEl = document.getElementById('homepage-hero-animated-enabled');
                 const heroAnimatedTextsEl = document.getElementById('homepage-hero-animated-texts');
@@ -8907,8 +8939,6 @@
                 if (heroAnimatedMobileEffectEl) heroAnimatedMobileEffectEl.value = settings.homepage_hero_animated_mobile_effect || 'typing';
                 if (heroAnimatedMobileSpeedEl) heroAnimatedMobileSpeedEl.value = settings.homepage_hero_animated_mobile_speed || '80';
                 if (heroAnimatedMobilePreview) heroAnimatedMobilePreview.textContent = '';
-                if (aboutParagraph4El) aboutParagraph4El.value = settings.about_us_paragraph_4 || '';
-                if (aboutParagraph5El) aboutParagraph5El.value = settings.about_us_paragraph_5 || '';
 
                 function escapeHtml(value) {
                     return String(value || '')
@@ -8918,106 +8948,6 @@
                         .replace(/"/g, '&quot;')
                         .replace(/'/g, '&#39;');
                 }
-
-                function getShapeValue(element) {
-                    return (element?.value || 'rectangle').trim().toLowerCase() === 'square' ? 'square' : 'rectangle';
-                }
-
-                function getRadius(shape) {
-                    return shape === 'square' ? 0 : 14;
-                }
-
-                function getAboutPreviewText() {
-                    const heading1 = document.getElementById('about-us-heading-1')?.value || '';
-                    const heading2 = document.getElementById('about-us-heading-2')?.value || '';
-                    const heading3 = document.getElementById('about-us-heading-3')?.value || '';
-                    const heading4 = document.getElementById('about-us-heading-4')?.value || '';
-                    const heading5 = document.getElementById('about-us-heading-5')?.value || '';
-                    const paragraph1 = document.getElementById('about-us-paragraph-1')?.value || '';
-                    const paragraph2 = document.getElementById('about-us-paragraph-2')?.value || '';
-                    const paragraph3 = document.getElementById('about-us-paragraph-3')?.value || '';
-                    const paragraph4 = document.getElementById('about-us-paragraph-4')?.value || '';
-                    const paragraph5 = document.getElementById('about-us-paragraph-5')?.value || '';
-                    const description = document.getElementById('about-us-description')?.value || '';
-
-                    return {
-                        description,
-                        blocks: [
-                            { heading: heading1, paragraph: paragraph1 },
-                            { heading: heading2, paragraph: paragraph2 },
-                            { heading: heading3, paragraph: paragraph3 },
-                            { heading: heading4, paragraph: paragraph4 },
-                            { heading: heading5, paragraph: paragraph5 }
-                        ]
-                    };
-                }
-
-                function updateAboutStylePreview() {
-                    if (!aboutStylePreviewEl) return;
-
-                    const fontFamily = (aboutFontFamilyEl?.value || 'Segoe UI').trim() || 'Segoe UI';
-                    const textAlign = (aboutTextAlignEl?.value || 'left').trim().toLowerCase() || 'left';
-                    const descriptionShape = getShapeValue(aboutDescriptionBoxShapeEl);
-                    const paragraphShapes = [
-                        aboutParagraph1BoxShapeEl,
-                        aboutParagraph2BoxShapeEl,
-                        aboutParagraph3BoxShapeEl,
-                        aboutParagraph4BoxShapeEl,
-                        aboutParagraph5BoxShapeEl
-                    ].map((el) => getShapeValue(el));
-                    const preview = getAboutPreviewText();
-
-                    aboutStylePreviewEl.style.fontFamily = fontFamily;
-                    aboutStylePreviewEl.style.textAlign = textAlign;
-                    aboutStylePreviewEl.innerHTML = `
-                        <div style="display:grid; gap:0.75rem;">
-                            <div style="border:1px solid rgba(34,197,94,0.18); border-radius:${getRadius(descriptionShape)}px; background:linear-gradient(135deg,#fff,#f7fff9); padding:0.9rem; box-shadow:0 8px 18px rgba(15,23,42,0.06);">
-                                <div style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.18em; color:#16a34a; margin-bottom:0.35rem;">Description preview</div>
-                                <div style="font-size:0.95rem; color:#14532d; font-weight:700; margin-bottom:0.2rem;">${escapeHtml(document.getElementById('about-page-title')?.value || 'About Us')}</div>
-                                <div style="color:#374151; line-height:1.5;">${escapeHtml(preview.description || 'Type your About Us description here to see it appear in this preview.')}</div>
-                            </div>
-                            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:0.65rem;">
-                                ${preview.blocks.map((block, idx) => {
-                                    const shape = paragraphShapes[idx] || 'rectangle';
-                                    const heading = block.heading || `Paragraph ${idx + 1}`;
-                                    const text = block.paragraph || 'Start typing to preview this card.';
-                                    return `
-                                        <article style="border:1px solid rgba(34,197,94,0.18); border-radius:${getRadius(shape)}px; background:#fff; padding:0.75rem; box-shadow:0 8px 18px rgba(15,23,42,0.06);">
-                                            <div style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.18em; color:#16a34a; margin-bottom:0.2rem;">Card ${idx + 1}</div>
-                                            <div style="font-weight:700; color:#14532d; font-size:0.92rem; margin-bottom:0.15rem;">${escapeHtml(heading)}</div>
-                                            <div style="color:#374151; line-height:1.45; font-size:0.85rem;">${escapeHtml(text)}</div>
-                                        </article>
-                                    `;
-                                }).join('')}
-                            </div>
-                        </div>
-                    `;
-                }
-
-                updateAboutStylePreview();
-
-                [aboutFontFamilyEl, aboutTextAlignEl, aboutDescriptionBoxShapeEl, aboutParagraph1BoxShapeEl, aboutParagraph2BoxShapeEl, aboutParagraph3BoxShapeEl, aboutParagraph4BoxShapeEl, aboutParagraph5BoxShapeEl]
-                    .filter(Boolean)
-                    .forEach((el) => {
-                        el.addEventListener('change', updateAboutStylePreview);
-                    });
-
-                [
-                    document.getElementById('about-us-description'),
-                    document.getElementById('about-us-heading-1'),
-                    document.getElementById('about-us-heading-2'),
-                    document.getElementById('about-us-heading-3'),
-                    document.getElementById('about-us-heading-4'),
-                    document.getElementById('about-us-heading-5'),
-                    document.getElementById('about-us-paragraph-1'),
-                    document.getElementById('about-us-paragraph-2'),
-                    document.getElementById('about-us-paragraph-3'),
-                    document.getElementById('about-us-paragraph-4'),
-                    document.getElementById('about-us-paragraph-5'),
-                    document.getElementById('about-page-title')
-                ].filter(Boolean).forEach((el) => {
-                    el.addEventListener('input', updateAboutStylePreview);
-                });
 
                 if (faqQuestion1El) faqQuestion1El.value = settings.faq_question_1 || '';
                 if (faqQuestion2El) faqQuestion2El.value = settings.faq_question_2 || '';
@@ -9904,66 +9834,83 @@
             }
         };
 
+        window.addStoryParaCard = function(title, text) {
+            const list = document.getElementById('about-story-paras-list');
+            if (!list) return;
+            const idx = list.children.length + 1;
+            const card = document.createElement('div');
+            card.className = 'story-para-card-item';
+            card.style.cssText = 'flex:0 0 220px; border:1px solid var(--border); border-top:3px solid var(--primary); border-radius:10px; padding:0.9rem; background:var(--bg-primary); position:relative;';
+            const esc = v => String(v||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+            card.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+                    <span style="font-size:0.72rem; font-weight:700; color:var(--primary); text-transform:uppercase; letter-spacing:0.06em;">Para ${idx}</span>
+                    <button type="button" onclick="this.closest('.story-para-card-item').remove(); window.renumberStoryParaCards();" style="background:none;border:none;color:var(--danger);cursor:pointer;padding:2px 5px;border-radius:4px;" title="Remove"><i class="fas fa-times"></i></button>
+                </div>
+                <input type="text" class="form-input sp-title" style="font-size:0.85rem; padding:0.3rem 0.5rem; margin-bottom:0.4rem;" placeholder="Title (e.g. Highland Sourcing)" value="${esc(title||'')}"><textarea class="form-input sp-text" rows="3" style="font-size:0.82rem; padding:0.3rem 0.5rem; resize:vertical;" placeholder="Paragraph text...">${esc(text||'')}</textarea>`;
+            list.appendChild(card);
+            window.renumberStoryParaCards();
+        };
+
+        window.renumberStoryParaCards = function() {
+            const list = document.getElementById('about-story-paras-list');
+            if (!list) return;
+            Array.from(list.children).forEach((card, i) => {
+                const label = card.querySelector('span');
+                if (label) label.textContent = 'Para ' + (i + 1);
+            });
+        };
+
         window.saveAboutUsSettings = async function() {
             try {
-                const about_us_description = (document.getElementById('about-us-description')?.value || '').trim();
-                const about_us_description_box_shape = (document.getElementById('about-us-description-box-shape')?.value || 'rectangle').trim().toLowerCase();
-                const about_us_font_family = (document.getElementById('about-us-font-family')?.value || 'Segoe UI').trim();
-                const about_us_text_align = (document.getElementById('about-us-text-align')?.value || 'left').trim().toLowerCase();
-                const about_page_title = (document.getElementById('about-page-title')?.value || '').trim();
-                const about_intro_title = (document.getElementById('about-intro-title')?.value || '').trim();
-                const about_mission_vision_title = (document.getElementById('about-mission-vision-title')?.value || '').trim();
-                const about_us_heading_1 = (document.getElementById('about-us-heading-1')?.value || '').trim();
-                const about_us_paragraph_1_box_shape = (document.getElementById('about-us-paragraph-1-box-shape')?.value || 'rectangle').trim().toLowerCase();
-                const about_us_heading_2 = (document.getElementById('about-us-heading-2')?.value || '').trim();
-                const about_us_paragraph_2_box_shape = (document.getElementById('about-us-paragraph-2-box-shape')?.value || 'rectangle').trim().toLowerCase();
-                const about_us_heading_3 = (document.getElementById('about-us-heading-3')?.value || '').trim();
-                const about_us_paragraph_3_box_shape = (document.getElementById('about-us-paragraph-3-box-shape')?.value || 'rectangle').trim().toLowerCase();
-                const about_us_heading_4 = (document.getElementById('about-us-heading-4')?.value || '').trim();
-                const about_us_paragraph_4_box_shape = (document.getElementById('about-us-paragraph-4-box-shape')?.value || 'rectangle').trim().toLowerCase();
-                const about_us_heading_5 = (document.getElementById('about-us-heading-5')?.value || '').trim();
-                const about_us_paragraph_5_box_shape = (document.getElementById('about-us-paragraph-5-box-shape')?.value || 'rectangle').trim().toLowerCase();
-                const about_us_paragraph_1 = (document.getElementById('about-us-paragraph-1')?.value || '').trim();
-                const about_us_paragraph_2 = (document.getElementById('about-us-paragraph-2')?.value || '').trim();
-                const about_us_paragraph_3 = (document.getElementById('about-us-paragraph-3')?.value || '').trim();
-                const about_us_paragraph_4 = (document.getElementById('about-us-paragraph-4')?.value || '').trim();
-                const about_us_paragraph_5 = (document.getElementById('about-us-paragraph-5')?.value || '').trim();
-
-                showAlert('Saving About Us content...', 'info');
-                const response = await api.post('/admin/settings', {
-                    about_us_description,
-                    about_us_description_box_shape,
-                    about_us_font_family,
-                    about_us_text_align,
-                    about_page_title,
-                    about_intro_title,
-                    about_mission_vision_title,
-                    about_us_heading_1,
-                    about_us_paragraph_1_box_shape,
-                    about_us_heading_2,
-                    about_us_paragraph_2_box_shape,
-                    about_us_heading_3,
-                    about_us_paragraph_3_box_shape,
-                    about_us_heading_4,
-                    about_us_paragraph_4_box_shape,
-                    about_us_heading_5,
-                    about_us_paragraph_5_box_shape,
-                    about_us_paragraph_1,
-                    about_us_paragraph_2,
-                    about_us_paragraph_3,
-                    about_us_paragraph_4,
-                    about_us_paragraph_5
+                const abFields = [
+                    'ab-hero-badge','ab-hero-title','ab-hero-sub',
+                    'ab-stat-1-number','ab-stat-1-suffix','ab-stat-1-label',
+                    'ab-stat-2-number','ab-stat-2-suffix','ab-stat-2-label',
+                    'ab-stat-3-number','ab-stat-3-suffix','ab-stat-3-label',
+                    'ab-stat-4-number','ab-stat-4-suffix','ab-stat-4-label',
+                    'ab-story-title','ab-story-body',
+                    'ab-values-title','ab-values-sub',
+                    'ab-value-1-title','ab-value-1-text','ab-value-2-title','ab-value-2-text',
+                    'ab-value-3-title','ab-value-3-text','ab-value-4-title','ab-value-4-text',
+                    'ab-value-5-title','ab-value-5-text','ab-value-6-title','ab-value-6-text',
+                    'ab-why-title',
+                    'ab-why-1-vtitle','ab-why-1-vsub','ab-why-1-badges','ab-why-1-heading','ab-why-1-body','ab-why-1-bullets',
+                    'ab-why-2-vtitle','ab-why-2-vsub','ab-why-2-badges','ab-why-2-heading','ab-why-2-body','ab-why-2-bullets',
+                    'ab-why-3-vtitle','ab-why-3-vsub','ab-why-3-badges','ab-why-3-heading','ab-why-3-body','ab-why-3-bullets',
+                    'ab-promise-title','ab-promise-text',
+                    'ab-cta-title','ab-cta-sub',
+                ];
+                const abKeyFor = id => 'about_' + id.replace(/^ab-/, '').replace(/-/g, '_');
+                const payload = {};
+                abFields.forEach(fid => {
+                    const el = document.getElementById(fid);
+                    if (!el) return;
+                    const value = el.value.trim();
+                    // Do not create empty settings for untouched fields. Existing settings
+                    // may still be cleared intentionally, which restores their page default.
+                    if (value || el.dataset.settingExists === 'true') {
+                        payload[abKeyFor(fid)] = value;
+                    }
                 });
-
+                // Serialize story paragraph cards as JSON
+                const _paraList = document.getElementById('about-story-paras-list');
+                const _paras = _paraList ? Array.from(_paraList.querySelectorAll('.story-para-card-item')).map(card => ({
+                    title: (card.querySelector('.sp-title')?.value || '').trim(),
+                    text:  (card.querySelector('.sp-text')?.value  || '').trim(),
+                })).filter(p => p.title || p.text) : [];
+                payload['about_story_paragraphs'] = JSON.stringify(_paras);
+                showAlert('Saving About Us settings…', 'info');
+                const response = await api.post('/admin/settings', payload);
                 if (response && (response.success || response.message)) {
-                    showAlert('About Us content saved successfully!', 'success');
+                    showAlert('About Us page saved successfully!', 'success');
                     await loadSiteSettings();
                 } else {
-                    throw new Error(response?.error || 'Failed to save About Us content');
+                    throw new Error(response?.error || 'Failed to save About Us settings');
                 }
             } catch (error) {
-                console.error('Save About Us settings error:', error);
-                showAlert(error.message || 'Failed to save About Us content', 'error');
+                console.error('saveAboutUsSettings error:', error);
+                showAlert(error.message || 'Failed to save About Us settings', 'error');
             }
         };
 
