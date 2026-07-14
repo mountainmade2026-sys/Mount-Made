@@ -4,44 +4,53 @@ class Return {
   // Initialize returns table
   static async initializeSchema() {
     try {
-      const client = await db.connect();
-      try {
-        await client.query(`
-          CREATE TABLE IF NOT EXISTS returns (
-            id SERIAL PRIMARY KEY,
-            order_id INT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
-            user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-            return_reason VARCHAR(255) NOT NULL,
-            return_description TEXT,
-            quantity INT NOT NULL DEFAULT 1,
-            return_status VARCHAR(50) NOT NULL DEFAULT 'pending' CHECK (return_status IN ('pending', 'approved', 'rejected', 'shipped', 'completed')),
-            refund_amount DECIMAL(10, 2),
-            admin_notes TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            approved_at TIMESTAMP,
-            completed_at TIMESTAMP
-          );
-        `);
+      // Check if table exists first
+      const checkTableResult = await db.query(
+        `SELECT to_regclass('public.returns');`
+      );
 
-        // Create indexes
-        await client.query(`
-          CREATE INDEX IF NOT EXISTS idx_returns_order_id ON returns(order_id);
-        `);
-        await client.query(`
-          CREATE INDEX IF NOT EXISTS idx_returns_user_id ON returns(user_id);
-        `);
-        await client.query(`
-          CREATE INDEX IF NOT EXISTS idx_returns_status ON returns(return_status);
-        `);
-
-        console.log('✓ Returns table initialized successfully');
-      } finally {
-        client.release();
+      if (checkTableResult.rows[0].to_regclass !== null) {
+        console.log('✓ Returns table already exists');
+        return;
       }
+
+      // Table doesn't exist, create it
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS returns (
+          id SERIAL PRIMARY KEY,
+          order_id INT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+          user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          return_reason VARCHAR(255) NOT NULL,
+          return_description TEXT,
+          quantity INT NOT NULL DEFAULT 1,
+          return_status VARCHAR(50) NOT NULL DEFAULT 'pending' CHECK (return_status IN ('pending', 'approved', 'rejected', 'shipped', 'completed')),
+          refund_amount DECIMAL(10, 2),
+          admin_notes TEXT,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          approved_at TIMESTAMP,
+          completed_at TIMESTAMP
+        );
+      `);
+
+      // Create indexes
+      await db.query(
+        `CREATE INDEX IF NOT EXISTS idx_returns_order_id ON returns(order_id);`
+      );
+      await db.query(
+        `CREATE INDEX IF NOT EXISTS idx_returns_user_id ON returns(user_id);`
+      );
+      await db.query(
+        `CREATE INDEX IF NOT EXISTS idx_returns_status ON returns(return_status);`
+      );
+
+      console.log('✓ Returns table created successfully');
     } catch (error) {
-      console.error('Warning: Returns table initialization issue:', error.message);
-      // Don't throw - allow app to continue even if table already exists
+      if (error.message && error.message.includes('already exists')) {
+        console.log('✓ Returns table already exists');
+      } else {
+        console.error('Warning: Returns table initialization issue:', error.message);
+      }
     }
   }
 
