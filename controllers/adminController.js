@@ -2454,6 +2454,23 @@ exports.updateSiteSettings = async (req, res) => {
     if (req.body.homepage_hero_animated_color !== undefined) {
       updates.push({ key: 'homepage_hero_animated_color', value: String(req.body.homepage_hero_animated_color || '').trim() });
     }
+    if (req.body.homepage_hero_animated_font_size !== undefined) {
+      const parsed = parseInt(req.body.homepage_hero_animated_font_size, 10);
+      if (Number.isNaN(parsed) || parsed < 18 || parsed > 120) {
+        return res.status(400).json({ error: 'Animated font size must be a number between 18 and 120.' });
+      }
+      updates.push({ key: 'homepage_hero_animated_font_size', value: String(parsed) });
+    }
+    if (req.body.homepage_hero_animated_font_style !== undefined) {
+      const allowedStyles = ['default', 'cursive', 'handwriting', 'serif', 'elegant'];
+      const style = String(req.body.homepage_hero_animated_font_style || 'default').trim().toLowerCase();
+      updates.push({ key: 'homepage_hero_animated_font_style', value: allowedStyles.includes(style) ? style : 'default' });
+    }
+    if (req.body.homepage_hero_animated_effect !== undefined) {
+      const allowedEffects = ['typing', 'cursive'];
+      const effect = String(req.body.homepage_hero_animated_effect || 'typing').trim().toLowerCase();
+      updates.push({ key: 'homepage_hero_animated_effect', value: allowedEffects.includes(effect) ? effect : 'typing' });
+    }
     if (req.body.homepage_hero_animated_speed !== undefined) {
       const parsed = parseInt(req.body.homepage_hero_animated_speed, 10);
       if (Number.isNaN(parsed) || parsed < 30 || parsed > 2000) {

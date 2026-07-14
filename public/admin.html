@@ -2275,12 +2275,33 @@
                                 <textarea id="homepage-hero-animated-texts" class="form-input" rows="6" placeholder="Fresh spices\nOrganic herbs\nFarm to table"></textarea>
                                 <small style="color:var(--text-muted);display:block;margin-top:0.35rem;">Use up to 8 phrases. Keep each line short for best effect.</small>
                             </div>
-                            <div style="display:flex;gap:0.75rem;align-items:center;">
-                                <div style="flex:1;min-width:140px;">
+                            <div style="display:grid;gap:0.75rem;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));align-items:start;">
+                                <div>
                                     <label class="form-label">Text Color</label>
                                     <input type="color" id="homepage-hero-animated-color" value="#ffffff" style="width:100%;height:36px;padding:4px;border-radius:6px;border:1px solid var(--border);">
                                 </div>
-                                <div style="width:160px;">
+                                <div>
+                                    <label class="form-label">Text Size (px)</label>
+                                    <input type="number" id="homepage-hero-animated-font-size" class="form-input" min="18" max="120" value="40">
+                                </div>
+                                <div>
+                                    <label class="form-label">Text Style</label>
+                                    <select id="homepage-hero-animated-font-style" class="form-input">
+                                        <option value="default">Default</option>
+                                        <option value="cursive">Cursive</option>
+                                        <option value="handwriting">Handwriting</option>
+                                        <option value="serif">Serif</option>
+                                        <option value="elegant">Elegant</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="form-label">Animation Style</label>
+                                    <select id="homepage-hero-animated-effect" class="form-input">
+                                        <option value="typing">Typing</option>
+                                        <option value="cursive">Cursive Writing</option>
+                                    </select>
+                                </div>
+                                <div>
                                     <label class="form-label">Typing Speed (ms)</label>
                                     <input type="number" id="homepage-hero-animated-speed" class="form-input" min="30" max="2000" value="80">
                                 </div>
@@ -8284,9 +8305,15 @@
                 const heroAnimatedSpeedEl = document.getElementById('homepage-hero-animated-speed');
                 const heroAnimatedPreview = document.getElementById('homepage-hero-animated-preview');
 
+                const heroAnimatedFontSizeEl = document.getElementById('homepage-hero-animated-font-size');
+                const heroAnimatedFontStyleEl = document.getElementById('homepage-hero-animated-font-style');
+                const heroAnimatedEffectEl = document.getElementById('homepage-hero-animated-effect');
                 if (heroAnimatedEnabledEl) heroAnimatedEnabledEl.checked = String(settings.homepage_hero_animated_enabled || 'false').toLowerCase() === 'true';
                 if (heroAnimatedTextsEl) heroAnimatedTextsEl.value = settings.homepage_hero_animated_texts || '';
                 if (heroAnimatedColorEl) heroAnimatedColorEl.value = settings.homepage_hero_animated_color || '#ffffff';
+                if (heroAnimatedFontSizeEl) heroAnimatedFontSizeEl.value = settings.homepage_hero_animated_font_size || '40';
+                if (heroAnimatedFontStyleEl) heroAnimatedFontStyleEl.value = settings.homepage_hero_animated_font_style || 'default';
+                if (heroAnimatedEffectEl) heroAnimatedEffectEl.value = settings.homepage_hero_animated_effect || 'typing';
                 if (heroAnimatedSpeedEl) heroAnimatedSpeedEl.value = settings.homepage_hero_animated_speed || '80';
                 if (heroAnimatedPreview) heroAnimatedPreview.textContent = '';
                 if (aboutParagraph4El) aboutParagraph4El.value = settings.about_us_paragraph_4 || '';
@@ -8798,12 +8825,29 @@
             }
         };
 
+        function getHeroFontFamily(style) {
+            switch (String(style || 'default').trim().toLowerCase()) {
+                case 'cursive': return 'Brush Script MT, Lucida Handwriting, cursive';
+                case 'handwriting': return 'Segoe Script, Bradley Hand, cursive';
+                case 'serif': return 'Georgia, Times New Roman, serif';
+                case 'elegant': return 'Palatino Linotype, Book Antiqua, serif';
+                default: return 'inherit';
+            }
+        }
+
         window.previewHeroAnimated = function() {
             try {
                 const preview = document.getElementById('homepage-hero-animated-preview');
                 const texts = (document.getElementById('homepage-hero-animated-texts')?.value || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean);
                 const color = document.getElementById('homepage-hero-animated-color')?.value || '#fff';
+                const size = parseInt(document.getElementById('homepage-hero-animated-font-size')?.value || '40', 10);
+                const fontStyle = (document.getElementById('homepage-hero-animated-font-style')?.value || 'default').trim().toLowerCase();
+                const effect = (document.getElementById('homepage-hero-animated-effect')?.value || 'typing').trim().toLowerCase();
                 preview.style.color = color;
+                preview.style.fontSize = `${Math.max(18, Math.min(120, size))}px`;
+                preview.style.fontFamily = getHeroFontFamily(fontStyle);
+                preview.style.fontStyle = effect === 'cursive' ? 'italic' : 'normal';
+                preview.style.letterSpacing = effect === 'cursive' ? '0.04em' : 'normal';
                 preview.textContent = texts.length ? texts[0] : '';
             } catch (e) { console.warn(e); }
         };
@@ -8813,6 +8857,9 @@
                 const enabled = !!document.getElementById('homepage-hero-animated-enabled')?.checked;
                 const texts = document.getElementById('homepage-hero-animated-texts')?.value || '';
                 const color = document.getElementById('homepage-hero-animated-color')?.value || '#ffffff';
+                const fontSize = document.getElementById('homepage-hero-animated-font-size')?.value || '40';
+                const fontStyle = document.getElementById('homepage-hero-animated-font-style')?.value || 'default';
+                const effect = document.getElementById('homepage-hero-animated-effect')?.value || 'typing';
                 const speed = document.getElementById('homepage-hero-animated-speed')?.value || '80';
 
                 showAlert('Saving hero animated settings...', 'info');
@@ -8820,6 +8867,9 @@
                     homepage_hero_animated_enabled: enabled,
                     homepage_hero_animated_texts: texts,
                     homepage_hero_animated_color: color,
+                    homepage_hero_animated_font_size: fontSize,
+                    homepage_hero_animated_font_style: fontStyle,
+                    homepage_hero_animated_effect: effect,
                     homepage_hero_animated_speed: speed
                 });
 

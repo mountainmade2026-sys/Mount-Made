@@ -1903,6 +1903,9 @@
                 const raw = (settings && settings.homepage_hero_animated_texts) || '';
                 const texts = String(raw || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean);
                 const color = (settings && settings.homepage_hero_animated_color) || '#ffffff';
+                const fontSize = Math.max(18, Math.min(120, parseInt((settings && settings.homepage_hero_animated_font_size) || '40', 10) || 40));
+                const fontStyle = String((settings && settings.homepage_hero_animated_font_style) || 'default').trim().toLowerCase();
+                const effect = String((settings && settings.homepage_hero_animated_effect) || 'typing').trim().toLowerCase();
                 const speed = Math.max(30, parseInt((settings && settings.homepage_hero_animated_speed) || '80', 10) || 80);
 
                 const container = document.getElementById('search-hero-heading');
@@ -1910,6 +1913,13 @@
                 const cursorEl = document.getElementById('homepage-hero-animated-cursor');
 
                 if (!container || !animatedTextEl) return;
+
+                animatedTextEl.style.fontSize = `${fontSize}px`;
+                animatedTextEl.style.fontFamily = getHeroFontFamily(fontStyle);
+                animatedTextEl.style.fontStyle = effect === 'cursive' ? 'italic' : 'normal';
+                animatedTextEl.style.letterSpacing = effect === 'cursive' ? '0.04em' : 'normal';
+                animatedTextEl.style.color = color;
+                if (cursorEl) cursorEl.style.background = color;
 
                 if (!enabled || texts.length === 0) {
                     // Hide animated area but keep regular hero title/subtitle behavior
@@ -1921,8 +1931,6 @@
 
                 container.classList.remove('hidden');
                 if (cursorEl) cursorEl.style.display = '';
-                animatedTextEl.style.color = color;
-                if (cursorEl) cursorEl.style.background = color;
 
                 let i = 0; // phrase index
                 let j = 0; // char index
@@ -1931,17 +1939,14 @@
                 const type = () => {
                     const current = texts[i];
                     if (!deleting) {
-                        // type forward
                         animatedTextEl.textContent = current.slice(0, j + 1);
                         j += 1;
                         if (j >= current.length) {
-                            // pause before deleting
-                            window.heroAnimatedTimer = setTimeout(() => { deleting = true; type(); }, 1000);
+                            window.heroAnimatedTimer = setTimeout(() => { deleting = true; type(); }, effect === 'cursive' ? 1200 : 1000);
                         } else {
-                            window.heroAnimatedTimer = setTimeout(type, speed);
+                            window.heroAnimatedTimer = setTimeout(type, effect === 'cursive' ? Math.max(30, speed + 40) : speed);
                         }
                     } else {
-                        // deleting
                         animatedTextEl.textContent = current.slice(0, j - 1);
                         j -= 1;
                         if (j <= 0) {
@@ -1949,7 +1954,7 @@
                             i = (i + 1) % texts.length;
                             window.heroAnimatedTimer = setTimeout(type, 300);
                         } else {
-                            window.heroAnimatedTimer = setTimeout(type, Math.max(30, Math.floor(speed / 1.6)));
+                            window.heroAnimatedTimer = setTimeout(type, Math.max(30, Math.floor(effect === 'cursive' ? speed + 20 : speed / 1.6)));
                         }
                     }
                 };
