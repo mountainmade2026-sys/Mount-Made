@@ -2830,26 +2830,7 @@
                     if (user && user.role === 'customer' && !user.phone) {
                         showPhoneRequiredModal();
                     }
-                    // If user is customer and has no saved delivery addresses, prompt to use current location
-                    if (user && user.role === 'customer') {
-                        try {
-                            const resp = await api.get('/addresses');
-                            const addrs = resp.addresses || [];
-                            if (!addrs.length) {
-                                // Ask user to use current location to auto-fill delivery address
-                                showLocationPromptIndex()
-                                    .then(ans => {
-                                        if (ans === true) {
-                                            const pinInput = document.getElementById('checkout-pincode-input') || document.getElementById('product-pincode-input');
-                                            requestAndFillLocationIndex(pinInput);
-                                        }
-                                    })
-                                    .catch(() => {});
-                            }
-                        } catch (err) {
-                            // ignore address fetch errors
-                        }
-                    }
+                    // Auto location prompt disabled
                 } catch (_) {}
             })();
 
