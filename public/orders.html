@@ -141,6 +141,11 @@
             color: var(--success);
         }
 
+        .order-status-approved {
+            background: var(--success-bg);
+            color: var(--success);
+        }
+
         .order-status-cancelled {
             background: var(--error-bg);
             color: var(--error);
@@ -555,6 +560,39 @@
             }
         }
 
+        function normalizeReturnStatus(status) {
+            if (!status) return '';
+            const s = String(status).toLowerCase();
+            if (s === 'requested') return 'pending';
+            return s;
+        }
+
+        function getEffectiveCustomerStatus(order) {
+            // If a return exists for this order, prefer showing the return lifecycle
+            const rawReturn = order.return_status || order.returnStatus || null;
+            const rstatus = normalizeReturnStatus(rawReturn);
+            if (rstatus) {
+                switch (rstatus) {
+                    case 'pending':
+                    case 'requested':
+                        return { text: 'Return In Progress', cls: 'order-status-badge order-status-pending' };
+                    case 'approved':
+                        return { text: 'Return Approved', cls: 'order-status-badge order-status-approved' };
+                    case 'rejected':
+                        return { text: 'Return Rejected', cls: 'order-status-badge order-status-cancelled' };
+                    case 'shipped':
+                        return { text: 'Return Shipped', cls: 'order-status-badge order-status-shipped' };
+                    case 'completed':
+                        return { text: 'Return Completed', cls: 'order-status-badge order-status-delivered' };
+                    default:
+                        return { text: String(rstatus).toUpperCase(), cls: 'order-status-badge' };
+                }
+            }
+
+            // Fallback to order status
+            return { text: getCustomerOrderStatusText(order.status), cls: getCustomerOrderStatusClass(order.status) };
+        }
+
         function getRefundDisplay(order) {
             const provider = String(order.payment_provider || '').toLowerCase();
             const paymentStatus = String(order.payment_status || '').toLowerCase();
@@ -768,7 +806,7 @@
                     `        <p style="color:var(--text-light);margin-top:0.25rem;">${formatDate(order.created_at)}</p>`,
                     '      </div>',
                     '      <div class="order-header-right">',
-                    `        <span class="${getCustomerOrderStatusClass(order.status)}">${getCustomerOrderStatusText(order.status)}</span>`,
+                    `        <span class="${getEffectiveCustomerStatus(order).cls}">${getEffectiveCustomerStatus(order).text}</span>`,
                     `        ${deliveryNoteHtml}`,
                     `        <p style="margin-top:0.5rem;font-size:1.25rem;font-weight:700;color:var(--primary);">${formatCurrency(order.total_amount)}</p>`,
                     '      </div>',
