@@ -1845,9 +1845,18 @@
                 </div>
 
                 <div class="controls">
-                    <div class="search-box">
-                        <i class="fas fa-search"></i>
-                        <input type="text" id="stock-search" placeholder="Search products..." oninput="filterStockReports()" onkeyup="filterStockReports()">
+                    <div style="display:flex;gap:0.5rem;align-items:center;">
+                        <div class="search-box" style="flex:1;">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="stock-search" placeholder="Search products..." oninput="filterStockReports()" onkeyup="filterStockReports()">
+                        </div>
+                        <div style="flex:0 0 180px;">
+                            <select id="stock-search-mode" class="form-input" onchange="filterStockReports()" style="width:100%;">
+                                <option value="any">Any (ID or Name)</option>
+                                <option value="id">ID only</option>
+                                <option value="name">Name only</option>
+                            </select>
+                        </div>
                     </div>
                     <button type="button" class="btn btn-secondary btn-sm filter-toggle" onclick="toggleFilters(this)">
                         <i class="fas fa-filter"></i> <span class="hide-mobile">Filters</span>
@@ -6828,6 +6837,7 @@
             if (!window._stockReportsCache) return;
 
             const searchTerm = (document.getElementById('stock-search')?.value || '').toLowerCase().trim();
+            const searchMode = (document.getElementById('stock-search-mode')?.value || 'any');
             const statusFilter = document.getElementById('stock-status-filter')?.value || '';
             const categoryFilter = document.getElementById('stock-category-filter')?.value || '';
 
@@ -6841,6 +6851,14 @@
                 const matchesSearch = tokens.length === 0 || tokens.every(token => {
                     // ID matching (digits-only) and normal text matching
                     const digits = token.replace(/[^0-9]/g, '');
+                    if (searchMode === 'id') {
+                        // only match by id
+                        return digits && String(p.id).includes(digits);
+                    }
+                    if (searchMode === 'name') {
+                        return name.includes(token);
+                    }
+                    // any: id or name or category
                     if (digits && String(p.id).includes(digits)) return true;
                     return name.includes(token) || categoryName.includes(token);
                 });
