@@ -11744,7 +11744,12 @@
         window.saveEditedInvoice = async function() {
             const btn = document.getElementById('invoice-editor-save-btn');
             const orderId = String(document.getElementById('invoice-editor-order-id').value || '').trim();
-            const isOrder = !!orderId;
+            const isOrder = !!orderId && orderId !== '0' && orderId !== 'null';
+
+            if (!isOrder) {
+                showAlert('Error: No order selected. Please click Edit on a specific order first.', 'error');
+                return;
+            }
 
             const payload = {
                 invoice_number: document.getElementById('invoice-editor-number')?.value || null,
