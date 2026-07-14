@@ -14,22 +14,20 @@ class Return {
         return;
       }
 
-      // Table doesn't exist, create it
+      // Table doesn't exist, create it (legacy-safe). The main schema is managed
+      // in config/database.js; this is a defensive creation to avoid startup errors
       await db.query(`
         CREATE TABLE IF NOT EXISTS returns (
           id SERIAL PRIMARY KEY,
           order_id INT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
           user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-          return_reason VARCHAR(255) NOT NULL,
-          return_description TEXT,
-          quantity INT NOT NULL DEFAULT 1,
-          return_status VARCHAR(50) NOT NULL DEFAULT 'pending' CHECK (return_status IN ('pending', 'approved', 'rejected', 'shipped', 'completed')),
-          refund_amount DECIMAL(10, 2),
+          reason TEXT NOT NULL,
           admin_notes TEXT,
+          quantity INT DEFAULT 1,
+          status VARCHAR(50) DEFAULT 'requested',
+          refund_amount DECIMAL(10, 2),
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          approved_at TIMESTAMP,
-          completed_at TIMESTAMP
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
       `);
 
@@ -41,7 +39,7 @@ class Return {
         `CREATE INDEX IF NOT EXISTS idx_returns_user_id ON returns(user_id);`
       );
       await db.query(
-        `CREATE INDEX IF NOT EXISTS idx_returns_status ON returns(return_status);`
+        `CREATE INDEX IF NOT EXISTS idx_returns_status ON returns(status);`
       );
 
       console.log('✓ Returns table created successfully');
@@ -57,12 +55,27 @@ class Return {
   // Create a return request
   static async create(userId, orderId, reason, description, quantity = 1) {
     try {
+      // The DB schema uses `reason` and `status`. Some deployments may not have
+      // `quantity` or `return_description` columns; to be robust we write the
+      // provided `description` and `quantity` into `admin_notes` when those
+      // columns are missing. The primary stored fields will be `reason`, `user_id`,
+      // `order_id`, `quantity` (if available) and `admin_notes`.
+
+      // Build a safe admin_notes payload containing the customer's description
+      // and requested quantity so admins can see the details.
+      const notesParts = [];
+      if (description && String(description).trim() !== '') notesParts.push(`customer_description: ${description}`);
+      if (quantity && Number(quantity) > 0) notesParts.push(`quantity: ${Number(quantity)}`);
+      const notes = notesParts.join('\n') || null;
+
+      // Insert into the core columns available across deployments: reason and admin_notes.
       const result = await db.query(
-        `INSERT INTO returns (user_id, order_id, return_reason, return_description, quantity)
-         VALUES ($1, $2, $3, $4, $5)
+        `INSERT INTO returns (user_id, order_id, reason, admin_notes)
+         VALUES ($1, $2, $3, $4)
          RETURNING *`,
-        [userId, orderId, reason, description, quantity]
+        [userId, orderId, reason, notes]
       );
+
       return result.rows[0];
     } catch (error) {
       console.error('Error creating return:', error);
@@ -103,9 +116,14 @@ class Return {
       let paramIndex = 1;
 
       if (filter.status) {
-        query += ` AND r.return_status = $${paramIndex}`;
-        params.push(filter.status);
-        paramIndex++;
+        // Support both 'pending' and 'requested' naming
+        if (filter.status === 'pending') {
+          query += ` AND (r.status = 'requested' OR r.status = 'pending')`;
+        } else {
+          query += ` AND r.status = $${paramIndex}`;
+          params.push(filter.status);
+          paramIndex++;
+        }
       }
 
       if (filter.orderId) {
@@ -147,10 +165,10 @@ class Return {
     try {
       const result = await db.query(
         `UPDATE returns
-         SET return_status = 'approved',
+         SET status = 'approved',
              refund_amount = $2,
-             admin_notes = $3,
-             approved_at = CURRENT_TIMESTAMP,
+             admin_notes = CASE WHEN admin_notes IS NULL OR admin_notes = '' THEN $3 ELSE admin_notes || E'\n---\n' || $3 END,
+             processed_at = CURRENT_TIMESTAMP,
              updated_at = CURRENT_TIMESTAMP
          WHERE id = $1
          RETURNING *`,
@@ -168,8 +186,8 @@ class Return {
     try {
       const result = await db.query(
         `UPDATE returns
-         SET return_status = 'rejected',
-             admin_notes = $2,
+         SET status = 'rejected',
+             admin_notes = CASE WHEN admin_notes IS NULL OR admin_notes = '' THEN $2 ELSE admin_notes || E'\n---\n' || $2 END,
              updated_at = CURRENT_TIMESTAMP
          WHERE id = $1
          RETURNING *`,
@@ -188,7 +206,7 @@ class Return {
       const notesText = adminNotes ? (adminNotes + '\n' + new Date().toLocaleString()) : '';
       const result = await db.query(
         `UPDATE returns
-         SET return_status = 'shipped',
+         SET status = 'shipped',
              admin_notes = CASE 
                WHEN admin_notes IS NULL OR admin_notes = '' THEN $2
                ELSE admin_notes || E'\n---\n' || $2
@@ -211,12 +229,10 @@ class Return {
       const notesText = adminNotes ? (adminNotes + '\n' + new Date().toLocaleString()) : '';
       const result = await db.query(
         `UPDATE returns
-         SET return_status = 'completed',
+         SET status = 'completed',
              admin_notes = CASE 
-               WHEN admin_notes IS NULL OR admin_notes = '' THEN $2
-               ELSE admin_notes || E'\n---\n' || $2
-             END,
-             completed_at = CURRENT_TIMESTAMP,
+               WHEN admin_notes IS NULL OR admin_notes = '' THEN $2 ELSE admin_notes || E'\n---\n' || $2 END,
+             processed_at = CURRENT_TIMESTAMP,
              updated_at = CURRENT_TIMESTAMP
          WHERE id = $1
          RETURNING *`,
@@ -247,11 +263,12 @@ class Return {
   static async countByStatus() {
     try {
       const result = await db.query(
-        `SELECT return_status, COUNT(*) as count
+        `SELECT status, COUNT(*) as count
          FROM returns
-         GROUP BY return_status
-         ORDER BY return_status`
+         GROUP BY status`
       );
+
+      // Normalize DB status names into the application statuses
       const counts = {
         pending: 0,
         approved: 0,
@@ -259,11 +276,12 @@ class Return {
         shipped: 0,
         completed: 0
       };
+
       result.rows.forEach(row => {
-        if (row.return_status in counts) {
-          counts[row.return_status] = parseInt(row.count, 10);
-        }
+        const status = row.status === 'requested' ? 'pending' : row.status;
+        if (status in counts) counts[status] = parseInt(row.count, 10);
       });
+
       return counts;
     } catch (error) {
       console.error('Error counting returns:', error);
