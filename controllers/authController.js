@@ -54,6 +54,17 @@ const createSmtpTransporterForAuth = () => {
   });
 };
 
+const shouldRequireOldPasswordForPasswordChange = (user = {}) => {
+  if (user?.password_set === false) {
+    return false;
+  }
+
+  const provider = String(user?.auth_provider || 'password').trim().toLowerCase();
+  return !['google', 'phone', 'phone_signup', 'passwordless', 'social'].includes(provider);
+};
+
+exports.shouldRequireOldPasswordForPasswordChange = shouldRequireOldPasswordForPasswordChange;
+
 const httpJsonRequest = ({ method, hostname, path, headers, body }) => {
   const payload = body ? JSON.stringify(body) : '';
   const requestHeaders = {
@@ -340,7 +351,9 @@ exports.register = async (req, res) => {
       phone: normalizedPhone,
       role: role || 'customer',
       business_name,
-      tax_id
+      tax_id,
+      auth_provider: 'password',
+      password_set: true
     });
 
     // If wholesale, create a default saved address during registration
@@ -446,6 +459,8 @@ exports.login = async (req, res) => {
         full_name: user.full_name,
         role: user.role,
         is_approved: user.is_approved,
+        auth_provider: user.auth_provider || 'password',
+        password_set: user.password_set !== false,
         profile_photo: user.profile_photo
       }
     });
@@ -522,6 +537,8 @@ exports.googleAuth = async (req, res) => {
           full_name: existingUser.full_name,
           role: existingUser.role,
           is_approved: existingUser.is_approved,
+          auth_provider: existingUser.auth_provider || 'password',
+          password_set: existingUser.password_set !== false,
           profile_photo: existingUser.profile_photo
         }
       });
@@ -565,7 +582,9 @@ exports.googleAuth = async (req, res) => {
       phone: normalizedPhone,
       role: selectedRole,
       business_name,
-      tax_id
+      tax_id,
+      auth_provider: 'google',
+      password_set: false
     });
 
     if (selectedRole === 'wholesale') {
@@ -592,6 +611,8 @@ exports.googleAuth = async (req, res) => {
         full_name: user.full_name,
         role: user.role,
         is_approved: user.is_approved,
+        auth_provider: user.auth_provider || 'google',
+        password_set: user.password_set !== false,
         profile_photo: user.profile_photo
       }
     });
@@ -883,8 +904,8 @@ exports.changePassword = async (req, res) => {
   try {
     const { old_password, new_password, confirm_password } = req.body || {};
 
-    if (!old_password || !new_password || !confirm_password) {
-      return res.status(400).json({ error: 'Old password, new password, and confirm password are required.' });
+    if (!new_password || !confirm_password) {
+      return res.status(400).json({ error: 'New password and confirm password are required.' });
     }
 
     if (String(new_password).length < 6) {
@@ -895,20 +916,27 @@ exports.changePassword = async (req, res) => {
       return res.status(400).json({ error: 'New password and confirm password do not match.' });
     }
 
-    const userRecord = await db.query('SELECT id, password FROM users WHERE id = $1', [req.user.id]);
+    const userRecord = await db.query('SELECT id, password, auth_provider, password_set FROM users WHERE id = $1', [req.user.id]);
     const user = userRecord.rows[0];
     if (!user) {
       return res.status(404).json({ error: 'User not found.' });
     }
 
-    const isOldPasswordValid = await User.verifyPassword(old_password, user.password);
-    if (!isOldPasswordValid) {
-      return res.status(400).json({ error: 'Old password is incorrect.' });
-    }
+    const requiresOldPassword = shouldRequireOldPasswordForPasswordChange(user);
+    if (requiresOldPassword) {
+      if (!old_password) {
+        return res.status(400).json({ error: 'Old password is required.' });
+      }
 
-    const isSamePassword = await User.verifyPassword(new_password, user.password);
-    if (isSamePassword) {
-      return res.status(400).json({ error: 'New password must be different from old password.' });
+      const isOldPasswordValid = await User.verifyPassword(old_password, user.password);
+      if (!isOldPasswordValid) {
+        return res.status(400).json({ error: 'Old password is incorrect.' });
+      }
+
+      const isSamePassword = await User.verifyPassword(new_password, user.password);
+      if (isSamePassword) {
+        return res.status(400).json({ error: 'New password must be different from old password.' });
+      }
     }
 
     await User.updatePassword(req.user.id, new_password);
@@ -963,6 +991,8 @@ exports.checkAuth = async (req, res) => {
         phone: user.phone || null,
         role: user.role,
         is_approved: user.is_approved,
+        auth_provider: user.auth_provider || 'password',
+        password_set: user.password_set !== false,
         profile_photo: user.profile_photo
       }
     });

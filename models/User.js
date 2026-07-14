@@ -12,7 +12,9 @@ class User {
       business_name = null,
       tax_id = null,
       is_approved = true,
-      is_blocked = false
+      is_blocked = false,
+      auth_provider = 'password',
+      password_set = true
     } = params || {};
 
     const normalizedEmail = (email || '').trim().toLowerCase();
@@ -29,8 +31,8 @@ class User {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const query = `
-      INSERT INTO users (email, password, full_name, phone, role, business_name, tax_id, is_approved, is_blocked)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      INSERT INTO users (email, password, full_name, phone, role, business_name, tax_id, is_approved, is_blocked, auth_provider, password_set)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       ON CONFLICT (email) DO UPDATE SET
         password = EXCLUDED.password,
         full_name = EXCLUDED.full_name,
@@ -40,8 +42,10 @@ class User {
         tax_id = EXCLUDED.tax_id,
         is_approved = EXCLUDED.is_approved,
         is_blocked = EXCLUDED.is_blocked,
+        auth_provider = EXCLUDED.auth_provider,
+        password_set = EXCLUDED.password_set,
         updated_at = CURRENT_TIMESTAMP
-      RETURNING id, email, full_name, phone, role, business_name, tax_id, is_approved, is_blocked, created_at;
+      RETURNING id, email, full_name, phone, role, business_name, tax_id, is_approved, is_blocked, auth_provider, password_set, created_at;
     `;
 
     const values = [
@@ -53,7 +57,9 @@ class User {
       business_name,
       tax_id,
       !!is_approved,
-      !!is_blocked
+      !!is_blocked,
+      auth_provider,
+      !!password_set
     ];
 
     const result = await db.query(query, values);
@@ -61,20 +67,20 @@ class User {
   }
 
   static async create(userData) {
-    const { email, password, full_name, phone, role, business_name, tax_id } = userData;
+    const { email, password, full_name, phone, role, business_name, tax_id, auth_provider = 'password', password_set = true } = userData;
     const normalizedEmail = (email || '').trim().toLowerCase();
     
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
     
     const query = `
-      INSERT INTO users (email, password, full_name, phone, role, business_name, tax_id, is_approved)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      RETURNING id, email, full_name, phone, role, business_name, tax_id, is_approved, created_at
+      INSERT INTO users (email, password, full_name, phone, role, business_name, tax_id, is_approved, auth_provider, password_set)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      RETURNING id, email, full_name, phone, role, business_name, tax_id, is_approved, auth_provider, password_set, created_at
     `;
     
     const is_approved = role === 'admin' || role === 'super_admin' || role === 'customer';
-    const values = [normalizedEmail, hashedPassword, full_name, phone, role, business_name, tax_id, is_approved];
+    const values = [normalizedEmail, hashedPassword, full_name, phone, role, business_name, tax_id, is_approved, auth_provider, !!password_set];
     
     const result = await db.query(query, values);
     return result.rows[0];
@@ -188,6 +194,8 @@ class User {
       tax_id: user.tax_id,
       is_approved: user.is_approved,
       is_blocked: user.is_blocked,
+      auth_provider: user.auth_provider,
+      password_set: user.password_set,
       profile_photo: user.profile_photo,
       created_at: user.created_at
     };
@@ -201,7 +209,7 @@ class User {
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     const query = `
       UPDATE users
-      SET password = $1, updated_at = CURRENT_TIMESTAMP
+      SET password = $1, auth_provider = 'password', password_set = true, updated_at = CURRENT_TIMESTAMP
       WHERE id = $2
       RETURNING id
     `;

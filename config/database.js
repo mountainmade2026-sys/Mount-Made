@@ -190,6 +190,8 @@ const initializeDatabase = async () => {
         tax_id VARCHAR(50),
         is_approved BOOLEAN DEFAULT false,
         is_blocked BOOLEAN DEFAULT false,
+        auth_provider VARCHAR(20) DEFAULT 'password',
+        password_set BOOLEAN DEFAULT true,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
@@ -257,6 +259,16 @@ const initializeDatabase = async () => {
         IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
                       WHERE table_name='users' AND column_name='profile_photo') THEN
           ALTER TABLE users ADD COLUMN profile_photo VARCHAR(500);
+        END IF;
+
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                      WHERE table_name='users' AND column_name='auth_provider') THEN
+          ALTER TABLE users ADD COLUMN auth_provider VARCHAR(20) DEFAULT 'password';
+        END IF;
+
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                      WHERE table_name='users' AND column_name='password_set') THEN
+          ALTER TABLE users ADD COLUMN password_set BOOLEAN DEFAULT true;
         END IF;
       END $$;
     `);

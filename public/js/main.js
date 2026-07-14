@@ -1729,6 +1729,13 @@ function ensureProfileModal() {
   }
 }
 
+function shouldRequireOldPasswordForPasswordChange(user = {}) {
+  if (user?.password_set === false) return false;
+
+  const provider = String(user?.auth_provider || 'password').trim().toLowerCase();
+  return !['google', 'phone', 'phone_signup', 'passwordless', 'social'].includes(provider);
+}
+
 function ensureAccountManagementModal() {
   if (document.getElementById(ACCOUNT_MODAL_ID)) return;
 
@@ -1738,8 +1745,8 @@ function ensureAccountManagementModal() {
   modal.innerHTML = `
     <div class="profile-modal-dialog">
       <h3 style="margin:0 0 0.25rem 0;">Account Management</h3>
-      <p class="profile-modal-sub">Change your account password securely.</p>
-      <div class="form-group">
+      <p id="account-password-subtitle" class="profile-modal-sub">Change your account password securely.</p>
+      <div id="account-old-password-group" class="form-group">
         <label class="form-label" for="account-old-password">Old Password</label>
         <input type="password" id="account-old-password" class="form-input" placeholder="Enter old password">
       </div>
@@ -1769,16 +1776,36 @@ async function openAccountManagementModal() {
   ensureProfileModal();
   ensureAccountManagementModal();
 
+  await auth.checkAuth();
+
+  const oldGroup = document.getElementById('account-old-password-group');
   const oldInput = document.getElementById('account-old-password');
   const newInput = document.getElementById('account-new-password');
   const confirmInput = document.getElementById('account-confirm-password');
+  const subtitle = document.getElementById('account-password-subtitle');
+  const requiresOldPassword = shouldRequireOldPasswordForPasswordChange(auth.currentUser || {});
+
+  if (oldGroup) {
+    oldGroup.style.display = requiresOldPassword ? '' : 'none';
+  }
+  if (subtitle) {
+    subtitle.textContent = requiresOldPassword
+      ? 'Change your account password securely.'
+      : 'Set a password for future logins.';
+  }
 
   if (oldInput) oldInput.value = '';
   if (newInput) newInput.value = '';
   if (confirmInput) confirmInput.value = '';
 
   openModal(ACCOUNT_MODAL_ID);
-  setTimeout(() => oldInput?.focus(), 0);
+  setTimeout(() => {
+    if (requiresOldPassword && oldInput) {
+      oldInput.focus();
+    } else if (newInput) {
+      newInput.focus();
+    }
+  }, 0);
 }
 
 async function changeAccountPassword() {
@@ -1786,12 +1813,18 @@ async function changeAccountPassword() {
   const newInput = document.getElementById('account-new-password');
   const confirmInput = document.getElementById('account-confirm-password');
 
+  const requiresOldPassword = shouldRequireOldPasswordForPasswordChange(auth.currentUser || {});
   const old_password = String(oldInput?.value || '').trim();
   const new_password = String(newInput?.value || '').trim();
   const confirm_password = String(confirmInput?.value || '').trim();
 
-  if (!old_password || !new_password || !confirm_password) {
-    showAlert('Please fill old password, new password, and confirm password.', 'error');
+  if (requiresOldPassword) {
+    if (!old_password || !new_password || !confirm_password) {
+      showAlert('Please fill old password, new password, and confirm password.', 'error');
+      return;
+    }
+  } else if (!new_password || !confirm_password) {
+    showAlert('Please fill new password and confirm password.', 'error');
     return;
   }
 
@@ -1814,6 +1847,10 @@ async function changeAccountPassword() {
 
   try {
     await api.put('/auth/change-password', { old_password, new_password, confirm_password });
+    if (auth.currentUser) {
+      auth.currentUser.auth_provider = 'password';
+      auth.currentUser.password_set = true;
+    }
     showAlert('Password updated successfully. Use your new password next login.', 'success');
     closeModal(ACCOUNT_MODAL_ID);
   } catch (error) {
