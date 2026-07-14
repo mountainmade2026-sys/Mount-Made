@@ -11081,7 +11081,7 @@
 
             const companyText = `<div style="font-size:${layout.company?.fontSize ?? 16}px;font-weight:${layout.company?.fontWeight ?? 700};line-height:${layout.company?.lineHeight ?? 1};color:${layout.company?.color || '#111'};text-align:${layout.company?.textAlign || 'left'};">${escapeHtml(company)}</div>`;
             const metaLines = [`<div><strong>Invoice:</strong> ${escapeHtml(invNum)}</div>`, `<div><strong>Date:</strong> ${new Date().toLocaleDateString('en-IN')}</div>`];
-            const customerLines = [`<div><strong>Customer:</strong> ${escapeHtml(customer)}</div>`, email ? `<div><strong>Email:</strong> ${escapeHtml(email)}</div>` : '', phone ? `<div><strong>Phone:</strong> ${escapeHtml(phone)}</div>` : '', address ? `<div><strong>Address:</strong> ${escapeHtml(address).replace(/\n/g, '<br>')}</div>` : ''].filter(Boolean);
+            const customerLines = [`<div><strong>Customer:</strong> ${escapeHtml(customer)}</div>`, phone ? `<div><strong>Phone:</strong> ${escapeHtml(phone)}</div>` : '', address ? `<div><strong>Address:</strong> ${escapeHtml(address).replace(/\n/g, '<br>')}</div>` : ''].filter(Boolean);
 
             const renderBlock = (blockKey, content, extraCss = '') => {
                 const cfg = layout[blockKey] || {};
