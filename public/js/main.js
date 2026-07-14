@@ -2487,9 +2487,13 @@ async function loadSiteLogo() {
 
 // Load logo on page load
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', loadSiteLogo);
+  document.addEventListener('DOMContentLoaded', () => {
+    loadSiteLogo();
+    injectFooterPolicyLinks();
+  });
 } else {
   loadSiteLogo();
+  injectFooterPolicyLinks();
 }
 
 function applyFooterContact(settings) {
@@ -2513,6 +2517,32 @@ function applyFooterContact(settings) {
     if (location) { locationEl.textContent = location; locationEl.parentElement.style.display = ''; }
     else { locationEl.parentElement.style.display = 'none'; }
   }
+}
+
+function injectFooterPolicyLinks() {
+  const footerBottom = document.querySelector('.footer-bottom');
+  if (!footerBottom || footerBottom.querySelector('.footer-policy-links')) return;
+
+  const links = [
+    ['/privacy-policy', 'Privacy Policy'],
+    ['/terms-conditions', 'Terms & Conditions'],
+    ['/refund-policy', 'Refund Policy'],
+    ['/return-policy', 'Return Policy'],
+    ['/shipping-policy', 'Shipping Policy'],
+    ['/cancellation-policy', 'Cancellation Policy'],
+    ['/cookie-policy', 'Cookie Policy']
+  ];
+
+  const trustNote = document.createElement('div');
+  trustNote.className = 'footer-trust-note';
+  trustNote.textContent = 'Secure checkout • Transparent policies • Fast support';
+
+  const policyLinks = document.createElement('div');
+  policyLinks.className = 'footer-policy-links';
+  policyLinks.innerHTML = links.map(([href, label]) => `<a href="${href}">${label}</a>`).join('');
+
+  footerBottom.appendChild(trustNote);
+  footerBottom.appendChild(policyLinks);
 }
 
 // ── Site Notice / Situation Reason Banner ─────────────────────────────────

@@ -805,6 +805,34 @@ app.get('/about', (req, res) => {
   return sendHtmlPage(req, res, 'about.html');
 });
 
+app.get('/privacy-policy', (req, res) => {
+  return sendHtmlPage(req, res, 'privacy-policy.html');
+});
+
+app.get('/terms-conditions', (req, res) => {
+  return sendHtmlPage(req, res, 'terms-conditions.html');
+});
+
+app.get('/refund-policy', (req, res) => {
+  return sendHtmlPage(req, res, 'refund-policy.html');
+});
+
+app.get('/return-policy', (req, res) => {
+  return sendHtmlPage(req, res, 'return-policy.html');
+});
+
+app.get('/shipping-policy', (req, res) => {
+  return sendHtmlPage(req, res, 'shipping-policy.html');
+});
+
+app.get('/cancellation-policy', (req, res) => {
+  return sendHtmlPage(req, res, 'cancellation-policy.html');
+});
+
+app.get('/cookie-policy', (req, res) => {
+  return sendHtmlPage(req, res, 'cookie-policy.html');
+});
+
 app.get('/faq', (req, res) => {
   return sendHtmlPage(req, res, 'faq.html');
 });

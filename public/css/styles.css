@@ -1727,13 +1727,67 @@ html[data-theme="dark"] .price-discount {
   margin: 0;
   border-top: none;
   text-align: center;
-  color: rgba(255,255,255,0.42);
-  font-size: 0.75rem;
+  color: rgba(255,255,255,0.65);
+  font-size: 0.85rem;
+}
+
+.footer-bottom p {
+  margin: 0;
+  color: rgba(255,255,255,0.65);
+}
+
+.footer-trust-note {
+  margin: 0 0 0.7rem 0;
+  text-align: center;
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.70);
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+.footer-policy-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6rem 1rem;
+  margin-top: 0.7rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid rgba(255,255,255,0.16);
+  font-size: 0.85rem;
+}
+
+.footer-policy-links a {
+  color: rgba(255,255,255,0.75);
+  text-decoration: underline;
+  transition: color var(--transition-fast);
+  display: inline;
+}
+
+.footer-policy-links a:hover {
+  color: rgba(255,255,255,0.95);
+  text-decoration: none;
 }
 
 @media (max-width: 768px) {
   .container { padding: var(--space-5) var(--space-4); }
   .section-title { margin-bottom: var(--space-5); }
+  
+  .footer-bottom {
+    padding: var(--space-4) var(--space-4);
+    font-size: 0.8rem;
+  }
+  
+  .footer-trust-note {
+    font-size: 0.8rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .footer-policy-links {
+    gap: 0.5rem 0.75rem;
+    margin-top: 0.5rem;
+    padding-top: 0.6rem;
+    font-size: 0.75rem;
+  }
 }
 
 /* ============================================================================
