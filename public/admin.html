@@ -11109,6 +11109,16 @@
             const itemsList = Array.isArray(options.items) ? options.items : (window.invoiceEditorData && Array.isArray(window.invoiceEditorData.items) ? window.invoiceEditorData.items : []);
             const productCatalog = Array.isArray(window._productsCache) ? window._productsCache : [];
 
+            // Catalog-level inferred discount: sum of per-item (listPrice - paidPrice) * qty
+            const catalogDiscount = Array.isArray(itemsList) ? itemsList.reduce((sum, it) => {
+                const prod = productCatalog.find(p => String(p.id) === String(it.product_id || it.id));
+                const listPrice = prod && Number.isFinite(Number(prod.price)) ? Number(prod.price) : null;
+                const paidPrice = Number.isFinite(Number(it.price)) ? Number(it.price) : 0;
+                const qty = Number.isFinite(Number(it.quantity)) ? Number(it.quantity) : 1;
+                if (listPrice != null && listPrice > paidPrice) return sum + (listPrice - paidPrice) * qty;
+                return sum;
+            }, 0) : 0;
+
             // grossSubtotal: sum of main (original) unit prices
             // paidSubtotal: sum of actual paid prices (after per-item discounts)
             let grossSubtotal = 0;
