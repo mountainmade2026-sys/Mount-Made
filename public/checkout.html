@@ -1358,6 +1358,44 @@
             line-height: 1.5;
         }
 
+        /* Banking Payment Form Styles */
+        .pm-detail-panel .form-label {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.4rem;
+            display: block;
+        }
+
+        .pm-detail-panel .form-control {
+            width: 100%;
+            padding: 0.65rem 0.75rem;
+            border: 2px solid var(--border-primary);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .pm-detail-panel .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(44, 95, 45, 0.1);
+        }
+
+        .pm-detail-panel .form-control::placeholder {
+            color: var(--text-tertiary);
+        }
+
+        .pm-detail-panel small {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            display: block;
+            margin-top: 0.25rem;
+        }
+
         /* Tablet optimizations */
         @media (max-width: 768px) {
             .payment-group-header {
@@ -2271,7 +2309,76 @@
     </style>
 
     <script src="/js/main.js?v=20260223"></script>
-    <script src="https://sdk.idfcbank.com/idealweb/production/js/IDFCBANK_SDK.js"></script>
+    
+    <!-- IDFC Payment Gateway SDK with fallback loading -->
+    <script>
+        (function loadIDFCSDK() {
+            const sdkUrl = 'https://sdk.idfcbank.com/idealweb/production/js/IDFCBANK_SDK.js';
+            const timeout = 5000; // 5 second timeout
+            
+            // Attempt to load IDFC SDK
+            function loadScript(url, callback) {
+                const script = document.createElement('script');
+                script.src = url;
+                script.type = 'text/javascript';
+                script.async = true;
+                
+                const timeoutId = setTimeout(() => {
+                    console.warn('IDFC SDK loading timed out after', timeout, 'ms');
+                    // Continue without SDK - will use URL fallback
+                    callback(false);
+                }, timeout);
+                
+                script.onload = function() {
+                    clearTimeout(timeoutId);
+                    console.log('IDFC SDK loaded successfully');
+                    if (window.IDFCBANK) {
+                        console.log('IDFCBANK object available');
+                        callback(true);
+                    } else {
+                        console.warn('IDFCBANK object not found after SDK load');
+                        callback(false);
+                    }
+                };
+                
+                script.onerror = function(e) {
+                    clearTimeout(timeoutId);
+                    console.warn('Failed to load IDFC SDK:', e);
+                    // Continue without SDK - will use URL fallback
+                    callback(false);
+                };
+                
+                document.head.appendChild(script);
+            }
+            
+            // Try to load SDK but don't block if it fails
+            loadScript(sdkUrl, function(success) {
+                if (success) {
+                    window.IDFC_SDK_LOADED = true;
+                    console.log('IDFC payment gateway ready');
+                } else {
+                    window.IDFC_SDK_LOADED = false;
+                    console.log('IDFC SDK not available - will use URL redirect fallback');
+                    // Set a fallback object to prevent errors
+                    window.IDFCBANK = window.IDFCBANK || {
+                        available: false,
+                        message: 'IDFC SDK not loaded'
+                    };
+                }
+            });
+            
+            // Timeout check - if SDK not loaded in 10 seconds, mark as unavailable
+            setTimeout(() => {
+                if (!window.IDFC_SDK_LOADED) {
+                    window.IDFCBANK = window.IDFCBANK || {
+                        available: false,
+                        message: 'IDFC SDK loading timeout'
+                    };
+                }
+            }, 10000);
+        })();
+    </script>
+    
     <script>
         // Fallbacks: if main.js is stale/blocked, keep checkout functional.
         (function ensureCheckoutDependencies() {
@@ -3333,6 +3440,40 @@
             updateCodPincodeCheck();
         }
 
+        function validateCardNumber(cardNumber) {
+            const cleaned = String(cardNumber || '').replace(/\D/g, '');
+            return cleaned.length >= 13 && cleaned.length <= 19;
+        }
+
+        function formatCardNumber(input) {
+            const value = String(input.value || '').replace(/\D/g, '');
+            const formatted = value.replace(/(\d{4})/g, '$1 ').trim();
+            input.value = formatted;
+        }
+
+        function validateExpiryDate(expiryDate) {
+            const parts = String(expiryDate || '').split('/');
+            if (parts.length !== 2) return false;
+            const month = parseInt(parts[0], 10);
+            const year = parseInt(parts[1], 10);
+            if (month < 1 || month > 12) return false;
+            const currentYear = new Date().getFullYear() % 100;
+            return year >= currentYear;
+        }
+
+        function formatExpiryDate(input) {
+            let value = String(input.value || '').replace(/\D/g, '');
+            if (value.length >= 2) {
+                value = value.slice(0, 2) + '/' + value.slice(2, 4);
+            }
+            input.value = value;
+        }
+
+        function validateCVV(cvv) {
+            const cleaned = String(cvv || '').replace(/\D/g, '');
+            return cleaned.length >= 3 && cleaned.length <= 4;
+        }
+
         function updatePaymentDetailsPanel(method) {
             const panel = document.getElementById('payment-details-panel');
             const content = document.getElementById('payment-details-content');
@@ -3342,7 +3483,6 @@
 
             // Show/hide based on method type
             if (normalizedMethod === 'cod') {
-                // For COD, show the pincode details
                 const gpaySection = document.getElementById('gpay-details');
                 if (gpaySection) {
                     gpaySection.style.display = 'block';
@@ -3351,7 +3491,6 @@
                 panel.style.display = 'none';
                 panel.classList.add('hidden');
             } else if (['gpay', 'phone', 'paytm'].includes(normalizedMethod)) {
-                // For UPI methods, show payment details
                 const gpaySection = document.getElementById('gpay-details');
                 if (gpaySection) {
                     gpaySection.style.display = 'block';
@@ -3360,34 +3499,84 @@
                 panel.style.display = 'none';
                 panel.classList.add('hidden');
             } else if (['debit', 'credit', 'netbank'].includes(normalizedMethod)) {
-                // For banking methods
+                // For banking methods - show actual form fields
                 const methodLabels = {
                     'debit': 'Debit Card',
                     'credit': 'Credit Card',
                     'netbank': 'Net Banking'
                 };
 
-                content.innerHTML = `
-                    <div class="pm-info-box" style="margin-bottom: 0.75rem;">
-                        <i class="fas fa-info-circle" style="margin-right: 0.4rem; color: var(--primary);"></i>
+                let fieldsHTML = `
+                    <div style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; padding: 1rem; border-radius: 12px; margin-bottom: 1rem;">
+                        <i class="fas fa-lock" style="margin-right: 0.5rem;"></i>
                         <strong>${methodLabels[normalizedMethod] || 'Bank Payment'}</strong>
-                    </div>
-                    <p class="pm-info-box">After placing the order, you will be redirected to a secure payment gateway to complete your payment. Your transaction is encrypted and safe.</p>
-                    <div style="display: grid; gap: 0.6rem; margin-top: 1rem;">
-                        <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
-                            <i class="fas fa-check-circle" style="color: var(--primary); margin-top: 0.15rem; flex-shrink: 0;"></i>
-                            <span class="pm-info-box">Secure SSL encryption</span>
-                        </div>
-                        <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
-                            <i class="fas fa-check-circle" style="color: var(--primary); margin-top: 0.15rem; flex-shrink: 0;"></i>
-                            <span class="pm-info-box">Multiple bank support</span>
-                        </div>
-                        <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
-                            <i class="fas fa-check-circle" style="color: var(--primary); margin-top: 0.15rem; flex-shrink: 0;"></i>
-                            <span class="pm-info-box">Instant confirmation</span>
-                        </div>
+                        <p style="font-size: 0.85rem; margin-top: 0.4rem; opacity: 0.9;">Secure payment gateway • Encrypted transaction</p>
                     </div>
                 `;
+
+                if (normalizedMethod === 'netbank') {
+                    // Net Banking - Bank selection
+                    fieldsHTML += `
+                        <div style="margin-bottom: 1rem;">
+                            <label class="form-label" style="font-weight: 600; margin-bottom: 0.5rem; display: block;">Select Your Bank</label>
+                            <select id="netbank-select" class="form-control" style="width: 100%; padding: 0.65rem; border: 2px solid var(--border-primary); border-radius: 8px; font-size: 0.95rem; background: var(--bg-primary); color: var(--text-primary);">
+                                <option value="">-- Choose Your Bank --</option>
+                                <option value="HDFC">HDFC Bank</option>
+                                <option value="ICICI">ICICI Bank</option>
+                                <option value="AXIS">Axis Bank</option>
+                                <option value="BOB">Bank of Baroda</option>
+                                <option value="SBI">State Bank of India</option>
+                                <option value="IDFC">IDFC Bank</option>
+                                <option value="KOTAK">Kotak Mahindra Bank</option>
+                                <option value="YES">YES Bank</option>
+                                <option value="INDUSIND">IndusInd Bank</option>
+                                <option value="OTHER">Other Bank</option>
+                            </select>
+                        </div>
+                        <div style="background: var(--bg-secondary); padding: 0.75rem; border-radius: 8px; border-left: 4px solid var(--primary);">
+                            <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">
+                                <i class="fas fa-info-circle" style="margin-right: 0.4rem; color: var(--primary);"></i>
+                                You will be redirected to your bank's secure page to complete the payment.
+                            </p>
+                        </div>
+                    `;
+                } else {
+                    // Debit/Credit Card fields
+                    fieldsHTML += `
+                        <div style="margin-bottom: 1rem;">
+                            <label class="form-label" style="font-weight: 600; margin-bottom: 0.4rem; display: block;">Cardholder Name</label>
+                            <input type="text" id="card-holder-name" placeholder="John Doe" class="form-control" style="width: 100%; padding: 0.65rem; border: 2px solid var(--border-primary); border-radius: 8px; font-size: 0.95rem;" maxlength="50">
+                        </div>
+
+                        <div style="margin-bottom: 1rem;">
+                            <label class="form-label" style="font-weight: 600; margin-bottom: 0.4rem; display: block;">Card Number</label>
+                            <input type="text" id="card-number" placeholder="1234 5678 9012 3456" class="form-control" style="width: 100%; padding: 0.65rem; border: 2px solid var(--border-primary); border-radius: 8px; font-size: 0.95rem; letter-spacing: 0.1em;" maxlength="19" oninput="formatCardNumber(this)">
+                            <small style="color: var(--text-secondary); font-size: 0.8rem; margin-top: 0.25rem; display: block;">13-19 digits • No spaces needed</small>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                            <div>
+                                <label class="form-label" style="font-weight: 600; margin-bottom: 0.4rem; display: block;">Expiry Date</label>
+                                <input type="text" id="card-expiry" placeholder="MM/YY" class="form-control" style="width: 100%; padding: 0.65rem; border: 2px solid var(--border-primary); border-radius: 8px; font-size: 0.95rem; text-align: center;" maxlength="5" oninput="formatExpiryDate(this)">
+                                <small style="color: var(--text-secondary); font-size: 0.8rem; margin-top: 0.25rem; display: block;">MM/YY</small>
+                            </div>
+                            <div>
+                                <label class="form-label" style="font-weight: 600; margin-bottom: 0.4rem; display: block;">CVV</label>
+                                <input type="password" id="card-cvv" placeholder="***" class="form-control" style="width: 100%; padding: 0.65rem; border: 2px solid var(--border-primary); border-radius: 8px; font-size: 0.95rem; text-align: center; letter-spacing: 0.2em;" maxlength="4" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                                <small style="color: var(--text-secondary); font-size: 0.8rem; margin-top: 0.25rem; display: block;">3-4 digits</small>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; align-items: flex-start; gap: 0.5rem; background: var(--bg-secondary); padding: 0.75rem; border-radius: 8px; border-left: 4px solid var(--primary);">
+                            <i class="fas fa-shield-alt" style="color: var(--primary); margin-top: 0.15rem; flex-shrink: 0;"></i>
+                            <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">
+                                Your card details are secure and encrypted. They will be processed by IDFC Bank's secure gateway.
+                            </p>
+                        </div>
+                    `;
+                }
+
+                content.innerHTML = fieldsHTML;
 
                 const gpaySection = document.getElementById('gpay-details');
                 if (gpaySection) {
@@ -3397,6 +3586,48 @@
                 panel.style.display = 'block';
                 panel.classList.remove('hidden');
             }
+        }
+
+        function validatePaymentDetails(method) {
+            const normalizedMethod = String(method || '').toLowerCase();
+
+            if (normalizedMethod === 'netbank') {
+                const bankSelect = document.getElementById('netbank-select');
+                if (!bankSelect || !bankSelect.value) {
+                    showAlert('Please select your bank', 'warning');
+                    return false;
+                }
+                return true;
+            } else if (['debit', 'credit'].includes(normalizedMethod)) {
+                const cardName = document.getElementById('card-holder-name');
+                const cardNumber = document.getElementById('card-number');
+                const cardExpiry = document.getElementById('card-expiry');
+                const cardCVV = document.getElementById('card-cvv');
+
+                if (!cardName || !cardName.value.trim()) {
+                    showAlert('Please enter cardholder name', 'warning');
+                    return false;
+                }
+
+                if (!cardNumber || !validateCardNumber(cardNumber.value)) {
+                    showAlert('Please enter a valid card number (13-19 digits)', 'warning');
+                    return false;
+                }
+
+                if (!cardExpiry || !validateExpiryDate(cardExpiry.value)) {
+                    showAlert('Please enter a valid expiry date (MM/YY)', 'warning');
+                    return false;
+                }
+
+                if (!cardCVV || !validateCVV(cardCVV.value)) {
+                    showAlert('Please enter a valid CVV (3-4 digits)', 'warning');
+                    return false;
+                }
+
+                return true;
+            }
+
+            return true;
         }
 
         function toggleGpayDetails() {
@@ -4078,8 +4309,17 @@
             if (['debit', 'credit', 'netbank'].includes(paymentMethod)) {
                 console.log('checkout: handling banking payment via IDFC');
                 
+                // First, validate payment details form
+                if (!validatePaymentDetails(paymentMethod)) {
+                    console.log('checkout: payment details validation failed');
+                    setPlaceOrderButtonState(false);
+                    return;
+                }
+
                 // First, create the order on the server
                 try {
+                    setPlaceOrderButtonState(true);
+                    
                     if (shouldSaveAddress) {
                         try {
                             await api.post('/addresses', {
@@ -4099,16 +4339,28 @@
                         }
                     }
 
+                    // Show loading message
+                    showAlert('Creating your order... Please wait.', 'info');
+
                     // Create order on server
-                    const serverOrder = await api.post('/orders', orderData);
-                    console.log('checkout: server order created for banking', serverOrder);
+                    let serverOrder;
+                    try {
+                        serverOrder = await api.post('/orders', orderData);
+                        console.log('checkout: server order created for banking', serverOrder);
+                    } catch (orderError) {
+                        console.error('Order creation failed:', orderError);
+                        throw new Error(`Order creation failed: ${orderError.message || 'Server error'}`);
+                    }
 
                     if (!serverOrder || !serverOrder.order) {
-                        throw new Error('Failed to create order on server');
+                        throw new Error('Failed to create order on server - invalid response');
                     }
 
                     const orderId = serverOrder.order.id || serverOrder.order._id;
                     const orderNumber = serverOrder.order.order_number || serverOrder.order.id;
+
+                    // Show next step message
+                    showAlert('Initiating payment gateway... Please wait.', 'info');
 
                     // Prepare IDFC payment parameters
                     const bankingMethodMap = {
@@ -4120,25 +4372,6 @@
                     // Generate transaction reference
                     const txnRef = `MM${Date.now()}${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
                     
-                    // IDFC payment initiation
-                    const idfcPaymentData = {
-                        merchantId: serverOrder.idfc_merchant_id || window.IDFC_MERCHANT_ID,
-                        orderId: orderId,
-                        amount: Math.round(totalAmount * 100), // In paisa
-                        currency: 'INR',
-                        txnRef: txnRef,
-                        customerName: shippingAddress.full_name,
-                        customerEmail: auth?.currentUser?.email || '',
-                        customerMobile: shippingAddress.phone,
-                        paymentMode: bankingMethodMap[paymentMethod],
-                        description: `Order #${orderNumber} - Mount Made`,
-                        returnUrl: `${window.location.origin}/payment-callback`,
-                        notifyUrl: `${window.location.origin}/api/payments/idfc/webhook`,
-                        udf1: orderNumber,
-                        udf2: paymentMethod,
-                        udf3: orderId
-                    };
-
                     // Request IDFC payment session from server
                     try {
                         const paymentSession = await api.post('/payments/idfc/initiate', {
@@ -4153,46 +4386,81 @@
                         });
 
                         if (!paymentSession || !paymentSession.sessionId) {
-                            throw new Error('Failed to create IDFC payment session');
+                            const errorMsg = paymentSession?.error || 'Failed to create IDFC payment session';
+                            throw new Error(errorMsg);
                         }
 
-                        // Initialize IDFC payment
-                        if (window.IDFCBANK && typeof window.IDFCBANK.redirectToPaymentGateway === 'function') {
+                        console.log('checkout: IDFC payment session created', paymentSession);
+
+                        // Check if IDFC SDK is loaded
+                        if (!window.IDFCBANK) {
+                            console.warn('IDFC SDK not loaded, attempting to use payment URL');
+                            if (paymentSession.paymentUrl) {
+                                // Fallback to payment URL redirect
+                                window.location.href = paymentSession.paymentUrl;
+                            } else {
+                                throw new Error('IDFC payment gateway SDK not available. Please refresh and try again.');
+                            }
+                            return;
+                        }
+
+                        // Initialize IDFC payment with SDK
+                        if (typeof window.IDFCBANK.redirectToPaymentGateway === 'function') {
+                            console.log('checkout: redirecting to IDFC payment gateway');
+                            
                             window.IDFCBANK.redirectToPaymentGateway({
                                 sessionId: paymentSession.sessionId,
                                 merchantId: paymentSession.merchantId,
                                 onSuccess: function(response) {
                                     console.log('IDFC Payment successful:', response);
                                     // Payment gateway redirects to returnUrl
+                                    showAlert('Payment successful! Redirecting...', 'success');
                                 },
                                 onFailure: function(error) {
                                     console.error('IDFC Payment failed:', error);
                                     setPlaceOrderButtonState(false);
-                                    showOrderFailed(`Payment failed: ${error.message}`);
+                                    const errorMsg = error?.message || error?.error || 'Payment processing failed';
+                                    showOrderFailed(`Payment failed: ${errorMsg}`);
                                 },
                                 onCancel: function() {
                                     console.log('IDFC Payment cancelled');
                                     setPlaceOrderButtonState(false);
-                                    showAlert('Payment was cancelled. Please try again.', 'info');
+                                    showAlert('Payment was cancelled. Please try again.', 'warning');
                                 }
                             });
                         } else {
-                            // Fallback: Redirect to payment gateway URL
-                            if (paymentSession.paymentUrl) {
-                                window.location.href = paymentSession.paymentUrl;
-                            } else {
-                                throw new Error('IDFC payment gateway not available');
-                            }
+                            throw new Error('IDFC payment gateway not properly initialized');
                         }
                     } catch (sessionError) {
                         console.error('Failed to create IDFC payment session:', sessionError);
                         setPlaceOrderButtonState(false);
-                        showAlert(`Payment session error: ${sessionError.message}`, 'error');
+                        
+                        // Check if it's an API key error
+                        const errorMessage = sessionError.message || String(sessionError);
+                        if (errorMessage.includes('configured') || errorMessage.includes('IDFC') || errorMessage.includes('merchant')) {
+                            showAlert(
+                                'Payment gateway is not yet configured on the server. Please contact support to set up IDFC payment credentials.',
+                                'error'
+                            );
+                        } else if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
+                            showAlert(
+                                'Network error connecting to payment gateway. Please check your internet connection and try again.',
+                                'error'
+                            );
+                        } else {
+                            showAlert(`Payment session error: ${errorMessage}`, 'error');
+                        }
                     }
                 } catch (error) {
                     console.error('Banking payment error:', error);
                     setPlaceOrderButtonState(false);
-                    showAlert(`Payment error: ${error.message}`, 'error');
+                    
+                    const errorMsg = error.message || String(error);
+                    if (errorMsg.includes('order')) {
+                        showOrderFailed(`Order creation failed: ${errorMsg}`);
+                    } else {
+                        showAlert(`Payment error: ${errorMsg}`, 'error');
+                    }
                 }
                 return;
             }
