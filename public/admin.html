@@ -10855,7 +10855,28 @@
         };
 
         /* ── Order Invoice Printer ── */
-        window.printOrderInvoice = function(orderId) {
+        window.printOrderInvoice = async function(orderId) {
+            // Refresh the order data from server to ensure we have the latest thank you message
+            try {
+                const freshResp = await api.get(`/admin/orders/${orderId}`);
+                if (freshResp && freshResp.order) {
+                    // Parse edited_invoice if it's a string
+                    if (freshResp.order.edited_invoice && typeof freshResp.order.edited_invoice === 'string') {
+                        try {
+                            freshResp.order.edited_invoice = JSON.parse(freshResp.order.edited_invoice);
+                        } catch (e) {}
+                    }
+                    // Update cache with fresh data
+                    const idx = (window._ordersCache || []).findIndex(o => String(o.id) === String(orderId));
+                    if (idx >= 0) {
+                        window._ordersCache[idx] = freshResp.order;
+                    }
+                }
+            } catch (e) {
+                console.warn('Could not refresh order data:', e);
+                // Continue with cached data if refresh fails
+            }
+
             const orders = window._ordersCache || [];
             const o = orders.find(x => x.id == orderId);
             if (!o) { showAlert('Order not found', 'error'); return; }
@@ -11782,6 +11803,13 @@
 
                     syncOrderCache(window._ordersCache);
                     syncOrderCache(window._customerOrdersCache);
+
+                    // Ensure the thank you message is updated in the UI
+                    const updatedOrder = window._ordersCache.find(o => String(o.id) === String(orderId));
+                    if (updatedOrder && updatedOrder.edited_invoice) {
+                        // Force UI refresh to show latest thank you message
+                        updateInvoicePreview();
+                    }
 
                     if (typeof filterOrders === 'function') {
                         filterOrders();
