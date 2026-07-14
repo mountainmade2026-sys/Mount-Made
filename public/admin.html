@@ -11726,6 +11726,15 @@
             const isOrder = !!orderId;
 
             const payload = {
+                invoice_number: document.getElementById('invoice-editor-number')?.value || null,
+                company: document.getElementById('invoice-editor-company')?.value || 'Mount Made',
+                customer: document.getElementById('invoice-editor-customer')?.value || null,
+                email: document.getElementById('invoice-editor-email')?.value || null,
+                phone: document.getElementById('invoice-editor-phone')?.value || null,
+                address: document.getElementById('invoice-editor-address')?.value || null,
+                items: window.invoiceEditorData?.items || [],
+                discount: window.invoiceEditorData?.discount || 0,
+                delivery: window.invoiceEditorData?.deliveryCharge || 0,
                 thankYou: document.getElementById('invoice-editor-thankyou')?.value || null,
                 layout: window.invoiceEditorLayout || window.getInvoiceLayoutState()
             };
