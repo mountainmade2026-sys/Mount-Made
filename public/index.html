@@ -1473,7 +1473,7 @@
         /* Mobile-only: compact footer to avoid excessive height on small screens */
         @media (max-width: 640px) {
             .footer {
-                padding: 1rem 0.75rem 0.5rem !important;
+                padding: 0.6rem 0.75rem 0.5rem !important;
                 font-size: 0.92rem !important;
                 line-height: 1.15 !important;
             }
@@ -1754,6 +1754,20 @@
         let carouselProducts = [];
         let currentCarouselIndex = 0;
         const homeProductsMap = {}; // id -> product object for direct checkout
+
+        function getCarouselItemWidth() {
+            const track = document.getElementById('carousel-track');
+            if (!track || track.children.length === 0) return 296; // fallback to desktop default
+            
+            const firstItem = track.children[0];
+            const itemRect = firstItem.getBoundingClientRect();
+            const itemWidth = itemRect.width;
+            
+            // Get gap from computed style
+            const gap = parseInt(getComputedStyle(track).gap) || 16;
+            
+            return itemWidth + gap;
+        }
 
         function wireCategoryCarouselNav() {
             const track = document.getElementById('categories-track');
@@ -2606,7 +2620,7 @@
 
         function slideCarousel(direction) {
             const track = document.getElementById('carousel-track');
-            const itemWidth = 280 + 16; // item width + gap
+            const itemWidth = getCarouselItemWidth();
             const visibleItems = Math.floor(track.parentElement.offsetWidth / itemWidth);
             const maxIndex = Math.max(0, carouselProducts.length - visibleItems);
 
@@ -2632,7 +2646,7 @@
 
             autoSlideInterval = setInterval(() => {
                 const track = document.getElementById('carousel-track');
-                const itemWidth = 280 + 16;
+                const itemWidth = getCarouselItemWidth();
                 const visibleItems = Math.floor(track.parentElement.offsetWidth / itemWidth);
                 const maxIndex = Math.max(0, carouselProducts.length - visibleItems);
 
