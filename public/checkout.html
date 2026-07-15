@@ -2643,7 +2643,10 @@
             gpayEnabled: true,
             phonepeEnabled: true,
             paytmEnabled: true,
-            codEnabled: true
+            codEnabled: true,
+            debitEnabled: true,
+            creditEnabled: true,
+            netbankEnabled: true
         };
         // COD pincode list – empty = available everywhere
         let checkoutCodPincodes = [];
@@ -3442,8 +3445,9 @@
             if (checkoutPaymentSettings.phonepeEnabled) methods.push('phone');
             if (checkoutPaymentSettings.paytmEnabled) methods.push('paytm');
             if (checkoutPaymentSettings.codEnabled) methods.push('cod');
-            // Add banking methods as available
-            methods.push('debit', 'credit', 'netbank');
+            if (checkoutPaymentSettings.debitEnabled) methods.push('debit');
+            if (checkoutPaymentSettings.creditEnabled) methods.push('credit');
+            if (checkoutPaymentSettings.netbankEnabled) methods.push('netbank');
             return methods;
         }
 
@@ -3553,6 +3557,28 @@
             updatePaymentDetailsPanel(safeMethod);
             updateGpayLabelAndPrefill(safeMethod);
             updateCodPincodeCheck();
+            updatePaymentGroupVisibility();
+        }
+
+        function updatePaymentGroupVisibility() {
+            const enableGroup = (group) => {
+                if (group === 'upi') {
+                    return checkoutPaymentSettings.gpayEnabled || checkoutPaymentSettings.phonepeEnabled || checkoutPaymentSettings.paytmEnabled;
+                }
+                if (group === 'bank') {
+                    return checkoutPaymentSettings.debitEnabled || checkoutPaymentSettings.creditEnabled || checkoutPaymentSettings.netbankEnabled;
+                }
+                if (group === 'cod') {
+                    return checkoutPaymentSettings.codEnabled;
+                }
+                return false;
+            };
+
+            ['upi', 'bank', 'cod'].forEach(groupId => {
+                const wrapper = document.querySelector(`[id="${groupId}-group-toggle"]`)?.closest('.payment-group-wrapper');
+                if (!wrapper) return;
+                wrapper.style.display = enableGroup(groupId) ? '' : 'none';
+            });
         }
 
         function validateCardNumber(cardNumber) {
@@ -4057,6 +4083,7 @@
 
             // Initialize the default selected tile panels
             selectPaymentMethod(document.getElementById('payment_method')?.value || 'gpay');
+            updatePaymentGroupVisibility();
 
             const paymentSelect = document.getElementById('payment_method');
             const typeSelect = document.getElementById('gpay-detail-type');
@@ -4148,6 +4175,9 @@
                 checkoutPaymentSettings.phonepeEnabled = String(settings.payment_phonepe_enabled ?? 'true').toLowerCase() === 'true';
                 checkoutPaymentSettings.paytmEnabled = String(settings.payment_paytm_enabled ?? 'true').toLowerCase() === 'true';
                 checkoutPaymentSettings.codEnabled = String(settings.payment_cod_enabled ?? 'true').toLowerCase() === 'true';
+                checkoutPaymentSettings.debitEnabled = String(settings.payment_debit_enabled ?? 'true').toLowerCase() === 'true';
+                checkoutPaymentSettings.creditEnabled = String(settings.payment_credit_enabled ?? 'true').toLowerCase() === 'true';
+                checkoutPaymentSettings.netbankEnabled = String(settings.payment_netbank_enabled ?? 'true').toLowerCase() === 'true';
 
                 checkoutGpaySettings.enabled = checkoutPaymentSettings.gpayEnabled;
                 checkoutGpaySettings.payeeName = String(settings.gpay_payee_name || 'Mount Made').trim();

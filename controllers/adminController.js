@@ -2358,6 +2358,9 @@ exports.updateSiteSettings = async (req, res) => {
       payment_phonepe_enabled,
       payment_paytm_enabled,
       payment_cod_enabled,
+      payment_debit_enabled,
+      payment_credit_enabled,
+      payment_netbank_enabled,
       gpay_enabled,
       gpay_payee_name,
       gpay_upi_id,
@@ -2393,7 +2396,10 @@ exports.updateSiteSettings = async (req, res) => {
       payment_gpay_enabled !== undefined ||
       payment_phonepe_enabled !== undefined ||
       payment_paytm_enabled !== undefined ||
-      payment_cod_enabled !== undefined;
+      payment_cod_enabled !== undefined ||
+      payment_debit_enabled !== undefined ||
+      payment_credit_enabled !== undefined ||
+      payment_netbank_enabled !== undefined;
 
     const hasAdminManageablePincodeSetting = req.body?.cod_available_pincodes !== undefined;
 
@@ -2742,6 +2748,30 @@ exports.updateSiteSettings = async (req, res) => {
           ? payment_cod_enabled
           : String(payment_cod_enabled).toLowerCase() === 'true';
       updates.push({ key: 'payment_cod_enabled', value: enabledValue ? 'true' : 'false' });
+    }
+
+    if (payment_debit_enabled !== undefined && payment_debit_enabled !== null) {
+      const enabledValue =
+        typeof payment_debit_enabled === 'boolean'
+          ? payment_debit_enabled
+          : String(payment_debit_enabled).toLowerCase() === 'true';
+      updates.push({ key: 'payment_debit_enabled', value: enabledValue ? 'true' : 'false' });
+    }
+
+    if (payment_credit_enabled !== undefined && payment_credit_enabled !== null) {
+      const enabledValue =
+        typeof payment_credit_enabled === 'boolean'
+          ? payment_credit_enabled
+          : String(payment_credit_enabled).toLowerCase() === 'true';
+      updates.push({ key: 'payment_credit_enabled', value: enabledValue ? 'true' : 'false' });
+    }
+
+    if (payment_netbank_enabled !== undefined && payment_netbank_enabled !== null) {
+      const enabledValue =
+        typeof payment_netbank_enabled === 'boolean'
+          ? payment_netbank_enabled
+          : String(payment_netbank_enabled).toLowerCase() === 'true';
+      updates.push({ key: 'payment_netbank_enabled', value: enabledValue ? 'true' : 'false' });
     }
 
     if (gpay_enabled !== undefined && gpay_enabled !== null) {

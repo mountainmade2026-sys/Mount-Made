@@ -3074,6 +3074,27 @@
                             </label>
                         </div>
 
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <label class="form-label" style="display:flex; align-items:center; gap:0.5rem;">
+                                <input type="checkbox" id="payment-debit-enabled" style="width:auto;">
+                                Enable Debit Card at checkout
+                            </label>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <label class="form-label" style="display:flex; align-items:center; gap:0.5rem;">
+                                <input type="checkbox" id="payment-credit-enabled" style="width:auto;">
+                                Enable Credit Card at checkout
+                            </label>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <label class="form-label" style="display:flex; align-items:center; gap:0.5rem;">
+                                <input type="checkbox" id="payment-netbank-enabled" style="width:auto;">
+                                Enable Net Banking at checkout
+                            </label>
+                        </div>
+
                         <button class="btn btn-primary" onclick="savePaymentMethodSettings()">
                             <i class="fas fa-toggle-on"></i> Save Payment Methods
                         </button>
@@ -8832,6 +8853,9 @@
                 const paymentPhonepeEnabledEl = document.getElementById('payment-phonepe-enabled');
                 const paymentPaytmEnabledEl = document.getElementById('payment-paytm-enabled');
                 const paymentCodEnabledEl = document.getElementById('payment-cod-enabled');
+                const paymentDebitEnabledEl = document.getElementById('payment-debit-enabled');
+                const paymentCreditEnabledEl = document.getElementById('payment-credit-enabled');
+                const paymentNetbankEnabledEl = document.getElementById('payment-netbank-enabled');
 
                 if (paymentGpayEnabledEl) {
                     paymentGpayEnabledEl.checked = String(settings.payment_gpay_enabled ?? settings.gpay_enabled ?? 'true').toLowerCase() === 'true';
@@ -8844,6 +8868,15 @@
                 }
                 if (paymentCodEnabledEl) {
                     paymentCodEnabledEl.checked = String(settings.payment_cod_enabled ?? 'true').toLowerCase() === 'true';
+                }
+                if (paymentDebitEnabledEl) {
+                    paymentDebitEnabledEl.checked = String(settings.payment_debit_enabled ?? 'true').toLowerCase() === 'true';
+                }
+                if (paymentCreditEnabledEl) {
+                    paymentCreditEnabledEl.checked = String(settings.payment_credit_enabled ?? 'true').toLowerCase() === 'true';
+                }
+                if (paymentNetbankEnabledEl) {
+                    paymentNetbankEnabledEl.checked = String(settings.payment_netbank_enabled ?? 'true').toLowerCase() === 'true';
                 }
 
                 const faqPageTitleEl = document.getElementById('faq-page-title');
@@ -10020,7 +10053,10 @@
                     payment_gpay_enabled: !!document.getElementById('payment-gpay-enabled')?.checked,
                     payment_phonepe_enabled: !!document.getElementById('payment-phonepe-enabled')?.checked,
                     payment_paytm_enabled: !!document.getElementById('payment-paytm-enabled')?.checked,
-                    payment_cod_enabled: !!document.getElementById('payment-cod-enabled')?.checked
+                    payment_cod_enabled: !!document.getElementById('payment-cod-enabled')?.checked,
+                    payment_debit_enabled: !!document.getElementById('payment-debit-enabled')?.checked,
+                    payment_credit_enabled: !!document.getElementById('payment-credit-enabled')?.checked,
+                    payment_netbank_enabled: !!document.getElementById('payment-netbank-enabled')?.checked
                 };
 
                 const response = await api.post('/admin/settings', payload);
