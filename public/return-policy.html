@@ -30,15 +30,17 @@
   </nav>
   <main class="policy-page">
     <section class="policy-card">
-      <h1>Return Policy</h1>
-      <p>Returns are accepted for products that are damaged, defective, or different from the description provided.</p>
-      <h2>Return Window</h2>
+      <h1 id="policy-title">Return Policy</h1>
+      <div id="policy-body">
+        <p>Returns are accepted for products that are damaged, defective, or different from the description provided.</p>
+        <h2>Return Window</h2>
       <p>Customers must report the issue within 24–48 hours of delivery and share photos for verification.</p>
       <h2>Non-Returnable Items</h2>
       <ul>
         <li>Perishable products that have been opened or used.</li>
         <li>Items damaged by customer misuse.</li>
       </ul>
+      </div>
     </section>
   </main>
   <footer class="footer">
@@ -85,5 +87,51 @@
     </div>
   </footer>
   <script src="/js/main.js"></script>
+  <script>
+    function escapeHtml(value) {
+      return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function renderPolicyBody(raw) {
+      const normalized = String(raw || '').trim();
+      if (!normalized) {
+        return '';
+      }
+      return normalized
+        .split(/\r?\n\s*\r?\n/)
+        .map(paragraph => `<p>${escapeHtml(paragraph).replace(/\r?\n/g, '<br>')}</p>`)
+        .join('');
+    }
+
+    async function loadPolicyPageContent(titleKey, bodyKey) {
+      try {
+        const response = await api.get('/products/settings');
+        const settings = response?.settings || {};
+        const title = String(settings[titleKey] || '').trim();
+        const body = String(settings[bodyKey] || '').trim();
+        const titleEl = document.getElementById('policy-title');
+        const bodyEl = document.getElementById('policy-body');
+
+        if (title && titleEl) {
+          titleEl.textContent = title;
+          document.title = `${title} - Mount Made`;
+        }
+        if (body && bodyEl) {
+          bodyEl.innerHTML = renderPolicyBody(body);
+        }
+      } catch (error) {
+        console.error('Failed to load policy content:', error);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      loadPolicyPageContent('return_policy_title', 'return_policy_body');
+    });
+  </script>
 </body>
 </html>

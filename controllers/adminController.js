@@ -2367,6 +2367,20 @@ exports.updateSiteSettings = async (req, res) => {
       gpay_phone_number,
       gpay_bank_name,
       gpay_qr_image_url,
+      privacy_policy_title,
+      privacy_policy_body,
+      terms_conditions_title,
+      terms_conditions_body,
+      refund_policy_title,
+      refund_policy_body,
+      return_policy_title,
+      return_policy_body,
+      shipping_policy_title,
+      shipping_policy_body,
+      cancellation_policy_title,
+      cancellation_policy_body,
+      cookie_policy_title,
+      cookie_policy_body,
       cod_available_pincodes,
       slider_image_1,
       slider_image_2,
@@ -2772,6 +2786,49 @@ exports.updateSiteSettings = async (req, res) => {
           ? payment_netbank_enabled
           : String(payment_netbank_enabled).toLowerCase() === 'true';
       updates.push({ key: 'payment_netbank_enabled', value: enabledValue ? 'true' : 'false' });
+    }
+
+    if (privacy_policy_title !== undefined) {
+      updates.push({ key: 'privacy_policy_title', value: String(privacy_policy_title || '').trim() });
+    }
+    if (privacy_policy_body !== undefined) {
+      updates.push({ key: 'privacy_policy_body', value: String(privacy_policy_body || '').trim() });
+    }
+    if (terms_conditions_title !== undefined) {
+      updates.push({ key: 'terms_conditions_title', value: String(terms_conditions_title || '').trim() });
+    }
+    if (terms_conditions_body !== undefined) {
+      updates.push({ key: 'terms_conditions_body', value: String(terms_conditions_body || '').trim() });
+    }
+    if (refund_policy_title !== undefined) {
+      updates.push({ key: 'refund_policy_title', value: String(refund_policy_title || '').trim() });
+    }
+    if (refund_policy_body !== undefined) {
+      updates.push({ key: 'refund_policy_body', value: String(refund_policy_body || '').trim() });
+    }
+    if (return_policy_title !== undefined) {
+      updates.push({ key: 'return_policy_title', value: String(return_policy_title || '').trim() });
+    }
+    if (return_policy_body !== undefined) {
+      updates.push({ key: 'return_policy_body', value: String(return_policy_body || '').trim() });
+    }
+    if (shipping_policy_title !== undefined) {
+      updates.push({ key: 'shipping_policy_title', value: String(shipping_policy_title || '').trim() });
+    }
+    if (shipping_policy_body !== undefined) {
+      updates.push({ key: 'shipping_policy_body', value: String(shipping_policy_body || '').trim() });
+    }
+    if (cancellation_policy_title !== undefined) {
+      updates.push({ key: 'cancellation_policy_title', value: String(cancellation_policy_title || '').trim() });
+    }
+    if (cancellation_policy_body !== undefined) {
+      updates.push({ key: 'cancellation_policy_body', value: String(cancellation_policy_body || '').trim() });
+    }
+    if (cookie_policy_title !== undefined) {
+      updates.push({ key: 'cookie_policy_title', value: String(cookie_policy_title || '').trim() });
+    }
+    if (cookie_policy_body !== undefined) {
+      updates.push({ key: 'cookie_policy_body', value: String(cookie_policy_body || '').trim() });
     }
 
     if (gpay_enabled !== undefined && gpay_enabled !== null) {

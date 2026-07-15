@@ -30,12 +30,14 @@
   </nav>
   <main class="policy-page">
     <section class="policy-card">
-      <h1>Cancellation Policy</h1>
-      <p>Orders can be cancelled before dispatch. If the order has already been packed or dispatched, it may not be possible to cancel it.</p>
-      <h2>How to Cancel</h2>
+      <h1 id="policy-title">Cancellation Policy</h1>
+      <div id="policy-body">
+        <p>Orders can be cancelled before dispatch. If the order has already been packed or dispatched, it may not be possible to cancel it.</p>
+        <h2>How to Cancel</h2>
       <p>Contact support immediately via the contact page or email so we can assist with your request.</p>
       <h2>Refunds</h2>
       <p>Approved cancellations are refunded to the original payment method as per the refund policy.</p>
+      </div>
     </section>
   </main>
   <footer class="footer">
@@ -82,5 +84,51 @@
     </div>
   </footer>
   <script src="/js/main.js"></script>
+  <script>
+    function escapeHtml(value) {
+      return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function renderPolicyBody(raw) {
+      const normalized = String(raw || '').trim();
+      if (!normalized) {
+        return '';
+      }
+      return normalized
+        .split(/\r?\n\s*\r?\n/)
+        .map(paragraph => `<p>${escapeHtml(paragraph).replace(/\r?\n/g, '<br>')}</p>`)
+        .join('');
+    }
+
+    async function loadPolicyPageContent(titleKey, bodyKey) {
+      try {
+        const response = await api.get('/products/settings');
+        const settings = response?.settings || {};
+        const title = String(settings[titleKey] || '').trim();
+        const body = String(settings[bodyKey] || '').trim();
+        const titleEl = document.getElementById('policy-title');
+        const bodyEl = document.getElementById('policy-body');
+
+        if (title && titleEl) {
+          titleEl.textContent = title;
+          document.title = `${title} - Mount Made`;
+        }
+        if (body && bodyEl) {
+          bodyEl.innerHTML = renderPolicyBody(body);
+        }
+      } catch (error) {
+        console.error('Failed to load policy content:', error);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      loadPolicyPageContent('cancellation_policy_title', 'cancellation_policy_body');
+    });
+  </script>
 </body>
 </html>

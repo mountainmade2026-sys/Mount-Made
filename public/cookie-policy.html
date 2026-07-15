@@ -40,6 +40,7 @@
       </ul>
       <h2>Managing Cookies</h2>
       <p>You can disable cookies in your browser settings, but some site features may not work as expected.</p>
+      </div>
     </section>
   </main>
   <footer class="footer">
@@ -86,5 +87,51 @@
     </div>
   </footer>
   <script src="/js/main.js"></script>
+  <script>
+    function escapeHtml(value) {
+      return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function renderPolicyBody(raw) {
+      const normalized = String(raw || '').trim();
+      if (!normalized) {
+        return '';
+      }
+      return normalized
+        .split(/\r?\n\s*\r?\n/)
+        .map(paragraph => `<p>${escapeHtml(paragraph).replace(/\r?\n/g, '<br>')}</p>`)
+        .join('');
+    }
+
+    async function loadPolicyPageContent(titleKey, bodyKey) {
+      try {
+        const response = await api.get('/products/settings');
+        const settings = response?.settings || {};
+        const title = String(settings[titleKey] || '').trim();
+        const body = String(settings[bodyKey] || '').trim();
+        const titleEl = document.getElementById('policy-title');
+        const bodyEl = document.getElementById('policy-body');
+
+        if (title && titleEl) {
+          titleEl.textContent = title;
+          document.title = `${title} - Mount Made`;
+        }
+        if (body && bodyEl) {
+          bodyEl.innerHTML = renderPolicyBody(body);
+        }
+      } catch (error) {
+        console.error('Failed to load policy content:', error);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      loadPolicyPageContent('cookie_policy_title', 'cookie_policy_body');
+    });
+  </script>
 </body>
 </html>

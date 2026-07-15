@@ -30,16 +30,18 @@
   </nav>
   <main class="policy-page">
     <section class="policy-card">
-      <h1>Terms & Conditions</h1>
-      <p>By using Mount Made, you agree to the following terms. These terms govern your access to the website and use of our products and services.</p>
-      <h2>Use of Website</h2>
-      <p>You must provide accurate information during registration and checkout. You agree not to misuse the website or place fraudulent orders.</p>
-      <h2>Orders & Payments</h2>
-      <p>All orders are subject to product availability and delivery feasibility. Payment is processed through secure payment gateways approved for use on this site.</p>
-      <h2>Returns & Refunds</h2>
-      <p>Refunds and returns are governed by our refund and return policy. Please review the policy before placing an order.</p>
-      <h2>Contact</h2>
-      <p>For questions about these terms, contact us at hello@mountain-made.com.</p>
+      <h1 id="policy-title">Terms & Conditions</h1>
+      <div id="policy-body">
+        <p>By using Mount Made, you agree to the following terms. These terms govern your access to the website and use of our products and services.</p>
+        <h2>Use of Website</h2>
+        <p>You must provide accurate information during registration and checkout. You agree not to misuse the website or place fraudulent orders.</p>
+        <h2>Orders & Payments</h2>
+        <p>All orders are subject to product availability and delivery feasibility. Payment is processed through secure payment gateways approved for use on this site.</p>
+        <h2>Returns & Refunds</h2>
+        <p>Refunds and returns are governed by our refund and return policy. Please review the policy before placing an order.</p>
+        <h2>Contact</h2>
+        <p>For questions about these terms, contact us at hello@mountain-made.com.</p>
+      </div>
     </section>
   </main>
   <footer class="footer">
@@ -86,5 +88,51 @@
     </div>
   </footer>
   <script src="/js/main.js"></script>
+  <script>
+    function escapeHtml(value) {
+      return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function renderPolicyBody(raw) {
+      const normalized = String(raw || '').trim();
+      if (!normalized) {
+        return '';
+      }
+      return normalized
+        .split(/\r?\n\s*\r?\n/)
+        .map(paragraph => `<p>${escapeHtml(paragraph).replace(/\r?\n/g, '<br>')}</p>`)
+        .join('');
+    }
+
+    async function loadPolicyPageContent(titleKey, bodyKey) {
+      try {
+        const response = await api.get('/products/settings');
+        const settings = response?.settings || {};
+        const title = String(settings[titleKey] || '').trim();
+        const body = String(settings[bodyKey] || '').trim();
+        const titleEl = document.getElementById('policy-title');
+        const bodyEl = document.getElementById('policy-body');
+
+        if (title && titleEl) {
+          titleEl.textContent = title;
+          document.title = `${title} - Mount Made`;
+        }
+        if (body && bodyEl) {
+          bodyEl.innerHTML = renderPolicyBody(body);
+        }
+      } catch (error) {
+        console.error('Failed to load policy content:', error);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      loadPolicyPageContent('terms_conditions_title', 'terms_conditions_body');
+    });
+  </script>
 </body>
 </html>

@@ -30,9 +30,10 @@
   </nav>
   <main class="policy-page">
     <section class="policy-card">
-      <h1>Refund Policy</h1>
-      <p>Mount Made aims to provide a smooth shopping experience. Refunds may be initiated for cancelled orders, duplicate payments, or damaged or incorrect items, subject to verification.</p>
-      <h2>Refund Eligibility</h2>
+      <h1 id="policy-title">Refund Policy</h1>
+      <div id="policy-body">
+        <p>Mount Made aims to provide a smooth shopping experience. Refunds may be initiated for cancelled orders, duplicate payments, or damaged or incorrect items, subject to verification.</p>
+        <h2>Refund Eligibility</h2>
       <ul>
         <li>Payment failed or duplicated due to technical issues.</li>
         <li>Order cancelled before dispatch.</li>
@@ -42,6 +43,7 @@
       <p>Refunds are processed back to the original payment method within 5–10 business days after approval.</p>
       <h2>Contact</h2>
       <p>For refund requests, contact hello@mountain-made.com.</p>
+      </div>
     </section>
   </main>
   <footer class="footer">
@@ -88,5 +90,51 @@
     </div>
   </footer>
   <script src="/js/main.js"></script>
+  <script>
+    function escapeHtml(value) {
+      return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function renderPolicyBody(raw) {
+      const normalized = String(raw || '').trim();
+      if (!normalized) {
+        return '';
+      }
+      return normalized
+        .split(/\r?\n\s*\r?\n/)
+        .map(paragraph => `<p>${escapeHtml(paragraph).replace(/\r?\n/g, '<br>')}</p>`)
+        .join('');
+    }
+
+    async function loadPolicyPageContent(titleKey, bodyKey) {
+      try {
+        const response = await api.get('/products/settings');
+        const settings = response?.settings || {};
+        const title = String(settings[titleKey] || '').trim();
+        const body = String(settings[bodyKey] || '').trim();
+        const titleEl = document.getElementById('policy-title');
+        const bodyEl = document.getElementById('policy-body');
+
+        if (title && titleEl) {
+          titleEl.textContent = title;
+          document.title = `${title} - Mount Made`;
+        }
+        if (body && bodyEl) {
+          bodyEl.innerHTML = renderPolicyBody(body);
+        }
+      } catch (error) {
+        console.error('Failed to load policy content:', error);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      loadPolicyPageContent('refund_policy_title', 'refund_policy_body');
+    });
+  </script>
 </body>
 </html>

@@ -3101,6 +3101,91 @@
                     </div>
                 </div>
 
+                <div id="ss-sub-policies" class="data-table-container" style="margin-top: 1.5rem;">
+                    <div class="table-header">
+                        <h3>Policy Pages</h3>
+                    </div>
+                    <div style="padding: 2rem;">
+                        <p style="color: var(--text-muted); margin-bottom: 1rem;">
+                            Edit the customer-facing policy page titles and content in one place.
+                        </p>
+
+                        <div class="form-group" style="margin-bottom: 1.5rem;">
+                            <h4 style="margin-bottom: 0.75rem;">Privacy Policy</h4>
+                            <label class="form-label" for="privacy-policy-title">Title</label>
+                            <input type="text" id="privacy-policy-title" class="form-input" placeholder="Privacy Policy">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 1.5rem;">
+                            <label class="form-label" for="privacy-policy-body">Content</label>
+                            <textarea id="privacy-policy-body" class="form-textarea" rows="5" placeholder="Enter the privacy policy content. Use line breaks for paragraphs."></textarea>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 1.5rem;">
+                            <h4 style="margin-bottom: 0.75rem;">Terms &amp; Conditions</h4>
+                            <label class="form-label" for="terms-conditions-title">Title</label>
+                            <input type="text" id="terms-conditions-title" class="form-input" placeholder="Terms & Conditions">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 1.5rem;">
+                            <label class="form-label" for="terms-conditions-body">Content</label>
+                            <textarea id="terms-conditions-body" class="form-textarea" rows="5" placeholder="Enter the terms and conditions content."></textarea>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 1.5rem;">
+                            <h4 style="margin-bottom: 0.75rem;">Refund Policy</h4>
+                            <label class="form-label" for="refund-policy-title">Title</label>
+                            <input type="text" id="refund-policy-title" class="form-input" placeholder="Refund Policy">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 1.5rem;">
+                            <label class="form-label" for="refund-policy-body">Content</label>
+                            <textarea id="refund-policy-body" class="form-textarea" rows="5" placeholder="Enter the refund policy content."></textarea>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 1.5rem;">
+                            <h4 style="margin-bottom: 0.75rem;">Return Policy</h4>
+                            <label class="form-label" for="return-policy-title">Title</label>
+                            <input type="text" id="return-policy-title" class="form-input" placeholder="Return Policy">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 1.5rem;">
+                            <label class="form-label" for="return-policy-body">Content</label>
+                            <textarea id="return-policy-body" class="form-textarea" rows="5" placeholder="Enter the return policy content."></textarea>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 1.5rem;">
+                            <h4 style="margin-bottom: 0.75rem;">Shipping Policy</h4>
+                            <label class="form-label" for="shipping-policy-title">Title</label>
+                            <input type="text" id="shipping-policy-title" class="form-input" placeholder="Shipping Policy">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 1.5rem;">
+                            <label class="form-label" for="shipping-policy-body">Content</label>
+                            <textarea id="shipping-policy-body" class="form-textarea" rows="5" placeholder="Enter the shipping policy content."></textarea>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 1.5rem;">
+                            <h4 style="margin-bottom: 0.75rem;">Cancellation Policy</h4>
+                            <label class="form-label" for="cancellation-policy-title">Title</label>
+                            <input type="text" id="cancellation-policy-title" class="form-input" placeholder="Cancellation Policy">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 1.5rem;">
+                            <label class="form-label" for="cancellation-policy-body">Content</label>
+                            <textarea id="cancellation-policy-body" class="form-textarea" rows="5" placeholder="Enter the cancellation policy content."></textarea>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 1.5rem;">
+                            <h4 style="margin-bottom: 0.75rem;">Cookie Policy</h4>
+                            <label class="form-label" for="cookie-policy-title">Title</label>
+                            <input type="text" id="cookie-policy-title" class="form-input" placeholder="Cookie Policy">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 1.5rem;">
+                            <label class="form-label" for="cookie-policy-body">Content</label>
+                            <textarea id="cookie-policy-body" class="form-textarea" rows="5" placeholder="Enter the cookie policy content."></textarea>
+                        </div>
+
+                        <button class="btn btn-primary" onclick="savePolicyPageSettings()">
+                            <i class="fas fa-file-alt"></i> Save Policy Pages
+                        </button>
+                    </div>
+                </div>
+
                 <div id="ss-sub-gpay" class="data-table-container" style="margin-top: 1.5rem;">
                     <div class="table-header">
                         <h3>Google Pay Integration</h3>
@@ -4825,6 +4910,7 @@
                 { id: 'ss-sub-contact',   label: 'Contact Info' },
                 { id: 'ss-sub-email',     label: 'Business Email' },
                 { id: 'ss-sub-payments',  label: 'Payment Methods' },
+                { id: 'ss-sub-policies',  label: 'Policy Pages' },
                 { id: 'ss-sub-gpay',      label: 'Google Pay' },
                 { id: 'ss-sub-cod',       label: 'Delivery Pincodes' },
                 { id: 'ss-sub-notice',    label: 'Site Notice' }
@@ -8879,6 +8965,36 @@
                     paymentNetbankEnabledEl.checked = String(settings.payment_netbank_enabled ?? 'true').toLowerCase() === 'true';
                 }
 
+                const privacyPolicyTitleEl = document.getElementById('privacy-policy-title');
+                const privacyPolicyBodyEl = document.getElementById('privacy-policy-body');
+                const termsConditionsTitleEl = document.getElementById('terms-conditions-title');
+                const termsConditionsBodyEl = document.getElementById('terms-conditions-body');
+                const refundPolicyTitleEl = document.getElementById('refund-policy-title');
+                const refundPolicyBodyEl = document.getElementById('refund-policy-body');
+                const returnPolicyTitleEl = document.getElementById('return-policy-title');
+                const returnPolicyBodyEl = document.getElementById('return-policy-body');
+                const shippingPolicyTitleEl = document.getElementById('shipping-policy-title');
+                const shippingPolicyBodyEl = document.getElementById('shipping-policy-body');
+                const cancellationPolicyTitleEl = document.getElementById('cancellation-policy-title');
+                const cancellationPolicyBodyEl = document.getElementById('cancellation-policy-body');
+                const cookiePolicyTitleEl = document.getElementById('cookie-policy-title');
+                const cookiePolicyBodyEl = document.getElementById('cookie-policy-body');
+
+                if (privacyPolicyTitleEl) privacyPolicyTitleEl.value = settings.privacy_policy_title || 'Privacy Policy';
+                if (privacyPolicyBodyEl) privacyPolicyBodyEl.value = settings.privacy_policy_body || '';
+                if (termsConditionsTitleEl) termsConditionsTitleEl.value = settings.terms_conditions_title || 'Terms & Conditions';
+                if (termsConditionsBodyEl) termsConditionsBodyEl.value = settings.terms_conditions_body || '';
+                if (refundPolicyTitleEl) refundPolicyTitleEl.value = settings.refund_policy_title || 'Refund Policy';
+                if (refundPolicyBodyEl) refundPolicyBodyEl.value = settings.refund_policy_body || '';
+                if (returnPolicyTitleEl) returnPolicyTitleEl.value = settings.return_policy_title || 'Return Policy';
+                if (returnPolicyBodyEl) returnPolicyBodyEl.value = settings.return_policy_body || '';
+                if (shippingPolicyTitleEl) shippingPolicyTitleEl.value = settings.shipping_policy_title || 'Shipping Policy';
+                if (shippingPolicyBodyEl) shippingPolicyBodyEl.value = settings.shipping_policy_body || '';
+                if (cancellationPolicyTitleEl) cancellationPolicyTitleEl.value = settings.cancellation_policy_title || 'Cancellation Policy';
+                if (cancellationPolicyBodyEl) cancellationPolicyBodyEl.value = settings.cancellation_policy_body || '';
+                if (cookiePolicyTitleEl) cookiePolicyTitleEl.value = settings.cookie_policy_title || 'Cookie Policy';
+                if (cookiePolicyBodyEl) cookiePolicyBodyEl.value = settings.cookie_policy_body || '';
+
                 const faqPageTitleEl = document.getElementById('faq-page-title');
                 const faqIntroTextEl = document.getElementById('faq-intro-text');
 
@@ -10069,6 +10185,38 @@
             } catch (error) {
                 console.error('Save payment method settings error:', error);
                 showAlert(error.message || 'Failed to save payment methods', 'error');
+            }
+        };
+
+        window.savePolicyPageSettings = async function() {
+            try {
+                const payload = {
+                    privacy_policy_title: (document.getElementById('privacy-policy-title')?.value || '').trim(),
+                    privacy_policy_body: (document.getElementById('privacy-policy-body')?.value || '').trim(),
+                    terms_conditions_title: (document.getElementById('terms-conditions-title')?.value || '').trim(),
+                    terms_conditions_body: (document.getElementById('terms-conditions-body')?.value || '').trim(),
+                    refund_policy_title: (document.getElementById('refund-policy-title')?.value || '').trim(),
+                    refund_policy_body: (document.getElementById('refund-policy-body')?.value || '').trim(),
+                    return_policy_title: (document.getElementById('return-policy-title')?.value || '').trim(),
+                    return_policy_body: (document.getElementById('return-policy-body')?.value || '').trim(),
+                    shipping_policy_title: (document.getElementById('shipping-policy-title')?.value || '').trim(),
+                    shipping_policy_body: (document.getElementById('shipping-policy-body')?.value || '').trim(),
+                    cancellation_policy_title: (document.getElementById('cancellation-policy-title')?.value || '').trim(),
+                    cancellation_policy_body: (document.getElementById('cancellation-policy-body')?.value || '').trim(),
+                    cookie_policy_title: (document.getElementById('cookie-policy-title')?.value || '').trim(),
+                    cookie_policy_body: (document.getElementById('cookie-policy-body')?.value || '').trim()
+                };
+
+                const response = await api.post('/admin/settings', payload);
+                if (response && (response.success || response.message)) {
+                    showAlert('Policy pages saved successfully!', 'success');
+                    await loadSiteSettings();
+                } else {
+                    throw new Error(response?.error || 'Failed to save policy pages');
+                }
+            } catch (error) {
+                console.error('Save policy page settings error:', error);
+                showAlert(error.message || 'Failed to save policy pages', 'error');
             }
         };
 

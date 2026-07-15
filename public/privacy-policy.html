@@ -30,9 +30,10 @@
   </nav>
   <main class="policy-page">
     <section class="policy-card">
-      <h1>Privacy Policy</h1>
-      <p>Mount Made respects your privacy. This Privacy Policy explains how we collect, use, disclose, and protect your information when you visit or place an order on our website.</p>
-      <h2>Information We Collect</h2>
+      <h1 id="policy-title">Privacy Policy</h1>
+      <div id="policy-body">
+        <p>Mount Made respects your privacy. This Privacy Policy explains how we collect, use, disclose, and protect your information when you visit or place an order on our website.</p>
+        <h2>Information We Collect</h2>
       <ul>
         <li>Account details such as name, email, phone number, and delivery address.</li>
         <li>Order and payment information needed to process purchases.</li>
@@ -48,6 +49,7 @@
       <p>We use reasonable technical and organizational measures to protect your data. However, no internet transmission is completely secure.</p>
       <h2>Contact Us</h2>
       <p>For privacy questions, please contact us at hello@mountain-made.com or +91-8119901989.</p>
+      </div>
     </section>
   </main>
   <footer class="footer">
@@ -94,5 +96,51 @@
     </div>
   </footer>
   <script src="/js/main.js"></script>
+  <script>
+    function escapeHtml(value) {
+      return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function renderPolicyBody(raw) {
+      const normalized = String(raw || '').trim();
+      if (!normalized) {
+        return '';
+      }
+      return normalized
+        .split(/\r?\n\s*\r?\n/)
+        .map(paragraph => `<p>${escapeHtml(paragraph).replace(/\r?\n/g, '<br>')}</p>`)
+        .join('');
+    }
+
+    async function loadPolicyPageContent(titleKey, bodyKey) {
+      try {
+        const response = await api.get('/products/settings');
+        const settings = response?.settings || {};
+        const title = String(settings[titleKey] || '').trim();
+        const body = String(settings[bodyKey] || '').trim();
+        const titleEl = document.getElementById('policy-title');
+        const bodyEl = document.getElementById('policy-body');
+
+        if (title && titleEl) {
+          titleEl.textContent = title;
+          document.title = `${title} - Mount Made`;
+        }
+        if (body && bodyEl) {
+          bodyEl.innerHTML = renderPolicyBody(body);
+        }
+      } catch (error) {
+        console.error('Failed to load policy content:', error);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      loadPolicyPageContent('privacy_policy_title', 'privacy_policy_body');
+    });
+  </script>
 </body>
 </html>
