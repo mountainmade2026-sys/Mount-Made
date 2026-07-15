@@ -509,8 +509,56 @@
         @media (max-width: 500px) {
             .rm-reason-grid { grid-template-columns: 1fr; }
             .rm-condition-grid { grid-template-columns: 1fr 1fr; }
-            .return-modal { border-radius: 16px 16px 0 0; max-height: 95vh; }
-            .return-modal-overlay { align-items: flex-end; padding: 0; }
+            .return-modal {
+                width: min(100%, calc(100vw - 1rem));
+                max-width: 100%;
+                border-radius: 18px 18px 0 0;
+                max-height: 95vh;
+                margin: 0;
+            }
+            .return-modal-header,
+            .return-modal-body,
+            .return-modal-footer {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+            .return-modal-header { padding-top: 1rem; padding-bottom: 1rem; }
+            .return-modal-body { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+            .return-modal-body .form-group {
+                display: flex;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.45rem;
+                margin-bottom: 1rem;
+            }
+            .return-modal-body .form-group label {
+                width: 100%;
+                margin-bottom: 0;
+                white-space: normal;
+            }
+            .return-modal-body .form-group .form-control {
+                width: 100%;
+                min-width: 0;
+                display: block;
+            }
+            .return-modal-body .form-group textarea {
+                min-height: 120px;
+            }
+            .return-modal-footer {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.75rem;
+                padding-top: 0.75rem;
+                padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+            }
+            .return-modal-footer .btn {
+                width: 100%;
+            }
+            .return-modal-overlay {
+                align-items: flex-end;
+                justify-content: center;
+                padding: 0.5rem 0.5rem calc(0.75rem + env(safe-area-inset-bottom));
+            }
         }
 
         /* account dropdown styles moved to styles.css */
@@ -851,16 +899,12 @@
             const order = _ordersCache.find(o => o.id === orderId);
             if (!order) return;
 
-            const itemsOptions = order.items.map(item => 
-                `<option value="${item.quantity}">${item.product_name} (Available: ${item.quantity})</option>`
-            ).join('');
-
             const modalHtml = `
                 <div id="return-modal-overlay" class="return-modal-overlay">
                     <div class="return-modal" style="max-width: 500px;">
                         <div class="return-modal-header">
                             <h2><i class="fas fa-undo"></i> Return Items from Order #${orderNumber}</h2>
-                            <button class="return-modal-close" onclick="closeReturnModal()"><i class="fas fa-times"></i></button>
+                            <button id="return-close-btn" class="return-modal-close"><i class="fas fa-times"></i></button>
                         </div>
                         <div class="return-modal-body">
                             <div class="form-group">
@@ -876,18 +920,14 @@
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label for="return-quantity">Quantity to Return *</label>
-                                <input type="number" id="return-quantity" class="form-control" min="1" max="${order.items[0]?.quantity || 1}" value="1" required>
-                            </div>
-                            <div class="form-group">
                                 <label for="return-description">Description (optional)</label>
                                 <textarea id="return-description" class="form-control" placeholder="Explain why you want to return this item..." maxlength="500" style="resize: vertical; min-height: 100px;"></textarea>
                                 <small style="color: var(--text-light);" id="char-count">0/500 characters</small>
                             </div>
                         </div>
                         <div class="return-modal-footer">
-                            <button class="btn btn-secondary" onclick="closeReturnModal()">Cancel</button>
-                            <button class="btn btn-primary" onclick="submitReturn(${orderId})">Submit Return Request</button>
+                            <button id="return-cancel-btn" class="btn btn-secondary">Cancel</button>
+                            <button id="return-submit-btn" class="btn btn-primary">Submit Return Request</button>
                         </div>
                     </div>
                 </div>
@@ -895,11 +935,52 @@
 
             document.body.insertAdjacentHTML('beforeend', modalHtml);
 
-            // Character counter
+            // Wire up controls (use JS listeners instead of inline onclick to avoid mobile/stacking issues)
+            const overlay = document.getElementById('return-modal-overlay');
+            // ensure overlay sits above other UI layers
+            if (overlay && overlay.style) overlay.style.zIndex = 200000;
             const textarea = document.getElementById('return-description');
-            textarea.addEventListener('input', () => {
-                document.getElementById('char-count').textContent = textarea.value.length + '/500 characters';
-            });
+            const btnSubmit = document.getElementById('return-submit-btn');
+            const btnClose = document.getElementById('return-close-btn');
+            const btnCancel = document.getElementById('return-cancel-btn');
+
+            // Character counter
+            if (textarea) {
+                textarea.addEventListener('input', () => {
+                    const cc = document.getElementById('char-count');
+                    if (cc) cc.textContent = textarea.value.length + '/500 characters';
+                });
+            }
+
+            // Ensure overlay accepts pointer events
+            if (overlay && overlay.style) overlay.style.pointerEvents = 'auto';
+            // Helper: add listeners for touch/mouse/click to improve cross-browser tap responsiveness
+            function addTapListener(el, fn) {
+                if (!el) return;
+                try { el.style.pointerEvents = 'auto'; } catch (e) {}
+                try { el.style.cursor = 'pointer'; } catch (e) {}
+                try { el.disabled = false; } catch (e) {}
+                el.style.touchAction = el.style.touchAction || 'manipulation';
+                const handler = (ev) => { ev.preventDefault && ev.preventDefault(); ev.stopPropagation && ev.stopPropagation(); fn(ev); };
+                el.addEventListener('touchstart', handler, { passive: false });
+                el.addEventListener('mousedown', handler);
+                el.addEventListener('click', handler);
+            }
+
+            // Submit
+            addTapListener(btnSubmit, () => { console.log('DEBUG: return-submit clicked'); submitReturn(orderId); });
+
+            // Close / Cancel
+            const closeHandlers = () => { closeReturnModal(); };
+            addTapListener(btnClose, closeHandlers);
+            addTapListener(btnCancel, closeHandlers);
+
+            // Backdrop click closes modal when clicking outside content
+            if (overlay) {
+                overlay.addEventListener('click', function (e) {
+                    if (e.target === overlay) closeReturnModal();
+                });
+            }
         }
 
         function closeReturnModal() {
@@ -909,17 +990,13 @@
 
         async function submitReturn(orderId) {
             try {
+                console.log('DEBUG: submitReturn called for orderId=', orderId);
                 const reason = document.getElementById('return-reason').value;
-                const quantity = parseInt(document.getElementById('return-quantity').value);
                 const description = document.getElementById('return-description').value;
+                const quantity = 1;
 
                 if (!reason) {
                     showAlert('Please select a return reason', 'error');
-                    return;
-                }
-
-                if (!quantity || quantity < 1) {
-                    showAlert('Please enter a valid quantity', 'error');
                     return;
                 }
 
