@@ -1090,6 +1090,40 @@ function createAlertContainer() { /* legacy — replaced by mm-toast-container *
     }
   }
 
+  // Ensure pages that don't include the mobile-menu-toggle (policy pages, static pages)
+  // still have a working toggle on small screens. This only runs on mobile viewports.
+  function ensureMobileMenuToggle() {
+    try {
+      if (!window.matchMedia('(max-width: 900px)').matches) return;
+      if (document.querySelector('.mobile-menu-toggle')) return;
+
+      const container = document.querySelector('.navbar-container') || document.querySelector('.navbar');
+      if (!container) return;
+
+      const btn = document.createElement('button');
+      btn.className = 'mobile-menu-toggle';
+      btn.setAttribute('aria-label', 'Open navigation menu');
+      btn.innerHTML = '<i class="fas fa-bars"></i>';
+      btn.addEventListener('click', (e) => { e.stopPropagation(); openMobileMenu(); });
+
+      // Insert as the first child so it appears in the left corner like other pages
+      container.insertBefore(btn, container.firstChild);
+    } catch (e) {
+      // silent
+    }
+  }
+
+  // Run on load and resize to keep the toggle present on mobile-only
+  document.addEventListener('DOMContentLoaded', ensureMobileMenuToggle);
+  // Local debounce wrapper so we don't depend on a global `debounce` function
+  (function () {
+    let _mmToggleResizeTimer = null;
+    window.addEventListener('resize', function () {
+      if (_mmToggleResizeTimer) clearTimeout(_mmToggleResizeTimer);
+      _mmToggleResizeTimer = setTimeout(ensureMobileMenuToggle, 160);
+    });
+  })();
+
   function syncCartBadge(nav) {
     const badge = nav.querySelector('#mm-bnav-cart-badge');
     if (!badge) return;
@@ -1101,6 +1135,19 @@ function createAlertContainer() { /* legacy — replaced by mm-toast-container *
   }
 
   function init() {
+    // Ensure Font Awesome is available on pages that don't include it (policy/static pages)
+    (function ensureFontAwesome() {
+      try {
+        if (document.querySelector('link[href*="font-awesome"], link[href*="fontawesome"], link[href*="all.min.css"]')) return;
+        const ln = document.createElement('link');
+        ln.rel = 'stylesheet';
+        ln.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css';
+        ln.crossOrigin = 'anonymous';
+        document.head.appendChild(ln);
+      } catch (e) {
+        // silent
+      }
+    })();
     if (!shouldShowBottomNav()) return;
     if (document.getElementById('mm-bottom-nav')) return;
 
@@ -1147,9 +1194,8 @@ function createAlertContainer() { /* legacy — replaced by mm-toast-container *
 
     document.body.appendChild(nav);
     document.body.classList.add('has-bottom-nav');
-    // Hide until auth state is confirmed
-    nav.style.display = 'none';
-    document.body.classList.remove('has-bottom-nav');
+    // Keep nav visible immediately; auth will hide/show via `mmBnavSetAuth` if needed
+    nav.style.display = '';
 
     // Profile button → open profile sheet
     const profileBtn = nav.querySelector('#mm-bnav-profile-btn');
@@ -2478,6 +2524,8 @@ async function loadSiteLogo() {
 
       // Apply site notice / situation banner
       applySiteNoticeBanner(settings);
+      // Update footer policy links with possible custom titles from settings
+      try { injectFooterPolicyLinks(settings); } catch (e) { /* ignore */ }
     }
   } catch (error) {
     // Silently fail - keep default logo
@@ -2489,6 +2537,7 @@ async function loadSiteLogo() {
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     loadSiteLogo();
+    // injectFooterPolicyLinks will be called after settings are fetched
     injectFooterPolicyLinks();
   });
 } else {
@@ -2519,19 +2568,39 @@ function applyFooterContact(settings) {
   }
 }
 
-function injectFooterPolicyLinks() {
+function injectFooterPolicyLinks(settings) {
   const footerBottom = document.querySelector('.footer-bottom');
-  if (!footerBottom || footerBottom.querySelector('.footer-policy-links')) return;
+  if (!footerBottom) return;
+
+  const existing = footerBottom.querySelector('.footer-policy-links');
+
+  const labels = {
+    privacy: (settings && settings.privacy_policy_title) || 'Privacy Policy',
+    terms: (settings && settings.terms_conditions_title) || 'Terms & Conditions',
+    refund: (settings && settings.refund_policy_title) || 'Refund Policy',
+    returns: (settings && settings.return_policy_title) || 'Return Policy',
+    shipping: (settings && settings.shipping_policy_title) || 'Shipping Policy',
+    cancellation: (settings && settings.cancellation_policy_title) || 'Cancellation Policy',
+    cookie: (settings && settings.cookie_policy_title) || 'Cookie Policy'
+  };
 
   const links = [
-    ['/privacy-policy', 'Privacy Policy'],
-    ['/terms-conditions', 'Terms & Conditions'],
-    ['/refund-policy', 'Refund Policy'],
-    ['/return-policy', 'Return Policy'],
-    ['/shipping-policy', 'Shipping Policy'],
-    ['/cancellation-policy', 'Cancellation Policy'],
-    ['/cookie-policy', 'Cookie Policy']
+    ['/privacy-policy', labels.privacy],
+    ['/terms-conditions', labels.terms],
+    ['/refund-policy', labels.refund],
+    ['/return-policy', labels.returns],
+    ['/shipping-policy', labels.shipping],
+    ['/cancellation-policy', labels.cancellation],
+    ['/cookie-policy', labels.cookie]
   ];
+
+  if (existing) {
+    // Update labels if settings provided
+    if (settings) {
+      existing.innerHTML = links.map(([href, label]) => `<a href="${href}">${label}</a>`).join('');
+    }
+    return;
+  }
 
   const trustNote = document.createElement('div');
   trustNote.className = 'footer-trust-note';
