@@ -6,6 +6,7 @@ const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const twilio = require('twilio');
 const https = require('https');
+const fs = require('fs');
 const db = require('../config/database');
 const { getLicenseState, LICENSE_EXPIRED_MESSAGE } = require('../middleware/adminLicense');
 const { notifyOrderConfirmed, notifyOrderShipped, notifyOutForDelivery } = require('../utils/whatsappService');
@@ -2299,6 +2300,13 @@ exports.updateSiteSettings = async (req, res) => {
   try {
     // Temporary debug log to help trace incoming payload shape
     console.log('updateSiteSettings payload:', req.body);
+    try {
+      // Write a copy of the incoming admin payload to public for local debugging
+      const outPath = require('path').join(__dirname, '..', 'public', 'admin_last_payload.json');
+      fs.writeFileSync(outPath, JSON.stringify(req.body || {}, null, 2), 'utf8');
+    } catch (e) {
+      console.warn('Failed to write admin payload debug file:', e && e.message ? e.message : e);
+    }
 
     const {
       logo_url,
@@ -2517,7 +2525,7 @@ exports.updateSiteSettings = async (req, res) => {
     if (faq_intro_text !== undefined) {
       updates.push({ key: 'faq_intro_text', value: String(faq_intro_text || '').trim() });
     }
-    for (let i = 1; i <= 5; i += 1) {
+    for (let i = 1; i <= 20; i += 1) {
       const question = req.body?.[`faq_question_${i}`];
       const answer = req.body?.[`faq_answer_${i}`];
       if (question !== undefined) {
@@ -3050,6 +3058,15 @@ exports.updateSiteSettings = async (req, res) => {
     if (updates.length === 0) {
       // If nothing was provided, respond gracefully instead of erroring
       return res.json({ success: true, message: 'No changes to update.' });
+    }
+
+    // Log updates for debugging and persist a copy to public for inspection
+    try {
+      console.log('site settings updates to apply:', updates);
+      const dbgPath = require('path').join(__dirname, '..', 'public', 'admin_last_updates.json');
+      fs.writeFileSync(dbgPath, JSON.stringify(updates || [], null, 2), 'utf8');
+    } catch (e) {
+      console.warn('Failed to write admin updates debug file:', e && e.message ? e.message : e);
     }
 
     for (const setting of updates) {

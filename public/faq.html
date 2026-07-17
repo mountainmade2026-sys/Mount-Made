@@ -331,7 +331,7 @@
                 faqIntroEl.textContent = (settings.faq_intro_text || '').trim() || 'Browse common questions about our products, delivery, and support.';
             }
 
-            const items = [1, 2, 3, 4, 5]
+            const items = Array.from({ length: 20 }, (_, index) => index + 1)
                 .map((index) => ({
                     question: String(settings[`faq_question_${index}`] || '').trim(),
                     answer: String(settings[`faq_answer_${index}`] || '').trim(),

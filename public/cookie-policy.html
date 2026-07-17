@@ -110,18 +110,22 @@
 
     async function loadPolicyPageContent(titleKey, bodyKey) {
       try {
-        const response = await api.get('/products/settings');
+        const response = await api.get(`/products/settings?_=${Date.now()}`);
         const settings = response?.settings || {};
-        const title = String(settings[titleKey] || '').trim();
-        const body = String(settings[bodyKey] || '').trim();
         const titleEl = document.getElementById('policy-title');
         const bodyEl = document.getElementById('policy-body');
 
-        if (title && titleEl) {
-          titleEl.textContent = title;
-          document.title = `${title} - Mount Made`;
+        const hasTitleKey = Object.prototype.hasOwnProperty.call(settings, titleKey);
+        const hasBodyKey = Object.prototype.hasOwnProperty.call(settings, bodyKey);
+
+        if (hasTitleKey && titleEl) {
+          const title = String(settings[titleKey] || '').trim();
+          titleEl.textContent = title || 'Cookie Policy';
+          document.title = `${title || 'Cookie Policy'} - Mount Made`;
         }
-        if (body && bodyEl) {
+
+        if (hasBodyKey && bodyEl) {
+          const body = String(settings[bodyKey] || '').trim();
           bodyEl.innerHTML = renderPolicyBody(body);
         }
       } catch (error) {
