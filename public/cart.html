@@ -1282,7 +1282,7 @@
                                     <i class="fas fa-plus"></i>
                                 </button>
                             </div>
-                            <button onclick="cart.remove(${item.id}); loadCart();" class="btn btn-danger btn-sm">
+                            <button onclick="handleRemoveItem(${item.id});" class="btn btn-danger btn-sm">
                                 <i class="fas fa-trash"></i> Remove
                             </button>
                         </div>
@@ -1294,6 +1294,40 @@
         }).join('');
         document.getElementById('cart-subtotal').textContent = formatCurrency(data.total);
         document.getElementById('cart-total').textContent = formatCurrency(data.total);
+    }
+
+    async function handleRemoveItem(itemId) {
+        const itemElement = document.querySelector(`[data-cart-item-id="${itemId}"]`);
+        
+        // Optimistic UI update - remove immediately from view
+        if (itemElement) {
+            itemElement.style.opacity = '0.5';
+            itemElement.style.pointerEvents = 'none';
+        }
+        
+        try {
+            // Remove from backend
+            await api.delete(`/cart/${itemId}`);
+            
+            // Reload cart data from server
+            const data = await cart.fetch();
+            
+            // Re-render the entire cart UI
+            renderCartData(data);
+            
+            // Show success message
+            showAlert('Item removed from cart', 'success');
+        } catch (error) {
+            // Restore visual state on error
+            if (itemElement) {
+                itemElement.style.opacity = '1';
+                itemElement.style.pointerEvents = 'auto';
+            }
+            showAlert(error.message || 'Failed to remove item', 'error');
+            
+            // Reload cart to sync with server
+            await loadCart();
+        }
     }
 
     async function loadCart() {
