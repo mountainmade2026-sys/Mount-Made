@@ -2129,6 +2129,175 @@ function normalizeImageUrl(value) {
   }
 }
 
+function setupNavbarSearch() {
+  const navbarActions = document.querySelector('.navbar-actions');
+  if (!navbarActions || document.querySelector('.navbar-search-container')) return;
+
+  const searchContainer = document.createElement('div');
+  searchContainer.className = 'navbar-search-container';
+
+  searchContainer.innerHTML = `
+    <button type="button" class="navbar-search-toggle" aria-label="Search" aria-expanded="false">
+      <i class="fas fa-search"></i>
+    </button>
+    <div class="navbar-search-panel" role="search" aria-hidden="true">
+      <input type="text" class="navbar-search-input" placeholder="Search" aria-label="Search site" autocomplete="off">
+      <button type="button" class="navbar-search-submit">Search</button>
+    </div>
+  `;
+
+  const userMenu = navbarActions.querySelector('#user-menu');
+  const authButtons = navbarActions.querySelector('#auth-buttons');
+  const insertTarget = userMenu || authButtons || navbarActions.firstChild;
+
+  if (insertTarget) {
+    navbarActions.insertBefore(searchContainer, insertTarget);
+  } else {
+    navbarActions.appendChild(searchContainer);
+  }
+
+  const toggleButton = searchContainer.querySelector('.navbar-search-toggle');
+  const panel = searchContainer.querySelector('.navbar-search-panel');
+  const input = searchContainer.querySelector('.navbar-search-input');
+  const submitButton = searchContainer.querySelector('.navbar-search-submit');
+
+  const closePanel = () => {
+    if (!panel) return;
+    panel.classList.remove('is-open');
+    if (toggleButton) {
+      toggleButton.setAttribute('aria-expanded', 'false');
+    }
+    panel.setAttribute('aria-hidden', 'true');
+  };
+
+  const openPanel = () => {
+    if (!panel) return;
+    panel.classList.add('is-open');
+    if (toggleButton) {
+      toggleButton.setAttribute('aria-expanded', 'true');
+    }
+    panel.setAttribute('aria-hidden', 'false');
+    input?.focus();
+  };
+
+  const togglePanel = () => {
+    if (!panel) return;
+    if (panel.classList.contains('is-open')) {
+      closePanel();
+    } else {
+      openPanel();
+    }
+  };
+
+  const performSearch = async () => {
+    const query = String(input?.value || '').trim();
+    if (!query) return;
+
+    closePanel();
+    const normalized = query.toLowerCase();
+    const routeMap = {
+      about: '/about',
+      contact: '/contact',
+      cart: '/cart',
+      checkout: '/checkout',
+      orders: '/orders',
+      address: '/addresses',
+      addresses: '/addresses',
+      login: '/login',
+      register: '/register',
+      wholesale: '/wholesale',
+      faq: '/faq',
+      privacy: '/privacy-policy',
+      policy: '/privacy-policy',
+      refund: '/refund-policy',
+      shipping: '/shipping-policy',
+      terms: '/terms-conditions',
+      cancellation: '/cancellation-policy'
+    };
+
+    const directRoute = Object.entries(routeMap).find(([key]) => normalized.includes(key));
+    if (directRoute) {
+      window.location.href = directRoute[1];
+      return;
+    }
+
+    const isBarcodeQuery = /^mm-?\d{1,6}$/.test(query.toUpperCase()) || /^\d{6}$/.test(query.replace(/[^0-9]/g, ''));
+    if (isBarcodeQuery) {
+      try {
+        const product = await api.get(`/products/barcode?barcode=${encodeURIComponent(query)}`);
+        if (product?.product?.id) {
+          window.location.href = `/product-details?id=${encodeURIComponent(product.product.id)}`;
+          return;
+        }
+      } catch (_) {}
+    }
+
+    try {
+      const [productsResponse, categoriesResponse] = await Promise.all([
+        api.get('/products').catch(() => ({ products: [] })),
+        api.get('/products/categories').catch(() => ({ categories: [] }))
+      ]);
+
+      const products = Array.isArray(productsResponse?.products) ? productsResponse.products : [];
+      const categories = Array.isArray(categoriesResponse?.categories) ? categoriesResponse.categories : [];
+
+      const normalizedQuery = normalized.trim();
+      const exactProduct = products.find((product) => String(product.name || '').toLowerCase() === normalizedQuery);
+      if (exactProduct?.id) {
+        window.location.href = `/product-details?id=${encodeURIComponent(exactProduct.id)}`;
+        return;
+      }
+
+      const productMatch = products.find((product) => {
+        const name = String(product.name || '').toLowerCase();
+        const description = String(product.description || '').toLowerCase();
+        const barcode = String(product.barcode || '').toLowerCase();
+        return name.includes(normalizedQuery) || description.includes(normalizedQuery) || barcode.includes(normalizedQuery);
+      });
+
+      if (productMatch?.id) {
+        window.location.href = `/product-details?id=${encodeURIComponent(productMatch.id)}`;
+        return;
+      }
+
+      const categoryMatch = categories.find((category) => String(category.name || '').toLowerCase().includes(normalizedQuery));
+      if (categoryMatch?.id) {
+        window.location.href = `/products?category=${encodeURIComponent(categoryMatch.id)}&search=${encodeURIComponent(query)}`;
+        return;
+      }
+    } catch (_) {}
+
+    window.location.href = `/products?search=${encodeURIComponent(query)}`;
+  };
+
+  toggleButton?.addEventListener('click', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    togglePanel();
+  });
+
+  submitButton?.addEventListener('click', (event) => {
+    event.preventDefault();
+    performSearch();
+  });
+
+  input?.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      performSearch();
+    } else if (event.key === 'Escape') {
+      closePanel();
+    }
+  });
+
+  document.addEventListener('click', (event) => {
+    if (!panel?.classList.contains('is-open')) return;
+    if (!event.target.closest('.navbar-search-container')) {
+      closePanel();
+    }
+  });
+}
+
 function optimizeDynamicImages(root = document) {
   const scope = root && root.querySelectorAll ? root : document;
   const images = scope.querySelectorAll('img:not([data-image-optimized="true"])');
@@ -2224,6 +2393,8 @@ function validateImageFile(file) {
 
 // Initialize app
 async function initApp() {
+  setupNavbarSearch();
+
   // Initialize theme before anything else
   theme.init();
   

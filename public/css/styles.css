@@ -699,6 +699,122 @@ html[data-theme="dark"] .price-discount {
   flex-shrink: 0;
 }
 
+.navbar-search-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  margin-right: 0.25rem;
+}
+
+.navbar-search-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.08);
+  color: #ffffff;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.navbar-search-toggle:hover {
+  background: rgba(255,255,255,0.16);
+}
+
+.navbar-search-panel {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  right: 0;
+  display: none;
+  width: min(360px, calc(100vw - 6rem));
+  background: rgba(10, 30, 16, 0.98);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 999px;
+  padding: 0.4rem;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.35);
+  z-index: 2000;
+  align-items: center;
+}
+
+.navbar-search-panel.is-open {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+/* Mobile: place panel below the navbar so it doesn't collide with mobile layout */
+@media (max-width: 900px) {
+  .navbar-search-panel {
+    top: calc(100% + 0.5rem);
+    transform: none;
+    right: 0;
+    width: calc(100vw - 2rem);
+    border-radius: 16px;
+    padding: 0.55rem;
+  }
+  .navbar-search-container { margin-right: 0; }
+}
+
+.navbar-search-input {
+  flex: 1;
+  width: 100%;
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 999px;
+  padding: 0.55rem 0.9rem;
+  background: rgba(255,255,255,0.08);
+  color: #ffffff;
+  outline: none;
+  font-size: 0.92rem;
+}
+
+.navbar-search-input::placeholder {
+  color: rgba(255,255,255,0.72);
+}
+
+.navbar-search-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 0.9rem;
+  border: none;
+  border-radius: 999px;
+  background: var(--primary-600);
+  color: #ffffff;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.navbar-search-submit:hover {
+  background: var(--primary-500);
+}
+
+.navbar-search-input::placeholder {
+  color: rgba(255,255,255,0.74);
+}
+
+.navbar-search-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  min-height: 36px;
+  border: none;
+  border-radius: 999px;
+  background: var(--primary-600);
+  color: #ffffff;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.navbar-search-btn:hover {
+  background: var(--primary-500);
+  transform: translateY(-1px);
+}
+
 #auth-buttons {
   display: flex;
   align-items: center;
@@ -1902,6 +2018,9 @@ body.auth-ready #auth-buttons { visibility: visible; }
   .navbar-actions {
     margin-left: auto;
   }
+  .navbar-search {
+    display: none;
+  }
   .navbar-tagline { font-size: 0.5rem; letter-spacing: 0.15em; }
   .navbar-brand img { max-height: 52px; }
   .navbar-deliver-inline { max-width: 150px; padding: 0.12rem 0.2rem; gap: 0.25rem; }
@@ -1917,6 +2036,9 @@ body.auth-ready #auth-buttons { visibility: visible; }
   .mobile-menu-toggle { width: 44px; height: 44px; min-width: 44px; min-height: 44px; font-size: 1.3rem; }
 
   .navbar-actions { gap: var(--space-1); }
+  .navbar-search { padding: 0.2rem; }
+  .navbar-search-input { width: 170px; font-size: 0.82rem; padding: 0.25rem 0.5rem; min-height: 30px; }
+  .navbar-search-btn { min-width: 32px; min-height: 32px; }
   #auth-buttons { gap: var(--space-1); flex-wrap: nowrap; }
   #auth-buttons .btn { padding: 0.32rem 0.55rem; font-size: 0.65rem; white-space: nowrap; }
   #user-menu { gap: var(--space-1); }
