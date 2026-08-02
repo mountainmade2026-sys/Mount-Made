@@ -2765,6 +2765,39 @@
                     </div>
                 </div>
 
+                <div id="ss-sub-gst-overrides" class="data-table-container" style="margin-top: 1.5rem;">
+                    <div class="table-header">
+                        <h3>Product GST Overrides</h3>
+                    </div>
+                    <div style="padding: 2rem;">
+                        <p style="color: var(--text-muted); margin-bottom: 1rem;">
+                            Configure product-specific GST percentages here. Products not configured in this list will use the default GST rate of <strong>5%</strong>.
+                        </p>
+                        <div class="form-row" style="margin-bottom: 1rem; gap: 1rem; flex-wrap: wrap;">
+                            <div style="min-width: 220px; flex: 1;">
+                                <label class="form-label" for="gst-product-selector">Product</label>
+                                <select id="gst-product-selector" class="form-input" onchange="onGstProductSelected()">
+                                    <option value="">Select a product</option>
+                                </select>
+                            </div>
+                            <div style="min-width: 220px; flex: 1;">
+                                <label class="form-label" for="gst-product-percent">GST Percent (%)</label>
+                                <input type="text" id="gst-product-percent" class="form-input" placeholder="e.g., 12">
+                            </div>
+                        </div>
+                        <div style="display:flex; gap:1rem; flex-wrap: wrap; align-items: center; margin-bottom: 1rem;">
+                            <button class="btn btn-primary" onclick="saveProductGstOverride()">
+                                <i class="fas fa-tag"></i> Save GST Override
+                            </button>
+                            <button class="btn btn-secondary" onclick="clearProductGstOverrides()">
+                                <i class="fas fa-trash-alt"></i> Clear All Overrides
+                            </button>
+                            <span style="color: var(--text-muted);">Default GST for non-overridden products is 5%.</span>
+                        </div>
+                        <div id="gst-overrides-table"></div>
+                    </div>
+                </div>
+
                 <div id="ss-sub-about" class="data-table-container" style="margin-top: 1.5rem;">
                     <div class="table-header">
                         <h3>About Us Page Editor</h3>
@@ -9321,6 +9354,8 @@
                     stdFreeAboveInput.value = !Number.isNaN(parsed) && parsed >= 0 ? parsed : '';
                 }
 
+                await loadProductGstOverrideSettings(settings);
+
                 const businessEmailInput = document.getElementById('business-support-email');
                 if (businessEmailInput) {
                     businessEmailInput.value = settings.business_support_email || 'hello@mountain-made.com';
@@ -10077,6 +10112,181 @@
             } catch (error) {
                 console.error('Save delivery settings error:', error);
                 showAlert(error.message || 'Failed to save delivery settings', 'error');
+            }
+        };
+
+        async function loadProductGstOverrideSettings(settings) {
+            const raw = settings.product_gst_overrides || '{}';
+            let parsed = {};
+            if (typeof raw === 'string') {
+                try {
+                    parsed = JSON.parse(raw || '{}');
+                } catch (e) {
+                    parsed = {};
+                }
+            } else if (typeof raw === 'object' && raw !== null) {
+                parsed = raw;
+            }
+
+            const overrides = {};
+            for (const [key, value] of Object.entries(parsed || {})) {
+                const id = String(key).trim();
+                const percent = Number(value);
+                if (id && Number.isFinite(percent) && percent >= 0) {
+                    overrides[id] = Number(percent.toFixed(2));
+                }
+            }
+
+            window._productGstOverrides = overrides;
+            await ensureGstProductSelector();
+            renderProductGstOverrideTable();
+        }
+
+        async function ensureGstProductSelector() {
+            if (!Array.isArray(window._productsCache) || window._productsCache.length === 0) {
+                try {
+                    const response = await api.get('/admin/products');
+                    window._productsCache = response.products || [];
+                } catch (e) {
+                    console.warn('Could not load products for GST override selector:', e);
+                    window._productsCache = window._productsCache || [];
+                }
+            }
+            populateGstProductSelector();
+        }
+
+        function populateGstProductSelector() {
+            const selector = document.getElementById('gst-product-selector');
+            if (!selector) return;
+            const products = Array.isArray(window._productsCache) ? window._productsCache.slice() : [];
+            selector.innerHTML = '<option value="">Select a product</option>' +
+                products.map(p => {
+                    const label = `#${p.id} - ${String(p.name || p.product_name || p.title || 'Unnamed Product')}`;
+                    return `<option value="${p.id}">${escapeHtml(label)}</option>`;
+                }).join('');
+        }
+
+        function renderProductGstOverrideTable() {
+            const container = document.getElementById('gst-overrides-table');
+            if (!container) return;
+            const overrides = window._productGstOverrides || {};
+            const productIds = Object.keys(overrides);
+            if (!productIds.length) {
+                container.innerHTML = '<div class="empty-state"><p>No product GST overrides configured yet.</p></div>';
+                return;
+            }
+
+            const rows = productIds.map(productId => {
+                const percent = Number(overrides[productId]);
+                const product = (window._productsCache || []).find(p => String(p.id) === String(productId));
+                const productLabel = product
+                    ? `#${product.id} - ${String(product.name || product.product_name || product.title || 'Unnamed Product')}`
+                    : `#${productId}`;
+                return `
+                    <div class="data-row" style="display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:0.75rem 0; border-bottom:1px solid var(--border-primary);">
+                        <div><strong>${escapeHtml(productLabel)}</strong><div style="color: var(--text-muted);">GST: ${Number.isFinite(percent) ? percent.toFixed(2) : '0.00'}%</div></div>
+                        <div style="display:flex; gap:0.75rem; align-items:center;"> 
+                            <button class="btn btn-secondary btn-sm" type="button" onclick="editProductGstOverride('${escapeHtml(productId)}')">Edit</button>
+                            <button class="btn btn-danger btn-sm" type="button" onclick="removeProductGstOverride('${escapeHtml(productId)}')">Remove</button>
+                        </div>
+                    </div>`;
+            });
+
+            container.innerHTML = rows.join('');
+        }
+
+        window.onGstProductSelected = function() {
+            const selector = document.getElementById('gst-product-selector');
+            const percentInput = document.getElementById('gst-product-percent');
+            if (!selector || !percentInput) return;
+            const selectedId = String(selector.value || '').trim();
+            if (!selectedId) {
+                percentInput.value = '';
+                return;
+            }
+            const overrides = window._productGstOverrides || {};
+            const value = overrides[selectedId];
+            percentInput.value = Number.isFinite(value) ? value : '';
+        };
+
+        window.saveProductGstOverride = async function() {
+            try {
+                const selector = document.getElementById('gst-product-selector');
+                const percentInput = document.getElementById('gst-product-percent');
+                if (!selector || !percentInput) return;
+                const productId = String(selector.value || '').trim();
+                const rawPercent = percentInput.value.trim();
+                if (!productId) {
+                    showAlert('Please select a product before saving GST.', 'error');
+                    return;
+                }
+                const percent = parseFloat(rawPercent);
+                if (Number.isNaN(percent) || percent < 0 || percent > 100) {
+                    showAlert('GST percent must be a number between 0 and 100.', 'error');
+                    percentInput.focus();
+                    return;
+                }
+
+                const overrides = { ...(window._productGstOverrides || {}) };
+                overrides[productId] = Number(percent.toFixed(2));
+                await saveProductGstOverrides(overrides);
+                percentInput.value = '';
+                selector.value = '';
+                showAlert('Product GST override saved successfully.', 'success');
+            } catch (error) {
+                console.error('Save product GST override error:', error);
+                showAlert(error.message || 'Failed to save product GST override', 'error');
+            }
+        }
+
+        window.saveProductGstOverrides = async function(overrides) {
+            try {
+                const jsonString = JSON.stringify(overrides);
+                const response = await api.post('/admin/settings', { product_gst_overrides: jsonString });
+                if (response && (response.success || response.message)) {
+                    // Reload settings from server so the saved GST overrides persist correctly
+                    await loadSiteSettings();
+                    return;
+                }
+                throw new Error(response.error || 'Failed to save product GST overrides.');
+            } catch (error) {
+                console.error('Save product GST overrides error:', error);
+                throw error;
+            }
+        };
+
+        window.editProductGstOverride = function(productId) {
+            const selector = document.getElementById('gst-product-selector');
+            const percentInput = document.getElementById('gst-product-percent');
+            if (!selector || !percentInput) return;
+            selector.value = productId;
+            const overrides = window._productGstOverrides || {};
+            percentInput.value = Number.isFinite(overrides[productId]) ? overrides[productId] : '';
+            percentInput.focus();
+        }
+
+        window.removeProductGstOverride = async function(productId) {
+            try {
+                const overrides = { ...(window._productGstOverrides || {}) };
+                delete overrides[productId];
+                await saveProductGstOverrides(overrides);
+                renderProductGstOverrideTable();
+                showAlert('Product GST override removed.', 'success');
+            } catch (error) {
+                console.error('Remove product GST override error:', error);
+                showAlert(error.message || 'Failed to remove GST override', 'error');
+            }
+        };
+
+        window.clearProductGstOverrides = async function() {
+            if (!window.confirm('Clear all product GST overrides?')) return;
+            try {
+                await saveProductGstOverrides({});
+                renderProductGstOverrideTable();
+                showAlert('All product GST overrides have been cleared.', 'success');
+            } catch (error) {
+                console.error('Clear product GST overrides error:', error);
+                showAlert(error.message || 'Failed to clear GST overrides', 'error');
             }
         };
 

@@ -7,7 +7,7 @@ const { authenticateToken } = require('../middleware/auth');
 const { blockAdminCommerce } = require('../middleware/commerceAccess');
 const { sendOrderNotificationToAdmin } = require('../utils/emailService');
 const { notifyOrderPlaced } = require('../utils/whatsappService');
-const { getDeliveryChargeForSubtotal } = require('../utils/deliverySettings');
+const { getDeliveryChargeForSubtotal, parseProductGstOverrides, computeCartGst } = require('../utils/deliverySettings');
 
 // All order routes require authentication
 router.use(authenticateToken);
@@ -67,13 +67,16 @@ router.post('/', async (req, res) => {
       return sum + (price * quantity);
     }, 0);
     const siteSettings = await getSiteDeliverySettings();
-    const deliveryCharge = getDeliveryChargeForSubtotal(itemSubtotal, siteSettings);
-    const totalAmount = itemSubtotal + deliveryCharge;
+    const gstOverrides = parseProductGstOverrides(siteSettings);
+    const gst = computeCartGst(items, gstOverrides);
+    const deliveryCharge = getDeliveryChargeForSubtotal(itemSubtotal, siteSettings, gst);
+    const totalAmount = itemSubtotal + deliveryCharge + gst;
 
     const orderData = {
       ...req.body,
       user_id: req.user.id,
       delivery_charge: deliveryCharge,
+      gst: gst,
       total_amount: totalAmount
     };
 
@@ -329,6 +332,7 @@ router.post('/quick-buy', async (req, res) => {
     const subtotal = price * quantity;
     const siteSettings = await getSiteDeliverySettings();
     const deliveryCharge = getDeliveryChargeForSubtotal(subtotal, siteSettings);
+    const gst = Math.round((Number(subtotal) * 0.05) * 100) / 100;
 
     const normalizedPaymentMethod = (() => {
       const raw = (payment_method || '').toString().trim();
@@ -344,7 +348,8 @@ router.post('/quick-buy', async (req, res) => {
     // Create order
     const orderData = {
       user_id: req.user.id,
-      total_amount: subtotal + deliveryCharge,
+      gst: gst,
+      total_amount: subtotal + deliveryCharge + gst,
       delivery_charge: deliveryCharge,
       shipping_address: shipping_address || {},
       payment_method: normalizedPaymentMethod,

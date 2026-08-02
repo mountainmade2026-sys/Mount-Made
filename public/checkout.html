@@ -271,6 +271,10 @@
                                 <span>Subtotal</span>
                                 <span id="order-subtotal">₹0.00</span>
                             </div>
+                            <div style="display:flex; justify-content:space-between; font-size:0.95rem; margin-bottom:0.75rem; color: var(--text-secondary);">
+                                <span id="order-gst-label">GST (5%)</span>
+                                <span id="order-gst">₹0.00</span>
+                            </div>
                             <div style="display:flex; justify-content:space-between; font-size:0.95rem; margin-bottom:1rem; color: var(--text-secondary);">
                                 <span>Delivery</span>
                                 <span id="order-delivery">Free</span>
@@ -500,7 +504,7 @@
             line-height: 1.4;
         }
 
-        .checkout-qty-remove-wrap {
+        .checkout-item-meta > .checkout-qty-remove-wrap {
             display: flex;
             flex-direction: column;
             align-items: flex-start;
@@ -513,6 +517,32 @@
             align-items: center;
             gap: 0.25rem;
             flex-wrap: nowrap;
+            min-width: 110px;
+            justify-content: flex-start;
+        }
+
+        .checkout-qty-group {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 110px;
+            width: 110px;
+        }
+
+        .checkout-qty-input {
+            width: 42px;
+            min-width: 42px;
+            max-width: 42px;
+            padding: 0.12rem 0.1rem;
+            border: none;
+            text-align: center;
+            background: transparent;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            line-height: 1.1;
+            -moz-appearance: textfield;
+            appearance: textfield;
+            box-sizing: border-box;
         }
 
         .checkout-qty-remove-wrap .checkout-item-unit-price {
@@ -2629,7 +2659,8 @@
         let checkoutSettings = {
             standardDeliveryEnabled: false,
             standardDeliveryCharge: 0,
-            standardDeliveryFreeAbove: 1999
+            standardDeliveryFreeAbove: 1999,
+            productGstOverrides: {}
         };
         let checkoutGpaySettings = {
             enabled: false,
@@ -2750,6 +2781,28 @@
             return unitPrice > 0 ? unitPrice * quantity : 0;
         }
 
+        function getItemProductId(item) {
+            if (!item || typeof item !== 'object') return '';
+            return String(item.product_id || item.id || item.productId || item.productId || '').trim();
+        }
+
+        function getProductGstPercent(item) {
+            const id = getItemProductId(item);
+            const overrides = checkoutSettings.productGstOverrides || {};
+            if (id && Number.isFinite(Number(overrides[id])) && Number(overrides[id]) >= 0) {
+                return Number(overrides[id]);
+            }
+            return 5;
+        }
+
+        function computeItemGst(item) {
+            const subtotal = resolveItemSubtotal(item);
+            const percent = getProductGstPercent(item);
+            return Number.isFinite(subtotal) && subtotal > 0
+                ? Math.round((subtotal * percent / 100) * 100) / 100
+                : 0;
+        }
+
         function computeCartSubtotal(data) {
             const items = Array.isArray(data?.cartItems) ? data.cartItems : [];
             if (!items.length) return 0;
@@ -2786,6 +2839,59 @@
                 cartItems: items,
                 total: computedTotal
             };
+        }
+
+        function renderCheckoutItems() {
+            if (!cartData || !Array.isArray(cartData.cartItems)) {
+                return;
+            }
+            const container = document.getElementById('order-items');
+            if (!container) return;
+
+            container.innerHTML = cartData.cartItems.map(item => {
+                const priceBlock = (() => {
+                    const base = item.original_price != null ? Number(item.original_price) : null;
+                    const sale = resolveItemUnitPrice(item);
+                    const showDiscount = base != null && sale != null && sale < base;
+                    if (showDiscount) {
+                        return `<span style="text-decoration: line-through; color: #d14343; font-size: 0.9em; margin-right: 6px;">${formatCurrency(base)}</span><span style="color: var(--primary); font-weight: 700;">${formatCurrency(sale)}</span>`;
+                    }
+                    return sale != null ? formatCurrency(sale) : '—';
+                })();
+                const weightLabel = getItemWeightLabel(item);
+                const gstPercent = getProductGstPercent(item);
+                const gstBadge = gstPercent !== 5 ? `<div class="checkout-item-gst">GST: ${gstPercent.toFixed(2)}%</div>` : '';
+
+                return `<div class="checkout-item-row">
+                    <img src="${item.image_url || item.product_image || '/images/placeholder.jpg'}" alt="${escapeHtml(item.name)}" class="checkout-item-thumb" onerror="this.src='/images/placeholder.jpg'">
+                    <div class="checkout-item-content">
+                        <div class="checkout-item-name">${escapeHtml(item.name)}</div>
+                        <div class="checkout-item-meta">
+                            ${weightLabel ? `<div class="checkout-item-weight">Size: ${escapeHtml(weightLabel)}</div>` : ''}
+                            ${gstBadge}
+                            <div class="checkout-qty-remove-wrap">
+                                <div class="checkout-qty-controls">
+                                    <label for="checkout-qty-${item.id}" class="checkout-item-qty-label">Qty</label>
+                                    <div class="checkout-qty-group">
+                                        <button type="button" class="checkout-qty-btn" aria-label="Decrease quantity" onclick="event.preventDefault(); changeCheckoutQuantity(${item.id}, -1, document.getElementById('checkout-qty-${item.id}'))">−</button>
+                                        <input type="text" inputmode="numeric" class="checkout-qty-input"
+                                               id="checkout-qty-${item.id}"
+                                               value="${toNumber(item.quantity || item.qty || 1)}"
+                                               min="1"
+                                               max="${item.stock_quantity || ''}"
+                                               oninput="changeCheckoutQuantity(${item.id}, 0, this)"
+                                               onchange="changeCheckoutQuantity(${item.id}, 0, this)">
+                                        <button type="button" class="checkout-qty-btn" aria-label="Increase quantity" onclick="event.preventDefault(); changeCheckoutQuantity(${item.id}, 1, document.getElementById('checkout-qty-${item.id}'))" ${toNumber(item.quantity || item.qty || 1) >= (item.stock_quantity || 0) ? 'disabled' : ''}>+</button>
+                                    </div>
+                                </div>
+                                <span class="checkout-item-unit-price">× ${priceBlock}</span>
+                                <button type="button" class="btn btn-secondary btn-sm checkout-remove-btn" aria-label="Remove item" onclick="event.preventDefault(); removeCheckoutItem(${item.id})"><i class="fas fa-trash"></i> Remove</button>
+                            </div>
+                        </div>
+                    </div>
+                    <strong class="checkout-item-price" data-item-subtotal="${item.id}">${formatCurrency(resolveItemSubtotal(item))}</strong>
+                </div>`;
+            }).join('');
         }
 
         async function populateCheckoutCustomerProfile(profileUser) {
@@ -2838,48 +2944,10 @@
                     window.location.href = '/products';
                     return;
                 }
-                cartData = { cartItems: [item], total: item.price * item.quantity };
-                checkoutCartSubtotal = item.price * item.quantity;
-                const priceBlock = (() => {
-                    const base = item.original_price != null ? parseFloat(item.original_price) : null;
-                    const sale = resolveItemUnitPrice(item);
-                    const showDiscount = base != null && sale != null && sale < base;
-                    if (showDiscount) {
-                        return `<span style="text-decoration: line-through; color: #d14343; font-size: 0.9em; margin-right: 6px;">${formatCurrency(base)}</span><span style="color: var(--primary); font-weight: 700;">${formatCurrency(sale)}</span>`;
-                    }
-                    return sale != null ? formatCurrency(sale) : '—';
-                })();
-                document.getElementById('order-items').innerHTML = `<div class="checkout-item-row">
-                    <img src="${item.image_url || item.product_image || '/images/placeholder.jpg'}" alt="${item.name}" class="checkout-item-thumb" onerror="this.src='/images/placeholder.jpg'">
-                    <div class="checkout-item-content">
-                        <div class="checkout-item-name">${item.name}</div>
-                        <div class="checkout-item-meta">
-                            ${(() => {
-                                const weightLabel = getItemWeightLabel(item);
-                                return weightLabel ? `<div class="checkout-item-weight">Size: ${escapeHtml(weightLabel)}</div>` : '';
-                            })()}
-                            <div class="checkout-qty-remove-wrap">
-                                <div class="checkout-qty-controls">
-                                    <label for="checkout-qty-${item.id}" class="checkout-item-qty-label">Qty</label>
-                                    <div class="checkout-qty-group">
-                                        <button type="button" class="checkout-qty-btn" aria-label="Decrease quantity" onclick="event.preventDefault(); changeCheckoutQuantity(${item.id}, -1, document.getElementById('checkout-qty-${item.id}'))">−</button>
-                                        <input type="text" inputmode="numeric" class="checkout-qty-input"
-                                               id="checkout-qty-${item.id}"
-                                               value="${item.quantity}"
-                                               min="1"
-                                               max="${item.stock_quantity || ''}"
-                                               oninput="changeCheckoutQuantity(${item.id}, 0, this)"
-                                               onchange="changeCheckoutQuantity(${item.id}, 0, this)">
-                                        <button type="button" class="checkout-qty-btn" aria-label="Increase quantity" onclick="event.preventDefault(); changeCheckoutQuantity(${item.id}, 1, document.getElementById('checkout-qty-${item.id}'))" ${item.quantity >= (item.stock_quantity || 0) ? 'disabled' : ''}>+</button>
-                                    </div>
-                                </div>
-                                <span class="checkout-item-unit-price">× ${priceBlock}</span>
-                                <button type="button" class="btn btn-secondary btn-sm checkout-remove-btn" aria-label="Remove item" onclick="event.preventDefault(); removeCheckoutItem(${item.id})"><i class="fas fa-trash"></i> Remove</button>
-                            </div>
-                        </div>
-                    </div>
-                    <strong class="checkout-item-price" data-item-subtotal="${item.id}">${formatCurrency(item.price * item.quantity)}</strong>
-                </div>`;                updateOrderSummaryTotals();
+                cartData = normalizeCartPayload({ cartItems: [item], total: item.price * item.quantity });
+                checkoutCartSubtotal = computeCartSubtotal(cartData);
+                renderCheckoutItems();
+                updateOrderSummaryTotals();
                 await loadUserAddresses();
                 return;
             }
@@ -2897,78 +2965,58 @@
 
             checkoutCartSubtotal = computeCartSubtotal(cartData);
             
-            document.getElementById('order-items').innerHTML = cartData.cartItems.map(item => {
-                const priceBlock = (() => {
-                    const base = item.original_price != null ? parseFloat(item.original_price) : null;
-                    const sale = resolveItemUnitPrice(item);
-                    const showDiscount = base != null && sale != null && sale < base;
-                    if (showDiscount) {
-                        return `<span style="text-decoration: line-through; color: #d14343; font-size: 0.9em; margin-right: 6px;">${formatCurrency(base)}</span><span style="color: var(--primary); font-weight: 700;">${formatCurrency(sale)}</span>`;
-                    }
-                    return sale != null ? formatCurrency(sale) : '—';
-                })();
-
-                return `<div class="checkout-item-row">
-                    <img src="${item.image_url || item.product_image || '/images/placeholder.jpg'}" alt="${item.name}" class="checkout-item-thumb" onerror="this.src='/images/placeholder.jpg'">
-                    <div class="checkout-item-content">
-                        <div class="checkout-item-name">${item.name}</div>
-                        <div class="checkout-item-meta">
-                            ${(() => {
-                                const weightLabel = getItemWeightLabel(item);
-                                return weightLabel ? `<div class="checkout-item-weight">Size: ${escapeHtml(weightLabel)}</div>` : '';
-                            })()}
-                            <div class="checkout-qty-remove-wrap">
-                                <div class="checkout-qty-controls">
-                                    <label for="checkout-qty-${item.id}" class="checkout-item-qty-label">Qty</label>
-                                    <div class="checkout-qty-group">
-                                        <button type="button" class="checkout-qty-btn" aria-label="Decrease quantity" onclick="event.preventDefault(); changeCheckoutQuantity(${item.id}, -1, document.getElementById('checkout-qty-${item.id}'))">−</button>
-                                        <input type="text" inputmode="numeric" class="checkout-qty-input"
-                                               id="checkout-qty-${item.id}"
-                                               value="${toNumber(item.quantity || item.qty || 1)}"
-                                               min="1"
-                                               max="${item.stock_quantity || ''}"
-                                               oninput="changeCheckoutQuantity(${item.id}, 0, this)"
-                                               onchange="changeCheckoutQuantity(${item.id}, 0, this)">
-                                        <button type="button" class="checkout-qty-btn" aria-label="Increase quantity" onclick="event.preventDefault(); changeCheckoutQuantity(${item.id}, 1, document.getElementById('checkout-qty-${item.id}'))" ${toNumber(item.quantity || item.qty || 1) >= (item.stock_quantity || 0) ? 'disabled' : ''}>+</button>
-                                    </div>
-                                </div>
-                                <span class="checkout-item-unit-price">× ${priceBlock}</span>
-                                <button type="button" class="btn btn-secondary btn-sm checkout-remove-btn" aria-label="Remove item" onclick="event.preventDefault(); removeCheckoutItem(${item.id})"><i class="fas fa-trash"></i> Remove</button>
-                            </div>
-                        </div>
-                    </div>
-                    <strong class="checkout-item-price" data-item-subtotal="${item.id}">${formatCurrency(resolveItemSubtotal(item))}</strong>
-                </div>`;
-            }).join('');
+            renderCheckoutItems();
             updateOrderSummaryTotals();
             
             await loadUserAddresses();
         }
 
-        function getDeliveryChargeForSubtotal(subtotal) {
-            const amount = Number(subtotal) || 0;
+        function getDeliveryChargeForSubtotal(subtotal, gstAmount = null) {
+            const base = Number(subtotal) || 0;
             const enabled = checkoutSettings.standardDeliveryEnabled;
             if (!enabled) {
                 return 0;
             }
             const freeAbove = Number(checkoutSettings.standardDeliveryFreeAbove ?? 1999);
-            if (Number.isFinite(freeAbove) && amount >= freeAbove) {
+            const effectiveGst = Number.isFinite(Number(gstAmount)) ? Number(gstAmount) : Math.round((base * 0.05) * 100) / 100;
+            const amountWithGst = base + effectiveGst;
+            if (Number.isFinite(freeAbove) && amountWithGst >= freeAbove) {
                 return 0;
             }
             const charge = Number(checkoutSettings.standardDeliveryCharge || 0);
             return Number.isFinite(charge) && charge >= 0 ? charge : 0;
         }
 
+        function getCartGstLabel() {
+            const items = Array.isArray(cartData?.cartItems) ? cartData.cartItems : [];
+            const percents = new Set(items.map(getProductGstPercent));
+            if (percents.size === 1) {
+                const only = [...percents][0];
+                return `GST (${only.toFixed(2)}%)`;
+            }
+            return 'GST (varies)';
+        }
+
+        function computeCartGst(data) {
+            const items = Array.isArray(data?.cartItems) ? data.cartItems : [];
+            return items.reduce((sum, item) => sum + computeItemGst(item), 0);
+        }
+
         function updateOrderSummaryTotals() {
             const subtotalEl = document.getElementById('order-subtotal');
+            const gstEl = document.getElementById('order-gst');
+            const gstLabelEl = document.getElementById('order-gst-label');
             const deliveryEl = document.getElementById('order-delivery');
             const totalEl = document.getElementById('order-total');
 
             const subtotal = checkoutCartSubtotal || 0;
-            const deliveryCharge = getDeliveryChargeForSubtotal(subtotal);
-            const total = subtotal + deliveryCharge;
+            const gst = computeCartGst(cartData);
+            const deliveryCharge = getDeliveryChargeForSubtotal(subtotal, gst);
+            const total = subtotal + deliveryCharge + gst;
 
             if (subtotalEl) subtotalEl.textContent = formatCurrency(subtotal);
+            if (gstLabelEl) gstLabelEl.textContent = getCartGstLabel();
+            if (gstEl) gstEl.textContent = formatCurrency(gst);
             if (deliveryEl) {
                 if (deliveryCharge > 0) {
                     deliveryEl.textContent = formatCurrency(deliveryCharge);
@@ -3318,7 +3366,8 @@
                 ? (checkoutSettings.standardDeliveryCharge || 0)
                 : 0;
             const subtotal = computeCartSubtotal(cartData) || checkoutCartSubtotal || 0;
-            return subtotal + deliveryCharge;
+            const gst = Math.round((Number(subtotal) * 0.05) * 100) / 100;
+            return subtotal + deliveryCharge + gst;
         }
 
         function generateGpayRef() {
@@ -4195,6 +4244,27 @@
 
                 const chargeLabel = document.getElementById('standard-delivery-charge-label');
 
+                let productGstOverrides = {};
+                if (settings.product_gst_overrides !== undefined && settings.product_gst_overrides !== null) {
+                    try {
+                        const parsed = typeof settings.product_gst_overrides === 'string'
+                            ? JSON.parse(settings.product_gst_overrides || '{}')
+                            : settings.product_gst_overrides;
+                        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+                            for (const [key, value] of Object.entries(parsed)) {
+                                const id = String(key || '').trim();
+                                const percent = Number(value);
+                                if (id && Number.isFinite(percent) && percent >= 0 && percent <= 100) {
+                                    productGstOverrides[id] = Number(percent.toFixed(2));
+                                }
+                            }
+                        }
+                    } catch (error) {
+                        productGstOverrides = {};
+                    }
+                }
+                checkoutSettings.productGstOverrides = productGstOverrides;
+
                 if (chargeLabel) {
                     const freeAboveText = Number.isFinite(freeAbove) ? freeAbove.toFixed(0) : '1999';
                     chargeLabel.textContent = enabled
@@ -4202,6 +4272,7 @@
                         : 'Delivery charge disabled';
                 }
 
+                renderCheckoutItems();
                 updateOrderSummaryTotals();
                 updateGpayLabelAndPrefill();
                 selectPaymentMethod(document.getElementById('payment_method')?.value || 'gpay');
@@ -4421,9 +4492,10 @@
             }
 
             const currentSubtotal = Number(computeCartSubtotal(cartData) || checkoutCartSubtotal || 0);
-            const delivery_charge = Number(getDeliveryChargeForSubtotal(currentSubtotal) || 0);
-            const totalAmount = Number.isFinite(currentSubtotal + delivery_charge)
-                ? currentSubtotal + delivery_charge
+            const gst = computeCartGst(cartData);
+            const delivery_charge = Number(getDeliveryChargeForSubtotal(currentSubtotal, gst) || 0);
+            const totalAmount = Number.isFinite(currentSubtotal + delivery_charge + gst)
+                ? currentSubtotal + delivery_charge + gst
                 : 0;
 
             let paymentDetails = ['gpay', 'phone', 'paytm'].includes(paymentMethod)
@@ -4436,6 +4508,7 @@
                 payment_details: paymentDetails,
                 notes: combinedNotes,
                 total_amount: totalAmount,
+                gst: gst,
                 delivery_speed: checkoutDeliverySpeed,
                 delivery_charge,
                 items: cartData.cartItems.map(item => ({

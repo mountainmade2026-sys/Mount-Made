@@ -2881,6 +2881,30 @@ exports.updateSiteSettings = async (req, res) => {
       updates.push({ key: 'gpay_qr_image_url', value: qrImageUrl });
     }
 
+    if (req.body.product_gst_overrides !== undefined) {
+      let parsedProductGstOverrides = req.body.product_gst_overrides;
+      if (typeof parsedProductGstOverrides === 'string') {
+        try {
+          parsedProductGstOverrides = JSON.parse(parsedProductGstOverrides || '{}');
+        } catch (error) {
+          return res.status(400).json({ error: 'Invalid product_gst_overrides JSON.' });
+        }
+      }
+      if (typeof parsedProductGstOverrides !== 'object' || parsedProductGstOverrides === null || Array.isArray(parsedProductGstOverrides)) {
+        return res.status(400).json({ error: 'product_gst_overrides must be an object.' });
+      }
+      const cleanedOverrides = {};
+      for (const [overrideKey, overrideValue] of Object.entries(parsedProductGstOverrides)) {
+        const productId = String(overrideKey || '').trim();
+        const percent = Number(overrideValue);
+        if (!productId || Number.isNaN(percent) || percent < 0 || percent > 100) {
+          return res.status(400).json({ error: 'Each product GST override must be a valid percentage between 0 and 100.' });
+        }
+        cleanedOverrides[productId] = Number(percent.toFixed(2));
+      }
+      updates.push({ key: 'product_gst_overrides', value: JSON.stringify(cleanedOverrides) });
+    }
+
     if (cod_available_pincodes !== undefined) {
       const normalizedPincodes = String(cod_available_pincodes || '')
         .split(/[\n,]+/)

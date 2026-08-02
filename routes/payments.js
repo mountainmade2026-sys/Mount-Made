@@ -7,7 +7,7 @@ const { authenticateToken } = require('../middleware/auth');
 const { blockAdminCommerce } = require('../middleware/commerceAccess');
 const { sendOrderNotificationToAdmin } = require('../utils/emailService');
 const { notifyOrderPlaced } = require('../utils/whatsappService');
-const { getDeliveryChargeForSubtotal } = require('../utils/deliverySettings');
+const { getDeliveryChargeForSubtotal, parseProductGstOverrides, computeCartGst } = require('../utils/deliverySettings');
 
 const router = express.Router();
 
@@ -263,8 +263,10 @@ router.post('/idfc/verify', async (req, res) => {
       });
     }
 
-    const serverDeliveryCharge = getDeliveryChargeForSubtotal(total, siteSettings);
-    const serverTotalAmount = (Number(total) || 0) + serverDeliveryCharge;
+    const gstOverrides = parseProductGstOverrides(siteSettings);
+    const gst = computeCartGst(cartItems, gstOverrides);
+    const serverDeliveryCharge = getDeliveryChargeForSubtotal(total, siteSettings, gst);
+    const serverTotalAmount = (Number(total) || 0) + serverDeliveryCharge + gst;
 
     // Verify amount matches
     if (Math.round(Number(amount) || 0) !== Math.round(serverTotalAmount)) {
@@ -287,6 +289,7 @@ router.post('/idfc/verify', async (req, res) => {
     const orderData = {
       user_id: req.user.id,
       total_amount: serverTotalAmount,
+      gst: gst,
       shipping_address: shipping_address || {},
       payment_method: paymentSession.payment_method,
       payment_provider: 'idfc',

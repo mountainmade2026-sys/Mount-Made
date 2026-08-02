@@ -1636,7 +1636,7 @@
             <div class="footer-section">
                 <h3>Support</h3>
                 <ul>
-                    <li><a href="#">Wholesale FAQ</a></li>
+                    <li><a href="/faq">FAQs</a></li>
                     <li><a href="#contact" data-wholesale-view="contact">Contact Sales Team</a></li>
                     <li><a href="#payment-terms" data-wholesale-view="payment-terms">Payment Terms</a></li>
                 </ul>
@@ -1802,6 +1802,10 @@
             };
 
             document.querySelectorAll('[data-wholesale-view]').forEach(link => {
+                // Skip binding if this link is an absolute or external link or opens in a new tab
+                const href = String(link.getAttribute('href') || '').trim();
+                if (href.startsWith('/') || href.startsWith('http') || link.target === '_blank') return;
+
                 link.addEventListener('click', (e) => {
                     const targetView = link.getAttribute('data-wholesale-view');
                     if (!targetView) return;
