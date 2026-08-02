@@ -15,6 +15,38 @@
             color-scheme: light;
         }
 
+        .nav-icon-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.12);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+
+        .nav-icon-btn:hover,
+        .navbar-actions button:hover {
+            background: rgba(255, 255, 255, 0.18);
+            transform: translateY(-1px);
+        }
+
+        .navbar-actions button {
+            border: none;
+            background: rgba(255, 255, 255, 0.12);
+            color: #ffffff;
+            width: 40px;
+            height: 40px;
+            border-radius: 999px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
         .faq-page-shell {
             padding: 2rem 1rem 4rem;
         }
@@ -240,22 +272,33 @@
     </style>
 </head>
 <body>
-    <header class="site-header">
-        <nav class="nav-container">
-            <a href="/" class="brand-logo">Mount Made</a>
-            <div class="nav-links">
-                <a href="/products">Products</a>
-                <a href="/about">About</a>
-                <a href="/contact">Contact</a>
-                <a href="/faq" class="active">FAQ</a>
+    <nav class="navbar">
+        <span class="nav-corner nav-corner-tl" aria-hidden="true"></span>
+        <span class="nav-corner nav-corner-tr" aria-hidden="true"></span>
+        <span class="nav-corner nav-corner-bl" aria-hidden="true"></span>
+        <span class="nav-corner nav-corner-br" aria-hidden="true"></span>
+        <div class="navbar-container">
+            <button class="mobile-menu-toggle" aria-label="Open navigation menu">
+                <i class="fas fa-bars"></i>
+            </button>
+            <a href="/" class="navbar-brand">
+                Mount Made
+                <span class="navbar-tagline">GOURMET GROCERIES</span>
+            </a>
+            <ul class="navbar-menu">
+                <li><a href="/">Home</a></li>
+                <li><a href="/products">Products</a></li>
+                <li><a href="/about">About Us</a></li>
+                <li><a href="/contact">Contact</a></li>
+                <li><a href="/faq" class="active">FAQ</a></li>
+            </ul>
+            <div class="navbar-actions">
+                <a href="/cart" class="icon-button" aria-label="Shopping Cart"><i class="fas fa-shopping-cart"></i></a>
+                <a href="/orders" class="icon-button" aria-label="Orders"><i class="fas fa-box"></i></a>
+                <button id="account-toggle" class="icon-button" aria-label="Account"><i class="fas fa-user"></i></button>
             </div>
-            <div class="nav-actions">
-                <a href="/cart" class="nav-icon-btn" aria-label="Shopping Cart"><i class="fas fa-shopping-cart"></i></a>
-                <a href="/orders" class="nav-icon-btn" aria-label="Orders"><i class="fas fa-box"></i></a>
-                <button id="account-toggle" class="nav-icon-btn" aria-label="Account"><i class="fas fa-user"></i></button>
-            </div>
-        </nav>
-    </header>
+        </div>
+    </nav>
 
     <main class="page-shell faq-page-shell">
         <section class="faq-page-layout">
