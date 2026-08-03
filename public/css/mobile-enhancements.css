@@ -263,6 +263,11 @@
     box-shadow: 0 2px 8px rgba(0,0,0,0.24);
   }
 
+  /* When navbar is sticky, the body padding should not add extra gap above it */
+  body {
+    padding-top: 0;
+  }
+
   /* Reduce generic section paddings at very bottom of homepage sections */
   #homepage-sections-container > section.container {
     margin-bottom: 1rem !important;
@@ -335,6 +340,7 @@
   .footer {
     margin-bottom: 0 !important;
     margin-top: 0 !important;
+    padding-bottom: 0 !important;
   }
 
   body {

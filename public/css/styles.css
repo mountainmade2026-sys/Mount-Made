@@ -672,7 +672,7 @@ html[data-theme="dark"] .price-discount {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='120'%3E%3Cg stroke='rgba(255,255,255,0.05)' stroke-width='1' fill='none'%3E%3Cpath d='M0,60 C35,25 65,25 95,60 C125,95 155,95 185,60'/%3E%3C/g%3E%3C/svg%3E");
   background-repeat: repeat;
   background-size: 240px 120px;
-  padding: 58px var(--space-4) var(--space-4);
+  padding: 0 1rem 1rem;
   box-shadow: 0 8px 32px rgba(0,0,0,0.5);
   z-index: 9999;
   border-bottom: 2px solid rgba(212,175,55,0.4);
@@ -949,6 +949,12 @@ html[data-theme="dark"] .price-discount {
 .mobile-menu-toggle:hover {
   border-color: rgba(212,175,55,0.75);
   background: rgba(212,175,55,0.12);
+}
+
+@media (max-width: 767px) {
+  .mobile-menu-toggle {
+    display: none !important;
+  }
 }
 
 /* ============================================================================
@@ -2419,9 +2425,9 @@ html[data-theme="dark"] .accd-item-danger:hover .accd-icon { background: rgba(24
     left: 0;
     right: 0;
     height: calc(60px + env(safe-area-inset-bottom, 0px));
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-bottom: env(safe-area-inset-bottom);
     background: linear-gradient(160deg, #1a3c1b 0%, #2c5f2d 55%, #1e4d1f 100%);
-    border-top: 1px solid rgba(212,175,55,0.30);
+    border-top: none;
     box-shadow: 0 -4px 24px rgba(0,0,0,0.22), 0 -1px 0 rgba(212,175,55,0.12);
     z-index: 9800;
     align-items: stretch;
@@ -2437,13 +2443,7 @@ html[data-theme="dark"] .accd-item-danger:hover .accd-icon { background: rgba(24
 
   /* Ornate top border accent line */
   .mm-bottom-nav::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 5%;
-    right: 5%;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(212,175,55,0.55) 30%, rgba(212,175,55,0.55) 70%, transparent);
+    display: none;
   }
 
   .mm-bnav-item {
