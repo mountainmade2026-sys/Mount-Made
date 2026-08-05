@@ -315,17 +315,13 @@ router.post('/razorpay/initiate', async (req, res) => {
     // Create Payment Link - Payment Links API has basic parameters only
     const baseUrl = process.env.BASE_URL || 'https://mountmade.in';
     
+    // Use ONLY Razorpay Payment Links API supported fields (no methods/upi_link)
     const paymentLinkBody = {
       amount: paymentAmount,
       currency: 'INR',
       accept_partial: false,
       description: `Order #${order.order_number}`,
-      customer_notify: 0,
-      notify: {
-        sms: false,
-        email: false
-      },
-      reminder_enable: false,
+      customer_notify: false,
       notes: {
         merchant_order_id: String(order.id || order._id),
         payment_method: paymentMethod,
@@ -335,7 +331,7 @@ router.post('/razorpay/initiate', async (req, res) => {
       callback_method: 'get'
     };
 
-    // Create the payment link
+    // Create the payment link with only supported fields
     console.log('Creating Razorpay payment link with body:', JSON.stringify(paymentLinkBody, null, 2));
     const paymentLink = await razorpay.paymentLink.create(paymentLinkBody);
     console.log('Razorpay payment link created:', paymentLink);
