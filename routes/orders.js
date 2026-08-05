@@ -108,8 +108,10 @@ router.post('/', async (req, res) => {
       return res.status(201).json({ message: 'Order placed successfully.', order });
     }
 
-    // For payment orders, mark payment as pending and create the order so the client can continue to payment.
+    // For payment orders, mark payment as pending and set status to a temporary state
+    // so the admin dashboard does not show the order until payment is confirmed.
     orderData.payment_status = 'pending';
+    orderData.status = 'payment_pending';
     const order = await Order.create(orderData);
 
     // Do NOT notify admin yet for unpaid payment orders. Notification will be sent after payment verification.

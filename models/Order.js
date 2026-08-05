@@ -325,6 +325,9 @@ class Order {
       query += ` AND o.status = $${paramCount}`;
       values.push(filters.status);
       paramCount++;
+    } else {
+      // By default hide temporary orders that are awaiting payment
+      query += ` AND o.status != 'payment_pending'`;
     }
 
     query += ` GROUP BY o.id, u.full_name, u.email, u.phone ORDER BY o.created_at DESC`;
