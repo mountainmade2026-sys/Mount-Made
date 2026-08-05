@@ -4545,23 +4545,6 @@
 
                         console.log('checkout: Razorpay payment session created', paymentSession);
 
-                        // Map payment methods to Razorpay method specifications
-                        let razorpayMethod = null;
-                        let allowedMethods = [];
-
-                        if (paymentSession.paymentMethod === 'credit') {
-                            razorpayMethod = 'card';
-                            allowedMethods = ['card'];
-                        } else if (paymentSession.paymentMethod === 'debit') {
-                            razorpayMethod = 'card';
-                            allowedMethods = ['card'];
-                        } else if (paymentSession.paymentMethod === 'netbank') {
-                            razorpayMethod = 'netbanking';
-                            allowedMethods = ['netbanking'];
-                        }
-
-                        console.log('checkout: Razorpay method config', { method: razorpayMethod, allowed: allowedMethods });
-
                         const options = {
                             key: paymentSession.keyId,
                             amount: paymentSession.amount,
@@ -4590,16 +4573,6 @@
                                     console.log('Razorpay payment modal dismissed');
                                     setPlaceOrderButtonState(false);
                                     showAlert('Payment was cancelled. Please try again.', 'warning');
-                                    // Clean up retry interval
-                                    if (window.__razorpayRetryInterval) {
-                                        clearInterval(window.__razorpayRetryInterval);
-                                        window.__razorpayRetryInterval = null;
-                                    }
-                                    // Clean up observer
-                                    if (window.__razorpayMethodObserver) {
-                                        window.__razorpayMethodObserver.disconnect();
-                                        window.__razorpayMethodObserver = null;
-                                    }
                                 }
                             },
                             prefill: {
@@ -4613,109 +4586,26 @@
                             }
                         };
 
+                        // Set method based on selected payment method
+                        if (paymentSession.paymentMethod === 'credit') {
+                            options.method = 'card';
+                            // Disable all payment methods except card
+                            options.disabled = ['upi', 'netbanking', 'wallet', 'emi', 'paylater', 'emandate', 'recurring'];
+                        } else if (paymentSession.paymentMethod === 'debit') {
+                            options.method = 'card';
+                            // Disable all payment methods except card
+                            options.disabled = ['upi', 'netbanking', 'wallet', 'emi', 'paylater', 'emandate', 'recurring'];
+                        } else if (paymentSession.paymentMethod === 'netbank') {
+                            options.method = 'netbanking';
+                            // Disable all payment methods except netbanking
+                            options.disabled = ['upi', 'card', 'wallet', 'emi', 'paylater', 'emandate', 'recurring'];
+                        }
+
                         if (typeof Razorpay === 'undefined') {
                             throw new Error('Razorpay SDK is not loaded. Please refresh and try again.');
                         }
 
                         const razorpayInstance = new Razorpay(options);
-                        
-                        // Setup method tab selector after modal opens
-                        window.__razorpaySelectedMethod = razorpayMethod;
-                        window.__razorpayPaymentMethodNeeded = paymentSession.paymentMethod;
-                        
-                        // Function to find and click the payment method tab by text content
-                        const navigateToPaymentMethod = () => {
-                            try {
-                                let tabFound = false;
-                                
-                                // Get all clickable elements in the modal
-                                const allElements = document.querySelectorAll('*');
-                                
-                                if (razorpayMethod === 'card') {
-                                    // Search for Cards tab by text content
-                                    for (let el of allElements) {
-                                        if (el.textContent && el.textContent.trim() === 'Cards' && el.offsetParent !== null) {
-                                            console.log('Found Cards tab element:', el);
-                                            // Click the element or its parent if it's not clickable
-                                            if (el.onclick || el.tagName === 'BUTTON' || el.tagName === 'A' || el.classList.contains('rzp-tab')) {
-                                                el.click();
-                                            } else if (el.parentElement) {
-                                                el.parentElement.click();
-                                            }
-                                            tabFound = true;
-                                            console.log('Successfully clicked Cards tab');
-                                            break;
-                                        }
-                                    }
-                                } else if (razorpayMethod === 'netbanking') {
-                                    // Search for Netbanking tab by text content
-                                    for (let el of allElements) {
-                                        if (el.textContent && el.textContent.trim() === 'Netbanking' && el.offsetParent !== null) {
-                                            console.log('Found Netbanking tab element:', el);
-                                            // Click the element or its parent if it's not clickable
-                                            if (el.onclick || el.tagName === 'BUTTON' || el.tagName === 'A' || el.classList.contains('rzp-tab')) {
-                                                el.click();
-                                            } else if (el.parentElement) {
-                                                el.parentElement.click();
-                                            }
-                                            tabFound = true;
-                                            console.log('Successfully clicked Netbanking tab');
-                                            break;
-                                        }
-                                    }
-                                }
-                                
-                                if (tabFound) {
-                                    console.log('Successfully navigated to payment method:', razorpayMethod);
-                                    if (window.__razorpayMethodObserver) {
-                                        window.__razorpayMethodObserver.disconnect();
-                                        window.__razorpayMethodObserver = null;
-                                    }
-                                    return true;
-                                }
-                                return false;
-                            } catch (e) {
-                                console.error('Error navigating to payment method:', e);
-                                return false;
-                            }
-                        };
-                        
-                        // Setup aggressive retry mechanism
-                        let retryCount = 0;
-                        const maxRetries = 20;
-                        const retryInterval = setInterval(() => {
-                            if (retryCount < maxRetries) {
-                                const success = navigateToPaymentMethod();
-                                if (success) {
-                                    clearInterval(retryInterval);
-                                    console.log('Successfully navigated after', retryCount, 'retries');
-                                }
-                                retryCount++;
-                            } else {
-                                clearInterval(retryInterval);
-                                console.warn('Failed to navigate to payment method after', maxRetries, 'retries');
-                            }
-                        }, 150);
-                        
-                        window.__razorpayRetryInterval = retryInterval;
-                        
-                        // Also setup MutationObserver as backup
-                        const observer = new MutationObserver((mutations) => {
-                            navigateToPaymentMethod();
-                        });
-                        
-                        try {
-                            const modalContent = document.querySelector('div[aria-modal="true"]') || document.body;
-                            observer.observe(modalContent, {
-                                childList: true,
-                                subtree: true,
-                                attributes: true
-                            });
-                            window.__razorpayMethodObserver = observer;
-                        } catch (e) {
-                            console.warn('Could not setup MutationObserver:', e);
-                        }
-                        
                         razorpayInstance.open();
                     } catch (sessionError) {
                         console.error('Failed to create Razorpay payment session:', sessionError);
