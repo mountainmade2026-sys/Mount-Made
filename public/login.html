@@ -658,7 +658,7 @@
             }
         }
 
-        // ── Form submit: detect admin → show CAPTCHA ─────────────────────
+        // ── Form submit: perform login directly for all users ─────────────────────
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -668,33 +668,7 @@
 
             if (!identifier || !password) return;
 
-            // Check if this identifier belongs to an admin account
-            let isAdmin = false;
-            try {
-                const roleResp = await api.post('/auth/check-admin', { identifier });
-                isAdmin = roleResp?.is_admin === true;
-            } catch (_) {
-                // If check fails, proceed without CAPTCHA (fail open for non-critical path)
-                isAdmin = false;
-            }
-
-            if (!isAdmin) {
-                // Non-admin (customer / wholesale): skip CAPTCHA entirely
-                await performLogin(identifier, password, false);
-                return;
-            }
-
-            // Admin account: check remember-me bypass
-            const bypass = getRememberBypass();
-            const isBypass = bypass && bypass.identifier === identifier;
-
-            if (isBypass) {
-                // Fast path: already verified recently
-                await performLogin(identifier, password, rememberMe);
-            } else {
-                // Show CAPTCHA modal
-                showCaptchaOverlay({ identifier, password, rememberMe });
-            }
+            await performLogin(identifier, password, rememberMe);
         });
 
         // ── CAPTCHA refresh button ───────────────────────────────────────
