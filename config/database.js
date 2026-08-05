@@ -797,7 +797,7 @@ const initializeDatabase = async () => {
         ) THEN
           ALTER TABLE orders DROP CONSTRAINT orders_status_check;
           ALTER TABLE orders ADD CONSTRAINT orders_status_check
-            CHECK (status IN ('pending','processing','shipped','out_for_delivery','delivered','cancelled'));
+            CHECK (status IN ('pending','processing','shipped','out_for_delivery','delivered','cancelled','payment_pending'));
         END IF;
       END $$;
     `);
