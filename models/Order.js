@@ -153,7 +153,9 @@ class Order {
         RETURNING *
       `;
 
-      const insertResult = await client.query(insertQuery, [
+      let insertResult;
+      try {
+        insertResult = await client.query(insertQuery, [
         user_id,
         tempOrderNumber,
         total_amount,
@@ -173,7 +175,14 @@ class Order {
         (orderData && orderData.status) ? orderData.status : null,
         delivery_speed,
         delivery_charge
-      ]);
+        ]);
+      } catch (err) {
+        // Enhanced logging for constraint violations to aid debugging in production
+        try {
+          console.error('Order insert failed. Insert params status value=', (orderData && orderData.status), 'payment_method=', payment_method);
+        } catch (_) {}
+        throw err;
+      }
 
       let order = insertResult.rows[0];
 
