@@ -143,8 +143,8 @@ router.post('/idfc/initiate', async (req, res) => {
       udf3: String(order.id || order._id)
     };
 
-    // Generate IDFC request signature
-    const signatureString = `${transactionId}|${IDFC_CONFIG.merchantId}|${amount}|INR`;
+    // Generate IDFC request signature using the same amount value sent to IDFC
+    const signatureString = `${transactionId}|${IDFC_CONFIG.merchantId}|${paymentRequestData.amount}|INR`;
     const signature = crypto.createHmac('sha256', IDFC_CONFIG.apiSecret)
       .update(signatureString)
       .digest('hex');
