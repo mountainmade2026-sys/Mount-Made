@@ -4587,25 +4587,18 @@
                         };
 
                         // Set method based on selected payment method
-                        if (paymentSession.paymentMethod === 'credit') {
+                        if (paymentSession.paymentMethod === 'credit' || paymentSession.paymentMethod === 'debit') {
                             options.method = 'card';
-                            // Disable all payment methods except card
-                            options.disabled = ['upi', 'netbanking', 'wallet', 'emi', 'paylater', 'emandate', 'recurring'];
-                        } else if (paymentSession.paymentMethod === 'debit') {
-                            options.method = 'card';
-                            // Disable all payment methods except card
-                            options.disabled = ['upi', 'netbanking', 'wallet', 'emi', 'paylater', 'emandate', 'recurring'];
+                            options.disabled = ['upi', 'netbanking', 'wallet'];
                         } else if (paymentSession.paymentMethod === 'netbank') {
                             options.method = 'netbanking';
-                            // Disable all payment methods except netbanking
-                            options.disabled = ['upi', 'card', 'wallet', 'emi', 'paylater', 'emandate', 'recurring'];
+                            options.disabled = ['upi', 'card', 'wallet'];
                         }
 
                         if (typeof Razorpay === 'undefined') {
                             throw new Error('Razorpay SDK is not loaded. Please refresh and try again.');
                         }
 
-                        console.log('Razorpay options:', JSON.stringify({method: options.method, disabled: options.disabled}, null, 2));
                         const razorpayInstance = new Razorpay(options);
                         razorpayInstance.open();
                     } catch (sessionError) {
