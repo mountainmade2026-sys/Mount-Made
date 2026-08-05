@@ -172,14 +172,14 @@ app.use((req, res, next) => {
     "default-src 'self'",
     "base-uri 'self'",
     "frame-ancestors 'none'",
-    "frame-src 'self' https://accounts.google.com https://content.googleapis.com",
-    "child-src 'self' https://accounts.google.com https://content.googleapis.com",
+    "frame-src 'self' https://accounts.google.com https://content.googleapis.com https://checkout.razorpay.com https://*.razorpay.com",
+    "child-src 'self' https://accounts.google.com https://content.googleapis.com https://checkout.razorpay.com https://*.razorpay.com",
     "object-src 'none'",
     "script-src 'self' 'unsafe-inline' https:",
     "style-src 'self' 'unsafe-inline' https:",
     "img-src 'self' data: blob: https: http:",
     "font-src 'self' data: https:",
-    "connect-src 'self' https: http: ws: wss:",
+    "connect-src 'self' https: http: ws: wss: https://checkout.razorpay.com https://api.razorpay.com",
     "media-src 'self' blob: data:",
     "form-action 'self'"
   ];
