@@ -4551,6 +4551,12 @@
                         }
 
                         console.log('Redirecting to Razorpay Payment Link:', paymentSession.paymentLinkUrl);
+                        console.log('Order stored with payment link ID:', paymentSession.paymentLinkId);
+                        
+                        // Store payment link info globally for verification after redirect
+                        window.__razorpayPaymentLinkId = paymentSession.paymentLinkId;
+                        window.__razorpayOrderId = serverOrder.order.id || serverOrder.order._id;
+                        
                         showAlert('Redirecting to payment gateway...', 'info');
                         
                         // Redirect after a short delay to ensure alert is shown

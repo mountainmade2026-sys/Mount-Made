@@ -331,7 +331,7 @@ router.post('/razorpay/initiate', async (req, res) => {
         payment_method: paymentMethod,
         order_number: order.order_number
       },
-      callback_url: `${baseUrl}/delivery-confirm.html`,
+      callback_url: `${baseUrl}/api/payments/razorpay/callback`,
       callback_method: 'get'
     };
 
@@ -426,7 +426,7 @@ router.post('/razorpay/verify', async (req, res) => {
 
       // Find order by payment link ID
       const orderResult = await db.query(
-        'SELECT * FROM orders WHERE payment_link_id = $1 OR payment_gateway_order_id = $1',
+        'SELECT * FROM orders WHERE payment_gateway_order_id = $1',
         [razorpay_payment_link_id]
       );
 
@@ -519,7 +519,91 @@ router.post('/razorpay/verify', async (req, res) => {
   }
 });
 
-// IDFC Payment Verification Endpoint
+// Razorpay Payment Link Callback Handler
+router.get('/razorpay/callback', async (req, res) => {
+  try {
+    const {
+      razorpay_payment_link_id,
+      razorpay_payment_id,
+      razorpay_payment_link_status,
+      razorpay_payment_link_reference_id
+    } = req.query || {};
+
+    console.log('Razorpay Payment Link Callback:', {
+      payment_link_id: razorpay_payment_link_id,
+      payment_id: razorpay_payment_id,
+      status: razorpay_payment_link_status
+    });
+
+    // Check if payment was successful
+    if (razorpay_payment_link_status !== 'paid') {
+      // Payment failed or was cancelled
+      return res.redirect(`/checkout?error=Payment+was+${razorpay_payment_link_status || 'cancelled'}`);
+    }
+
+    // Verify payment with Razorpay API
+    if (!RAZORPAY_CONFIG.keyId || !RAZORPAY_CONFIG.keySecret) {
+      return res.redirect('/checkout?error=Payment+verification+failed');
+    }
+
+    try {
+      const razorpay = new Razorpay({ key_id: RAZORPAY_CONFIG.keyId, key_secret: RAZORPAY_CONFIG.keySecret });
+      const paymentLink = await razorpay.paymentLink.fetch(razorpay_payment_link_id);
+
+      if (!paymentLink || paymentLink.status !== 'paid') {
+        return res.redirect('/checkout?error=Payment+verification+failed');
+      }
+
+      // Find and update order
+      const orderResult = await db.query(
+        'SELECT * FROM orders WHERE payment_gateway_order_id = $1',
+        [razorpay_payment_link_id]
+      );
+
+      if (!orderResult.rows || !orderResult.rows[0]) {
+        return res.redirect('/checkout?error=Order+not+found');
+      }
+
+      const order = orderResult.rows[0];
+
+      // Update order with payment details
+      await db.query(
+        `UPDATE orders
+         SET payment_status = 'paid', paid_at = NOW(), payment_gateway_payment_id = $1
+         WHERE id = $2`,
+        [razorpay_payment_id, order.id]
+      );
+
+      // Fire-and-forget admin notification
+      const capturedUserId = order.user_id;
+      const capturedOrderId = order.id;
+      Promise.resolve().then(async () => {
+        try {
+          const [userResult, itemsResult] = await Promise.all([
+            db.query('SELECT full_name, phone FROM users WHERE id = $1', [capturedUserId]),
+            db.query('SELECT product_name, quantity, price FROM order_items WHERE order_id = $1', [capturedOrderId])
+          ]);
+          const customer = userResult.rows[0] || {};
+          const items = itemsResult.rows || [];
+          await sendOrderNotificationToAdmin(order, customer, items);
+          await notifyOrderPlaced(customer.phone, customer.full_name || 'Customer', order.order_number, order.total_amount);
+        } catch (notifErr) {
+          console.error('[EMAIL] Razorpay callback notification failed:', notifErr.message);
+        }
+      }).catch(err => console.error('[EMAIL] Unhandled Razorpay callback error:', err.message));
+
+      // Redirect to success page
+      return res.redirect(`/delivery-confirm.html?order=${order.id}`);
+    } catch (error) {
+      console.error('Razorpay callback verification error:', error);
+      return res.redirect('/checkout?error=Verification+error');
+    }
+  } catch (error) {
+    console.error('Razorpay callback error:', error);
+    return res.redirect('/checkout?error=Callback+error');
+  }
+});
+
 router.post('/idfc/verify', async (req, res) => {
   try {
     if (!IDFC_CONFIG.merchantId || !IDFC_CONFIG.apiKey) {
