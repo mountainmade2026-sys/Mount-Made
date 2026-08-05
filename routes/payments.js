@@ -112,6 +112,12 @@ const RAZORPAY_CONFIG = {
   keySecret: process.env.RAZORPAY_KEY_SECRET || ''
 };
 
+console.log('Razorpay config loaded:', {
+  keyIdSet: Boolean(RAZORPAY_CONFIG.keyId),
+  keySecretSet: Boolean(RAZORPAY_CONFIG.keySecret),
+  nodeEnv: process.env.NODE_ENV || 'undefined'
+});
+
 function getRequiredEnv(name) {
   const value = process.env[name];
   if (!value || !String(value).trim()) {
@@ -295,7 +301,11 @@ router.post('/idfc/initiate', async (req, res) => {
 router.post('/razorpay/initiate', async (req, res) => {
   try {
     if (!RAZORPAY_CONFIG.keyId || !RAZORPAY_CONFIG.keySecret) {
-      return res.status(501).json({ error: 'Razorpay is not configured on server.' });
+      console.error('Razorpay initiate blocked because keys are missing', {
+        keyIdSet: Boolean(RAZORPAY_CONFIG.keyId),
+        keySecretSet: Boolean(RAZORPAY_CONFIG.keySecret)
+      });
+      return res.status(501).json({ error: 'Razorpay payment gateway is not configured on server.' });
     }
 
     const {
