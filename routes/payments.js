@@ -18,6 +18,7 @@ router.use(blockAdminCommerce);
 const IDFC_CONFIG = {
   merchantId: process.env.IDFC_MERCHANT_ID || '',
   apiKey: process.env.IDFC_API_KEY || '',
+  apiSecret: process.env.IDFC_API_SECRET || '',
   baseUrl: process.env.IDFC_BASE_URL || 'https://api.idfcbank.com/api/v1',
   redirectUrl: process.env.IDFC_REDIRECT_URL || 'http://localhost:3000/payment-callback',
   webhookUrl: process.env.IDFC_WEBHOOK_URL || 'http://localhost:3000/api/payments/idfc/webhook'
@@ -144,7 +145,7 @@ router.post('/idfc/initiate', async (req, res) => {
 
     // Generate IDFC request signature
     const signatureString = `${transactionId}|${IDFC_CONFIG.merchantId}|${amount}|INR`;
-    const signature = crypto.createHmac('sha256', IDFC_CONFIG.apiKey)
+    const signature = crypto.createHmac('sha256', IDFC_CONFIG.apiSecret)
       .update(signatureString)
       .digest('hex');
 
@@ -366,7 +367,7 @@ router.post('/idfc/webhook', async (req, res) => {
     };
 
     const signatureString = JSON.stringify(webhookData);
-    const expectedSignature = crypto.createHmac('sha256', IDFC_CONFIG.apiKey)
+    const expectedSignature = crypto.createHmac('sha256', IDFC_CONFIG.apiSecret)
       .update(signatureString)
       .digest('hex');
 
