@@ -97,14 +97,18 @@ router.post('/razorpay/webhook', rawJson, razorpayWebhookHandler);
 router.use(authenticateToken);
 router.use(blockAdminCommerce);
 
+// Application base URL for hosted environments
+const APP_BASE_URL = process.env.APP_BASE_URL || process.env.BASE_URL ||
+  (process.env.RENDER_EXTERNAL_HOSTNAME ? `https://${process.env.RENDER_EXTERNAL_HOSTNAME}` : 'https://mountmade.in');
+
 // IDFC Payment Gateway Configuration
 const IDFC_CONFIG = {
   merchantId: process.env.IDFC_MERCHANT_ID || '',
   apiKey: process.env.IDFC_API_KEY || '',
   apiSecret: process.env.IDFC_API_SECRET || '',
   baseUrl: process.env.IDFC_BASE_URL || 'https://api.idfcbank.com/api/v1',
-  redirectUrl: process.env.IDFC_REDIRECT_URL || 'http://localhost:3000/payment-callback',
-  webhookUrl: process.env.IDFC_WEBHOOK_URL || 'http://localhost:3000/api/payments/idfc/webhook'
+  redirectUrl: process.env.IDFC_REDIRECT_URL || `${APP_BASE_URL}/payment-callback`,
+  webhookUrl: process.env.IDFC_WEBHOOK_URL || `${APP_BASE_URL}/api/payments/idfc/webhook`
 };
 // Razorpay Payment Gateway Configuration
 const RAZORPAY_CONFIG = {
