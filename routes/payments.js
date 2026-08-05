@@ -312,7 +312,7 @@ router.post('/razorpay/initiate', async (req, res) => {
     const paymentAmount = Math.round(amount * 100);
     const razorpay = new Razorpay({ key_id: RAZORPAY_CONFIG.keyId, key_secret: RAZORPAY_CONFIG.keySecret });
 
-    // Create Payment Link with method-specific restrictions
+    // Create Payment Link - Payment Links API has basic parameters only
     const baseUrl = process.env.BASE_URL || 'https://mountmade.in';
     
     const paymentLinkBody = {
@@ -320,7 +320,7 @@ router.post('/razorpay/initiate', async (req, res) => {
       currency: 'INR',
       accept_partial: false,
       description: `Order #${order.order_number}`,
-      customer_notify: 0,
+      customer_notify: false,
       notify: {
         sms: false,
         email: false
@@ -334,31 +334,6 @@ router.post('/razorpay/initiate', async (req, res) => {
       callback_url: `${baseUrl}/api/payments/razorpay/callback`,
       callback_method: 'get'
     };
-
-    // Build upi_link and methods object based on selected payment method
-    if (paymentMethod === 'credit' || paymentMethod === 'debit') {
-      // Only allow cards
-      paymentLinkBody.upi_link = false;
-      paymentLinkBody.methods = {
-        card: '1',
-        netbanking: '0',
-        upi: '0',
-        wallet: '0',
-        emi: '0',
-        paylater: '0'
-      };
-    } else if (paymentMethod === 'netbank') {
-      // Only allow netbanking
-      paymentLinkBody.upi_link = false;
-      paymentLinkBody.methods = {
-        card: '0',
-        netbanking: '1',
-        upi: '0',
-        wallet: '0',
-        emi: '0',
-        paylater: '0'
-      };
-    }
 
     // Create the payment link
     console.log('Creating Razorpay payment link with body:', JSON.stringify(paymentLinkBody, null, 2));
