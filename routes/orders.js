@@ -72,18 +72,25 @@ router.post('/', async (req, res) => {
     const deliveryCharge = getDeliveryChargeForSubtotal(itemSubtotal, siteSettings, gst);
     const totalAmount = itemSubtotal + deliveryCharge + gst;
 
-    const orderData = {
-      ...req.body,
+    // Build orderData from allowed fields only and ignore any client-sent `status` or `payment_status`.
+    const orderData = Object.assign({}, req.body || {});
+    // Remove any client-supplied status fields to prevent DB constraint violations
+    delete orderData.status;
+    delete orderData.payment_status;
+    Object.assign(orderData, {
       user_id: req.user.id,
       delivery_charge: deliveryCharge,
       gst: gst,
       total_amount: totalAmount
-    };
+    });
 
     const paymentMethod = String(req.body?.payment_method || '').toLowerCase();
     const isCodOrder = paymentMethod === 'cod' || paymentMethod === 'cash_on_delivery';
 
     if (isCodOrder) {
+      // Force COD orders to a server-approved status
+      orderData.payment_status = 'unpaid';
+      orderData.status = 'pending';
       const order = await Order.create(orderData);
       const capturedUserId = req.user.id;
       const capturedOrderId = order.id;
@@ -110,6 +117,7 @@ router.post('/', async (req, res) => {
 
     // For payment orders, mark payment as pending and set status to a temporary state
     // so the admin dashboard does not show the order until payment is confirmed.
+    // For gateway payments, ensure server-controlled pending state
     orderData.payment_status = 'pending';
     orderData.status = 'payment_pending';
     const order = await Order.create(orderData);
@@ -338,6 +346,17 @@ router.post('/quick-buy', async (req, res) => {
         subtotal
       }]
     };
+
+    // Sanitize and enforce server-controlled status values
+    delete orderData.status;
+    delete orderData.payment_status;
+    if (normalizedPaymentMethod === 'cash_on_delivery') {
+      orderData.payment_status = 'unpaid';
+      orderData.status = 'pending';
+    } else {
+      orderData.payment_status = 'pending';
+      orderData.status = 'payment_pending';
+    }
 
     const order = await Order.create(orderData);
 

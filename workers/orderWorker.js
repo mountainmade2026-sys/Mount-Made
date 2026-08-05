@@ -14,6 +14,21 @@ const worker = new Worker('orders', async (job) => {
   const { orderData } = job.data || {};
   if (!orderData) throw new Error('Missing order data');
 
+  // Sanitize incoming orderData and enforce server-controlled statuses
+  delete orderData.status;
+  delete orderData.payment_status;
+  const pm = String(orderData.payment_method || '').toLowerCase();
+  if (orderData.payment_status === 'paid' || orderData.paid_at) {
+    orderData.payment_status = 'paid';
+    orderData.status = 'processing';
+  } else if (pm === 'cod' || pm === 'cash_on_delivery') {
+    orderData.payment_status = 'unpaid';
+    orderData.status = 'pending';
+  } else {
+    orderData.payment_status = 'pending';
+    orderData.status = 'payment_pending';
+  }
+
   // Create order using existing logic in Order.create
   const order = await Order.create(orderData);
 

@@ -4545,6 +4545,22 @@
 
                         console.log('checkout: Razorpay payment session created', paymentSession);
 
+                        // Map payment methods to Razorpay method specifications
+                        let razorpayMethod = undefined;
+                        let cardPreference = undefined;
+
+                        if (paymentSession.paymentMethod === 'credit') {
+                            razorpayMethod = 'card';
+                            cardPreference = 'credit';
+                        } else if (paymentSession.paymentMethod === 'debit') {
+                            razorpayMethod = 'card';
+                            cardPreference = 'debit';
+                        } else if (paymentSession.paymentMethod === 'netbank') {
+                            razorpayMethod = 'netbanking';
+                        }
+
+                        console.log('checkout: Razorpay method config', { method: razorpayMethod, card_preference: cardPreference });
+
                         const options = {
                             key: paymentSession.keyId,
                             amount: paymentSession.amount,
@@ -4552,6 +4568,7 @@
                             name: paymentSession.name || 'Mount Made',
                             description: paymentSession.description || `Order #${serverOrder.order.order_number}`,
                             order_id: paymentSession.orderId,
+                            method: razorpayMethod,
                             handler: async function(response) {
                                 console.log('Razorpay payment completed', response);
                                 try {
@@ -4585,6 +4602,11 @@
                                 order_number: serverOrder.order.order_number
                             }
                         };
+
+                        // Add card preference if specified (for credit/debit card distinction)
+                        if (cardPreference) {
+                            options.card_preference = [cardPreference];
+                        }
 
                         if (typeof Razorpay === 'undefined') {
                             throw new Error('Razorpay SDK is not loaded. Please refresh and try again.');

@@ -340,7 +340,8 @@ router.post('/razorpay/initiate', async (req, res) => {
       amount: paymentAmount,
       currency: 'INR',
       name: 'Mount Made',
-      description: `Order #${order.order_number}`
+      description: `Order #${order.order_number}`,
+      paymentMethod: paymentMethod
     });
   } catch (error) {
     console.error('Razorpay initiate error:', error);
