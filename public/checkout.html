@@ -4605,6 +4605,7 @@
                             throw new Error('Razorpay SDK is not loaded. Please refresh and try again.');
                         }
 
+                        console.log('Razorpay options:', JSON.stringify({method: options.method, disabled: options.disabled}, null, 2));
                         const razorpayInstance = new Razorpay(options);
                         razorpayInstance.open();
                     } catch (sessionError) {
