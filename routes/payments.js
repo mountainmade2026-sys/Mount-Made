@@ -106,7 +106,6 @@ const IDFC_CONFIG = {
   redirectUrl: process.env.IDFC_REDIRECT_URL || 'http://localhost:3000/payment-callback',
   webhookUrl: process.env.IDFC_WEBHOOK_URL || 'http://localhost:3000/api/payments/idfc/webhook'
 };
-
 // Razorpay Payment Gateway Configuration
 const RAZORPAY_CONFIG = {
   keyId: process.env.RAZORPAY_KEY_ID || '',
