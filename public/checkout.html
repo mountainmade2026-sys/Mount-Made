@@ -4597,7 +4597,7 @@
                                             throw new Error(verifyResult?.error || 'Payment verification failed.');
                                         }
 
-                                        window.location.href = `/delivery-confirm.html?order=${serverOrder.order.id || serverOrder.order._id}`;
+                                        window.location.href = '/orders';
                                     } catch (verifyError) {
                                         console.error('Razorpay verification failed:', verifyError);
                                         setPlaceOrderButtonState(false);

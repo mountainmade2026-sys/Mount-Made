@@ -479,10 +479,10 @@ router.post('/razorpay/verify', async (req, res) => {
 
       const order = orderResult.rows[0];
 
-      // Update order with payment details
+      // Update order with payment details and mark the order pending for admin processing
       await db.query(
         `UPDATE orders
-         SET payment_status = 'paid', paid_at = NOW(), payment_gateway_payment_id = $1
+         SET payment_status = 'paid', paid_at = NOW(), payment_gateway_payment_id = $1, status = 'pending'
          WHERE id = $2`,
         [razorpay_payment_id, order.id]
       );
@@ -529,7 +529,7 @@ router.post('/razorpay/verify', async (req, res) => {
 
       await db.query(
         `UPDATE orders
-         SET payment_status = 'paid', paid_at = NOW(), payment_gateway_payment_id = $1, payment_gateway_signature = $2
+         SET payment_status = 'paid', paid_at = NOW(), payment_gateway_payment_id = $1, payment_gateway_signature = $2, status = 'pending'
          WHERE id = $3`,
         [req.body.razorpay_payment_id, req.body.razorpay_signature, order.id]
       );
@@ -609,10 +609,9 @@ router.get('/razorpay/callback', async (req, res) => {
 
       const order = orderResult.rows[0];
 
-      // Update order with payment details
       await db.query(
         `UPDATE orders
-         SET payment_status = 'paid', paid_at = NOW(), payment_gateway_payment_id = $1
+         SET payment_status = 'paid', paid_at = NOW(), payment_gateway_payment_id = $1, status = 'pending'
          WHERE id = $2`,
         [razorpay_payment_id, order.id]
       );
@@ -635,8 +634,8 @@ router.get('/razorpay/callback', async (req, res) => {
         }
       }).catch(err => console.error('[EMAIL] Unhandled Razorpay callback error:', err.message));
 
-      // Redirect to success page
-      return res.redirect(`/delivery-confirm.html?order=${order.id}`);
+      // Redirect to the customer order history page after successful payment
+      return res.redirect('/orders');
     } catch (error) {
       console.error('Razorpay callback verification error:', error);
       return res.redirect('/checkout?error=Verification+error');
