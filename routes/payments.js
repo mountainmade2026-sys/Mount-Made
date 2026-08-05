@@ -487,6 +487,9 @@ router.post('/razorpay/verify', async (req, res) => {
         [razorpay_payment_id, order.id]
       );
 
+      // Clear the user's cart once payment is confirmed.
+      await db.query('DELETE FROM cart WHERE user_id = $1', [order.user_id]);
+
       // Fire-and-forget admin notification
       const capturedUserId = order.user_id;
       const capturedOrderId = order.id;
@@ -533,6 +536,9 @@ router.post('/razorpay/verify', async (req, res) => {
          WHERE id = $3`,
         [req.body.razorpay_payment_id, req.body.razorpay_signature, order.id]
       );
+
+      // Clear the user's cart once payment is confirmed.
+      await db.query('DELETE FROM cart WHERE user_id = $1', [order.user_id]);
 
       // Fire-and-forget admin notification
       const capturedUserId = order.user_id;

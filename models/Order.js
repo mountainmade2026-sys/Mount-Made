@@ -219,8 +219,11 @@ class Order {
         }
       }
 
-      // Clear user's cart
-      await client.query('DELETE FROM cart WHERE user_id = $1', [user_id]);
+      // Clear the cart only for orders that are already confirmed (for example COD).
+      // For gateway payment orders that are still awaiting payment, keep the cart until payment is verified.
+      if (order.status !== 'payment_pending') {
+        await client.query('DELETE FROM cart WHERE user_id = $1', [user_id]);
+      }
 
       await client.query('COMMIT');
       return order;
