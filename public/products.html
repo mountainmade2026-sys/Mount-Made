@@ -8,6 +8,7 @@
     <title>Products</title>
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/mobile-enhancements.css">
+    <link rel="stylesheet" href="/css/mobile-components.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
@@ -32,14 +33,21 @@
                 <li id="admin-link" class="hidden"><a href="/admin">Admin</a></li>
             </ul>
             <div class="navbar-actions">
-                <div id="auth-buttons"><a href="/login" class="btn btn-secondary btn-sm">Login</a>
+                <div id="auth-buttons">
+                    <a href="/login" class="btn btn-secondary btn-sm">Login</a>
+                    <a href="/register" class="btn btn-primary btn-sm">Register</a>
+                </div>
+                
                 <div id="user-menu" class="hidden flex gap-2" style="align-items: center;">
-                    <a href="/cart" class="icon-button"><i class="fas fa-shopping-cart"></i><span id="cart-badge" class="cart-badge hidden">0</span></a>
+                    <a href="/cart" class="icon-button" title="Shopping Cart">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span id="cart-badge" class="cart-badge hidden">0</span>
+                    </a>
                     <div class="account-menu">
                         <button id="account-toggle" class="icon-button" title="Account">
                             <i class="fas fa-user-circle"></i>
                         </button>
-                                                <div id="account-dropdown" class="account-dropdown hidden">
+                        <div id="account-dropdown" class="account-dropdown hidden">
                             <div class="accd-header">
                                 <div class="accd-avatar" id="account-avatar">U</div>
                                 <div class="accd-user">

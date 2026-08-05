@@ -8,6 +8,7 @@
     <title>Mount Made</title>
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/mobile-enhancements.css">
+    <link rel="stylesheet" href="/css/mobile-components.css">
     <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
     <style>
@@ -1019,12 +1020,14 @@
             }
 
             .search-input-wrapper {
-                flex-direction: column;
-                gap: 0;
+                flex-direction: row;
+                gap: 0.5rem;
             }
 
             .search-button {
-                padding: 0.875rem;
+                padding: 0.6rem 0.85rem;
+                font-size: 0.85rem;
+                border-left: 1px solid rgba(212,175,55,0.30);
             }
 
             .search-suggestions {
@@ -1084,9 +1087,32 @@
             .carousel-track-container {
                 min-height: 240px;
             }
+
+            /* Extra-small devices: make search even more compact */
+            .search-container {
+                bottom: 0.6rem;
+                left: 0.6rem;
+                right: 0.6rem;
+                padding: 0.12rem 0.55rem;
+                border-radius: 8px;
+            }
+
+            .search-input {
+                padding: 0.12rem 0.55rem;
+                font-size: 0.75rem;
+                height: 20px;
+                line-height: 1.1;
+            }
+
+            .search-button {
+                padding: 0.12rem 0.55rem;
+                font-size: 0.7rem;
+                height: 20px;
+                line-height: 1.1;
+            }
         }
 
-        /* ── Mobile hero: search bar top, image+heading below ── */
+        /* ── Mobile hero: search bar at bottom of slide, image+heading below ── */
         @media (max-width: 768px) {
             .search-section {
                 display: flex;
@@ -1099,16 +1125,42 @@
                 position: relative;
             }
 
-            /* 1. Search bar at very top — clean white, compact */
+            /* Search bar positioned at BOTTOM of slide container */
             .search-container {
-                order: 1;
-                position: static;
-                z-index: 3;
-                background: #fff;
-                padding: 0.75rem 1rem 0.7rem;
-                width: 100%;
-                max-width: 100%;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.09);
+                position: absolute;
+                bottom: 0.75rem;
+                left: 0.75rem;
+                right: 0.75rem;
+                z-index: 4;
+                background: rgba(255, 255, 255, 0.96);
+                backdrop-filter: blur(8px);
+                padding: 0.15rem 0.65rem;
+                width: auto;
+                max-width: none;
+                box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+                border-radius: 10px;
+            }
+
+            /* Smaller search input for mobile */
+            .search-input {
+                padding: 0.15rem 0.6rem;
+                font-size: 0.8rem;
+                height: 22px;
+                line-height: 1.1;
+            }
+
+            /* Smaller search button for mobile */
+            .search-input-wrapper {
+                flex-direction: row;
+                gap: 0.5rem;
+            }
+
+            .search-button {
+                padding: 0.15rem 0.6rem;
+                font-size: 0.75rem;
+                height: 22px;
+                line-height: 1.1;
+                border-left: 1px solid rgba(212,175,55,0.30);
             }
 
             /* Pull heading OUT of search-container flow → float over image.
@@ -1217,7 +1269,7 @@
                 position: relative;
                 inset: auto;
                 width: 100%;
-                height: clamp(200px, 52vw, 320px);
+                height: clamp(280px, 75vw, 480px);
                 z-index: 1;
                 overflow: hidden;
             }
@@ -1235,14 +1287,9 @@
                 z-index: 2;
             }
 
-            /* Stronger dark gradient at top so heading text stays readable */
+            /* Remove dark gradient overlay on mobile to show image clearly */
             .hero-slide::after {
-                background: linear-gradient(
-                    180deg,
-                    rgba(5,20,10,0.78) 0%,
-                    rgba(5,20,10,0.48) 55%,
-                    rgba(5,20,10,0.15) 100%
-                );
+                display: none;
             }
 
             /* When a dedicated mobile bg is set, the whole section becomes the canvas */
@@ -1514,9 +1561,148 @@
                 font-size: 0.86rem !important;
             }
         }
+
+        /* ═══════════════════════════════════════════════════════
+           Mobile-Only Login/SignUp CTA Banner
+           ════════════════════════════════════════════════════════ */
+        .auth-cta-section {
+            display: none;
+            padding: 1.5rem 1rem;
+            background: linear-gradient(135deg, #065f46 0%, #059669 100%);
+            margin: 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .auth-cta-section::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at top-right, rgba(255,255,255,0.1), transparent),
+                        radial-gradient(circle at bottom-left, rgba(255,255,255,0.05), transparent);
+            pointer-events: none;
+        }
+
+        .auth-cta-section.visible {
+            display: block;
+        }
+
+        .auth-cta-container {
+            position: relative;
+            z-index: 2;
+            max-width: 100%;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 1rem;
+        }
+
+        .auth-cta-icon {
+            width: 56px;
+            height: 56px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            color: white;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .auth-cta-content h3 {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: white;
+            margin: 0 0 0.5rem 0;
+            line-height: 1.3;
+            letter-spacing: -0.02em;
+        }
+
+        .auth-cta-content p {
+            font-size: 0.95rem;
+            color: rgba(255,255,255,0.92);
+            margin: 0;
+            line-height: 1.5;
+            font-weight: 500;
+        }
+
+        .auth-cta-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            width: 100%;
+            max-width: 340px;
+            margin-top: 0.5rem;
+        }
+
+        .auth-cta-btn {
+            padding: 0.875rem 1rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-align: center;
+        }
+
+        .auth-cta-btn-login {
+            background: white;
+            color: #065f46;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .auth-cta-btn-login:active {
+            transform: scale(0.96);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        }
+
+        .auth-cta-btn-signup {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border: 2px solid white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .auth-cta-btn-signup:active {
+            background: rgba(255,255,255,0.25);
+            transform: scale(0.96);
+        }
+
+        @media (max-width: 768px) {
+            .auth-cta-section {
+                display: none;
+                padding: 1.25rem 1rem;
+                margin: 0.5rem 0;
+            }
+
+            .auth-cta-section.visible {
+                display: block;
+            }
+
+            .auth-cta-buttons {
+                max-width: 100%;
+            }
+        }
+
+        /* Hide on desktop */
+        @media (min-width: 769px) {
+            .auth-cta-section {
+                display: none !important;
+            }
+        }
     </style>
 </head>
-<body>
+<body class="homepage">
     <!-- Navigation -->
     <nav class="navbar">
         <span class="nav-corner nav-corner-tl" aria-hidden="true"></span>
@@ -1634,6 +1820,27 @@
                 <span class="home-trust-item"><i class="fas fa-shield-check"></i> Secure checkout</span>
                 <span class="home-trust-item"><i class="fas fa-leaf"></i> Fresh quality products</span>
                 <span class="home-trust-item"><i class="fas fa-truck"></i> Fast doorstep delivery</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Mobile-Only Login/SignUp CTA Banner (shown when not logged in) -->
+    <section class="auth-cta-section" id="auth-cta-section">
+        <div class="auth-cta-container">
+            <div class="auth-cta-icon">
+                <i class="fas fa-shopping-bag"></i>
+            </div>
+            <div class="auth-cta-content">
+                <h3>Ready to Shop Fresh?</h3>
+                <p>Sign up to unlock exclusive offers and track your orders</p>
+            </div>
+            <div class="auth-cta-buttons">
+                <a href="/login" class="auth-cta-btn auth-cta-btn-login">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </a>
+                <a href="/register" class="auth-cta-btn auth-cta-btn-signup">
+                    <i class="fas fa-user-plus"></i> Sign Up
+                </a>
             </div>
         </div>
     </section>
@@ -2836,11 +3043,25 @@
         const debouncedSuggestions = debounce(loadSearchSuggestions, 300);
 
         // Initialize page
+        // Update mobile auth CTA section visibility based on login state
+        function updateAuthCtaVisibility() {
+            const ctaSection = document.getElementById('auth-cta-section');
+            if (!ctaSection) return;
+            
+            const isAuthenticated = auth.isAuthenticated();
+            if (isAuthenticated) {
+                ctaSection.classList.remove('visible');
+            } else {
+                ctaSection.classList.add('visible');
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             wireCategoryCarouselNav();
             loadCategories();
             loadHomepageSections();
             loadCarouselProducts();
+            updateAuthCtaVisibility(); // Show/hide mobile CTA based on auth state
             // Check if Google-signup user needs to add phone
             (async () => {
                 try {

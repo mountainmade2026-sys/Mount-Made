@@ -436,6 +436,11 @@ const auth = {
     // Update delivery address summary under logo
     this.updateDeliveryAddressUI();
 
+    // Update mobile auth CTA section visibility (homepage only)
+    if (typeof window.updateAuthCtaVisibility === 'function') {
+      window.updateAuthCtaVisibility();
+    }
+
     // (mmBnavSetAuth is called at the top of updateUI, before the early-return guard)
   },
 

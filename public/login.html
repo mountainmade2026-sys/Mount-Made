@@ -10,6 +10,7 @@
     <link rel="preload" as="image" href="/images/login-box.png" fetchpriority="high">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/mobile-enhancements.css">
+    <link rel="stylesheet" href="/css/mobile-components.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
@@ -318,8 +319,62 @@
             <ul class="navbar-menu">
                 <li><a href="/">Home</a></li>
                 <li><a href="/products">Products</a></li>
+                <li><a href="/about">About</a></li>
+                <li><a href="/contact">Contact Us</a></li>
+                <li><a href="/faq">FAQ</a></li>
+                <li id="admin-link" class="hidden"><a href="/admin">Admin</a></li>
             </ul>
-            <div class="navbar-actions"></div>
+            <div class="navbar-actions">
+                <div id="auth-buttons">
+                    <a href="/login" class="btn btn-secondary btn-sm">Login</a>
+                    <a href="/register" class="btn btn-primary btn-sm">Register</a>
+                </div>
+                
+                <div id="user-menu" class="hidden flex gap-2" style="align-items: center;">
+                    <a href="/cart" class="icon-button" title="Shopping Cart">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span id="cart-badge" class="cart-badge hidden">0</span>
+                    </a>
+                    <div class="account-menu">
+                        <button id="account-toggle" class="icon-button" title="Account">
+                            <i class="fas fa-user-circle"></i>
+                        </button>
+                        <div id="account-dropdown" class="account-dropdown hidden">
+                            <div class="accd-header">
+                                <div class="accd-avatar" id="account-avatar">U</div>
+                                <div class="accd-user">
+                                    <div class="accd-name" id="account-display-name">User</div>
+                                    <div class="accd-role" id="account-display-role">Member</div>
+                                </div>
+                            </div>
+                            <div class="accd-group">
+                                <button class="accd-item" onclick="openProfileModal()">
+                                    <span class="accd-icon"><i class="fas fa-user-edit"></i></span>Edit Profile
+                                </button>
+                                <a href="/orders" class="accd-item">
+                                    <span class="accd-icon"><i class="fas fa-box-open"></i></span>My Orders
+                                </a>
+                                <a href="/addresses" class="accd-item accd-desktop-only">
+                                    <span class="accd-icon"><i class="fas fa-map-marker-alt"></i></span>Manage Address
+                                </a>
+                                <button class="accd-item" onclick="openAccountManagementModal()">
+                                    <span class="accd-icon"><i class="fas fa-key"></i></span>Change Password
+                                </button>
+                            </div>
+                            <div class="accd-group">
+                                <button id="theme-toggle" class="accd-item">
+                                    <span class="accd-icon"><i class="fas fa-moon"></i></span>Switch to Dark Mode
+                                </button>
+                            </div>
+                            <div class="accd-group accd-group-last">
+                                <button id="account-logout" class="accd-item accd-item-danger">
+                                    <span class="accd-icon"><i class="fas fa-sign-out-alt"></i></span>Logout
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </nav>
 
