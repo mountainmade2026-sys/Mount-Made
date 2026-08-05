@@ -9,7 +9,6 @@
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/mobile-enhancements.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode.js/1.5.3/qrcode.min.js"></script>
 </head>
 <body>
     <nav class="navbar">
@@ -4538,7 +4537,7 @@
                             }
                         });
 
-                        if (!paymentSession || !paymentSession.orderId || !paymentSession.keyId) {
+                        if (!paymentSession || !paymentSession.paymentLinkUrl) {
                             const errorMsg = paymentSession?.error || 'Failed to create Razorpay payment session';
                             throw new Error(errorMsg);
                         }
@@ -4546,10 +4545,6 @@
                         console.log('checkout: Razorpay payment session created', paymentSession);
 
                         // Redirect to Razorpay Payment Link with method-specific restrictions
-                        if (!paymentSession.paymentLinkUrl) {
-                            throw new Error('No payment link URL provided');
-                        }
-
                         console.log('Redirecting to Razorpay Payment Link:', paymentSession.paymentLinkUrl);
                         console.log('Order stored with payment link ID:', paymentSession.paymentLinkId);
                         
