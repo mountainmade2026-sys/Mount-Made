@@ -45,6 +45,23 @@ async function razorpayWebhookHandler(req, res) {
           'UPDATE orders SET payment_status = $1, paid_at = NOW(), payment_gateway_payment_id = $2 WHERE payment_gateway_order_id = $3',
           ['paid', paymentId, orderId]
         );
+        // Notify admin after marking paid (webhook path)
+        try {
+          const orderRes = await db.query('SELECT * FROM orders WHERE payment_gateway_order_id = $1', [orderId]);
+          const order = orderRes.rows[0];
+          if (order) {
+            const [userResult, itemsResult] = await Promise.all([
+              db.query('SELECT full_name, phone FROM users WHERE id = $1', [order.user_id]),
+              db.query('SELECT product_name, quantity, price FROM order_items WHERE order_id = $1', [order.id])
+            ]);
+            const customer = userResult.rows[0] || {};
+            const items = itemsResult.rows || [];
+            await sendOrderNotificationToAdmin(order, customer, items);
+            await notifyOrderPlaced(customer.phone, customer.full_name || 'Customer', order.order_number, order.total_amount);
+          }
+        } catch (notifyErr) {
+          console.error('[EMAIL] Razorpay webhook notification failed:', notifyErr.message);
+        }
       }
     } else if (evt === 'payment.failed') {
       const payment = event.payload?.payment?.entity || {};
@@ -377,6 +394,23 @@ router.post('/razorpay/verify', async (req, res) => {
        WHERE id = $3`,
       [razorpay_payment_id, razorpay_signature, order.id]
     );
+    // Fire-and-forget admin notification after payment is confirmed
+    const capturedUserId = order.user_id;
+    const capturedOrderId = order.id;
+    Promise.resolve().then(async () => {
+      try {
+        const [userResult, itemsResult] = await Promise.all([
+          db.query('SELECT full_name, phone FROM users WHERE id = $1', [capturedUserId]),
+          db.query('SELECT product_name, quantity, price FROM order_items WHERE order_id = $1', [capturedOrderId])
+        ]);
+        const customer = userResult.rows[0] || {};
+        const items = itemsResult.rows || [];
+        await sendOrderNotificationToAdmin(order, customer, items);
+        await notifyOrderPlaced(customer.phone, customer.full_name || 'Customer', order.order_number, order.total_amount);
+      } catch (notifErr) {
+        console.error('[EMAIL] Razorpay order notification failed:', notifErr.message);
+      }
+    }).catch(err => console.error('[EMAIL] Unhandled Razorpay notification error:', err.message));
 
     return res.json({ success: true, message: 'Payment verified successfully.' });
   } catch (error) {
