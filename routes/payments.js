@@ -320,7 +320,7 @@ router.post('/razorpay/initiate', async (req, res) => {
       currency: 'INR',
       accept_partial: false,
       description: `Order #${order.order_number}`,
-      customer_notify: false,
+      customer_notify: 0,
       notify: {
         sms: false,
         email: false
