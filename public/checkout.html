@@ -3685,9 +3685,22 @@
             input.value = value;
         }
 
-        function validateCVV(cvv) {
+        function validateCVV(cvv, cardNumber) {
             const cleaned = String(cvv || '').replace(/\D/g, '');
-            return cleaned.length >= 3 && cleaned.length <= 4;
+            if (!cleaned) return false;
+
+            const cardClean = String(cardNumber || '').replace(/\D/g, '');
+            // Detect Amex by IIN (34, 37) or 15-digit length
+            const isAmex = /^3[47]/.test(cardClean) || cardClean.length === 15;
+            const requiredLen = isAmex ? 4 : 3;
+            return cleaned.length === requiredLen;
+        }
+
+        function validateCardHolderName(name) {
+            const s = String(name || '').trim();
+            if (s.length < 2) return false;
+            // Require at least one alphabetic character
+            return /[A-Za-z]/.test(s);
         }
 
         function updatePaymentDetailsPanel(method) {
@@ -3820,13 +3833,13 @@
                 const cardExpiry = document.getElementById('card-expiry');
                 const cardCVV = document.getElementById('card-cvv');
 
-                if (!cardName || !cardName.value.trim()) {
-                    showAlert('Please enter cardholder name', 'warning');
+                if (!cardName || !validateCardHolderName(cardName.value)) {
+                    showAlert('Please enter a valid cardholder name', 'warning');
                     return false;
                 }
 
                 if (!cardNumber || !validateCardNumber(cardNumber.value)) {
-                    showAlert('Please enter a valid card number (13-19 digits)', 'warning');
+                    showAlert('Please enter a valid card number', 'warning');
                     return false;
                 }
 
@@ -3835,8 +3848,8 @@
                     return false;
                 }
 
-                if (!cardCVV || !validateCVV(cardCVV.value)) {
-                    showAlert('Please enter a valid CVV (3-4 digits)', 'warning');
+                if (!cardCVV || !validateCVV(cardCVV.value, cardNumber ? cardNumber.value : '')) {
+                    showAlert('Please enter a valid CVV for the card provided', 'warning');
                     return false;
                 }
 
