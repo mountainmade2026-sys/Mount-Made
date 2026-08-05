@@ -3633,7 +3633,21 @@
 
         function validateCardNumber(cardNumber) {
             const cleaned = String(cardNumber || '').replace(/\D/g, '');
-            return cleaned.length >= 13 && cleaned.length <= 19;
+            if (cleaned.length < 13 || cleaned.length > 19) return false;
+
+            // Luhn algorithm
+            let sum = 0;
+            let shouldDouble = false;
+            for (let i = cleaned.length - 1; i >= 0; i--) {
+                let digit = parseInt(cleaned.charAt(i), 10);
+                if (shouldDouble) {
+                    digit = digit * 2;
+                    if (digit > 9) digit -= 9;
+                }
+                sum += digit;
+                shouldDouble = !shouldDouble;
+            }
+            return sum % 10 === 0;
         }
 
         function formatCardNumber(input) {
@@ -3646,10 +3660,21 @@
             const parts = String(expiryDate || '').split('/');
             if (parts.length !== 2) return false;
             const month = parseInt(parts[0], 10);
-            const year = parseInt(parts[1], 10);
+            let year = parseInt(parts[1], 10);
+            if (!Number.isFinite(month) || !Number.isFinite(year)) return false;
             if (month < 1 || month > 12) return false;
-            const currentYear = new Date().getFullYear() % 100;
-            return year >= currentYear;
+
+            // Normalize two-digit years to 2000+
+            if (year < 100) {
+                const currentFullYear = new Date().getFullYear();
+                const currentCentury = Math.floor(currentFullYear / 100) * 100;
+                year = currentCentury + year;
+            }
+
+            const now = new Date();
+            const expiry = new Date(year, month - 1 + 1, 1); // first day of month after expiry
+            // Card is valid if expiry date (end of month) is in the future
+            return expiry > now;
         }
 
         function formatExpiryDate(input) {
