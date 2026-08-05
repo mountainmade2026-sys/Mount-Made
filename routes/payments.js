@@ -12,6 +12,66 @@ const { getDeliveryChargeForSubtotal, parseProductGstOverrides, computeCartGst }
 
 const router = express.Router();
 
+// Expose an unauthenticated webhook endpoint for Razorpay.
+// This must be defined before `authenticateToken` is applied so Razorpay can POST without a user token.
+const rawJson = express.raw({ type: 'application/json' });
+router.post('/razorpay/webhook', rawJson, async (req, res) => {
+  try {
+    const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
+    if (!secret) {
+      console.warn('Razorpay webhook received but RAZORPAY_WEBHOOK_SECRET is not configured');
+      return res.status(501).send('Webhook not configured');
+    }
+
+    const signature = req.headers['x-razorpay-signature'];
+    if (!signature) return res.status(400).send('Missing signature');
+
+    const expected = crypto.createHmac('sha256', secret).update(req.body).digest('hex');
+    if (expected !== signature) {
+      console.warn('Invalid Razorpay webhook signature');
+      return res.status(401).send('Invalid signature');
+    }
+
+    const event = JSON.parse(req.body.toString());
+    const evt = event.event;
+
+    if (evt === 'payment.captured') {
+      const payment = event.payload?.payment?.entity || {};
+      const orderId = payment.order_id;
+      const paymentId = payment.id;
+      if (orderId) {
+        await db.query(
+          'UPDATE orders SET payment_status = $1, paid_at = NOW(), payment_gateway_payment_id = $2 WHERE payment_gateway_order_id = $3',
+          ['paid', paymentId, orderId]
+        );
+      }
+    } else if (evt === 'payment.failed') {
+      const payment = event.payload?.payment?.entity || {};
+      const orderId = payment.order_id;
+      if (orderId) {
+        await db.query(
+          'UPDATE orders SET payment_status = $1 WHERE payment_gateway_order_id = $2',
+          ['failed', orderId]
+        );
+      }
+    } else if (evt === 'order.paid') {
+      const orderEntity = event.payload?.order?.entity || {};
+      const orderId = orderEntity.id;
+      if (orderId) {
+        await db.query(
+          'UPDATE orders SET payment_status = $1, paid_at = NOW() WHERE payment_gateway_order_id = $2',
+          ['paid', orderId]
+        );
+      }
+    }
+
+    return res.status(200).send('OK');
+  } catch (err) {
+    console.error('Razorpay webhook error', err);
+    return res.status(500).send('Error');
+  }
+});
+
 router.use(authenticateToken);
 router.use(blockAdminCommerce);
 
