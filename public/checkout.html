@@ -2454,6 +2454,7 @@
     </style>
 
     <script src="/js/main.js?v=20260223"></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     
     <!-- IDFC Payment Gateway SDK with fallback loading -->
     <script>
@@ -4523,9 +4524,9 @@
             const manualAddressUsed = !selectedAddressId;
             const shouldSaveAddress = manualAddressUsed || !!document.getElementById('save_address')?.checked;
 
-            // Handle Banking Methods (Debit, Credit, Net Banking) via IDFC
+            // Handle Banking Methods (Debit, Credit, Net Banking) via Razorpay
             if (['debit', 'credit', 'netbank'].includes(paymentMethod)) {
-                console.log('checkout: handling banking payment via IDFC');
+                console.log('checkout: handling banking payment via Razorpay');
                 
                 // First, validate payment details form
                 if (!validatePaymentDetails(paymentMethod)) {
@@ -4580,19 +4581,9 @@
                     // Show next step message
                     showAlert('Initiating payment gateway... Please wait.', 'info');
 
-                    // Prepare IDFC payment parameters
-                    const bankingMethodMap = {
-                        'debit': 'DEBIT_CARD',
-                        'credit': 'CREDIT_CARD',
-                        'netbank': 'NETBANKING'
-                    };
-
-                    // Generate transaction reference
-                    const txnRef = `MM${Date.now()}${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
-                    
-                    // Request IDFC payment session from server
+                    // Request Razorpay payment session from server
                     try {
-                        const paymentSession = await api.post('/payments/idfc/initiate', {
+                        const paymentSession = await api.post('/payments/razorpay/initiate', {
                             order: serverOrder.order,
                             amount: totalAmount,
                             paymentMethod: paymentMethod,
@@ -4603,61 +4594,67 @@
                             }
                         });
 
-                        if (!paymentSession || !paymentSession.sessionId) {
-                            const errorMsg = paymentSession?.error || 'Failed to create IDFC payment session';
+                        if (!paymentSession || !paymentSession.orderId || !paymentSession.keyId) {
+                            const errorMsg = paymentSession?.error || 'Failed to create Razorpay payment session';
                             throw new Error(errorMsg);
                         }
 
-                        console.log('checkout: IDFC payment session created', paymentSession);
+                        console.log('checkout: Razorpay payment session created', paymentSession);
 
-                        // Check if IDFC SDK is loaded
-                        if (!window.IDFCBANK) {
-                            console.warn('IDFC SDK not loaded, attempting to use payment URL');
-                            if (paymentSession.paymentUrl) {
-                                // Fallback to payment URL redirect
-                                window.location.href = paymentSession.paymentUrl;
-                            } else {
-                                throw new Error('IDFC payment gateway SDK not available. Please refresh and try again.');
-                            }
-                            return;
-                        }
-
-                        // Initialize IDFC payment with SDK
-                        if (typeof window.IDFCBANK.redirectToPaymentGateway === 'function') {
-                            console.log('checkout: redirecting to IDFC payment gateway');
-                            
-                            window.IDFCBANK.redirectToPaymentGateway({
-                                sessionId: paymentSession.sessionId,
-                                merchantId: paymentSession.merchantId,
-                                onSuccess: function(response) {
-                                    console.log('IDFC Payment successful:', response);
-                                    // Payment gateway redirects to returnUrl
-                                    showAlert('Payment successful! Redirecting...', 'success');
-                                },
-                                onFailure: function(error) {
-                                    console.error('IDFC Payment failed:', error);
+                        const options = {
+                            key: paymentSession.keyId,
+                            amount: paymentSession.amount,
+                            currency: paymentSession.currency,
+                            name: paymentSession.name || 'Mount Made',
+                            description: paymentSession.description || `Order #${serverOrder.order.order_number}`,
+                            order_id: paymentSession.orderId,
+                            handler: async function(response) {
+                                console.log('Razorpay payment completed', response);
+                                try {
+                                    const verifyResult = await api.post('/payments/razorpay/verify', response);
+                                    if (verifyResult && verifyResult.success) {
+                                        showAlert('Payment successful! Redirecting...', 'success');
+                                        window.location.href = '/delivery-confirm.html';
+                                    } else {
+                                        throw new Error(verifyResult?.error || 'Payment verification failed');
+                                    }
+                                } catch (verifyError) {
+                                    console.error('Razorpay verification failed:', verifyError);
                                     setPlaceOrderButtonState(false);
-                                    const errorMsg = error?.message || error?.error || 'Payment processing failed';
-                                    showOrderFailed(`Payment failed: ${errorMsg}`);
-                                },
-                                onCancel: function() {
-                                    console.log('IDFC Payment cancelled');
+                                    showOrderFailed(`Payment verification failed: ${verifyError.message || verifyError}`);
+                                }
+                            },
+                            modal: {
+                                ondismiss: function() {
+                                    console.log('Razorpay payment modal dismissed');
                                     setPlaceOrderButtonState(false);
                                     showAlert('Payment was cancelled. Please try again.', 'warning');
                                 }
-                            });
-                        } else {
-                            throw new Error('IDFC payment gateway not properly initialized');
+                            },
+                            prefill: {
+                                name: shippingAddress.full_name,
+                                email: auth?.currentUser?.email || '',
+                                contact: shippingAddress.phone
+                            },
+                            notes: {
+                                order_id: serverOrder.order.id || serverOrder.order._id,
+                                order_number: serverOrder.order.order_number
+                            }
+                        };
+
+                        if (typeof Razorpay === 'undefined') {
+                            throw new Error('Razorpay SDK is not loaded. Please refresh and try again.');
                         }
+
+                        const razorpayInstance = new Razorpay(options);
+                        razorpayInstance.open();
                     } catch (sessionError) {
-                        console.error('Failed to create IDFC payment session:', sessionError);
+                        console.error('Failed to create Razorpay payment session:', sessionError);
                         setPlaceOrderButtonState(false);
-                        
-                        // Check if it's an API key error
                         const errorMessage = sessionError.message || String(sessionError);
-                        if (errorMessage.includes('configured') || errorMessage.includes('IDFC') || errorMessage.includes('merchant')) {
+                        if (errorMessage.includes('configured') || errorMessage.includes('Razorpay')) {
                             showAlert(
-                                'Payment gateway is not yet configured on the server. Please contact support to set up IDFC payment credentials.',
+                                'Payment gateway is not configured on the server. Please contact support to set up Razorpay credentials.',
                                 'error'
                             );
                         } else if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
@@ -4672,7 +4669,6 @@
                 } catch (error) {
                     console.error('Banking payment error:', error);
                     setPlaceOrderButtonState(false);
-                    
                     const errorMsg = error.message || String(error);
                     if (errorMsg.includes('order')) {
                         showOrderFailed(`Order creation failed: ${errorMsg}`);

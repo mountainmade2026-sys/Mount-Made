@@ -1,6 +1,7 @@
 const express = require('express');
 const crypto = require('crypto');
 const axios = require('axios');
+const Razorpay = require('razorpay');
 const db = require('../config/database');
 const Order = require('../models/Order');
 const { authenticateToken } = require('../middleware/auth');
@@ -22,6 +23,12 @@ const IDFC_CONFIG = {
   baseUrl: process.env.IDFC_BASE_URL || 'https://api.idfcbank.com/api/v1',
   redirectUrl: process.env.IDFC_REDIRECT_URL || 'http://localhost:3000/payment-callback',
   webhookUrl: process.env.IDFC_WEBHOOK_URL || 'http://localhost:3000/api/payments/idfc/webhook'
+};
+
+// Razorpay Payment Gateway Configuration
+const RAZORPAY_CONFIG = {
+  keyId: process.env.RAZORPAY_KEY_ID || '',
+  keySecret: process.env.RAZORPAY_KEY_SECRET || ''
 };
 
 function getRequiredEnv(name) {
@@ -106,7 +113,7 @@ const {
 // IDFC Payment Initiation Endpoint
 router.post('/idfc/initiate', async (req, res) => {
   try {
-    if (!IDFC_CONFIG.merchantId || !IDFC_CONFIG.apiKey) {
+    if (!IDFC_CONFIG.merchantId || !IDFC_CONFIG.apiKey || !IDFC_CONFIG.apiSecret) {
       return res.status(501).json({ error: 'IDFC payment gateway is not configured on server.' });
     }
 
@@ -200,6 +207,116 @@ router.post('/idfc/initiate', async (req, res) => {
   } catch (error) {
     console.error('IDFC initiate payment error:', error);
     return res.status(500).json({ error: 'Failed to initiate payment.' });
+  }
+});
+
+// Razorpay Payment Initiation Endpoint
+router.post('/razorpay/initiate', async (req, res) => {
+  try {
+    if (!RAZORPAY_CONFIG.keyId || !RAZORPAY_CONFIG.keySecret) {
+      return res.status(501).json({ error: 'Razorpay is not configured on server.' });
+    }
+
+    const {
+      order,
+      amount,
+      paymentMethod,
+      customerDetails
+    } = req.body || {};
+
+    if (!order || !amount || !customerDetails) {
+      return res.status(400).json({ error: 'Missing required payment parameters.' });
+    }
+
+    const paymentAmount = Math.round(amount * 100);
+    const razorpay = new Razorpay({ key_id: RAZORPAY_CONFIG.keyId, key_secret: RAZORPAY_CONFIG.keySecret });
+
+    const receipt = `order_${order.id || order._id}`;
+    const razorpayOrder = await razorpay.orders.create({
+      amount: paymentAmount,
+      currency: 'INR',
+      receipt,
+      payment_capture: 1,
+      notes: {
+        merchant_order_id: String(order.id || order._id),
+        payment_method: paymentMethod
+      }
+    });
+
+    if (!razorpayOrder || !razorpayOrder.id) {
+      throw new Error('Failed to create Razorpay order');
+    }
+
+    await db.query(
+      `UPDATE orders SET payment_gateway_order_id = $1, payment_provider = 'razorpay' WHERE id = $2`,
+      [razorpayOrder.id, order.id || order._id]
+    );
+
+    return res.json({
+      success: true,
+      keyId: RAZORPAY_CONFIG.keyId,
+      orderId: razorpayOrder.id,
+      amount: paymentAmount,
+      currency: 'INR',
+      name: 'Mount Made',
+      description: `Order #${order.order_number}`
+    });
+  } catch (error) {
+    console.error('Razorpay initiate error:', error);
+    return res.status(502).json({
+      error: 'Failed to create Razorpay payment session',
+      details: error.message
+    });
+  }
+});
+
+// Razorpay Payment Verification Endpoint
+router.post('/razorpay/verify', async (req, res) => {
+  try {
+    if (!RAZORPAY_CONFIG.keyId || !RAZORPAY_CONFIG.keySecret) {
+      return res.status(501).json({ error: 'Razorpay is not configured on server.' });
+    }
+
+    const {
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature
+    } = req.body || {};
+
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      return res.status(400).json({ error: 'Missing Razorpay verification parameters.' });
+    }
+
+    const expectedSignature = crypto.createHmac('sha256', RAZORPAY_CONFIG.keySecret)
+      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+      .digest('hex');
+
+    if (expectedSignature !== razorpay_signature) {
+      return res.status(400).json({ error: 'Invalid Razorpay signature.' });
+    }
+
+    const result = await db.query(
+      'SELECT * FROM orders WHERE payment_gateway_order_id = $1',
+      [razorpay_order_id]
+    );
+
+    if (!result.rows || !result.rows[0]) {
+      return res.status(404).json({ error: 'Order not found for this Razorpay order ID.' });
+    }
+
+    const order = result.rows[0];
+
+    await db.query(
+      `UPDATE orders
+       SET payment_status = 'paid', paid_at = NOW(), payment_gateway_payment_id = $1, payment_gateway_signature = $2
+       WHERE id = $3`,
+      [razorpay_payment_id, razorpay_signature, order.id]
+    );
+
+    return res.json({ success: true, message: 'Payment verified successfully.' });
+  } catch (error) {
+    console.error('Razorpay verify error:', error);
+    return res.status(500).json({ error: 'Failed to verify Razorpay payment.' });
   }
 });
 
