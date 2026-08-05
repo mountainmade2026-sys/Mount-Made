@@ -3728,97 +3728,25 @@
                 panel.style.display = 'none';
                 panel.classList.add('hidden');
             } else if (['debit', 'credit', 'netbank'].includes(normalizedMethod)) {
-                // For banking methods - show actual form fields
-                const methodLabels = {
-                    'debit': 'Debit Card',
-                    'credit': 'Credit Card',
-                    'netbank': 'Net Banking'
-                };
-
-                let fieldsHTML = `
-                    <div style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: #000; padding: 1rem; border-radius: 12px; margin-bottom: 1rem;">
-                        <i class="fas fa-lock" style="margin-right: 0.5rem;"></i>
-                        <strong>${methodLabels[normalizedMethod] || 'Bank Payment'}</strong>
-                        <p style="font-size: 0.85rem; margin-top: 0.4rem; opacity: 0.9;">Secure payment gateway • Encrypted transaction</p>
-                    </div>
-                `;
-
-                if (normalizedMethod === 'netbank') {
-                    // Net Banking - Bank selection
-                    fieldsHTML += `
-                        <div style="margin-bottom: 1rem;">
-                            <label class="form-label" style="font-weight: 600; margin-bottom: 0.5rem; display: block; color: #000 !important;">Select Your Bank</label>
-                            <select id="netbank-select" class="form-control" style="width: 100%; padding: 0.65rem; border: 2px solid var(--border-primary); border-radius: 8px; font-size: 0.95rem; background: var(--bg-primary); color: #000 !important;">
-                                <option value="">-- Choose Your Bank --</option>
-                                <option value="HDFC">HDFC Bank</option>
-                                <option value="ICICI">ICICI Bank</option>
-                                <option value="AXIS">Axis Bank</option>
-                                <option value="BOB">Bank of Baroda</option>
-                                <option value="SBI">State Bank of India</option>
-                                <option value="IDFC">IDFC Bank</option>
-                                <option value="KOTAK">Kotak Mahindra Bank</option>
-                                <option value="YES">YES Bank</option>
-                                <option value="INDUSIND">IndusInd Bank</option>
-                                <option value="OTHER">Other Bank</option>
-                            </select>
-                        </div>
-                        <div style="background: var(--bg-secondary); padding: 0.75rem; border-radius: 8px; border-left: 4px solid var(--primary);">
-                            <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">
-                                <i class="fas fa-info-circle" style="margin-right: 0.4rem; color: var(--primary);"></i>
-                                You will be redirected to your bank's secure page to complete the payment.
-                            </p>
-                        </div>
-                    `;
-                } else {
-                    // Debit/Credit Card fields
-                    fieldsHTML += `
-                        <div style="margin-bottom: 1rem;">
-                            <label class="form-label" style="font-weight: 600; margin-bottom: 0.4rem; display: block;">Cardholder Name</label>
-                            <input type="text" id="card-holder-name" placeholder="John Doe" class="form-control" style="width: 100%; padding: 0.65rem; border: 2px solid var(--border-primary); border-radius: 8px; font-size: 0.95rem;" maxlength="50">
-                        </div>
-
-                        <div style="margin-bottom: 1rem;">
-                            <label class="form-label" style="font-weight: 600; margin-bottom: 0.4rem; display: block;">Card Number</label>
-                            <input type="text" id="card-number" placeholder="1234 5678 9012 3456" class="form-control" style="width: 100%; padding: 0.65rem; border: 2px solid var(--border-primary); border-radius: 8px; font-size: 0.95rem; letter-spacing: 0.1em;" maxlength="19" oninput="formatCardNumber(this)">
-                            <small style="color: var(--text-secondary); font-size: 0.8rem; margin-top: 0.25rem; display: block;">13-19 digits • No spaces needed</small>
-                        </div>
-
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-                            <div>
-                                <label class="form-label" style="font-weight: 600; margin-bottom: 0.4rem; display: block;">Expiry Date</label>
-                                <input type="text" id="card-expiry" placeholder="MM/YY" class="form-control" style="width: 100%; padding: 0.65rem; border: 2px solid var(--border-primary); border-radius: 8px; font-size: 0.95rem; text-align: center;" maxlength="5" oninput="formatExpiryDate(this)">
-                                <small style="color: var(--text-secondary); font-size: 0.8rem; margin-top: 0.25rem; display: block;">MM/YY</small>
-                            </div>
-                            <div>
-                                <label class="form-label" style="font-weight: 600; margin-bottom: 0.4rem; display: block;">CVV</label>
-                                <input type="password" id="card-cvv" placeholder="***" class="form-control" style="width: 100%; padding: 0.65rem; border: 2px solid var(--border-primary); border-radius: 8px; font-size: 0.95rem; text-align: center; letter-spacing: 0.2em;" maxlength="4" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
-                                <small style="color: var(--text-secondary); font-size: 0.8rem; margin-top: 0.25rem; display: block;">3-4 digits</small>
-                            </div>
-                        </div>
-
-                        <div style="display: flex; align-items: flex-start; gap: 0.5rem; background: var(--bg-secondary); padding: 0.75rem; border-radius: 8px; border-left: 4px solid var(--primary);">
-                            <i class="fas fa-shield-alt" style="color: var(--primary); margin-top: 0.15rem; flex-shrink: 0;"></i>
-                            <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">
-                                Your card details are secure and encrypted. They will be processed by IDFC Bank's secure gateway.
-                            </p>
-                        </div>
-                    `;
-                }
-
-                content.innerHTML = fieldsHTML;
-
+                // For banking methods, do not collect card details locally.
+                // The user will be redirected to Razorpay which will collect card/netbank info.
                 const gpaySection = document.getElementById('gpay-details');
                 if (gpaySection) {
                     gpaySection.style.display = 'none';
                     gpaySection.classList.add('hidden');
                 }
-                panel.style.display = 'block';
-                panel.classList.remove('hidden');
+                panel.style.display = 'none';
+                panel.classList.add('hidden');
             }
         }
 
         function validatePaymentDetails(method) {
             const normalizedMethod = String(method || '').toLowerCase();
+
+            // For banking methods we redirect to Razorpay; don't require local card fields
+            if (['debit', 'credit', 'netbank'].includes(normalizedMethod)) {
+                return true;
+            }
 
             if (normalizedMethod === 'netbank') {
                 const bankSelect = document.getElementById('netbank-select');
@@ -3828,33 +3756,11 @@
                 }
                 return true;
             } else if (['debit', 'credit'].includes(normalizedMethod)) {
-                const cardName = document.getElementById('card-holder-name');
-                const cardNumber = document.getElementById('card-number');
-                const cardExpiry = document.getElementById('card-expiry');
-                const cardCVV = document.getElementById('card-cvv');
-
-                if (!cardName || !validateCardHolderName(cardName.value)) {
-                    showAlert('Please enter a valid cardholder name', 'warning');
-                    return false;
-                }
-
-                if (!cardNumber || !validateCardNumber(cardNumber.value)) {
-                    showAlert('Please enter a valid card number', 'warning');
-                    return false;
-                }
-
-                if (!cardExpiry || !validateExpiryDate(cardExpiry.value)) {
-                    showAlert('Please enter a valid expiry date (MM/YY)', 'warning');
-                    return false;
-                }
-
-                if (!cardCVV || !validateCVV(cardCVV.value, cardNumber ? cardNumber.value : '')) {
-                    showAlert('Please enter a valid CVV for the card provided', 'warning');
-                    return false;
-                }
-
+                // kept for older flows; banking handled above
                 return true;
             }
+
+            if (['debit', 'credit', 'netbank'].includes(normalizedMethod)) return true;
 
             return true;
         }
