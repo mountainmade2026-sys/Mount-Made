@@ -4546,20 +4546,24 @@
                         console.log('checkout: Razorpay payment session created', paymentSession);
 
                         // Map payment methods to Razorpay method specifications
-                        let razorpayMethod = undefined;
-                        let cardPreference = undefined;
+                        let razorpayMethod = null;
+                        let disabledMethods = [];
 
                         if (paymentSession.paymentMethod === 'credit') {
                             razorpayMethod = 'card';
-                            cardPreference = 'credit';
+                            // Disable all methods except card
+                            disabledMethods = ['netbanking', 'upi', 'wallet', 'emi'];
                         } else if (paymentSession.paymentMethod === 'debit') {
                             razorpayMethod = 'card';
-                            cardPreference = 'debit';
+                            // Disable all methods except card
+                            disabledMethods = ['netbanking', 'upi', 'wallet', 'emi'];
                         } else if (paymentSession.paymentMethod === 'netbank') {
                             razorpayMethod = 'netbanking';
+                            // Disable all methods except netbanking
+                            disabledMethods = ['card', 'upi', 'wallet', 'emi'];
                         }
 
-                        console.log('checkout: Razorpay method config', { method: razorpayMethod, card_preference: cardPreference });
+                        console.log('checkout: Razorpay method config', { method: razorpayMethod, disabled: disabledMethods });
 
                         const options = {
                             key: paymentSession.keyId,
@@ -4568,7 +4572,6 @@
                             name: paymentSession.name || 'Mount Made',
                             description: paymentSession.description || `Order #${serverOrder.order.order_number}`,
                             order_id: paymentSession.orderId,
-                            method: razorpayMethod,
                             handler: async function(response) {
                                 console.log('Razorpay payment completed', response);
                                 try {
@@ -4603,9 +4606,16 @@
                             }
                         };
 
-                        // Add card preference if specified (for credit/debit card distinction)
-                        if (cardPreference) {
-                            options.card_preference = [cardPreference];
+                        // Disable other payment methods to show only the selected one
+                        if (disabledMethods.length > 0) {
+                            options.disabled = disabledMethods;
+                        }
+
+                        // For card payments, set preference for credit vs debit
+                        if (paymentSession.paymentMethod === 'credit') {
+                            options.prefer = 'card';
+                        } else if (paymentSession.paymentMethod === 'debit') {
+                            options.prefer = 'card';
                         }
 
                         if (typeof Razorpay === 'undefined') {
