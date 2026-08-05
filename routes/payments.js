@@ -336,9 +336,12 @@ router.post('/razorpay/initiate', async (req, res) => {
     };
 
     // Create the payment link
+    console.log('Creating Razorpay payment link with body:', JSON.stringify(paymentLinkBody, null, 2));
     const paymentLink = await razorpay.paymentLink.create(paymentLinkBody);
+    console.log('Razorpay payment link created:', paymentLink);
 
     if (!paymentLink || !paymentLink.id || !paymentLink.short_url) {
+      console.error('Invalid payment link response:', paymentLink);
       throw new Error('Failed to create Razorpay payment link');
     }
 
@@ -360,7 +363,10 @@ router.post('/razorpay/initiate', async (req, res) => {
       paymentMethod: paymentMethod
     });
   } catch (error) {
-    console.error('Razorpay initiate error:', error);
+    console.error('Razorpay initiate error:', error.message || error);
+    if (error.response?.data) {
+      console.error('Razorpay API response:', error.response.data);
+    }
     return res.status(502).json({
       error: 'Failed to create Razorpay payment session',
       details: error.message
