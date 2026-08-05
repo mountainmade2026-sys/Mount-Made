@@ -12,10 +12,10 @@ const { getDeliveryChargeForSubtotal, parseProductGstOverrides, computeCartGst }
 
 const router = express.Router();
 
-// Expose an unauthenticated webhook endpoint for Razorpay.
-// This must be defined before `authenticateToken` is applied so Razorpay can POST without a user token.
+// Expose an unauthenticated webhook handler for Razorpay.
+// We export the handler so server.js can register it before global JSON body parsing.
 const rawJson = express.raw({ type: 'application/json' });
-router.post('/razorpay/webhook', rawJson, async (req, res) => {
+async function razorpayWebhookHandler(req, res) {
   try {
     const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
     if (!secret) {
@@ -26,13 +26,14 @@ router.post('/razorpay/webhook', rawJson, async (req, res) => {
     const signature = req.headers['x-razorpay-signature'];
     if (!signature) return res.status(400).send('Missing signature');
 
-    const expected = crypto.createHmac('sha256', secret).update(req.body).digest('hex');
+    const payload = req.body;
+    const expected = crypto.createHmac('sha256', secret).update(payload).digest('hex');
     if (expected !== signature) {
       console.warn('Invalid Razorpay webhook signature');
       return res.status(401).send('Invalid signature');
     }
 
-    const event = JSON.parse(req.body.toString());
+    const event = JSON.parse(payload.toString());
     const evt = event.event;
 
     if (evt === 'payment.captured') {
@@ -70,7 +71,11 @@ router.post('/razorpay/webhook', rawJson, async (req, res) => {
     console.error('Razorpay webhook error', err);
     return res.status(500).send('Error');
   }
-});
+}
+
+// Route registration kept for completeness (works when raw body is available),
+// but server.js will register the handler early to guarantee raw bytes.
+router.post('/razorpay/webhook', rawJson, razorpayWebhookHandler);
 
 router.use(authenticateToken);
 router.use(blockAdminCommerce);

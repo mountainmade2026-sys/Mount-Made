@@ -197,6 +197,16 @@ app.use((req, res, next) => {
   next();
 });
 
+// Register Razorpay webhook handler before JSON body parser so we can verify raw payload HMAC
+try {
+  const payments = require('./routes/payments');
+  if (payments && typeof payments === 'object' && payments.webhookHandler) {
+    app.post('/api/payments/razorpay/webhook', express.raw({ type: 'application/json' }), payments.webhookHandler);
+  }
+} catch (e) {
+  // If payments module cannot be loaded early, continue; route remains mounted later.
+}
+
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 app.use(cookieParser());
