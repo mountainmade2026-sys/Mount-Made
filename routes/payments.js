@@ -189,10 +189,12 @@ router.post('/idfc/initiate', async (req, res) => {
         currency: 'INR'
       });
     } catch (idfcError) {
-      console.error('IDFC API error:', idfcError.message);
+      const status = idfcError?.response?.status;
+      const responseData = idfcError?.response?.data;
+      console.error('IDFC API error:', idfcError.message, 'status:', status, 'data:', responseData);
       return res.status(502).json({
         error: 'Failed to connect with payment gateway',
-        details: idfcError.message
+        details: responseData || idfcError.message
       });
     }
   } catch (error) {
