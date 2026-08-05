@@ -291,7 +291,7 @@ router.post('/idfc/initiate', async (req, res) => {
   }
 });
 
-// Razorpay Payment Initiation Endpoint
+// Razorpay Payment Initiation Endpoint - Using Payment Links for method-specific control
 router.post('/razorpay/initiate', async (req, res) => {
   try {
     if (!RAZORPAY_CONFIG.keyId || !RAZORPAY_CONFIG.keySecret) {
@@ -312,34 +312,75 @@ router.post('/razorpay/initiate', async (req, res) => {
     const paymentAmount = Math.round(amount * 100);
     const razorpay = new Razorpay({ key_id: RAZORPAY_CONFIG.keyId, key_secret: RAZORPAY_CONFIG.keySecret });
 
-    const receipt = `order_${order.id || order._id}`;
-    const razorpayOrder = await razorpay.orders.create({
+    // Create Payment Link with method-specific restrictions
+    const baseUrl = process.env.BASE_URL || 'https://mountmade.in';
+    
+    const paymentLinkBody = {
       amount: paymentAmount,
       currency: 'INR',
-      receipt,
-      payment_capture: 1,
+      accept_partial: false,
+      description: `Order #${order.order_number}`,
+      customer_notify: 0,
+      notify: {
+        sms: false,
+        email: false
+      },
+      reminder_enable: false,
       notes: {
         merchant_order_id: String(order.id || order._id),
-        payment_method: paymentMethod
-      }
-    });
+        payment_method: paymentMethod,
+        order_number: order.order_number
+      },
+      callback_url: `${baseUrl}/delivery-confirm.html`,
+      callback_method: 'get'
+    };
 
-    if (!razorpayOrder || !razorpayOrder.id) {
-      throw new Error('Failed to create Razorpay order');
+    // Build upi_link and methods object based on selected payment method
+    if (paymentMethod === 'credit' || paymentMethod === 'debit') {
+      // Only allow cards
+      paymentLinkBody.upi_link = false;
+      paymentLinkBody.methods = {
+        card: '1',
+        netbanking: '0',
+        upi: '0',
+        wallet: '0',
+        emi: '0',
+        paylater: '0'
+      };
+    } else if (paymentMethod === 'netbank') {
+      // Only allow netbanking
+      paymentLinkBody.upi_link = false;
+      paymentLinkBody.methods = {
+        card: '0',
+        netbanking: '1',
+        upi: '0',
+        wallet: '0',
+        emi: '0',
+        paylater: '0'
+      };
     }
 
+    // Create the payment link
+    const paymentLink = await razorpay.paymentLink.create(paymentLinkBody);
+
+    if (!paymentLink || !paymentLink.id || !paymentLink.short_url) {
+      throw new Error('Failed to create Razorpay payment link');
+    }
+
+    // Store payment link reference in database for tracking
     await db.query(
-      `UPDATE orders SET payment_gateway_order_id = $1, payment_provider = 'razorpay' WHERE id = $2`,
-      [razorpayOrder.id, order.id || order._id]
+      `UPDATE orders SET payment_gateway_order_id = $1, payment_provider = 'razorpay'
+       WHERE id = $2`,
+      [paymentLink.id, order.id || order._id]
     );
 
     return res.json({
       success: true,
-      keyId: RAZORPAY_CONFIG.keyId,
-      orderId: razorpayOrder.id,
+      paymentLinkId: paymentLink.id,
+      paymentLinkUrl: paymentLink.short_url,
+      paymentLinkStatus: paymentLink.status,
       amount: paymentAmount,
       currency: 'INR',
-      name: 'Mount Made',
       description: `Order #${order.order_number}`,
       paymentMethod: paymentMethod
     });
@@ -360,59 +401,118 @@ router.post('/razorpay/verify', async (req, res) => {
     }
 
     const {
-      razorpay_order_id,
+      razorpay_payment_link_id,
+      razorpay_payment_link_reference_id,
       razorpay_payment_id,
       razorpay_signature
     } = req.body || {};
 
-    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
-      return res.status(400).json({ error: 'Missing Razorpay verification parameters.' });
-    }
+    // Support both payment link callbacks and order-based callbacks
+    if (razorpay_payment_link_id && razorpay_payment_id) {
+      // Payment Link flow
+      const razorpay = new Razorpay({ key_id: RAZORPAY_CONFIG.keyId, key_secret: RAZORPAY_CONFIG.keySecret });
 
-    const expectedSignature = crypto.createHmac('sha256', RAZORPAY_CONFIG.keySecret)
-      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
-      .digest('hex');
+      // Fetch payment link details
+      const paymentLink = await razorpay.paymentLink.fetch(razorpay_payment_link_id);
 
-    if (expectedSignature !== razorpay_signature) {
-      return res.status(400).json({ error: 'Invalid Razorpay signature.' });
-    }
-
-    const result = await db.query(
-      'SELECT * FROM orders WHERE payment_gateway_order_id = $1',
-      [razorpay_order_id]
-    );
-
-    if (!result.rows || !result.rows[0]) {
-      return res.status(404).json({ error: 'Order not found for this Razorpay order ID.' });
-    }
-
-    const order = result.rows[0];
-
-    await db.query(
-      `UPDATE orders
-       SET payment_status = 'paid', paid_at = NOW(), payment_gateway_payment_id = $1, payment_gateway_signature = $2
-       WHERE id = $3`,
-      [razorpay_payment_id, razorpay_signature, order.id]
-    );
-    // Fire-and-forget admin notification after payment is confirmed
-    const capturedUserId = order.user_id;
-    const capturedOrderId = order.id;
-    Promise.resolve().then(async () => {
-      try {
-        const [userResult, itemsResult] = await Promise.all([
-          db.query('SELECT full_name, phone FROM users WHERE id = $1', [capturedUserId]),
-          db.query('SELECT product_name, quantity, price FROM order_items WHERE order_id = $1', [capturedOrderId])
-        ]);
-        const customer = userResult.rows[0] || {};
-        const items = itemsResult.rows || [];
-        await sendOrderNotificationToAdmin(order, customer, items);
-        await notifyOrderPlaced(customer.phone, customer.full_name || 'Customer', order.order_number, order.total_amount);
-      } catch (notifErr) {
-        console.error('[EMAIL] Razorpay order notification failed:', notifErr.message);
+      if (!paymentLink) {
+        return res.status(404).json({ error: 'Payment link not found.' });
       }
-    }).catch(err => console.error('[EMAIL] Unhandled Razorpay notification error:', err.message));
 
-    return res.json({ success: true, message: 'Payment verified successfully.' });
+      // Verify payment link is paid
+      if (paymentLink.status !== 'paid') {
+        return res.status(400).json({ error: 'Payment link status is not paid.' });
+      }
+
+      // Find order by payment link ID
+      const orderResult = await db.query(
+        'SELECT * FROM orders WHERE payment_link_id = $1 OR payment_gateway_order_id = $1',
+        [razorpay_payment_link_id]
+      );
+
+      if (!orderResult.rows || !orderResult.rows[0]) {
+        return res.status(404).json({ error: 'Order not found for this payment link.' });
+      }
+
+      const order = orderResult.rows[0];
+
+      // Update order with payment details
+      await db.query(
+        `UPDATE orders
+         SET payment_status = 'paid', paid_at = NOW(), payment_gateway_payment_id = $1
+         WHERE id = $2`,
+        [razorpay_payment_id, order.id]
+      );
+
+      // Fire-and-forget admin notification
+      const capturedUserId = order.user_id;
+      const capturedOrderId = order.id;
+      Promise.resolve().then(async () => {
+        try {
+          const [userResult, itemsResult] = await Promise.all([
+            db.query('SELECT full_name, phone FROM users WHERE id = $1', [capturedUserId]),
+            db.query('SELECT product_name, quantity, price FROM order_items WHERE order_id = $1', [capturedOrderId])
+          ]);
+          const customer = userResult.rows[0] || {};
+          const items = itemsResult.rows || [];
+          await sendOrderNotificationToAdmin(order, customer, items);
+          await notifyOrderPlaced(customer.phone, customer.full_name || 'Customer', order.order_number, order.total_amount);
+        } catch (notifErr) {
+          console.error('[EMAIL] Razorpay order notification failed:', notifErr.message);
+        }
+      }).catch(err => console.error('[EMAIL] Unhandled Razorpay notification error:', err.message));
+
+      return res.json({ success: true, message: 'Payment verified successfully via payment link.' });
+    } else if (req.body.razorpay_order_id && req.body.razorpay_payment_id && req.body.razorpay_signature) {
+      // Fallback to order-based verification for backward compatibility
+      const expectedSignature = crypto.createHmac('sha256', RAZORPAY_CONFIG.keySecret)
+        .update(`${req.body.razorpay_order_id}|${req.body.razorpay_payment_id}`)
+        .digest('hex');
+
+      if (expectedSignature !== req.body.razorpay_signature) {
+        return res.status(400).json({ error: 'Invalid Razorpay signature.' });
+      }
+
+      const result = await db.query(
+        'SELECT * FROM orders WHERE payment_gateway_order_id = $1',
+        [req.body.razorpay_order_id]
+      );
+
+      if (!result.rows || !result.rows[0]) {
+        return res.status(404).json({ error: 'Order not found for this Razorpay order ID.' });
+      }
+
+      const order = result.rows[0];
+
+      await db.query(
+        `UPDATE orders
+         SET payment_status = 'paid', paid_at = NOW(), payment_gateway_payment_id = $1, payment_gateway_signature = $2
+         WHERE id = $3`,
+        [req.body.razorpay_payment_id, req.body.razorpay_signature, order.id]
+      );
+
+      // Fire-and-forget admin notification
+      const capturedUserId = order.user_id;
+      const capturedOrderId = order.id;
+      Promise.resolve().then(async () => {
+        try {
+          const [userResult, itemsResult] = await Promise.all([
+            db.query('SELECT full_name, phone FROM users WHERE id = $1', [capturedUserId]),
+            db.query('SELECT product_name, quantity, price FROM order_items WHERE order_id = $1', [capturedOrderId])
+          ]);
+          const customer = userResult.rows[0] || {};
+          const items = itemsResult.rows || [];
+          await sendOrderNotificationToAdmin(order, customer, items);
+          await notifyOrderPlaced(customer.phone, customer.full_name || 'Customer', order.order_number, order.total_amount);
+        } catch (notifErr) {
+          console.error('[EMAIL] Razorpay order notification failed:', notifErr.message);
+        }
+      }).catch(err => console.error('[EMAIL] Unhandled Razorpay notification error:', err.message));
+
+      return res.json({ success: true, message: 'Payment verified successfully.' });
+    } else {
+      return res.status(400).json({ error: 'Missing payment verification parameters.' });
+    }
   } catch (error) {
     console.error('Razorpay verify error:', error);
     return res.status(500).json({ error: 'Failed to verify Razorpay payment.' });

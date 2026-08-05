@@ -4545,62 +4545,18 @@
 
                         console.log('checkout: Razorpay payment session created', paymentSession);
 
-                        const options = {
-                            key: paymentSession.keyId,
-                            amount: paymentSession.amount,
-                            currency: paymentSession.currency,
-                            name: paymentSession.name || 'Mount Made',
-                            description: paymentSession.description || `Order #${serverOrder.order.order_number}`,
-                            order_id: paymentSession.orderId,
-                            handler: async function(response) {
-                                console.log('Razorpay payment completed', response);
-                                try {
-                                    const verifyResult = await api.post('/payments/razorpay/verify', response);
-                                    if (verifyResult && verifyResult.success) {
-                                        showAlert('Payment successful! Redirecting...', 'success');
-                                        window.location.href = '/delivery-confirm.html';
-                                    } else {
-                                        throw new Error(verifyResult?.error || 'Payment verification failed');
-                                    }
-                                } catch (verifyError) {
-                                    console.error('Razorpay verification failed:', verifyError);
-                                    setPlaceOrderButtonState(false);
-                                    showOrderFailed(`Payment verification failed: ${verifyError.message || verifyError}`);
-                                }
-                            },
-                            modal: {
-                                ondismiss: function() {
-                                    console.log('Razorpay payment modal dismissed');
-                                    setPlaceOrderButtonState(false);
-                                    showAlert('Payment was cancelled. Please try again.', 'warning');
-                                }
-                            },
-                            prefill: {
-                                name: shippingAddress.full_name,
-                                email: auth?.currentUser?.email || '',
-                                contact: shippingAddress.phone
-                            },
-                            notes: {
-                                order_id: serverOrder.order.id || serverOrder.order._id,
-                                order_number: serverOrder.order.order_number
-                            }
-                        };
-
-                        // Set method based on selected payment method
-                        if (paymentSession.paymentMethod === 'credit' || paymentSession.paymentMethod === 'debit') {
-                            options.method = 'card';
-                            options.disabled = ['upi', 'netbanking', 'wallet'];
-                        } else if (paymentSession.paymentMethod === 'netbank') {
-                            options.method = 'netbanking';
-                            options.disabled = ['upi', 'card', 'wallet'];
+                        // Redirect to Razorpay Payment Link with method-specific restrictions
+                        if (!paymentSession.paymentLinkUrl) {
+                            throw new Error('No payment link URL provided');
                         }
 
-                        if (typeof Razorpay === 'undefined') {
-                            throw new Error('Razorpay SDK is not loaded. Please refresh and try again.');
-                        }
-
-                        const razorpayInstance = new Razorpay(options);
-                        razorpayInstance.open();
+                        console.log('Redirecting to Razorpay Payment Link:', paymentSession.paymentLinkUrl);
+                        showAlert('Redirecting to payment gateway...', 'info');
+                        
+                        // Redirect after a short delay to ensure alert is shown
+                        setTimeout(() => {
+                            window.location.href = paymentSession.paymentLinkUrl;
+                        }, 500);
                     } catch (sessionError) {
                         console.error('Failed to create Razorpay payment session:', sessionError);
                         setPlaceOrderButtonState(false);
