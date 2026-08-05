@@ -149,7 +149,7 @@ class Order {
           delivery_speed,
           delivery_charge
         )
-        VALUES ($1, $2, $3, $4, $5, $6, COALESCE($7, 'unpaid'), $8, $9, $10, $11, $12, $13, $14, $15, 'pending', $16, $17)
+        VALUES ($1, $2, $3, $4, $5, $6, COALESCE($7, 'unpaid'), $8, $9, $10, $11, $12, $13, $14, $15, COALESCE($16, 'pending'), $17, $18)
         RETURNING *
       `;
 
@@ -169,6 +169,8 @@ class Order {
         paid_at,
         notes,
         payment_details ? JSON.stringify(payment_details) : null,
+        // status param (COALESCE will default to 'pending' when null)
+        (orderData && orderData.status) ? orderData.status : null,
         delivery_speed,
         delivery_charge
       ]);
