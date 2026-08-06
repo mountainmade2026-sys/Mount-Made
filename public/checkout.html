@@ -4503,12 +4503,13 @@
                             return mobileUa || (hasTouch && smallScreen);
                         };
 
-                        const forceCheckoutFlow = ['debit', 'credit', 'netbank'].includes(paymentMethod) && !isMobileCheckoutDevice();
+                        // Prefer Razorpay checkout popup on desktop browsers; use payment links on mobile devices
+                        const preferCheckoutOnDesktop = !isMobileCheckoutDevice();
                         const paymentSession = await api.post('/payments/razorpay/initiate', {
                             order: serverOrder.order,
                             amount: totalAmount,
                             paymentMethod: paymentMethod,
-                            flow: forceCheckoutFlow ? 'checkout' : 'link',
+                            flow: preferCheckoutOnDesktop ? 'checkout' : 'link',
                             customerDetails: {
                                 name: shippingAddress.full_name,
                                 email: auth?.currentUser?.email || '',
