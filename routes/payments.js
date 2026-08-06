@@ -329,6 +329,7 @@ router.post('/razorpay/initiate', async (req, res) => {
     const baseUrl = APP_BASE_URL || 'https://mountmade.in';
     const description = `Order #${order.order_number}`;
 
+    console.log('Razorpay initiate called with flow=%s, paymentMethod=%s, order=%s', flow, paymentMethod, order?.order_number || order?.id || 'unknown');
     if (flow === 'checkout') {
       const razorpayOrder = await razorpay.orders.create({
         amount: paymentAmount,
@@ -342,7 +343,7 @@ router.post('/razorpay/initiate', async (req, res) => {
         }
       });
 
-      console.log('Razorpay checkout order created:', razorpayOrder);
+      console.log('Razorpay checkout order created:', razorpayOrder && razorpayOrder.id ? razorpayOrder.id : JSON.stringify(razorpayOrder));
       if (!razorpayOrder || !razorpayOrder.id) {
         console.error('Invalid Razorpay order response:', razorpayOrder);
         throw new Error('Failed to create Razorpay checkout order');
@@ -397,9 +398,9 @@ router.post('/razorpay/initiate', async (req, res) => {
     };
 
     // Create the payment link with only supported fields
-    console.log('Creating Razorpay payment link with body:', JSON.stringify(paymentLinkBody, null, 2));
+    console.log('Creating Razorpay payment link with body (amount=%d, method=%s):', paymentAmount, paymentMethod);
     const paymentLink = await razorpay.paymentLink.create(paymentLinkBody);
-    console.log('Razorpay payment link created:', paymentLink);
+    console.log('Razorpay payment link created:', paymentLink && paymentLink.id ? paymentLink.id : JSON.stringify(paymentLink));
 
     if (!paymentLink || !paymentLink.id || !paymentLink.short_url) {
       console.error('Invalid payment link response:', paymentLink);
