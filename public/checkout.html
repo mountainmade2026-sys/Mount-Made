@@ -4695,11 +4695,18 @@
                 }
 
                 // Build request payload for Razorpay initiate
+                // Decide whether to request checkout popup on desktop
+                const isMobileCheckoutDevice = () => {
+                    const ua = navigator.userAgent || '';
+                    return /Mobi|Android|iPhone|iPod|Opera Mini|IEMobile/i.test(ua);
+                };
+                const preferCheckoutOnDesktop = !isMobileCheckoutDevice();
+
                 const requestPayload = {
                     order: serverOrder && serverOrder.order ? serverOrder.order : null,
                     amount: totalAmount,
                     paymentMethod: paymentMethod,
-                    flow: 'link',
+                    flow: preferCheckoutOnDesktop ? 'checkout' : 'link',
                     customerDetails: {
                         name: shippingAddress.full_name,
                         email: auth?.currentUser?.email || '',
@@ -4709,6 +4716,60 @@
 
                 try {
                     const paymentSession = await api.post('/payments/razorpay/initiate', requestPayload);
+
+                    // If server returned a checkout order and we are on desktop, open popup
+                    if (paymentSession && paymentSession.flow === 'checkout' && paymentSession.razorpayOrderId && window.Razorpay) {
+                        console.log('checkout: opening Razorpay popup for UPI/wallet on desktop');
+                        const razorpayOptions = {
+                            key: paymentSession.keyId,
+                            amount: paymentSession.amount,
+                            currency: paymentSession.currency || 'INR',
+                            name: 'Mount Made',
+                            description: paymentSession.description || `Order #${serverOrder?.order?.order_number || 'Pending'}`,
+                            order_id: paymentSession.razorpayOrderId,
+                            prefill: {
+                                name: shippingAddress.full_name,
+                                email: auth?.currentUser?.email || paymentSession.customerDetails?.email || '',
+                                contact: shippingAddress.phone
+                            },
+                            notes: {
+                                order_number: serverOrder?.order?.order_number || 'Pending',
+                                merchant_order_id: String(serverOrder?.order?.id || serverOrder?.order?._id || ''),
+                                payment_method: paymentMethod
+                            },
+                            modal: {
+                                ondismiss: function() {
+                                    showAlert('Payment popup was closed. Please try again to complete payment.', 'warning');
+                                    setPlaceOrderButtonState(false);
+                                }
+                            },
+                            handler: async function(response) {
+                                showAlert('Verifying payment... Please wait.', 'info');
+                                try {
+                                    const verifyResult = await api.post('/payments/razorpay/verify', {
+                                        razorpay_order_id: response.razorpay_order_id,
+                                        razorpay_payment_id: response.razorpay_payment_id,
+                                        razorpay_signature: response.razorpay_signature
+                                    });
+
+                                    if (!verifyResult || !verifyResult.success) {
+                                        throw new Error(verifyResult?.error || 'Payment verification failed.');
+                                    }
+
+                                    window.location.href = '/orders';
+                                } catch (verifyError) {
+                                    console.error('Razorpay verification failed:', verifyError);
+                                    setPlaceOrderButtonState(false);
+                                    showAlert(verifyError.message || 'Payment verification failed. Please contact support.', 'error');
+                                }
+                            }
+                        };
+
+                        window.__razorpayOrderId = serverOrder?.order?.id || null;
+                        new Razorpay(razorpayOptions).open();
+                        return;
+                    }
+
                     if (paymentSession && paymentSession.paymentLinkUrl) {
                         // Store for verification callbacks
                         try { sessionStorage.setItem('checkoutPendingPayment', JSON.stringify({ orderId: serverOrder?.order?.id || null, ref: gpayRef })); } catch (e) {}
@@ -4716,6 +4777,7 @@
                         window.location.assign(paymentSession.paymentLinkUrl);
                         return;
                     }
+
                     throw new Error(paymentSession?.error || 'No payment link returned');
                 } catch (razorError) {
                     console.warn('Razorpay link creation failed, falling back to QR flow:', razorError);
