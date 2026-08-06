@@ -6,8 +6,6 @@
     <meta name="theme-color" content="#2c5f2d">
     <link rel="manifest" href="/manifest.json">
     <title>Login</title>
-    <link rel="preload" as="image" href="/images/login-bg.png" fetchpriority="high">
-    <link rel="preload" as="image" href="/images/login-box.png" fetchpriority="high">
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/mobile-enhancements.css">
     <link rel="stylesheet" href="/css/mobile-components.css">
@@ -43,16 +41,12 @@
         }
 
         body.login-page {
-            background:
-                linear-gradient(rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.18)),
-                url('/images/login-bg.png') center/cover no-repeat fixed;
+            background: linear-gradient(rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.18));
             background-color: #8fb7a2;
         }
 
         body.login-page .auth-card {
-            background:
-                linear-gradient(rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.75)),
-                url('/images/login-box.png') center/cover no-repeat;
+            background: linear-gradient(rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.75));
             border: 1px solid rgba(255, 255, 255, 0.45);
             backdrop-filter: blur(2px);
         }
@@ -528,15 +522,18 @@
             const role = user?.role;
             const isApproved = !!user?.is_approved;
 
-            if (role === 'admin' || role === 'super_admin') {
-                window.location.replace('/admin');
-            } else if (role === 'wholesale' && isApproved) {
-                window.location.replace('/wholesale');
-            } else if (redirectUrl) {
-                window.location.replace(redirectUrl);
-            } else {
-                window.location.replace('/');
-            }
+                if (role === 'admin' || role === 'super_admin') {
+                    window.location.replace('/admin');
+                } else if (role === 'crafter') {
+                    // Crafter users go to the visual editor
+                    window.location.replace('/editor');
+                } else if (role === 'wholesale' && isApproved) {
+                    window.location.replace('/wholesale');
+                } else if (redirectUrl) {
+                    window.location.replace(redirectUrl);
+                } else {
+                    window.location.replace('/');
+                }
         }
 
         // Update register link to include redirect parameter
