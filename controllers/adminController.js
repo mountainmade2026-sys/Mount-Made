@@ -4031,7 +4031,7 @@ exports.resetStockReports = async (req, res) => {
   const client = await db.pool.connect();
   try {
     await client.query('BEGIN');
-    await client.query('TRUNCATE TABLE offline_sales, product_stock_report_table RESTART IDENTITY CASCADE');
+    await client.query('TRUNCATE TABLE product_stock_report_table RESTART IDENTITY CASCADE');
     await client.query('INSERT INTO product_stock_report_table SELECT * FROM product_stock_report');
     await client.query('COMMIT');
     res.json({ message: 'Stock reports have been reset permanently.' });
