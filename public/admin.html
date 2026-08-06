@@ -2444,6 +2444,89 @@
                             </div>
                         </div>
 
+                        <div id="ss-sub-login" class="data-table-container" style="margin-top: 2rem;">
+                            <div class="table-header">
+                                <h3><i class="fas fa-sign-in-alt"></i> Login Page Backgrounds</h3>
+                            </div>
+                            <div style="padding: 2rem;">
+                                <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Upload custom login page background and login card background images. The previews use a flexible aspect ratio so the image fits the target display area consistently.</p>
+                                <div style="display:grid; gap:1.5rem; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+                                    <div>
+                                        <label class="form-label">Upload Login Page Background</label>
+                                        <input type="file" id="login-bg-upload" class="form-input" accept=".jpg,.jpeg,.png,.gif,.webp" onchange="previewLoginBg(event)">
+                                        <small style="color: var(--text-muted); display:block; margin-top:0.35rem;">Recommended ratio: 16:9. Max 6MB.</small>
+                                        <div style="margin-top:1rem; border:1px solid var(--border); border-radius: 10px; overflow:hidden; background:#f8fafc;">
+                                            <div style="position:relative; width:100%; aspect-ratio:16 / 9; background:#e5e7eb; display:flex; align-items:center; justify-content:center;">
+                                                <img id="login-bg-preview" src="" alt="Login background preview" style="width:100%; height:100%; object-fit:cover; display:none;">
+                                                <div id="login-bg-placeholder" style="color:var(--text-muted); text-align:center; padding:1rem;">
+                                                    <i class="fas fa-image" style="font-size:2rem; opacity:0.35;"></i>
+                                                    <div style="margin-top:0.5rem;">No login background selected</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div style="display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.85rem;">
+                                            <button class="btn btn-primary btn-sm" onclick="saveLoginBackground()"><i class="fas fa-save"></i> Save Login Background</button>
+                                            <button class="btn btn-secondary btn-sm" onclick="resetLoginBackground()"><i class="fas fa-undo"></i> Reset</button>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="form-label">Upload Login Card Background</label>
+                                        <input type="file" id="login-box-upload" class="form-input" accept=".jpg,.jpeg,.png,.gif,.webp" onchange="previewLoginBox(event)">
+                                        <small style="color: var(--text-muted); display:block; margin-top:0.35rem;">Recommended ratio: 4:3 or square. Max 6MB.</small>
+                                        <div style="margin-top:1rem; border:1px solid var(--border); border-radius: 10px; overflow:hidden; background:#f8fafc;">
+                                            <div style="position:relative; width:100%; aspect-ratio:4 / 3; background:#e5e7eb; display:flex; align-items:center; justify-content:center;">
+                                                <img id="login-box-preview" src="" alt="Login card preview" style="width:100%; height:100%; object-fit:cover; display:none;">
+                                                <div id="login-box-placeholder" style="color:var(--text-muted); text-align:center; padding:1rem;">
+                                                    <i class="fas fa-image" style="font-size:2rem; opacity:0.35;"></i>
+                                                    <div style="margin-top:0.5rem;">No login card image selected</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div style="display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.85rem;">
+                                            <button class="btn btn-primary btn-sm" onclick="saveLoginBoxBackground()"><i class="fas fa-save"></i> Save Login Box</button>
+                                            <button class="btn btn-secondary btn-sm" onclick="resetLoginBoxBackground()"><i class="fas fa-undo"></i> Reset</button>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="form-label">Upload Register Page Background</label>
+                                        <input type="file" id="register-bg-upload" class="form-input" accept=".jpg,.jpeg,.png,.gif,.webp" onchange="previewRegisterBg(event)">
+                                        <small style="color: var(--text-muted); display:block; margin-top:0.35rem;">Recommended ratio: 16:9. Max 6MB.</small>
+                                        <div style="margin-top:1rem; border:1px solid var(--border); border-radius: 10px; overflow:hidden; background:#f8fafc;">
+                                            <div style="position:relative; width:100%; aspect-ratio:16 / 9; background:#e5e7eb; display:flex; align-items:center; justify-content:center;">
+                                                <img id="register-bg-preview" src="" alt="Register background preview" style="width:100%; height:100%; object-fit:cover; display:none;">
+                                                <div id="register-bg-placeholder" style="color:var(--text-muted); text-align:center; padding:1rem;">
+                                                    <i class="fas fa-image" style="font-size:2rem; opacity:0.35;"></i>
+                                                    <div style="margin-top:0.5rem;">No register background selected</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div style="display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.85rem;">
+                                            <button class="btn btn-primary btn-sm" onclick="saveRegisterBackground()"><i class="fas fa-save"></i> Save Register Background</button>
+                                            <button class="btn btn-secondary btn-sm" onclick="resetRegisterBackground()"><i class="fas fa-undo"></i> Reset</button>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="form-label">Upload Register Card Background</label>
+                                        <input type="file" id="register-box-upload" class="form-input" accept=".jpg,.jpeg,.png,.gif,.webp" onchange="previewRegisterBox(event)">
+                                        <small style="color: var(--text-muted); display:block; margin-top:0.35rem;">Recommended ratio: 4:3 or square. Max 6MB.</small>
+                                        <div style="margin-top:1rem; border:1px solid var(--border); border-radius: 10px; overflow:hidden; background:#f8fafc;">
+                                            <div style="position:relative; width:100%; aspect-ratio:4 / 3; background:#e5e7eb; display:flex; align-items:center; justify-content:center;">
+                                                <img id="register-box-preview" src="" alt="Register card preview" style="width:100%; height:100%; object-fit:cover; display:none;">
+                                                <div id="register-box-placeholder" style="color:var(--text-muted); text-align:center; padding:1rem;">
+                                                    <i class="fas fa-image" style="font-size:2rem; opacity:0.35;"></i>
+                                                    <div style="margin-top:0.5rem;">No register card image selected</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div style="display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.85rem;">
+                                            <button class="btn btn-primary btn-sm" onclick="saveRegisterBoxBackground()"><i class="fas fa-save"></i> Save Register Box Background</button>
+                                            <button class="btn btn-secondary btn-sm" onclick="resetRegisterBoxBackground()"><i class="fas fa-undo"></i> Reset</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
@@ -5338,6 +5421,7 @@
             // Collect all labelled sub-sections
             var subs = [
                 { id: 'ss-sub-logo',      label: 'Site Logo' },
+                { id: 'ss-sub-login',     label: 'Login Backgrounds' },
                 { id: 'ss-sub-slider',    label: 'Hero Slider' },
                 { id: 'ss-sub-product-card', label: 'Product Card Image' },
                 { id: 'ss-sub-flipcards', label: 'Flip Cards' },
@@ -9343,6 +9427,68 @@
                     document.getElementById('current-logo-display').querySelector('.form-label').textContent = 'Current Active Logo: Using default';
                 }
 
+                const loginBgPreview = document.getElementById('login-bg-preview');
+                const loginBgPlaceholder = document.getElementById('login-bg-placeholder');
+                const loginBoxPreview = document.getElementById('login-box-preview');
+                const loginBoxPlaceholder = document.getElementById('login-box-placeholder');
+                const registerBgPreview = document.getElementById('register-bg-preview');
+                const registerBgPlaceholder = document.getElementById('register-bg-placeholder');
+                const registerBoxPreview = document.getElementById('register-box-preview');
+                const registerBoxPlaceholder = document.getElementById('register-box-placeholder');
+                const loginBackgroundUrl = (settings.login_page_background_image_url || '').trim();
+                const loginBoxUrl = (settings.login_page_box_image_url || '').trim();
+                const registerBackgroundUrl = (settings.register_page_background_image_url || '').trim();
+                const registerBoxUrl = (settings.register_page_box_image_url || '').trim();
+                const hasCustomLoginBackground = loginBackgroundUrl && loginBackgroundUrl !== 'default';
+                const hasCustomLoginBox = loginBoxUrl && loginBoxUrl !== 'default';
+                const hasCustomRegisterBackground = registerBackgroundUrl && registerBackgroundUrl !== 'default';
+                const hasCustomRegisterBox = registerBoxUrl && registerBoxUrl !== 'default';
+
+                if (loginBgPreview && loginBgPlaceholder) {
+                    if (hasCustomLoginBackground) {
+                        loginBgPreview.src = loginBackgroundUrl;
+                        loginBgPreview.style.display = 'block';
+                        loginBgPlaceholder.style.display = 'none';
+                    } else {
+                        loginBgPreview.src = '';
+                        loginBgPreview.style.display = 'none';
+                        loginBgPlaceholder.style.display = 'block';
+                    }
+                }
+                if (loginBoxPreview && loginBoxPlaceholder) {
+                    if (hasCustomLoginBox) {
+                        loginBoxPreview.src = loginBoxUrl;
+                        loginBoxPreview.style.display = 'block';
+                        loginBoxPlaceholder.style.display = 'none';
+                    } else {
+                        loginBoxPreview.src = '';
+                        loginBoxPreview.style.display = 'none';
+                        loginBoxPlaceholder.style.display = 'block';
+                    }
+                }
+                if (registerBgPreview && registerBgPlaceholder) {
+                    if (hasCustomRegisterBackground) {
+                        registerBgPreview.src = registerBackgroundUrl;
+                        registerBgPreview.style.display = 'block';
+                        registerBgPlaceholder.style.display = 'none';
+                    } else {
+                        registerBgPreview.src = '';
+                        registerBgPreview.style.display = 'none';
+                        registerBgPlaceholder.style.display = 'block';
+                    }
+                }
+                if (registerBoxPreview && registerBoxPlaceholder) {
+                    if (hasCustomRegisterBox) {
+                        registerBoxPreview.src = registerBoxUrl;
+                        registerBoxPreview.style.display = 'block';
+                        registerBoxPlaceholder.style.display = 'none';
+                    } else {
+                        registerBoxPreview.src = '';
+                        registerBoxPreview.style.display = 'none';
+                        registerBoxPlaceholder.style.display = 'block';
+                    }
+                }
+
                 // Populate homepage hero headings
                 const heroTitleInput = document.getElementById('homepage-hero-title');
                 const heroSubtitleInput = document.getElementById('homepage-hero-subtitle');
@@ -9800,6 +9946,376 @@
                 placeholder.style.display = 'none';
             };
             reader.readAsDataURL(file);
+        };
+
+        window.previewLoginBg = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const validation = validateImageFile(file);
+            if (!validation.valid) {
+                showAlert(validation.error, 'error');
+                event.target.value = '';
+                return;
+            }
+            if (file.size > 6 * 1024 * 1024) {
+                showAlert('Login background file size must be less than 6MB', 'error');
+                event.target.value = '';
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById('login-bg-preview');
+                const placeholder = document.getElementById('login-bg-placeholder');
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+                placeholder.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        };
+
+        window.previewLoginBox = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const validation = validateImageFile(file);
+            if (!validation.valid) {
+                showAlert(validation.error, 'error');
+                event.target.value = '';
+                return;
+            }
+            if (file.size > 6 * 1024 * 1024) {
+                showAlert('Login box image size must be less than 6MB', 'error');
+                event.target.value = '';
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById('login-box-preview');
+                const placeholder = document.getElementById('login-box-placeholder');
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+                placeholder.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        };
+
+        window.saveLoginBackground = async function() {
+            try {
+                const fileInput = document.getElementById('login-bg-upload');
+                const file = fileInput && fileInput.files[0];
+                if (!file) {
+                    showAlert('Please select a login background image first', 'warning');
+                    return;
+                }
+                const validation = validateImageFile(file);
+                if (!validation.valid) {
+                    showAlert(validation.error, 'error');
+                    return;
+                }
+                showAlert('Uploading login background...', 'info');
+                const imageUrl = await uploadProductImage(file);
+                if (!imageUrl) {
+                    throw new Error('Failed to upload login background image');
+                }
+                showAlert('Saving login background...', 'info');
+                const response = await api.post('/admin/settings', {
+                    login_page_background_image_url: imageUrl
+                });
+                if (response && (response.success || response.message)) {
+                    showAlert('Login background saved successfully!', 'success');
+                    fileInput.value = ''; 
+                    await loadSiteSettings();
+                } else {
+                    throw new Error(response.error || 'Failed to save login background');
+                }
+            } catch (error) {
+                console.error('Save login background error:', error);
+                showAlert(error.message || 'Failed to save login background', 'error');
+            }
+        };
+
+        window.saveLoginBoxBackground = async function() {
+            try {
+                const fileInput = document.getElementById('login-box-upload');
+                const file = fileInput && fileInput.files[0];
+                if (!file) {
+                    showAlert('Please select a login box image first', 'warning');
+                    return;
+                }
+                const validation = validateImageFile(file);
+                if (!validation.valid) {
+                    showAlert(validation.error, 'error');
+                    return;
+                }
+                showAlert('Uploading login box image...', 'info');
+                const imageUrl = await uploadProductImage(file);
+                if (!imageUrl) {
+                    throw new Error('Failed to upload login box image');
+                }
+                showAlert('Saving login box image...', 'info');
+                const response = await api.post('/admin/settings', {
+                    login_page_box_image_url: imageUrl
+                });
+                if (response && (response.success || response.message)) {
+                    showAlert('Login box image saved successfully!', 'success');
+                    fileInput.value = '';
+                    await loadSiteSettings();
+                } else {
+                    throw new Error(response.error || 'Failed to save login box image');
+                }
+            } catch (error) {
+                console.error('Save login box image error:', error);
+                showAlert(error.message || 'Failed to save login box image', 'error');
+            }
+        };
+
+        window.resetLoginBackground = async function() {
+            if (!(await showConfirmDialog('Reset login background to default? This will remove the custom image.', {
+                title: 'Reset Login Background',
+                confirmText: 'Reset',
+                danger: true
+            }))) {
+                return;
+            }
+            try {
+                showAlert('Resetting login background...', 'info');
+                const response = await api.post('/admin/settings', {
+                    login_page_background_image_url: 'default'
+                });
+                if (response && (response.success || response.message)) {
+                    showAlert('Login background reset to default!', 'success');
+                    const preview = document.getElementById('login-bg-preview');
+                    const placeholder = document.getElementById('login-bg-placeholder');
+                    if (preview) preview.style.display = 'none';
+                    if (placeholder) placeholder.style.display = 'block';
+                    await loadSiteSettings();
+                } else {
+                    throw new Error(response.error || 'Failed to reset login background');
+                }
+            } catch (error) {
+                console.error('Reset login background error:', error);
+                showAlert(error.message || 'Failed to reset login background', 'error');
+            }
+        };
+
+        window.resetLoginBoxBackground = async function() {
+            if (!(await showConfirmDialog('Reset login card background to default? This will remove the custom image.', {
+                title: 'Reset Login Box Background',
+                confirmText: 'Reset',
+                danger: true
+            }))) {
+                return;
+            }
+            try {
+                showAlert('Resetting login box image...', 'info');
+                const response = await api.post('/admin/settings', {
+                    login_page_box_image_url: 'default'
+                });
+                if (response && (response.success || response.message)) {
+                    showAlert('Login box image reset to default!', 'success');
+                    const preview = document.getElementById('login-box-preview');
+                    const placeholder = document.getElementById('login-box-placeholder');
+                    if (preview) preview.style.display = 'none';
+                    if (placeholder) placeholder.style.display = 'block';
+                    await loadSiteSettings();
+                } else {
+                    throw new Error(response.error || 'Failed to reset login box image');
+                }
+            } catch (error) {
+                console.error('Reset login box image error:', error);
+                showAlert(error.message || 'Failed to reset login box image', 'error');
+            }
+        };
+
+        window.previewRegisterBg = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const validation = validateImageFile(file);
+            if (!validation.valid) {
+                showAlert(validation.error, 'error');
+                event.target.value = '';
+                return;
+            }
+            if (file.size > 6 * 1024 * 1024) {
+                showAlert('Register background file size must be less than 6MB', 'error');
+                event.target.value = '';
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById('register-bg-preview');
+                const placeholder = document.getElementById('register-bg-placeholder');
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+                placeholder.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        };
+
+        window.previewRegisterBox = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const validation = validateImageFile(file);
+            if (!validation.valid) {
+                showAlert(validation.error, 'error');
+                event.target.value = '';
+                return;
+            }
+            if (file.size > 6 * 1024 * 1024) {
+                showAlert('Register box image size must be less than 6MB', 'error');
+                event.target.value = '';
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById('register-box-preview');
+                const placeholder = document.getElementById('register-box-placeholder');
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+                placeholder.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        };
+
+        window.saveRegisterBackground = async function() {
+            try {
+                const fileInput = document.getElementById('register-bg-upload');
+                const file = fileInput && fileInput.files[0];
+                if (!file) {
+                    showAlert('Please select a register background image first', 'warning');
+                    return;
+                }
+                const validation = validateImageFile(file);
+                if (!validation.valid) {
+                    showAlert(validation.error, 'error');
+                    return;
+                }
+                showAlert('Uploading register background...', 'info');
+                const imageUrl = await uploadProductImage(file);
+                if (!imageUrl) {
+                    throw new Error('Failed to upload register background image');
+                }
+                showAlert('Saving register background...', 'info');
+                const response = await api.post('/admin/settings', {
+                    register_page_background_image_url: imageUrl
+                });
+                if (response && (response.success || response.message)) {
+                    showAlert('Register background saved successfully!', 'success');
+                    const preview = document.getElementById('register-bg-preview');
+                    const placeholder = document.getElementById('register-bg-placeholder');
+                    if (preview && placeholder) {
+                        preview.src = imageUrl;
+                        preview.style.display = 'block';
+                        placeholder.style.display = 'none';
+                    }
+                    fileInput.value = ''; 
+                    await loadSiteSettings();
+                } else {
+                    throw new Error(response.error || 'Failed to save register background');
+                }
+            } catch (error) {
+                console.error('Save register background error:', error);
+                showAlert(error.message || 'Failed to save register background', 'error');
+            }
+        };
+
+        window.saveRegisterBoxBackground = async function() {
+            try {
+                const fileInput = document.getElementById('register-box-upload');
+                const file = fileInput && fileInput.files[0];
+                if (!file) {
+                    showAlert('Please select a register box image first', 'warning');
+                    return;
+                }
+                const validation = validateImageFile(file);
+                if (!validation.valid) {
+                    showAlert(validation.error, 'error');
+                    return;
+                }
+                showAlert('Uploading register box image...', 'info');
+                const imageUrl = await uploadProductImage(file);
+                if (!imageUrl) {
+                    throw new Error('Failed to upload register box image');
+                }
+                showAlert('Saving register box image...', 'info');
+                const response = await api.post('/admin/settings', {
+                    register_page_box_image_url: imageUrl
+                });
+                if (response && (response.success || response.message)) {
+                    showAlert('Register box image saved successfully!', 'success');
+                    const preview = document.getElementById('register-box-preview');
+                    const placeholder = document.getElementById('register-box-placeholder');
+                    if (preview && placeholder) {
+                        preview.src = imageUrl;
+                        preview.style.display = 'block';
+                        placeholder.style.display = 'none';
+                    }
+                    fileInput.value = '';
+                    await loadSiteSettings();
+                } else {
+                    throw new Error(response.error || 'Failed to save register box image');
+                }
+            } catch (error) {
+                console.error('Save register box image error:', error);
+                showAlert(error.message || 'Failed to save register box image', 'error');
+            }
+        };
+
+        window.resetRegisterBackground = async function() {
+            if (!(await showConfirmDialog('Reset register background to default? This will remove the custom image.', {
+                title: 'Reset Register Background',
+                confirmText: 'Reset',
+                danger: true
+            }))) {
+                return;
+            }
+            try {
+                showAlert('Resetting register background...', 'info');
+                const response = await api.post('/admin/settings', {
+                    register_page_background_image_url: 'default'
+                });
+                if (response && (response.success || response.message)) {
+                    showAlert('Register background reset to default!', 'success');
+                    const preview = document.getElementById('register-bg-preview');
+                    const placeholder = document.getElementById('register-bg-placeholder');
+                    if (preview) preview.style.display = 'none';
+                    if (placeholder) placeholder.style.display = 'block';
+                    await loadSiteSettings();
+                } else {
+                    throw new Error(response.error || 'Failed to reset register background');
+                }
+            } catch (error) {
+                console.error('Reset register background error:', error);
+                showAlert(error.message || 'Failed to reset register background', 'error');
+            }
+        };
+
+        window.resetRegisterBoxBackground = async function() {
+            if (!(await showConfirmDialog('Reset register card background to default? This will remove the custom image.', {
+                title: 'Reset Register Box Background',
+                confirmText: 'Reset',
+                danger: true
+            }))) {
+                return;
+            }
+            try {
+                showAlert('Resetting register box image...', 'info');
+                const response = await api.post('/admin/settings', {
+                    register_page_box_image_url: 'default'
+                });
+                if (response && (response.success || response.message)) {
+                    showAlert('Register box image reset to default!', 'success');
+                    const preview = document.getElementById('register-box-preview');
+                    const placeholder = document.getElementById('register-box-placeholder');
+                    if (preview) preview.style.display = 'none';
+                    if (placeholder) placeholder.style.display = 'block';
+                    await loadSiteSettings();
+                } else {
+                    throw new Error(response.error || 'Failed to reset register box image');
+                }
+            } catch (error) {
+                console.error('Reset register box image error:', error);
+                showAlert(error.message || 'Failed to reset register box image', 'error');
+            }
         };
 
             // Edit Logo Modal Logic

@@ -2700,6 +2700,7 @@ async function loadSiteLogo() {
 
       // Apply site notice / situation banner
       applySiteNoticeBanner(settings);
+      applyLoginPageBackgrounds(settings);
       // Update footer policy links with possible custom titles from settings
       try { injectFooterPolicyLinks(settings); } catch (e) { /* ignore */ }
     }
@@ -2741,6 +2742,43 @@ function applyFooterContact(settings) {
   if (locationEl) {
     if (location) { locationEl.textContent = location; locationEl.parentElement.style.display = ''; }
     else { locationEl.parentElement.style.display = 'none'; }
+  }
+}
+
+function applyLoginPageBackgrounds(settings) {
+  const path = window.location.pathname || '';
+  const isLogin = document.body.classList.contains('login-page') || path.startsWith('/login') || path.startsWith('/login.html');
+  const isRegister = document.body.classList.contains('register-page') || path.startsWith('/register') || path.startsWith('/register.html');
+  if (!isLogin && !isRegister) return;
+
+  const loginBgUrl = settings.login_page_background_image_url && settings.login_page_background_image_url !== 'default'
+    ? settings.login_page_background_image_url
+    : '';
+  const loginBoxUrl = settings.login_page_box_image_url && settings.login_page_box_image_url !== 'default'
+    ? settings.login_page_box_image_url
+    : '';
+  const registerBgUrl = settings.register_page_background_image_url && settings.register_page_background_image_url !== 'default'
+    ? settings.register_page_background_image_url
+    : '';
+  const registerBoxUrl = settings.register_page_box_image_url && settings.register_page_box_image_url !== 'default'
+    ? settings.register_page_box_image_url
+    : '';
+  const bgUrl = isRegister ? registerBgUrl || loginBgUrl : loginBgUrl;
+  const boxUrl = isRegister ? registerBoxUrl || loginBoxUrl : loginBoxUrl;
+
+  if (bgUrl) {
+    document.body.style.background = `linear-gradient(rgba(255,255,255,0.18), rgba(255,255,255,0.18)), url('${bgUrl}') center/cover fixed no-repeat`;
+  } else {
+    document.body.style.background = '';
+  }
+
+  const authCard = document.querySelector('.auth-card');
+  if (authCard) {
+    if (boxUrl) {
+      authCard.style.background = `linear-gradient(rgba(255,255,255,0.75), rgba(255,255,255,0.75)), url('${boxUrl}') center/cover no-repeat`;
+    } else {
+      authCard.style.background = '';
+    }
   }
 }
 

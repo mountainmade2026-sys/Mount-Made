@@ -2375,6 +2375,10 @@ exports.updateSiteSettings = async (req, res) => {
       gpay_phone_number,
       gpay_bank_name,
       gpay_qr_image_url,
+      login_page_background_image_url,
+      login_page_box_image_url,
+      register_page_background_image_url,
+      register_page_box_image_url,
       privacy_policy_title,
       privacy_policy_body,
       terms_conditions_title,
@@ -2508,6 +2512,18 @@ exports.updateSiteSettings = async (req, res) => {
     }
     if (homepage_hero_image_url !== undefined) {
       updates.push({ key: 'homepage_hero_image_url', value: homepage_hero_image_url });
+    }
+    if (login_page_background_image_url !== undefined) {
+      updates.push({ key: 'login_page_background_image_url', value: login_page_background_image_url });
+    }
+    if (login_page_box_image_url !== undefined) {
+      updates.push({ key: 'login_page_box_image_url', value: login_page_box_image_url });
+    }
+    if (register_page_background_image_url !== undefined) {
+      updates.push({ key: 'register_page_background_image_url', value: register_page_background_image_url });
+    }
+    if (register_page_box_image_url !== undefined) {
+      updates.push({ key: 'register_page_box_image_url', value: register_page_box_image_url });
     }
     if (homepage_hero_section_id !== undefined) {
       updates.push({ key: 'homepage_hero_section_id', value: homepage_hero_section_id });
