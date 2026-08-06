@@ -206,6 +206,20 @@
             return '₹' + value.toFixed(2);
         }
 
+        function normalizePaymentMethod(method) {
+            const raw = String(method || '').trim().toLowerCase();
+            if (!raw) return 'gpay';
+            if (['gpay', 'upi', 'googlepay', 'google-pay', 'google-pay-upi', 'googlepay-upi'].includes(raw)) return 'gpay';
+            if (['phone', 'phonepe', 'phonepay', 'phone-pay', 'phone-pe', 'phonepe-upi'].includes(raw)) return 'phone';
+            if (['paytm', 'paytm-upi'].includes(raw)) return 'paytm';
+            return raw;
+        }
+
+        function getDisplayMethod(method) {
+            const normalized = normalizePaymentMethod(method);
+            return normalized === 'phone' ? 'phonepe' : normalized;
+        }
+
         function escapeHtml(value) {
             return String(value || '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
         }
@@ -407,7 +421,8 @@
         function initPage() {
             // Get payment method from URL parameter
             const urlParams = new URLSearchParams(window.location.search);
-            const paymentMethod = urlParams.get('method') || 'gpay';
+            const paymentMethod = normalizePaymentMethod(urlParams.get('method') || 'gpay');
+            const routeMethod = getDisplayMethod(paymentMethod);
 
             // Update header based on payment method
             const headerTitle = document.getElementById('payment-header-title');
@@ -428,7 +443,7 @@
                 }
             };
 
-            const header = headerMap[paymentMethod] || headerMap.gpay;
+            const header = headerMap[routeMethod] || headerMap.gpay;
             if (headerTitle) headerTitle.textContent = header.title;
             if (headerSubtitle) headerSubtitle.textContent = header.subtitle;
 
@@ -465,10 +480,10 @@
             const openAppButton = document.getElementById('qr-open-app-button');
             if (openAppButton) {
                 openAppButton.addEventListener('click', () => {
-                    if (paymentMethod === 'phonepe') {
+                    if (routeMethod === 'phonepe') {
                         const phonepeLink = buildPhonePeLink(payload);
                         if (phonepeLink) openUpiLink(phonepeLink, 'phonepe');
-                    } else if (paymentMethod === 'paytm') {
+                    } else if (routeMethod === 'paytm') {
                         const paytmLink = buildPaytmLink(payload);
                         if (paytmLink) openUpiLink(paytmLink, 'paytm');
                     } else if (qrPaidLink) {
@@ -486,14 +501,14 @@
             const qrImage = document.getElementById('qr-image');
             if (qrImage) {
                 const originalClick = () => {
-                    if (paymentMethod === 'phonepe' && isMobileDevice()) {
+                    if (routeMethod === 'phonepe' && isMobileDevice()) {
                         // Try to open PhonePe first, then fallback to UPI
                         const phonepeLink = buildPhonePeLink(payload);
                         if (phonepeLink) {
                             openUpiLink(phonepeLink, 'phonepe');
                             return;
                         }
-                    } else if (paymentMethod === 'paytm' && isMobileDevice()) {
+                    } else if (routeMethod === 'paytm' && isMobileDevice()) {
                         // Try to open Paytm first, then fallback to UPI
                         const paytmLink = buildPaytmLink(payload);
                         if (paytmLink) {

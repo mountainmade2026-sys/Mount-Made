@@ -3383,6 +3383,24 @@
             return `MM${Date.now()}${rand}`;
         }
 
+        function normalizePaymentMethod(method) {
+            const raw = String(method || '').trim().toLowerCase();
+            if (!raw) return 'gpay';
+
+            if (['gpay', 'upi', 'googlepay', 'google-pay', 'google-pay-upi', 'googlepay-upi'].includes(raw)) return 'gpay';
+            if (['phone', 'phonepe', 'phonepay', 'phone-pay', 'phone-pe', 'phonepe-upi'].includes(raw)) return 'phone';
+            if (['paytm', 'paytm-upi'].includes(raw)) return 'paytm';
+            if (['cod', 'cash', 'cash-on-delivery'].includes(raw)) return 'cod';
+            return raw;
+        }
+
+        function getPaymentMethodRoute(method) {
+            const normalized = normalizePaymentMethod(method);
+            if (normalized === 'gpay' || normalized === 'upi') return 'gpay';
+            if (normalized === 'phone') return 'phonepe';
+            return normalized;
+        }
+
         function buildGpayUpiLink(amount, note = '', transactionRef = '') {
             const recipient = String(checkoutGpaySettings.upiId || '').trim();
             if (!recipient) return null;
@@ -3448,7 +3466,7 @@
 
             if (!valueInput || !label) return;
 
-            const method = String(selectedMethod || 'gpay').toLowerCase();
+            const method = normalizePaymentMethod(selectedMethod);
             const hasQr = String(checkoutGpaySettings.qrImageUrl || '').trim() !== '';
             const hasUpi = String(checkoutGpaySettings.upiId || '').trim() !== '';
             const hasPhone = String(checkoutGpaySettings.phoneNumber || '').trim() !== '';
@@ -3578,7 +3596,7 @@
 
         function selectPaymentMethod(method) {
             const availableMethods = getEnabledPaymentMethods();
-            const normalizedMethod = String(method || 'gpay').toLowerCase();
+            const normalizedMethod = normalizePaymentMethod(method);
             const safeMethod = availableMethods.includes(normalizedMethod)
                 ? normalizedMethod
                 : (availableMethods[0] || 'cod');
@@ -3781,7 +3799,7 @@
             const button = document.getElementById('confirm-order-btn');
             const label = button?.querySelector('.confirm-order-label');
             const icon = button?.querySelector('i');
-            const normalizedMethod = String(method || '').toLowerCase();
+            const normalizedMethod = normalizePaymentMethod(method);
             const isCod = normalizedMethod === 'cod';
             const isBanking = ['debit', 'credit', 'netbank'].includes(normalizedMethod);
 
@@ -4727,12 +4745,13 @@
                 };
 
                 // Dynamically redirect based on payment method
+                const redirectMethod = getPaymentMethodRoute(paymentMethod);
                 let redirectPath = '/checkout-qr.html';
-                if (paymentMethod === 'paytm') {
+                if (redirectMethod === 'paytm') {
                     redirectPath = '/checkout-qr.html?method=paytm';
-                } else if (paymentMethod === 'phone') {
+                } else if (redirectMethod === 'phonepe') {
                     redirectPath = '/checkout-qr.html?method=phonepe';
-                } else if (paymentMethod === 'gpay') {
+                } else {
                     redirectPath = '/checkout-qr.html?method=gpay';
                 }
 

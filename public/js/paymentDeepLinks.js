@@ -5,6 +5,15 @@
     paytm: 'net.one97.paytm'
   };
 
+  function normalizeProviderName(provider = 'gpay') {
+    const raw = String(provider || '').trim().toLowerCase();
+    if (!raw) return 'gpay';
+    if (['gpay', 'upi', 'googlepay', 'google-pay', 'google-pay-upi', 'googlepay-upi'].includes(raw)) return 'gpay';
+    if (['phone', 'phonepe', 'phonepay', 'phone-pay', 'phone-pe', 'phonepe-upi'].includes(raw)) return 'phonepe';
+    if (['paytm', 'paytm-upi'].includes(raw)) return 'paytm';
+    return raw;
+  }
+
   function normalizeUpiRecipient(value) {
     const raw = String(value || '').trim();
     if (!raw) return '';
@@ -34,6 +43,7 @@
 
   function buildProviderDeepLink(payload, provider = 'gpay') {
     if (!payload) return null;
+    const normalizedProvider = normalizeProviderName(provider);
 
     const rawValue = normalizeUpiRecipient(payload.paymentValue);
     const upiId = normalizeUpiRecipient(payload.upiId);
@@ -90,7 +100,8 @@
 
   function buildAndroidIntentUrl(link, provider = 'gpay') {
     if (!link) return null;
-    const packageName = PROVIDER_PACKAGES[provider] || PROVIDER_PACKAGES.gpay;
+    const normalizedProvider = normalizeProviderName(provider);
+    const packageName = PROVIDER_PACKAGES[normalizedProvider] || PROVIDER_PACKAGES.gpay;
     try {
       const parsed = new URL(link);
       const pathname = parsed.pathname === '/' ? '' : parsed.pathname;
@@ -108,6 +119,7 @@
 
   function launchPaymentLink(link, provider = 'gpay') {
     if (!link) return false;
+    const normalizedProvider = normalizeProviderName(provider);
 
     const ua = global.navigator?.userAgent || '';
     const activeLink = String(link || '').trim();
