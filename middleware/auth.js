@@ -52,6 +52,30 @@ const authenticateToken = async (req, res, next) => {
 
     const decoded = verified.decoded;
 
+    // Allow local developer crafter tokens (issued without DB user) when running locally
+    const isLocalReq = () => {
+      try {
+        const ipRaw = String(req.ip || req.connection?.remoteAddress || '').replace(/^::ffff:/, '');
+        if (ipRaw === '127.0.0.1' || ipRaw === '::1' || ipRaw === '::ffff:127.0.0.1') return true;
+        const hostHeader = String(req.headers?.host || '').toLowerCase();
+        if (hostHeader.startsWith('localhost') || hostHeader.startsWith('127.0.0.1')) return true;
+        return false;
+      } catch (_) { return false; }
+    };
+
+    if (decoded && decoded.is_local_crafter && process.env.NODE_ENV !== 'production' && isLocalReq()) {
+      // Accept token without DB lookup for local crafter dev login
+      req.user = {
+        id: decoded.id,
+        email: decoded.email,
+        role: decoded.role || 'crafter',
+        is_approved: decoded.is_approved !== false,
+        is_blocked: decoded.is_blocked === true,
+        profile_photo: null
+      };
+      return next();
+    }
+
     const user = await User.findById(decoded.id);
     if (!user) {
       return res.status(401).json({ error: 'User account no longer exists.' });

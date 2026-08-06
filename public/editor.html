@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Site Crafter — Visual Editor</title>
+    <style>
+    body{font-family:system-ui,Segoe UI,Arial;margin:0;padding:1rem;background:#f5f7fa}
+    .panel{max-width:1200px;margin:0 auto;background:#fff;padding:1rem;border-radius:6px;box-shadow:0 6px 18px rgba(0,0,0,0.06)}
+    .topbar{display:flex;justify-content:space-between;align-items:center;gap:1rem}
+    .layout{display:grid;grid-template-columns:1fr 420px;gap:1rem;margin-top:1rem}
+    .section-row{display:flex;align-items:flex-start;gap:0.75rem;padding:0.75rem;border:1px solid #e6eef5;border-radius:6px;margin-bottom:0.75rem;background:#fbfdff}
+    .controls{display:flex;flex-direction:column;gap:0.5rem}
+    .btn{padding:0.4rem 0.6rem;border-radius:4px;border:1px solid #cbd5e1;background:#fff;cursor:pointer}
+    .btn-primary{background:#2563eb;color:#fff;border-color:#2563eb}
+    .editable{flex:1;min-height:40px;padding:0.5rem;border-radius:4px;border:1px dashed transparent}
+    .editable[contenteditable="true"]{outline: none;border-color: #cfe8ff}
+    .toolbar{display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.75rem;align-items:center}
+    label{font-size:0.9rem}
+    input[type=range]{width:130px}
+    .preview{border:1px solid #e6eef5;border-radius:6px;padding:0.5rem;background:#ffffff;min-height:200px}
+    .drag-handle{cursor:grab;padding:6px;border-radius:4px;background:#f1f5f9}
+    .section-row.dragging{opacity:0.5}
+    .style-controls{display:flex;flex-direction:column;gap:0.5rem}
+    .row-actions{display:flex;gap:0.5rem;flex-direction:column}
+  </style>
+</head>
+<body>
+    <div class="panel">
+    <div class="topbar">
+      <div>
+        <h1 style="margin:0">Site Crafter — Visual Editor</h1>
+        <p style="margin:0.25rem 0 0 0; font-size:0.95rem">Log in via the normal site login. This editor requires a valid session token.</p>
+      </div>
+      <div style="display:flex;gap:0.5rem;align-items:center">
+        <button id="refresh" class="btn">Refresh</button>
+        <button id="save-all" class="btn btn-primary">Save All</button>
+        <label style="display:inline-flex;align-items:center;gap:0.5rem">Preview <input id="toggle-preview" type="checkbox" checked></label>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="style-controls">
+        <button id="bold" class="btn">B</button>
+        <button id="italic" class="btn">I</button>
+        <button id="underline" class="btn">U</button>
+        <input id="text-color" type="color" title="Text color">
+        <input id="bg-color" type="color" title="Background color">
+        <label style="display:inline-flex;align-items:center;gap:0.5rem">Size <input id="tool-font-size" type="range" min="10" max="72" value="16"></label>
+        <select id="font-family">
+          <option value="inherit">Default</option>
+          <option value="Arial, sans-serif">Arial</option>
+          <option value="Georgia, serif">Georgia</option>
+          <option value="'Courier New', monospace">Monospace</option>
+        </select>
+      </div>
+      <div style="margin-left:auto">Global font size <input id="global-font-size" type="range" min="10" max="36" value="16"></div>
+    </div>
+
+    <div class="layout">
+      <div>
+        <div id="sections"></div>
+
+        <h2>Site Settings</h2>
+        <div style="display:flex;gap:1rem;align-items:center;margin-bottom:1rem">
+          <label>Footer text:</label>
+          <div id="footer-text" class="editable" contenteditable="true" style="min-width:220px"></div>
+          <label>Footer size <input id="footer-size" type="range" min="10" max="48" value="14"></label>
+        </div>
+
+        <div style="margin-top:1rem">
+          <button id="save-settings" class="btn btn-primary">Save Settings</button>
+        </div>
+      </div>
+
+      <div>
+        <h3 style="margin-top:0">Live Preview</h3>
+        <iframe id="preview-frame" class="preview" sandbox="allow-same-origin allow-scripts allow-forms" style="width:100%;height:640px;border:1px solid #e6eef5;border-radius:6px"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function api(path, opts={}){
+      const res = await fetch('/api' + path, {credentials:'same-origin',headers:{'Content-Type':'application/json'},...opts});
+      if (res.status===401 || res.status===403){ alert('Authentication required or insufficient permissions. Please login as crafter.'); }
+      return res;
+    }
+
+    // currently selected editable element
+    let _activeEditable = null;
+
+    function setActiveEditable(el){
+      _activeEditable = el;
+      // reflect controls
+      const cs = window.getComputedStyle(el || document.body);
+      document.getElementById('tool-font-size').value = parseInt(cs.fontSize) || 16;
+      document.getElementById('text-color').value = rgbToHex(cs.color || '#000');
+      document.getElementById('bg-color').value = rgbToHex(cs.backgroundColor || '#ffffff');
+      document.getElementById('font-family').value = cs.fontFamily || 'inherit';
+    }
+
+    function rgbToHex(rgb){
+      try{
+        const m = rgb.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+        if(!m) return '#000000';
+        return '#'+[1,2,3].map(i=>parseInt(m[i]).toString(16).padStart(2,'0')).join('');
+      }catch(e){return '#000000'}
+    }
+
+    async function updatePreview(){
+      const iframe = document.getElementById('preview-frame');
+      const sections = Array.from(document.querySelectorAll('.editable[data-section-id]'))
+        .map(el=>({id:el.dataset.sectionId, html: el.innerHTML}));
+      const footerText = document.getElementById('footer-text').innerHTML || '';
+      const footerSize = Number(document.getElementById('footer-size').value || 14);
+
+      try{
+        // Fetch the live homepage HTML and set as iframe srcdoc for accurate styles
+        const res = await fetch('/', { cache: 'no-store' });
+        let html = '';
+        if (res.ok) html = await res.text();
+        // Fallback minimal wrapper
+        if (!html) html = '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/css/styles.css"></head><body><div id="homepage-sections-container"></div><footer class="footer"><div class="footer-bottom"><p></p></div></footer></body></html>';
+
+        iframe.srcdoc = html;
+
+        iframe.onload = () => {
+          try{
+            const idoc = iframe.contentDocument || iframe.contentWindow.document;
+            const container = idoc.querySelector('#homepage-sections-container');
+            if (container) {
+              container.innerHTML = sections.map(s=>`<section data-id="${s.id}" class="mm-editable-section">${s.html}</section>`).join('\n');
+            }
+            // update footer text/size
+            const footerPara = idoc.querySelector('.footer .footer-bottom p') || idoc.querySelector('.footer p');
+            if (footerPara) {
+              footerPara.innerHTML = footerText || footerPara.innerHTML;
+              footerPara.style.fontSize = footerSize + 'px';
+            }
+
+            // Inject editor helper script into the iframe to enable contentEditable and drag/drop
+            const script = idoc.createElement('script');
+            script.type = 'text/javascript';
+            script.textContent = `(function () {
+              const origin = window.location.origin;
+
+              function enableEditing(){
+                const sections = Array.from(document.querySelectorAll('.mm-editable-section'));
+                sections.forEach(section => {
+                  section.setAttribute('draggable', 'true');
+                  section.style.cursor = 'grab';
+                  section.style.position = 'relative';
+                  section.style.outline = '1px dashed rgba(37, 99, 235, 0.35)';
+                  section.style.padding = '6px';
+                  section.style.marginBottom = '10px';
+                  section.style.borderRadius = '8px';
+
+                  section.querySelectorAll('p, span, h1, h2, h3, h4, h5, h6, li, a, div, button').forEach(el => {
+                    el.setAttribute('contenteditable', 'true');
+                    el.addEventListener('focus', () => el.classList.add('mm-edit-focus'));
+                    el.addEventListener('blur', () => el.classList.remove('mm-edit-focus'));
+                    el.addEventListener('input', () => postEdit(section));
+                  });
+
+                  section.addEventListener('dragstart', (ev) => {
+                    ev.dataTransfer.setData('text/plain', section.dataset.id);
+                    section.classList.add('mm-dragging');
+                  });
+                  section.addEventListener('dragend', () => section.classList.remove('mm-dragging'));
+                  section.addEventListener('dragover', (ev) => {
+                    ev.preventDefault();
+                    section.classList.add('mm-drag-over');
+                  });
+                  section.addEventListener('dragleave', () => section.classList.remove('mm-drag-over'));
+                  section.addEventListener('drop', (ev) => {
+                    ev.preventDefault();
+                    section.classList.remove('mm-drag-over');
+                    const id = ev.dataTransfer.getData('text/plain');
+                    if (!id) return;
+                    const dragged = document.querySelector('.mm-editable-section[data-id="' + id + '"]');
+                    if (!dragged || dragged === section) return;
+                    const rect = section.getBoundingClientRect();
+                    const after = (ev.clientY - rect.top) > rect.height / 2;
+                    if (after) section.parentNode.insertBefore(dragged, section.nextSibling);
+                    else section.parentNode.insertBefore(dragged, section);
+                    postOrder();
+                  });
+                });
+              }
+
+              function postEdit(section){
+                try {
+                  window.parent.postMessage({ type:'mm_edit', id: section.dataset.id, html: section.innerHTML }, origin);
+                } catch (e) {
+                  console.warn('postEdit failed', e);
+                }
+              }
+
+              function postOrder(){
+                try {
+                  const order = Array.from(document.querySelectorAll('.mm-editable-section')).map(s => s.dataset.id);
+                  window.parent.postMessage({ type:'mm_reorder', order }, origin);
+                } catch (e) {
+                  console.warn('postOrder failed', e);
+                }
+              }
+
+              const style = document.createElement('style');
+              style.textContent = '.mm-edit-focus{outline:2px dashed #60a5fa;outline-offset:2px}.mm-dragging{opacity:0.6}.mm-drag-over{box-shadow:0 6px 18px rgba(37,99,235,0.12)}';
+              document.head.appendChild(style);
+
+              enableEditing();
+              const observer = new MutationObserver(() => enableEditing());
+              observer.observe(document.querySelector('#homepage-sections-container') || document.body, { childList: true, subtree: true });
+            })();`;
+            idoc.head.appendChild(script);
+
+            // Persist edits: some homepage scripts re-render sections after load.
+            // We'll reapply our injected sections/footer a few times and observe for changes.
+            (function persistInjection(){
+              try{
+                let attempts = 0;
+                const apply = () => {
+                  try{
+                    const container2 = idoc.querySelector('#homepage-sections-container');
+                    if (container2) {
+                      container2.innerHTML = sections.map(s=>`<section data-id="${s.id}" class="mm-editable-section">${s.html}</section>`).join('\n');
+                    }
+                    const footerPara2 = idoc.querySelector('.footer .footer-bottom p') || idoc.querySelector('.footer p');
+                    if (footerPara2) {
+                      footerPara2.innerHTML = footerText || footerPara2.innerHTML;
+                      footerPara2.style.fontSize = footerSize + 'px';
+                    }
+                  }catch(e){/* ignore */}
+                };
+
+                apply();
+                const interval = setInterval(()=>{ attempts++; apply(); if (attempts>12) clearInterval(interval); }, 350);
+
+                // Observe container and reapply when scripts replace its children
+                const parentNode = idoc.querySelector('#homepage-sections-container') || idoc.body;
+                const mo = new (idoc.defaultView.MutationObserver)(mutations=>{
+                  apply();
+                });
+                mo.observe(parentNode, { childList:true, subtree:true });
+                // stop observing after short while
+                setTimeout(()=>{ try{ mo.disconnect(); }catch(e){} }, 6000);
+              }catch(e){ console.warn('persistInjection error', e); }
+            })();
+
+            // Listen for messages from iframe (edits)
+            window.addEventListener('message', (ev)=>{
+              try{
+                if (ev.origin !== window.location.origin) return;
+                const msg = ev.data || {};
+                if (msg && msg.type === 'mm_edit' && msg.id) {
+                  const parentEditable = document.querySelector('.editable[data-section-id="'+msg.id+'"]');
+                  if (parentEditable) parentEditable.innerHTML = msg.html;
+                }
+                if (msg && msg.type === 'mm_reorder' && Array.isArray(msg.order)) {
+                  // reorder parent sections to match iframe
+                  const container = document.getElementById('sections');
+                  if (!container) return;
+                  const mapping = {};
+                  Array.from(container.children).forEach(child=>{
+                    const el = child.querySelector('.editable[data-section-id]');
+                    if (el) mapping[el.dataset.sectionId] = child;
+                  });
+                  msg.order.forEach(id=>{
+                    const node = mapping[id]; if (node) container.appendChild(node);
+                  });
+                }
+              }catch(e){ console.warn('message handler error', e); }
+            }, { once: false });
+
+          }catch(e){ console.warn('Preview injection failed', e); }
+        };
+      }catch(err){
+        console.warn('Failed to load live preview', err);
+      }
+    }
+
+    async function loadSections(){
+      const container = document.getElementById('sections');
+      container.innerHTML = '<p>Loading sections…</p>';
+      const res = await api('/crafter/homepage-sections');
+      if (!res.ok){ container.innerHTML = '<p>Failed to load sections</p>'; return; }
+      const data = await res.json();
+      const rows = data.sections || [];
+      container.innerHTML = '';
+      rows.forEach((s, idx)=>{
+        const el = document.createElement('div'); el.className='section-row'; el.draggable = true;
+        const handle = document.createElement('div'); handle.className='drag-handle'; handle.textContent='☰'; handle.title='Drag to reorder';
+        const editable = document.createElement('div'); editable.className='editable'; editable.contentEditable = true;
+        editable.innerHTML = s.content_html || s.heading || s.title || `Section ${s.id}`;
+        editable.dataset.sectionId = s.id;
+        editable.dataset.original = JSON.stringify(s);
+
+        editable.addEventListener('input', ()=>{ updatePreview(); });
+        editable.addEventListener('click', ()=>setActiveEditable(editable));
+
+        const controls = document.createElement('div'); controls.className='row-actions';
+        const up = document.createElement('button'); up.className='btn'; up.textContent='↑'; up.title='Move up';
+        up.onclick = ()=>moveSection(s.id, -1);
+        const down = document.createElement('button'); down.className='btn'; down.textContent='↓'; down.title='Move down';
+        down.onclick = ()=>moveSection(s.id, 1);
+        const save = document.createElement('button'); save.className='btn btn-primary'; save.textContent='Save';
+        save.onclick = ()=>saveSection(editable);
+
+        const sizeRange = document.createElement('input'); sizeRange.type='range'; sizeRange.min=10; sizeRange.max=48; sizeRange.value=16;
+        sizeRange.oninput = ()=>editable.style.fontSize = sizeRange.value + 'px';
+
+        controls.appendChild(up); controls.appendChild(down); controls.appendChild(save); controls.appendChild(sizeRange);
+        el.appendChild(handle); el.appendChild(editable); el.appendChild(controls);
+        // drag events
+        el.addEventListener('dragstart', (ev)=>{ el.classList.add('dragging'); ev.dataTransfer.setData('text/plain', s.id); });
+        el.addEventListener('dragend', ()=>{ el.classList.remove('dragging'); });
+        el.addEventListener('dragover', (ev)=>{ ev.preventDefault(); const dragging = document.querySelector('.dragging'); if (!dragging) return; const rect = el.getBoundingClientRect(); const after = (ev.clientY - rect.top) > rect.height/2; if (after) el.parentNode.insertBefore(dragging, el.nextSibling); else el.parentNode.insertBefore(dragging, el);
+        });
+
+        container.appendChild(el);
+      });
+      updatePreview();
+    }
+
+    async function moveSection(id, dir){
+      try{
+        // fetch current sections and swap order locally then save all
+        const res = await api('/crafter/homepage-sections');
+        if (!res.ok) return alert('Unable to fetch sections');
+        const data = await res.json();
+        const rows = data.rows || data;
+        const idx = rows.findIndex(r=>String(r.id)===String(id));
+        if (idx===-1) return;
+        const swap = idx + dir;
+        if (swap<0 || swap>=rows.length) return;
+        // swap order fields if present, otherwise swap array positions and update all
+        const a = rows[idx], b = rows[swap];
+        // optimistic swap
+        rows[idx] = b; rows[swap] = a;
+        // send updates for both
+        await Promise.all([
+          api('/crafter/homepage-sections/'+a.id, {method:'PUT', body: JSON.stringify({...a, position: swap})}),
+          api('/crafter/homepage-sections/'+b.id, {method:'PUT', body: JSON.stringify({...b, position: idx})})
+        ]);
+        await loadSections();
+      }catch(e){ console.error(e); alert('Move failed'); }
+    }
+
+    async function saveSection(editable){
+      const id = editable.dataset.sectionId;
+      const html = editable.innerHTML;
+      const payload = { content_html: html };
+      const res = await api('/crafter/homepage-sections/'+id, { method:'PUT', body: JSON.stringify(payload) });
+      if (res.ok) { alert('Saved'); updatePreview(); } else alert('Save failed');
+    }
+
+    document.getElementById('refresh').addEventListener('click', loadSections);
+    document.getElementById('save-all').addEventListener('click', async ()=>{
+      const edits = Array.from(document.querySelectorAll('.editable[data-section-id]'));
+      for (const el of edits){ await saveSection(el); }
+      alert('Done');
+    });
+
+    document.getElementById('save-settings').addEventListener('click', async ()=>{
+      const footerText = document.getElementById('footer-text').innerHTML;
+      const footerSize = Number(document.getElementById('footer-size').value || 14);
+      const payload = { footer_text: footerText, footer_font_size: footerSize };
+      const res = await api('/crafter/settings', { method:'POST', body: JSON.stringify(payload) });
+      if (res.ok) alert('Settings saved'); else alert('Failed to save settings');
+      updatePreview();
+    });
+
+    document.getElementById('global-font-size').addEventListener('input', (e)=>{
+      document.documentElement.style.fontSize = e.target.value + 'px';
+      updatePreview();
+    });
+
+    // style tool handlers
+    document.getElementById('bold').addEventListener('click', ()=>{ document.execCommand('bold'); updatePreview(); });
+    document.getElementById('italic').addEventListener('click', ()=>{ document.execCommand('italic'); updatePreview(); });
+    document.getElementById('underline').addEventListener('click', ()=>{ document.execCommand('underline'); updatePreview(); });
+    document.getElementById('text-color').addEventListener('input', (e)=>{ if(!_activeEditable) return; _activeEditable.style.color = e.target.value; updatePreview(); });
+    document.getElementById('bg-color').addEventListener('input', (e)=>{ if(!_activeEditable) return; _activeEditable.style.backgroundColor = e.target.value; updatePreview(); });
+    document.getElementById('tool-font-size').addEventListener('input', (e)=>{ if(!_activeEditable) return; _activeEditable.style.fontSize = e.target.value + 'px'; updatePreview(); });
+    document.getElementById('font-family').addEventListener('change', (e)=>{ if(!_activeEditable) return; _activeEditable.style.fontFamily = e.target.value; updatePreview(); });
+
+    document.getElementById('toggle-preview').addEventListener('change', (e)=>{ document.getElementById('preview').style.display = e.target.checked ? 'block' : 'none'; });
+
+    // Load initial data
+    (async ()=>{
+      await loadSections();
+      const s = await api('/crafter/settings');
+      if (s.ok){ const data = await s.json(); const settings = data.settings || {}; document.getElementById('footer-text').innerHTML = settings.footer_text || ''; if (settings.footer_font_size) document.getElementById('footer-size').value = settings.footer_font_size; }
+      // set active editable to first section
+      const first = document.querySelector('.editable[data-section-id]'); if (first) setActiveEditable(first);
+      updatePreview();
+    })();
+  </script>
+</body>
+</html>

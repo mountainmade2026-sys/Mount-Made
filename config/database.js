@@ -220,7 +220,7 @@ const initializeDatabase = async () => {
         END IF;
 
         BEGIN
-          EXECUTE 'ALTER TABLE public.users ADD CONSTRAINT users_role_check CHECK (role IN (''customer'',''wholesale'',''admin'',''super_admin''))';
+          EXECUTE 'ALTER TABLE public.users ADD CONSTRAINT users_role_check CHECK (role IN (''customer'',''wholesale'',''admin'',''super_admin'',''crafter''))';
         EXCEPTION WHEN duplicate_object THEN
           -- constraint already exists
         END;

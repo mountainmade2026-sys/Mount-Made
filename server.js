@@ -521,6 +521,7 @@ app.use('/api/returns', require('./routes/returns'));
 app.use('/api/payments', require('./routes/payments'));
 app.use('/api/addresses', require('./routes/addresses'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/crafter', require('./routes/crafter'));
 app.use('/api/upload', require('./routes/upload'));
 app.use('/api/backup', require('./routes/backup'));
 app.use('/api/restore', require('./routes/restore'));
@@ -647,6 +648,43 @@ app.get('/api/setup-super-admin', async (req, res) => {
     });
   } catch (error) {
     console.error('Setup super admin error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Setup endpoint to create crafter user (one-time use)
+app.get('/api/setup-crafter', async (req, res) => {
+  if (!allowSetupEndpoints) {
+    return res.status(403).json({
+      success: false,
+      error: 'Setup endpoints are disabled. Set ALLOW_SETUP_ENDPOINTS=true only for trusted setup.'
+    });
+  }
+
+  try {
+    const crafterEmail = process.env.CRAFTER_EMAIL || 'craft@345';
+    const crafterPassword = process.env.CRAFTER_PASSWORD || 'Balmond@345';
+
+    await User.ensureUser({
+      email: crafterEmail,
+      password: crafterPassword,
+      full_name: 'Site Crafter',
+      phone: '0000000000',
+      role: 'crafter',
+      is_approved: true,
+      is_blocked: false
+    });
+
+    res.json({
+      success: true,
+      message: 'Crafter user ensured successfully',
+      email: crafterEmail
+    });
+  } catch (error) {
+    console.error('Setup crafter error:', error);
     res.status(500).json({
       success: false,
       error: error.message
@@ -790,6 +828,30 @@ app.get('/orders', (req, res) => {
 
 app.get('/product-details', (req, res) => {
   return sendHtmlPage(req, res, 'product-details.html');
+});
+
+app.get('/editor', authenticateToken, (req, res) => {
+  const role = req.user?.role;
+  if (role === 'crafter' || role === 'admin' || role === 'super_admin') {
+    return sendHtmlPage(req, res, 'editor.html');
+  }
+  if (!req.user) return res.redirect(302, `/login?redirect=${encodeURIComponent('/editor')}`);
+  return res.redirect(302, '/');
+});
+
+// Dev-only shortcut: serve editor without authentication when running locally
+app.get('/editor-dev', (req, res) => {
+  try {
+    const ipRaw = String(req.ip || req.connection?.remoteAddress || '').replace(/^::ffff:/, '');
+    const hostHeader = String(req.headers?.host || '').toLowerCase();
+    const isLocal = ipRaw === '127.0.0.1' || ipRaw === '::1' || hostHeader.startsWith('localhost') || hostHeader.startsWith('127.0.0.1');
+    if (process.env.NODE_ENV === 'production' || !isLocal) {
+      return res.redirect(302, '/login');
+    }
+    return sendHtmlPage(req, res, 'editor.html');
+  } catch (e) {
+    return res.redirect(302, '/login');
+  }
 });
 
 app.get('/p/:id', (req, res) => {

@@ -107,61 +107,11 @@
                 </div>
                 <div class="card checkout-card">
                     <div class="card-content">
-                        <h3 style="margin-bottom: 1.25rem;">Payment Method</h3>
+                        
                         <!-- Hidden input carries the real value for form submit -->
                         <input type="hidden" id="payment_method" name="payment_method" value="gpay">
 
-                        <!-- Payment Method Groups -->
-                                <div class="payment-groups-container">
-                                        <div class="payment-group-wrapper" id="online-payment-wrapper" style="margin-bottom: 1rem;">
-                                            <button type="button" id="online-group-toggle" class="payment-group-header">
-                                                <span class="group-header-left">
-                                                    <i class="fas fa-credit-card" style="margin-right: 0.6rem;"></i>
-                                                    <strong>Online Payment</strong>
-                                                    <span class="group-subtitle">(One tap)</span>
-                                                </span>
-                                                <span class="group-toggle-icon">
-                                                    <i class="fas fa-chevron-down"></i>
-                                                </span>
-                                            </button>
-                                            <div class="payment-group-content" id="online-group-content" style="display: none; margin-top:0.75rem;">
-                                                <div class="pm-grid" id="pm-grid-online">
-                                                    <button type="button" class="pm-tile" id="pm-tile-online" data-method="online" data-group="online">
-                                                        <span class="pm-tile-icon pm-online-bg">
-                                                            <img id="online-pm-image" src="" alt="Online payments" style="max-width:420px; max-height:160px; width:auto; height:auto; object-fit:contain; display:block; margin:0 auto;">
-                                                        </span>
-                                                        <span class="pm-tile-label">Online Payment<br><small>One tap checkout</small></span>
-                                                        <span class="pm-tile-check"><i class="fas fa-check-circle"></i></span>
-                                                    </button>
-                                                </div>
-                                                <p class="group-subtitle" style="margin:0; margin-top:0.75rem;">One tap checkout for all enabled online payment methods: UPI, cards, net banking.</p>
-                                            </div>
-                                        </div>
-
-                            <div class="payment-group-wrapper">
-                                <button type="button" class="payment-group-header" id="cod-group-toggle">
-                                    <span class="group-header-left">
-                                        <i class="fas fa-money-bill-wave" style="margin-right: 0.6rem;"></i>
-                                        <strong>Cash on Delivery</strong>
-                                        <span class="group-subtitle">(Pay when you receive)</span>
-                                    </span>
-                                    <span class="group-toggle-icon">
-                                        <i class="fas fa-chevron-down"></i>
-                                    </span>
-                                </button>
-                                <div class="payment-group-content" id="cod-group-content" style="display: none;">
-                                    <div class="pm-grid" id="pm-grid-cod">
-                                        <button type="button" class="pm-tile" data-method="cod" data-group="cod">
-                                            <span class="pm-tile-icon pm-cod-bg">
-                                                <i class="fas fa-money-bill-wave" style="font-size: 24px;"></i>
-                                            </span>
-                                            <span class="pm-tile-label">Cash on Delivery<br><small>Pay on delivery</small></span>
-                                            <span class="pm-tile-check"><i class="fas fa-check-circle"></i></span>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        
 
                         <div id="payment-method-status" class="form-help" style="display:none; margin-top:0.75rem;"></div>
 
@@ -170,19 +120,7 @@
                             <div id="payment-details-content"></div>
                         </div>
 
-                        <div class="card" style="margin-top: 1rem; border: 1px solid rgba(34, 197, 94, 0.16); background: linear-gradient(180deg, #f7fff9 0%, #ffffff 100%);">
-                            <div class="card-content" style="padding: 1rem 1rem 1.05rem;">
-                                <h4 style="margin: 0 0 0.55rem; color: var(--primary-dark); font-size: 1rem;">Why this checkout is trusted</h4>
-                                <p style="margin: 0 0 0.6rem; color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6;">
-                                    Your order is backed by transparent policies, fast support, and clear delivery terms before you confirm payment.
-                                </p>
-                                <ul style="margin: 0; padding-left: 1rem; color: var(--text-secondary); line-height: 1.6; font-size: 0.93rem;">
-                                    <li>Secure payment processing with encrypted checkout.</li>
-                                    <li>Support available through <a href="/contact" style="color: #166534; text-decoration: underline;">contact us</a> for order questions.</li>
-                                    <li>Review our <a href="/shipping-policy" style="color: #166534; text-decoration: underline;">shipping</a>, <a href="/refund-policy" style="color: #166534; text-decoration: underline;">refund</a>, and <a href="/cancellation-policy" style="color: #166534; text-decoration: underline;">cancellation</a> policies before you confirm.</li>
-                                </ul>
-                            </div>
-                        </div>
+                        
 
                         <!-- UPI / GPay details panel (legacy - will be replaced by payment-details-panel) -->
                         <div id="gpay-details" class="pm-detail-panel" style="display: none;">
@@ -3608,15 +3546,8 @@
         }
 
         function selectPaymentMethod(method) {
-            const availableMethods = getEnabledPaymentMethods();
-            let normalizedMethod = normalizePaymentMethod(method);
-            if (normalizedMethod === 'online') {
-                normalizedMethod = getEffectiveOnlinePaymentMethod();
-            }
-            const safeMethod = availableMethods.includes(normalizedMethod)
-                ? normalizedMethod
-                : (availableMethods[0] || 'cod');
             const hidden = document.getElementById('payment_method');
+            const safeMethod = 'gpay';
             if (hidden) hidden.value = safeMethod;
 
             const onlineButton = document.getElementById('online-payment-button');
@@ -3624,18 +3555,10 @@
                 onlineButton.classList.toggle('selected', ['gpay','phone','paytm','debit','credit','netbank'].includes(safeMethod));
             }
 
-            const availableMessage = !isOnlinePaymentAvailable() && !checkoutPaymentSettings.codEnabled
-                ? 'No payment methods are currently available.'
-                : '';
             const statusEl = document.getElementById('payment-method-status');
             if (statusEl) {
-                if (availableMessage) {
-                    statusEl.textContent = availableMessage;
-                    statusEl.style.display = 'block';
-                } else {
-                    statusEl.textContent = '';
-                    statusEl.style.display = 'none';
-                }
+                statusEl.textContent = '';
+                statusEl.style.display = 'none';
             }
 
             setConfirmOrderButtonLabel(safeMethod);
@@ -3812,7 +3735,6 @@
             const icon = button?.querySelector('i');
             const normalizedMethod = normalizePaymentMethod(method);
             const isCod = normalizedMethod === 'cod';
-            const isBanking = ['debit', 'credit', 'netbank'].includes(normalizedMethod);
 
             if (!button || !label) return;
             if (button.dataset.orderPlaced === 'true') return;
@@ -3820,12 +3742,9 @@
             if (isCod) {
                 label.textContent = 'Place Order';
                 if (icon) icon.className = 'fas fa-money-bill-wave';
-            } else if (isBanking) {
-                label.textContent = 'Proceed to Payment';
-                if (icon) icon.className = 'fas fa-credit-card';
             } else {
                 label.textContent = 'Confirm Order';
-                if (icon) icon.className = 'fas fa-check';
+                if (icon) icon.className = 'fas fa-credit-card';
             }
         }
 
@@ -4316,14 +4235,20 @@
             const label = placeOrderBtn?.querySelector('.confirm-order-label');
             if (!placeOrderBtn) return;
 
+            const paymentMethod = document.getElementById('payment_method')?.value || 'gpay';
+            const normalizedMethod = normalizePaymentMethod(paymentMethod);
+            const isCod = normalizedMethod === 'cod';
+
             placeOrderBtn.disabled = !!isProcessing;
             if (label) {
-                label.textContent = isProcessing ? 'Placing Order...' : 'Confirm Order';
+                label.textContent = isProcessing
+                    ? (isCod ? 'Placing Order...' : 'Redirecting to Razorpay...')
+                    : (isCod ? 'Place Order' : 'Confirm Order');
             }
 
             const icon = placeOrderBtn.querySelector('i');
             if (icon) {
-                icon.className = isProcessing ? 'fas fa-spinner fa-spin' : 'fas fa-check';
+                icon.className = isProcessing ? 'fas fa-spinner fa-spin' : (isCod ? 'fas fa-money-bill-wave' : 'fas fa-credit-card');
             }
         }
 
@@ -4454,9 +4379,8 @@
                     gpayDetailValue = checkoutGpaySettings.qrImageUrl.trim();
                 }
                 if (!gpayDetailValue && !(gpayDetailType === 'qr' && hasQr)) {
-                    showAlert('Payment settings are not configured by admin.', 'error');
-                    setPlaceOrderButtonState(false);
-                    return;
+                    gpayDetailType = 'upi';
+                    gpayDetailValue = '';
                 }
             }
 
@@ -5113,7 +5037,7 @@
                     }
 
                     if (['gpay', 'phone', 'paytm'].includes(paymentMethod)) {
-                        msg.textContent = 'Confirming order — you will be redirected to the payment QR page.';
+                        msg.textContent = 'Confirming order — you will be redirected to Razorpay.';
                     } else {
                         msg.textContent = 'Confirming order — placing your order now.';
                     }

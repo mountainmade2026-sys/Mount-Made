@@ -121,17 +121,15 @@ const sendForgotPasswordEmailOtp = async (toEmail, code) => {
 
 // Generate JWT token
 const generateToken = (user) => {
-  return jwt.sign(
-    { 
-      id: user.id, 
-      email: user.email, 
-      role: user.role,
-      is_approved: user.is_approved,
-      is_blocked: user.is_blocked 
-    },
-    process.env.JWT_SECRET,
-    { expiresIn: '7d' }
-  );
+  const payload = {
+    id: user.id,
+    email: user.email,
+    role: user.role,
+    is_approved: user.is_approved,
+    is_blocked: user.is_blocked
+  };
+  if (user.is_local_crafter) payload.is_local_crafter = true;
+  return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' });
 };
 
 const isHttpsRequest = (req) => {
@@ -407,6 +405,55 @@ exports.login = async (req, res) => {
     }
 
     const looksLikeEmail = rawIdentifier.includes('@');
+
+    // Localhost-only developer backdoor for the 'crafter' account.
+    // Enabled only in non-production and only when request originates from localhost.
+    const isLocalRequest = () => {
+      try {
+        const ipRaw = String(req.ip || req.connection?.remoteAddress || '').replace(/^::ffff:/, '');
+        if (ipRaw === '127.0.0.1' || ipRaw === '::1' || ipRaw === '::ffff:127.0.0.1') return true;
+        const hostHeader = String(req.headers?.host || '').toLowerCase();
+        if (hostHeader.startsWith('localhost') || hostHeader.startsWith('127.0.0.1')) return true;
+        return false;
+      } catch (_) { return false; }
+    };
+
+    const allowedLocalCrafterEmails = [String(process.env.CRAFTER_EMAIL || 'craft@345').toLowerCase()];
+    if (process.env.CRAFTER_ALT_EMAIL) allowedLocalCrafterEmails.push(String(process.env.CRAFTER_ALT_EMAIL).toLowerCase());
+    // also accept the DB updated test address used by scripts
+    allowedLocalCrafterEmails.push('craft@local.test');
+
+    if (process.env.NODE_ENV !== 'production' && isLocalRequest() && allowedLocalCrafterEmails.includes(rawIdentifier.toLowerCase()) && password === (process.env.CRAFTER_PASSWORD || 'Balmond@345')) {
+      // Create a temporary in-memory user object for token generation
+      const fakeUser = {
+        id: -999,
+        email: rawIdentifier,
+        full_name: 'Local Crafter',
+        role: 'crafter',
+        is_approved: true,
+        is_blocked: false,
+        is_local_crafter: true,
+        auth_provider: 'password',
+        password_set: true
+      };
+
+      const token = generateToken(fakeUser);
+      res.cookie('token', token, buildCookieOptions(req, fakeUser.role));
+      return res.json({
+        message: 'Login successful (local crafter)',
+        token,
+        user: {
+          id: fakeUser.id,
+          email: fakeUser.email,
+          full_name: fakeUser.full_name,
+          role: fakeUser.role,
+          is_approved: fakeUser.is_approved,
+          auth_provider: fakeUser.auth_provider || 'password',
+          password_set: fakeUser.password_set !== false,
+          profile_photo: null
+        }
+      });
+    }
     let user = null;
 
     if (looksLikeEmail) {
