@@ -127,8 +127,8 @@
                                             <div class="payment-group-content" id="online-group-content" style="display: none; margin-top:0.75rem;">
                                                 <div class="pm-grid" id="pm-grid-online">
                                                     <button type="button" class="pm-tile" id="pm-tile-online" data-method="online" data-group="online">
-                                                        <span class="pm-tile-icon pm-online-bg" style="display:flex; align-items:center; justify-content:center; padding:0.5rem; width:320px; height:140px; border-radius:12px;">
-                                                            <img id="online-pm-image" src="" alt="Online payments" style="max-width:100%; max-height:128px; object-fit:contain; display:block;">
+                                                        <span class="pm-tile-icon pm-online-bg">
+                                                            <img id="online-pm-image" src="" alt="Online payments" style="max-width:420px; max-height:160px; width:auto; height:auto; object-fit:contain; display:block; margin:0 auto;">
                                                         </span>
                                                         <span class="pm-tile-label">Online Payment<br><small>One tap checkout</small></span>
                                                         <span class="pm-tile-check"><i class="fas fa-check-circle"></i></span>
@@ -1323,6 +1323,10 @@
         .pm-cc-bg   { background: #ffebee; }
         .pm-net-bg  { background: #e8f5e9; }
         .pm-cod-bg  { background: #fff8e1; }
+
+        /* Online tile should show the image only (no colored square behind) */
+        .pm-online-bg { background: transparent; padding: 0; border-radius: 0; width: auto; height: auto; }
+        #pm-tile-online .pm-tile-icon { width: auto; height: auto; }
 
         .pm-tile-label { line-height: 1.3; }
         .pm-tile-label small { font-weight: 400; font-size: 0.73rem; color: var(--text-secondary); }
