@@ -1830,6 +1830,11 @@ html[data-theme="dark"] .price-discount {
 .footer-section ul { list-style: none; }
 .footer-section li { margin-bottom: var(--space-2); }
 
+/* Ensure footer description text (left column) is visible on dark background */
+.footer-section p {
+  color: #ffffff;
+}
+
 .footer-section a {
   color: rgba(255,255,255,0.70);
   font-size: 0.78rem;
