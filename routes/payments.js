@@ -38,18 +38,21 @@ async function razorpayWebhookHandler(req, res) {
 
     if (evt === 'payment.captured') {
       const payment = event.payload?.payment?.entity || {};
-      const orderId = payment.order_id;
+      const orderId = payment.order_id || payment.payment_link_id;
       const paymentId = payment.id;
       if (orderId) {
-        await db.query(
-          'UPDATE orders SET payment_status = $1, paid_at = NOW(), payment_gateway_payment_id = $2 WHERE payment_gateway_order_id = $3',
-          ['paid', paymentId, orderId]
+        const orderResult = await db.query(
+          'SELECT * FROM orders WHERE payment_gateway_order_id = $1',
+          [orderId]
         );
-        // Notify admin after marking paid (webhook path)
-        try {
-          const orderRes = await db.query('SELECT * FROM orders WHERE payment_gateway_order_id = $1', [orderId]);
-          const order = orderRes.rows[0];
-          if (order) {
+        const order = orderResult.rows[0];
+        if (order) {
+          await Order.finalizePayment(order.id, {
+            payment_gateway_payment_id: paymentId
+          });
+
+          // Notify admin after marking paid (webhook path)
+          try {
             const [userResult, itemsResult] = await Promise.all([
               db.query('SELECT full_name, phone FROM users WHERE id = $1', [order.user_id]),
               db.query('SELECT product_name, quantity, price FROM order_items WHERE order_id = $1', [order.id])
@@ -58,9 +61,9 @@ async function razorpayWebhookHandler(req, res) {
             const items = itemsResult.rows || [];
             await sendOrderNotificationToAdmin(order, customer, items);
             await notifyOrderPlaced(customer.phone, customer.full_name || 'Customer', order.order_number, order.total_amount);
+          } catch (notifyErr) {
+            console.error('[EMAIL] Razorpay webhook notification failed:', notifyErr.message);
           }
-        } catch (notifyErr) {
-          console.error('[EMAIL] Razorpay webhook notification failed:', notifyErr.message);
         }
       }
     } else if (evt === 'payment.failed') {
@@ -481,12 +484,9 @@ router.post('/razorpay/verify', async (req, res) => {
       const order = orderResult.rows[0];
 
       // Update order with payment details and mark the order pending for admin processing
-      await db.query(
-        `UPDATE orders
-         SET payment_status = 'paid', paid_at = NOW(), payment_gateway_payment_id = $1, status = 'pending'
-         WHERE id = $2`,
-        [razorpay_payment_id, order.id]
-      );
+      await Order.finalizePayment(order.id, {
+        payment_gateway_payment_id: razorpay_payment_id
+      });
 
       // Clear the user's cart once payment is confirmed.
       await db.query('DELETE FROM cart WHERE user_id = $1', [order.user_id]);
@@ -531,12 +531,10 @@ router.post('/razorpay/verify', async (req, res) => {
 
       const order = result.rows[0];
 
-      await db.query(
-        `UPDATE orders
-         SET payment_status = 'paid', paid_at = NOW(), payment_gateway_payment_id = $1, payment_gateway_signature = $2, status = 'pending'
-         WHERE id = $3`,
-        [req.body.razorpay_payment_id, req.body.razorpay_signature, order.id]
-      );
+      await Order.finalizePayment(order.id, {
+        payment_gateway_payment_id: req.body.razorpay_payment_id,
+        payment_gateway_signature: req.body.razorpay_signature
+      });
 
       // Clear the user's cart once payment is confirmed.
       await db.query('DELETE FROM cart WHERE user_id = $1', [order.user_id]);
@@ -616,12 +614,9 @@ router.get('/razorpay/callback', async (req, res) => {
 
       const order = orderResult.rows[0];
 
-      await db.query(
-        `UPDATE orders
-         SET payment_status = 'paid', paid_at = NOW(), payment_gateway_payment_id = $1, status = 'pending'
-         WHERE id = $2`,
-        [razorpay_payment_id, order.id]
-      );
+      await Order.finalizePayment(order.id, {
+        payment_gateway_payment_id: razorpay_payment_id
+      });
 
       // Fire-and-forget admin notification
       const capturedUserId = order.user_id;

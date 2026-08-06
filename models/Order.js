@@ -113,7 +113,10 @@ class Order {
       const stockMap = {};
       lockedProducts.rows.forEach(p => { stockMap[p.id] = p; });
 
-      // Pre-check stock for all items while holding the lock
+      // Pre-check stock for all items while holding the lock.
+      // For payment gateway orders that are still awaiting payment, do not decrement stock yet.
+      // This avoids reserving stock permanently when the customer closes the Razorpay popup.
+      const shouldDecrementStock = orderData.status !== 'payment_pending';
       for (const item of items) {
         const prod = stockMap[item.product_id];
         if (!prod) throw new Error(`Product not found: ${item.product_name}`);
@@ -209,13 +212,15 @@ class Order {
           item.subtotal
         ]);
 
-        // Lock product row and check stock before decrementing (prevents race condition)
-        const stockResult = await client.query(
-          'UPDATE products SET stock_quantity = stock_quantity - $1 WHERE id = $2 AND stock_quantity >= $1 RETURNING id, name, stock_quantity',
-          [item.quantity, item.product_id]
-        );
-        if (!stockResult.rows.length) {
-          throw new Error(`Insufficient stock for "${item.product_name}". Please update your cart and try again.`);
+        if (shouldDecrementStock) {
+          // Lock product row and check stock before decrementing (prevents race condition)
+          const stockResult = await client.query(
+            'UPDATE products SET stock_quantity = stock_quantity - $1 WHERE id = $2 AND stock_quantity >= $1 RETURNING id, name, stock_quantity',
+            [item.quantity, item.product_id]
+          );
+          if (!stockResult.rows.length) {
+            throw new Error(`Insufficient stock for "${item.product_name}". Please update your cart and try again.`);
+          }
         }
       }
 
@@ -234,6 +239,72 @@ class Order {
       client.release();
     }
   }  // end _createOnce
+
+  static async finalizePayment(orderId, paymentUpdate = {}) {
+    const id = Number(orderId);
+    if (!Number.isFinite(id)) {
+      throw new Error('Invalid order id');
+    }
+
+    const client = await db.pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const orderResult = await client.query('SELECT * FROM orders WHERE id = $1 FOR UPDATE', [id]);
+      const order = orderResult.rows[0];
+      if (!order) {
+        throw new Error('Order not found');
+      }
+
+      const updateFields = {
+        payment_status: 'paid',
+        status: 'pending',
+        paid_at: new Date(),
+        ...paymentUpdate
+      };
+
+      if (String(order.status) === 'payment_pending') {
+        const itemsResult = await client.query(
+          'SELECT product_id, quantity FROM order_items WHERE order_id = $1',
+          [id]
+        );
+
+        for (const row of itemsResult.rows || []) {
+          const qty = Number(row.quantity) || 0;
+          if (!row.product_id || qty <= 0) continue;
+
+          const stockResult = await client.query(
+            'UPDATE products SET stock_quantity = stock_quantity - $1 WHERE id = $2 AND stock_quantity >= $1 RETURNING id',
+            [qty, row.product_id]
+          );
+          if (!stockResult.rows.length) {
+            throw new Error('Insufficient stock available to complete this payment. Please try again later.');
+          }
+        }
+      }
+
+      const updateParts = [];
+      const updateValues = [];
+      let paramIndex = 1;
+      for (const [key, value] of Object.entries(updateFields)) {
+        updateParts.push(`${key} = $${paramIndex}`);
+        updateValues.push(value);
+        paramIndex += 1;
+      }
+      updateValues.push(id);
+
+      const updateQuery = `UPDATE orders SET ${updateParts.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = $${paramIndex} RETURNING *`;
+      const updateResult = await client.query(updateQuery, updateValues);
+
+      await client.query('COMMIT');
+      return updateResult.rows[0];
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
 
   static async findById(id) {
     const query = `
