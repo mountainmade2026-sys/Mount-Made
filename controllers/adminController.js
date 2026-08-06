@@ -4032,7 +4032,7 @@ exports.resetStockReports = async (req, res) => {
   try {
     await client.query('BEGIN');
 
-    const excludedTables = ['users', 'products', 'categories', 'homepage_sections'];
+    const excludedTables = ['users', 'products', 'categories', 'homepage_sections', 'uploads', 'backups'];
     const tablesResult = await client.query(
       `SELECT tablename
        FROM pg_tables
@@ -4058,7 +4058,7 @@ exports.resetStockReports = async (req, res) => {
     await client.query('INSERT INTO product_stock_report_table SELECT * FROM product_stock_report');
     await client.query('COMMIT');
 
-    res.json({ message: 'All data except users, products, categories, and homepage sections has been reset permanently.' });
+    res.json({ message: 'All data except users, products, categories, homepage sections, uploads, and backups has been reset permanently.' });
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('Reset everything except users/products error:', error);
