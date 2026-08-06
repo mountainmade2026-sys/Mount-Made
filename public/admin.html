@@ -3530,6 +3530,24 @@
                             </label>
                         </div>
 
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <label class="form-label" for="online-payment-button-image-url">Online payment button image</label>
+                            <input type="text" id="online-payment-button-image-url" class="form-input" placeholder="Paste image URL for checkout button">
+                            <input type="file" id="online-payment-button-image-file" accept="image/*" style="margin-top:0.75rem;" onchange="previewOnlinePaymentButtonImage(event)">
+                            <div id="online-payment-button-image-preview-wrap" style="margin-top:0.75rem; display:none;">
+                                <img id="online-payment-button-image-preview" src="" alt="Online payment button preview" style="max-width: 220px; max-height: 80px; border:1px solid #d1d5db; border-radius:10px; display:block; object-fit:contain;">
+                            </div>
+                        </div>
+
+                        <div style="display:flex; gap:0.75rem; flex-wrap:wrap; margin-bottom:1rem;">
+                            <button type="button" class="btn btn-primary" onclick="saveOnlinePaymentButtonImage()">
+                                <i class="fas fa-save"></i> Save Online Button
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="resetOnlinePaymentButtonImage()">
+                                <i class="fas fa-undo"></i> Reset Online Button
+                            </button>
+                        </div>
+
                         <button class="btn btn-primary" onclick="savePaymentMethodSettings()">
                             <i class="fas fa-toggle-on"></i> Save Payment Methods
                         </button>
@@ -9828,6 +9846,7 @@
                 const gpayPhoneEl = document.getElementById('gpay-phone-number');
                 const gpayBankEl = document.getElementById('gpay-bank-name');
                 const gpayQrEl = document.getElementById('gpay-qr-image-url');
+                const onlinePaymentButtonImageUrlEl = document.getElementById('online-payment-button-image-url');
 
                 if (gpayEnabledEl) {
                     gpayEnabledEl.checked = String(settings.gpay_enabled || 'false').toLowerCase() === 'true';
@@ -9838,6 +9857,12 @@
                 if (gpayBankEl) gpayBankEl.value = settings.gpay_bank_name || '';
                 if (gpayQrEl) gpayQrEl.value = settings.gpay_qr_image_url || '';
                 updateGpayQrImagePreview(settings.gpay_qr_image_url || '');
+
+                if (onlinePaymentButtonImageUrlEl) {
+                    onlinePaymentButtonImageUrlEl.value = settings.checkout_online_payment_button_image_url || '';
+                }
+                const onlineButtonImageUrl = String(settings.checkout_online_payment_button_image_url || '').trim();
+                updateOnlinePaymentButtonImagePreview(onlineButtonImageUrl === 'default' ? '' : onlineButtonImageUrl);
 
                 const codPincodesEl = document.getElementById('cod-available-pincodes');
                 if (codPincodesEl) codPincodesEl.value = settings.cod_available_pincodes || '';
@@ -11363,6 +11388,22 @@
             if (!previewWrap || !previewImg) return;
 
             const finalUrl = String(url || '').trim();
+            if (!finalUrl || finalUrl === 'default') {
+                previewImg.removeAttribute('src');
+                previewWrap.style.display = 'none';
+                return;
+            }
+
+            previewImg.src = finalUrl;
+            previewWrap.style.display = 'block';
+        }
+
+        function updateOnlinePaymentButtonImagePreview(url) {
+            const previewWrap = document.getElementById('online-payment-button-image-preview-wrap');
+            const previewImg = document.getElementById('online-payment-button-image-preview');
+            if (!previewWrap || !previewImg) return;
+
+            const finalUrl = String(url || '').trim();
             if (!finalUrl) {
                 previewImg.removeAttribute('src');
                 previewWrap.style.display = 'none';
@@ -11372,6 +11413,98 @@
             previewImg.src = finalUrl;
             previewWrap.style.display = 'block';
         }
+
+        window.previewOnlinePaymentButtonImage = function(event) {
+            const file = event.target.files?.[0];
+            if (!file) return;
+            const validation = validateImageFile(file);
+            if (!validation.valid) {
+                showAlert(validation.error, 'error');
+                event.target.value = '';
+                return;
+            }
+            if (file.size > 6 * 1024 * 1024) {
+                showAlert('Online payment button image size must be less than 6MB', 'error');
+                event.target.value = '';
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById('online-payment-button-image-preview');
+                const previewWrap = document.getElementById('online-payment-button-image-preview-wrap');
+                if (preview) preview.src = e.target.result;
+                if (previewWrap) previewWrap.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        };
+
+        window.saveOnlinePaymentButtonImage = async function() {
+            try {
+                const fileInput = document.getElementById('online-payment-button-image-file');
+                const file = fileInput?.files?.[0];
+                const urlInput = document.getElementById('online-payment-button-image-url');
+                let imageUrl = urlInput?.value?.trim() || '';
+
+                if (file) {
+                    showAlert('Uploading online payment button image...', 'info');
+                    const uploadedImageUrl = await uploadProductImage(file);
+                    if (!uploadedImageUrl) {
+                        throw new Error('Failed to upload online payment button image');
+                    }
+                    imageUrl = uploadedImageUrl;
+                    if (urlInput) urlInput.value = uploadedImageUrl;
+                }
+
+                if (!imageUrl) {
+                    showAlert('Please select a file or paste an image URL first.', 'warning');
+                    return;
+                }
+
+                showAlert('Saving online payment button image...', 'info');
+                const response = await api.post('/admin/settings', {
+                    checkout_online_payment_button_image_url: imageUrl
+                });
+                if (response && (response.success || response.message)) {
+                    showAlert('Online payment button saved successfully!', 'success');
+                    if (fileInput) fileInput.value = '';
+                    await loadSiteSettings();
+                } else {
+                    throw new Error(response.error || 'Failed to save online payment button image');
+                }
+            } catch (error) {
+                console.error('Save online payment button image error:', error);
+                showAlert(error.message || 'Failed to save online payment button image', 'error');
+            }
+        };
+
+        window.resetOnlinePaymentButtonImage = async function() {
+            if (!(await showConfirmDialog('Reset the online payment button image to default? This will remove the custom button image.', {
+                title: 'Reset Online Payment Button',
+                confirmText: 'Reset',
+                danger: true
+            }))) {
+                return;
+            }
+            try {
+                showAlert('Resetting online payment button image...', 'info');
+                const response = await api.post('/admin/settings', {
+                    checkout_online_payment_button_image_url: 'default'
+                });
+                if (response && (response.success || response.message)) {
+                    showAlert('Online payment button image reset to default!', 'success');
+                    const previewWrap = document.getElementById('online-payment-button-image-preview-wrap');
+                    const previewImg = document.getElementById('online-payment-button-image-preview');
+                    if (previewImg) previewImg.removeAttribute('src');
+                    if (previewWrap) previewWrap.style.display = 'none';
+                    await loadSiteSettings();
+                } else {
+                    throw new Error(response.error || 'Failed to reset online payment button image');
+                }
+            } catch (error) {
+                console.error('Reset online payment button image error:', error);
+                showAlert(error.message || 'Failed to reset online payment button image', 'error');
+            }
+        };
 
         window.savePaymentMethodSettings = async function() {
             if (!_canManageDeliveryPincodes()) {

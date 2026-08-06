@@ -2375,6 +2375,7 @@ exports.updateSiteSettings = async (req, res) => {
       gpay_phone_number,
       gpay_bank_name,
       gpay_qr_image_url,
+      checkout_online_payment_button_image_url,
       login_page_background_image_url,
       login_page_box_image_url,
       register_page_background_image_url,
@@ -2416,7 +2417,8 @@ exports.updateSiteSettings = async (req, res) => {
       gpay_upi_id !== undefined ||
       gpay_phone_number !== undefined ||
       gpay_bank_name !== undefined ||
-      gpay_qr_image_url !== undefined;
+      gpay_qr_image_url !== undefined ||
+      checkout_online_payment_button_image_url !== undefined;
 
     const hasPaymentMethodSetting =
       payment_gpay_enabled !== undefined ||
@@ -2895,6 +2897,14 @@ exports.updateSiteSettings = async (req, res) => {
         return res.status(400).json({ error: 'GPay QR image must be an uploaded image path or a valid http/https URL.' });
       }
       updates.push({ key: 'gpay_qr_image_url', value: qrImageUrl });
+    }
+
+    if (checkout_online_payment_button_image_url !== undefined) {
+      const buttonImageUrl = String(checkout_online_payment_button_image_url || '').trim();
+      if (buttonImageUrl && buttonImageUrl !== 'default' && !/^(https?:\/\/|\/uploads\/)/i.test(buttonImageUrl)) {
+        return res.status(400).json({ error: 'Online payment button image must be an uploaded image path or a valid http/https URL.' });
+      }
+      updates.push({ key: 'checkout_online_payment_button_image_url', value: buttonImageUrl });
     }
 
     if (req.body.product_gst_overrides !== undefined) {

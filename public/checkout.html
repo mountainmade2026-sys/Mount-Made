@@ -112,86 +112,17 @@
                         <input type="hidden" id="payment_method" name="payment_method" value="gpay">
 
                         <!-- Payment Method Groups -->
-                        <div class="payment-groups-container">
-                            <!-- UPI / Digital Payments Group -->
-                            <div class="payment-group-wrapper">
-                                <button type="button" class="payment-group-header" id="upi-group-toggle">
-                                    <span class="group-header-left">
-                                        <i class="fas fa-mobile-alt" style="margin-right: 0.6rem;"></i>
-                                        <strong>UPI / Digital Payments</strong>
-                                        <span class="group-subtitle">(GPay, PhonePe, Paytm)</span>
-                                    </span>
-                                    <span class="group-toggle-icon">
-                                        <i class="fas fa-chevron-down"></i>
-                                    </span>
+                                <div class="payment-groups-container">
+                            <div class="payment-group-wrapper" id="online-payment-wrapper" style="margin-bottom: 1rem;">
+                                <button type="button" id="online-payment-button" class="payment-group-header" style="width:100%; justify-content:center; display:flex; align-items:center; gap:0.75rem; padding: 1rem;">
+                                    <img id="online-payment-button-image" src="" alt="Pay online" style="display:none; max-height: 42px; max-width: 220px; object-fit:contain;">
+                                    <span id="online-payment-button-label" style="font-size: 1rem; font-weight: 700;">Pay Online</span>
                                 </button>
-                                <div class="payment-group-content" id="upi-group-content" style="display: grid;">
-                                    <div class="pm-grid" id="pm-grid-upi">
-                                        <button type="button" class="pm-tile pm-tile-selected" data-method="gpay" data-group="upi">
-                                            <span class="pm-tile-icon pm-upi-bg">
-                                                <i class="fab fa-google-pay" style="font-size: 24px;"></i>
-                                            </span>
-                                            <span class="pm-tile-label">Google Pay<br><small>UPI payments</small></span>
-                                            <span class="pm-tile-check"><i class="fas fa-check-circle"></i></span>
-                                        </button>
-                                        <button type="button" class="pm-tile" data-method="phone" data-group="upi">
-                                            <span class="pm-tile-icon pm-phone-bg">
-                                                <i class="fas fa-mobile-alt" style="font-size: 22px;"></i>
-                                            </span>
-                                            <span class="pm-tile-label">PhonePe<br><small>UPI payments</small></span>
-                                            <span class="pm-tile-check"><i class="fas fa-check-circle"></i></span>
-                                        </button>
-                                        <button type="button" class="pm-tile" data-method="paytm" data-group="upi">
-                                            <span class="pm-tile-icon pm-paytm-bg">
-                                                <i class="fas fa-wallet" style="font-size: 22px;"></i>
-                                            </span>
-                                            <span class="pm-tile-label">Paytm<br><small>UPI payments</small></span>
-                                            <span class="pm-tile-check"><i class="fas fa-check-circle"></i></span>
-                                        </button>
-                                    </div>
+                                <div class="payment-group-content" style="display:block; margin-top:0.75rem;">
+                                    <p class="group-subtitle" style="margin:0;">One tap checkout for all enabled online payment methods: UPI, cards, net banking.</p>
                                 </div>
                             </div>
 
-                            <!-- Banking Group -->
-                            <div class="payment-group-wrapper">
-                                <button type="button" class="payment-group-header" id="bank-group-toggle">
-                                    <span class="group-header-left">
-                                        <i class="fas fa-building" style="margin-right: 0.6rem;"></i>
-                                        <strong>Banking</strong>
-                                        <span class="group-subtitle">(Cards & Net Banking)</span>
-                                    </span>
-                                    <span class="group-toggle-icon">
-                                        <i class="fas fa-chevron-down"></i>
-                                    </span>
-                                </button>
-                                <div class="payment-group-content" id="bank-group-content" style="display: none;">
-                                    <div class="pm-grid" id="pm-grid-bank">
-                                        <button type="button" class="pm-tile" data-method="debit" data-group="bank">
-                                            <span class="pm-tile-icon pm-card-bg">
-                                                <i class="fas fa-credit-card" style="font-size: 24px;"></i>
-                                            </span>
-                                            <span class="pm-tile-label">Debit Card<br><small>Secure payment</small></span>
-                                            <span class="pm-tile-check"><i class="fas fa-check-circle"></i></span>
-                                        </button>
-                                        <button type="button" class="pm-tile" data-method="credit" data-group="bank">
-                                            <span class="pm-tile-icon pm-cc-bg">
-                                                <i class="fas fa-credit-card" style="font-size: 24px;"></i>
-                                            </span>
-                                            <span class="pm-tile-label">Credit Card<br><small>Secure payment</small></span>
-                                            <span class="pm-tile-check"><i class="fas fa-check-circle"></i></span>
-                                        </button>
-                                        <button type="button" class="pm-tile" data-method="netbank" data-group="bank">
-                                            <span class="pm-tile-icon pm-net-bg">
-                                                <i class="fas fa-university" style="font-size: 24px;"></i>
-                                            </span>
-                                            <span class="pm-tile-label">Net Banking<br><small>All major banks</small></span>
-                                            <span class="pm-tile-check"><i class="fas fa-check-circle"></i></span>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Cash on Delivery -->
                             <div class="payment-group-wrapper">
                                 <button type="button" class="payment-group-header" id="cod-group-toggle">
                                     <span class="group-header-left">
@@ -2687,6 +2618,7 @@
             creditEnabled: true,
             netbankEnabled: true
         };
+        let checkoutOnlinePaymentButtonImageUrl = '';
         // COD pincode list – empty = available everywhere
         let checkoutCodPincodes = [];
 
@@ -3526,6 +3458,47 @@
             return methods;
         }
 
+        function getEnabledOnlinePaymentMethods() {
+            return getEnabledPaymentMethods().filter(m => m !== 'cod');
+        }
+
+        function getEffectiveOnlinePaymentMethod() {
+            const available = getEnabledOnlinePaymentMethods();
+            const priority = ['debit', 'credit', 'netbank', 'gpay', 'phone', 'paytm'];
+            return available.find(m => priority.includes(m)) || available[0] || 'gpay';
+        }
+
+        function isOnlinePaymentAvailable() {
+            return getEnabledOnlinePaymentMethods().length > 0;
+        }
+
+        function renderOnlinePaymentButton() {
+            const button = document.getElementById('online-payment-button');
+            const image = document.getElementById('online-payment-button-image');
+            const label = document.getElementById('online-payment-button-label');
+            if (!button || !label) return;
+
+            const hasImage = String(checkoutOnlinePaymentButtonImageUrl || '').trim();
+            if (image) {
+                if (hasImage) {
+                    image.src = checkoutOnlinePaymentButtonImageUrl;
+                    image.style.display = 'inline-block';
+                    label.style.display = 'none';
+                } else {
+                    image.removeAttribute('src');
+                    image.style.display = 'none';
+                    label.style.display = 'inline-block';
+                }
+            }
+
+            button.disabled = !isOnlinePaymentAvailable();
+            if (!isOnlinePaymentAvailable()) {
+                label.textContent = 'Online payment unavailable';
+            } else if (!hasImage) {
+                label.textContent = 'Pay Online';
+            }
+        }
+
         function getPaymentMethodGroup(method) {
             const groupMap = {
                 'gpay': 'upi',
@@ -3596,31 +3569,28 @@
 
         function selectPaymentMethod(method) {
             const availableMethods = getEnabledPaymentMethods();
-            const normalizedMethod = normalizePaymentMethod(method);
+            let normalizedMethod = normalizePaymentMethod(method);
+            if (normalizedMethod === 'online') {
+                normalizedMethod = getEffectiveOnlinePaymentMethod();
+            }
             const safeMethod = availableMethods.includes(normalizedMethod)
                 ? normalizedMethod
                 : (availableMethods[0] || 'cod');
             const hidden = document.getElementById('payment_method');
             if (hidden) hidden.value = safeMethod;
 
-            // Expand the group that contains the selected method
-            const groupId = getPaymentMethodGroup(safeMethod);
-            const wrapper = document.querySelector(`[id="${groupId}-group-toggle"]`)?.closest('.payment-group-wrapper');
-            if (wrapper && !wrapper.classList.contains('expanded')) {
-                togglePaymentGroup(groupId);
+            const onlineButton = document.getElementById('online-payment-button');
+            if (onlineButton) {
+                onlineButton.classList.toggle('selected', ['gpay','phone','paytm','debit','credit','netbank'].includes(safeMethod));
             }
 
-            // Update all tiles
-            document.querySelectorAll('.pm-tile').forEach(t => {
-                const enabled = availableMethods.includes(t.dataset.method);
-                t.style.display = enabled ? '' : 'none';
-                t.classList.toggle('pm-tile-selected', t.dataset.method === safeMethod);
-            });
-
+            const availableMessage = !isOnlinePaymentAvailable() && !checkoutPaymentSettings.codEnabled
+                ? 'No payment methods are currently available.'
+                : '';
             const statusEl = document.getElementById('payment-method-status');
             if (statusEl) {
-                if (availableMethods.length === 0) {
-                    statusEl.textContent = 'No payment methods are currently available.';
+                if (availableMessage) {
+                    statusEl.textContent = availableMessage;
                     statusEl.style.display = 'block';
                 } else {
                     statusEl.textContent = '';
@@ -3637,11 +3607,8 @@
 
         function updatePaymentGroupVisibility() {
             const enableGroup = (group) => {
-                if (group === 'upi') {
-                    return checkoutPaymentSettings.gpayEnabled || checkoutPaymentSettings.phonepeEnabled || checkoutPaymentSettings.paytmEnabled;
-                }
-                if (group === 'bank') {
-                    return checkoutPaymentSettings.debitEnabled || checkoutPaymentSettings.creditEnabled || checkoutPaymentSettings.netbankEnabled;
+                if (group === 'online') {
+                    return isOnlinePaymentAvailable();
                 }
                 if (group === 'cod') {
                     return checkoutPaymentSettings.codEnabled;
@@ -3649,11 +3616,15 @@
                 return false;
             };
 
-            ['upi', 'bank', 'cod'].forEach(groupId => {
-                const wrapper = document.querySelector(`[id="${groupId}-group-toggle"]`)?.closest('.payment-group-wrapper');
-                if (!wrapper) return;
-                wrapper.style.display = enableGroup(groupId) ? '' : 'none';
-            });
+            const onlineWrapper = document.getElementById('online-payment-wrapper');
+            if (onlineWrapper) {
+                onlineWrapper.style.display = enableGroup('online') ? '' : 'none';
+            }
+
+            const codWrapper = document.querySelector(`[id="cod-group-toggle"]`)?.closest('.payment-group-wrapper');
+            if (codWrapper) {
+                codWrapper.style.display = enableGroup('cod') ? '' : 'none';
+            }
         }
 
         function validateCardNumber(cardNumber) {
@@ -4095,13 +4066,14 @@
             // Initialize payment group toggles
             initializePaymentGroupToggles();
 
-            // Wire payment method tiles
-            document.querySelectorAll('.pm-tile').forEach(tile => {
-                tile.addEventListener('click', () => selectPaymentMethod(tile.dataset.method));
-            });
+            const onlinePaymentAction = document.getElementById('online-payment-button');
+            if (onlinePaymentAction) {
+                onlinePaymentAction.addEventListener('click', () => selectPaymentMethod(getEffectiveOnlinePaymentMethod()));
+            }
 
-            // Initialize the default selected tile panels
-            selectPaymentMethod(document.getElementById('payment_method')?.value || 'gpay');
+            // Initialize the default selected payment option
+            renderOnlinePaymentButton();
+            selectPaymentMethod(document.getElementById('payment_method')?.value || (isOnlinePaymentAvailable() ? getEffectiveOnlinePaymentMethod() : 'cod'));
             updatePaymentGroupVisibility();
 
             const paymentSelect = document.getElementById('payment_method');
@@ -4197,6 +4169,8 @@
                 checkoutPaymentSettings.debitEnabled = String(settings.payment_debit_enabled ?? 'true').toLowerCase() === 'true';
                 checkoutPaymentSettings.creditEnabled = String(settings.payment_credit_enabled ?? 'true').toLowerCase() === 'true';
                 checkoutPaymentSettings.netbankEnabled = String(settings.payment_netbank_enabled ?? 'true').toLowerCase() === 'true';
+                const rawButtonImage = String(settings.checkout_online_payment_button_image_url || '').trim();
+                checkoutOnlinePaymentButtonImageUrl = rawButtonImage === 'default' ? '' : rawButtonImage;
 
                 checkoutGpaySettings.enabled = checkoutPaymentSettings.gpayEnabled;
                 checkoutGpaySettings.payeeName = String(settings.gpay_payee_name || 'Mount Made').trim();
@@ -4245,7 +4219,8 @@
                 renderCheckoutItems();
                 updateOrderSummaryTotals();
                 updateGpayLabelAndPrefill();
-                selectPaymentMethod(document.getElementById('payment_method')?.value || 'gpay');
+                renderOnlinePaymentButton();
+                selectPaymentMethod(document.getElementById('payment_method')?.value || (isOnlinePaymentAvailable() ? getEffectiveOnlinePaymentMethod() : 'cod'));
             } catch (error) {
                 console.error('Failed to load checkout settings:', error);
                 // On error, keep defaults (standard delivery free)
