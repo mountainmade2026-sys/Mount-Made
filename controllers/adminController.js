@@ -4031,14 +4031,51 @@ exports.resetStockReports = async (req, res) => {
   const client = await db.pool.connect();
   try {
     await client.query('BEGIN');
-    await client.query('TRUNCATE TABLE product_stock_report_table RESTART IDENTITY CASCADE');
+
+    const excludedTables = ['users', 'products'];
+    const tablesResult = await client.query(
+      `SELECT tablename
+       FROM pg_tables
+       WHERE schemaname = 'public'
+         AND tablename NOT IN (${excludedTables.map((_, index) => `$${index + 1}`).join(', ')})
+       ORDER BY tablename`,
+      excludedTables
+    );
+
+    const tables = tablesResult.rows.map((row) => row.tablename).filter(Boolean);
+    if (tables.length === 0) {
+      await client.query('COMMIT');
+      return res.json({ message: 'No tables to reset. Only users and products remain.' });
+    }
+
+    // Clear any category/homepage section references before truncating those parent tables.
+    await client.query('UPDATE products SET category_id = NULL, homepage_section_id = NULL');
+
+    const parentTables = ['categories', 'homepage_sections'];
+    const truncateCascadeTables = tables.filter((tableName) => !parentTables.includes(tableName));
+    if (truncateCascadeTables.length > 0) {
+      const tableList = truncateCascadeTables
+        .map((name) => `"public"."${name.replace(/"/g, '""')}"`)
+        .join(', ');
+      await client.query(`TRUNCATE TABLE ${tableList} RESTART IDENTITY CASCADE`);
+    }
+
+    const truncateParentTables = tables.filter((tableName) => parentTables.includes(tableName));
+    if (truncateParentTables.length > 0) {
+      const parentList = truncateParentTables
+        .map((name) => `"public"."${name.replace(/"/g, '""')}"`)
+        .join(', ');
+      await client.query(`TRUNCATE TABLE ${parentList} RESTART IDENTITY`);
+    }
+
     await client.query('INSERT INTO product_stock_report_table SELECT * FROM product_stock_report');
     await client.query('COMMIT');
-    res.json({ message: 'Stock reports have been reset permanently.' });
+
+    res.json({ message: 'All data except users and products has been reset permanently.' });
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error('Reset stock reports error:', error);
-    res.status(500).json({ error: 'Failed to reset stock reports.' });
+    console.error('Reset everything except users/products error:', error);
+    res.status(500).json({ error: 'Failed to reset database except users and products.' });
   } finally {
     client.release();
   }

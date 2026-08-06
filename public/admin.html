@@ -17114,19 +17114,19 @@
         };
 
         window.resetStockReports = async function resetStockReports() {
-            const confirmed = await showConfirmDialog('Reset stock reports permanently? This removes offline sales and refreshes the stock report table.', {
-                title: 'Reset Stock Reports',
-                confirmText: 'Reset Reports',
+            const confirmed = await showConfirmDialog('Reset all database data except users and products permanently? This will delete every other table and rebuild stock reports.', {
+                title: 'Reset Database Except Users & Products',
+                confirmText: 'Reset Database',
                 danger: true
             });
             if (!confirmed) return;
 
             try {
                 const result = await api.post('/admin/reset-stock-reports');
-                showAlert(result.message || 'Stock reports reset successfully.', 'success');
+                showAlert(result.message || 'Database reset successfully.', 'success');
             } catch (error) {
-                console.error('Reset stock reports error:', error);
-                showAlert(error.message || 'Failed to reset stock reports.', 'error');
+                console.error('Reset database error:', error);
+                showAlert(error.message || 'Failed to reset database.', 'error');
             }
         };
 
