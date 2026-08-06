@@ -4492,15 +4492,10 @@
                     // Request Razorpay payment session from server
                     try {
                         const isMobileCheckoutDevice = () => {
-                            // More conservative mobile detection:
-                            // - rely primarily on mobile user-agent tokens
-                            // - treat as mobile only when UA indicates a handset/tablet OR
-                            //   the device has touch AND a small viewport
+                            // Use user-agent based detection only. This avoids treating
+                            // desktop browsers in DevTools responsive/emulation mode as mobile.
                             const ua = navigator.userAgent || '';
-                            const mobileUa = /Mobi|Android|iPhone|iPod|Opera Mini|IEMobile/i.test(ua);
-                            const hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints && navigator.maxTouchPoints > 0);
-                            const smallScreen = window.innerWidth <= 768;
-                            return mobileUa || (hasTouch && smallScreen);
+                            return /Mobi|Android|iPhone|iPod|Opera Mini|IEMobile/i.test(ua);
                         };
 
                         // Prefer Razorpay checkout popup on desktop browsers; use payment links on mobile devices
