@@ -4048,8 +4048,25 @@ exports.resetStockReports = async (req, res) => {
       return res.json({ message: 'No tables to reset. Only users and products remain.' });
     }
 
-    // Clear any category/homepage section references before truncating those parent tables.
-    await client.query('UPDATE products SET category_id = NULL, homepage_section_id = NULL');
+    const hasCategoryColumnResult = await client.query(
+      `SELECT 1 FROM information_schema.columns
+       WHERE table_schema = 'public' AND table_name = 'products' AND column_name = 'category_id'
+       LIMIT 1`
+    );
+    const hasHomepageSectionColumnResult = await client.query(
+      `SELECT 1 FROM information_schema.columns
+       WHERE table_schema = 'public' AND table_name = 'products' AND column_name = 'homepage_section_id'
+       LIMIT 1`
+    );
+
+    if (hasCategoryColumnResult.rowCount > 0 || hasHomepageSectionColumnResult.rowCount > 0) {
+      const updates = [];
+      if (hasCategoryColumnResult.rowCount > 0) updates.push('category_id = NULL');
+      if (hasHomepageSectionColumnResult.rowCount > 0) updates.push('homepage_section_id = NULL');
+      if (updates.length > 0) {
+        await client.query(`UPDATE products SET ${updates.join(', ')}`);
+      }
+    }
 
     const parentTables = ['categories', 'homepage_sections'];
     const truncateCascadeTables = tables.filter((tableName) => !parentTables.includes(tableName));
@@ -4075,7 +4092,7 @@ exports.resetStockReports = async (req, res) => {
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('Reset everything except users/products error:', error);
-    res.status(500).json({ error: 'Failed to reset database except users and products.' });
+    res.status(500).json({ error: error.message || 'Failed to reset database except users and products.' });
   } finally {
     client.release();
   }
