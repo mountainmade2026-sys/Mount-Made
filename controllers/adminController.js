@@ -4074,7 +4074,7 @@ exports.resetStockReports = async (req, res) => {
       .join(', ');
 
     if (tableList) {
-      await client.query(`TRUNCATE TABLE ${tableList} RESTART IDENTITY CASCADE`);
+      await client.query(`TRUNCATE TABLE ${tableList} RESTART IDENTITY`);
     }
 
     await client.query('INSERT INTO product_stock_report_table SELECT * FROM product_stock_report');
