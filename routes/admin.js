@@ -92,5 +92,10 @@ router.post('/messages/send', adminController.sendAdminMessage);
 
 // Danger Zone - Delete all non-admin data
 router.post('/delete-all-data', superAdminCheck, adminController.deleteAllData);
+router.post('/remove-users', superAdminCheck, adminController.removeUsers);
+router.post('/remove-order-history', superAdminCheck, adminController.removeOrderHistory);
+router.post('/remove-user-activities', superAdminCheck, adminController.removeUserActivities);
+router.post('/remove-messages', superAdminCheck, adminController.removeMessages);
+router.post('/reset-stock-reports', superAdminCheck, adminController.resetStockReports);
 
 module.exports = router;

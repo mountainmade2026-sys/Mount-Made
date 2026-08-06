@@ -3922,6 +3922,128 @@ exports.deleteAllData = async (req, res) => {
   }
 };
 
+exports.removeUsers = async (req, res) => {
+  try {
+    const { userId, all } = req.body || {};
+    if (all) {
+      const result = await db.query("DELETE FROM users WHERE role NOT IN ('admin','super_admin')");
+      return res.json({
+        message: 'All non-admin users have been permanently deleted.',
+        deleted: result.rowCount
+      });
+    }
+
+    const parsedId = Number.parseInt(userId, 10);
+    if (!Number.isFinite(parsedId)) {
+      return res.status(400).json({ error: 'A valid user ID is required.' });
+    }
+
+    const userResult = await db.query('SELECT id, role FROM users WHERE id = $1', [parsedId]);
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    if (['admin', 'super_admin'].includes(userResult.rows[0].role)) {
+      return res.status(400).json({ error: 'Cannot delete admin or super admin users.' });
+    }
+
+    await db.query('DELETE FROM users WHERE id = $1', [parsedId]);
+    res.json({
+      message: 'User deleted permanently.',
+      deleted: 1,
+      userId: parsedId
+    });
+  } catch (error) {
+    console.error('Remove users error:', error);
+    res.status(500).json({ error: 'Failed to remove users.' });
+  }
+};
+
+exports.removeOrderHistory = async (req, res) => {
+  const client = await db.pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('TRUNCATE TABLE order_items, orders RESTART IDENTITY CASCADE');
+    await client.query('COMMIT');
+    res.json({ message: 'All order history has been permanently removed.' });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Remove order history error:', error);
+    res.status(500).json({ error: 'Failed to remove order history.' });
+  } finally {
+    client.release();
+  }
+};
+
+exports.removeUserActivities = async (req, res) => {
+  const client = await db.pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('TRUNCATE TABLE return_items, returns, offline_sales RESTART IDENTITY CASCADE');
+    await client.query('COMMIT');
+    res.json({ message: 'All user activity data has been permanently removed.' });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Remove user activities error:', error);
+    res.status(500).json({ error: 'Failed to remove user activities.' });
+  } finally {
+    client.release();
+  }
+};
+
+exports.removeMessages = async (req, res) => {
+  try {
+    const { messageId, all } = req.body || {};
+    if (all) {
+      const result = await db.query("DELETE FROM contact_messages WHERE message_type = 'message'");
+      return res.json({
+        message: 'All customer messages have been permanently deleted.',
+        deleted: result.rowCount
+      });
+    }
+
+    const parsedId = Number.parseInt(messageId, 10);
+    if (!Number.isFinite(parsedId)) {
+      return res.status(400).json({ error: 'A valid message ID is required.' });
+    }
+
+    const result = await db.query(
+      "DELETE FROM contact_messages WHERE id = $1 AND message_type = 'message' RETURNING id",
+      [parsedId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Message not found or cannot be deleted.' });
+    }
+
+    res.json({
+      message: 'Message deleted permanently.',
+      deleted: 1,
+      messageId: parsedId
+    });
+  } catch (error) {
+    console.error('Remove messages error:', error);
+    res.status(500).json({ error: 'Failed to remove messages.' });
+  }
+};
+
+exports.resetStockReports = async (req, res) => {
+  const client = await db.pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('TRUNCATE TABLE offline_sales, product_stock_report_table RESTART IDENTITY CASCADE');
+    await client.query('INSERT INTO product_stock_report_table SELECT * FROM product_stock_report');
+    await client.query('COMMIT');
+    res.json({ message: 'Stock reports have been reset permanently.' });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Reset stock reports error:', error);
+    res.status(500).json({ error: 'Failed to reset stock reports.' });
+  } finally {
+    client.release();
+  }
+};
+
 // ══════════════════════════════════════════════════════════════════════════
 // RETURNS MANAGEMENT
 // ══════════════════════════════════════════════════════════════════════════
