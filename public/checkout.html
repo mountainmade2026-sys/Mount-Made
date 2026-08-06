@@ -4492,9 +4492,15 @@
                     // Request Razorpay payment session from server
                     try {
                         const isMobileCheckoutDevice = () => {
+                            // More conservative mobile detection:
+                            // - rely primarily on mobile user-agent tokens
+                            // - treat as mobile only when UA indicates a handset/tablet OR
+                            //   the device has touch AND a small viewport
                             const ua = navigator.userAgent || '';
-                            const isTouch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
-                            return /Mobi|Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(ua) || isTouch || window.innerWidth <= 768;
+                            const mobileUa = /Mobi|Android|iPhone|iPod|Opera Mini|IEMobile/i.test(ua);
+                            const hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints && navigator.maxTouchPoints > 0);
+                            const smallScreen = window.innerWidth <= 768;
+                            return mobileUa || (hasTouch && smallScreen);
                         };
 
                         const forceCheckoutFlow = ['debit', 'credit', 'netbank'].includes(paymentMethod) && !isMobileCheckoutDevice();
