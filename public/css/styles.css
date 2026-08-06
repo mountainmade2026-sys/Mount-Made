@@ -245,7 +245,7 @@ h6 { font-size: var(--text-lg); }
 
 p {
   margin-bottom: var(--space-4);
-  color: var(--text-secondary);
+  color: var(--white);
   line-height: var(--leading-relaxed);
 }
 
