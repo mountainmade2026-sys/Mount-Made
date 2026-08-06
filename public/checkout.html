@@ -1327,6 +1327,13 @@
         /* Online tile should show the image only (no colored square behind) */
         .pm-online-bg { background: transparent; padding: 0; border-radius: 0; width: auto; height: auto; }
         #pm-tile-online .pm-tile-icon { width: auto; height: auto; }
+        /* Center the online tile and show only the image (no square, no label) */
+        #pm-grid-online { display:flex; justify-content:center; align-items:center; padding: 0; }
+        #pm-tile-online { border: none; background: transparent; box-shadow: none; padding: 0.25rem 0; }
+        #pm-tile-online .pm-tile-label { display: none; }
+        #pm-tile-online .pm-tile-check { display: none; }
+        #pm-tile-online .pm-tile-icon { width: auto; height: auto; padding: 0; }
+        #online-pm-image { display:block; margin: 8px auto; max-width: 760px; max-height: 220px; width: auto; height: auto; object-fit:contain; }
 
         .pm-tile-label { line-height: 1.3; }
         .pm-tile-label small { font-weight: 400; font-size: 0.73rem; color: var(--text-secondary); }
