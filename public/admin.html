@@ -4048,17 +4048,47 @@
                                     </div>
                                 </div>
 
-                                <div style="display: grid; gap: 0.75rem;">
-                                    <label class="form-label">Stock reports</label>
-                                    <button class="btn btn-warning btn-sm" onclick="resetStockReports()">
-                                        <i class="fas fa-chart-line"></i> Reset Stock Reports
-                                    </button>
-                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
+
+                    <div class="data-table-container" style="margin-top: 2rem; border-top: 3px solid #4b5563;">
+                        <div class="table-header" style="background: #f3f4f6; border-bottom-color: #9ca3af;">
+                            <h3 style="color: #111827;"><i class="fas fa-sync-alt"></i> Reset Database Except Users & Products</h3>
+                        </div>
+                        <div style="padding: 1.5rem; background: #f9fafb;">
+                            <p style="color: #111827; margin-bottom: 0.75rem; font-weight: 600;">This action will delete all database data except user and product records.</p>
+                            <button class="btn btn-warning" onclick="resetStockReports()">
+                                <i class="fas fa-chart-line"></i> Reset Database Except Users & Products
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="data-table-container" style="margin-top: 2rem; border-top: 3px solid #4b5563;">
+                        <div class="table-header" style="background: #f3f4f6; border-bottom-color: #9ca3af;">
+                            <h3 style="color: #111827;"><i class="fas fa-user-shield"></i> Super Admin Removers</h3>
+                        </div>
+                        <div style="padding: 1.5rem; background: #f9fafb;">
+                            <div style="display: grid; gap: 1rem;">
+                                <div style="display: grid; gap: 0.75rem;">
+                                    <label class="form-label">Remove single user (id)</label>
+                                    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+                                        <input type="number" id="superadmin-user-id" class="form-input" placeholder="User ID to delete" style="max-width: 220px;">
+                                        <button class="btn btn-danger btn-sm" onclick="removeSingleUser()">
+                                            <i class="fas fa-user-minus"></i> Delete User
+                                        </button>
+                                        <button class="btn btn-secondary btn-sm" onclick="removeAllUsers()">
+                                            <i class="fas fa-users-slash"></i> Delete All Non-Admin Users
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div style="display: grid; gap: 0.75rem;">
+                                    <label class="form-label">Order history</label>
+                                    <button class="btn btn-danger btn-sm" onclick="removeOrderHistory()">
+                                        <i class="fas fa-history"></i> Remove All Order History
+                                    </button>
+                                </div>
 
             <!-- ═══════════════════════════════════════════════
                  OWNERSHIP DOCUMENT SECTION
