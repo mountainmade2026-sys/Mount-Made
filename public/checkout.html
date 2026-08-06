@@ -4686,11 +4686,17 @@
 
                 // Create order on server so Razorpay link is associated with an order record
                 let serverOrder;
+                let orderCreationOutOfStock = false;
                 try {
                     serverOrder = await api.post('/orders', orderData);
                 } catch (orderError) {
                     console.error('Order creation for UPI/wallet failed:', orderError);
-                    // Fallback: continue to QR flow
+                    const status = orderError?.response?.status || orderError?.status || 0;
+                    const msg = (orderError?.response?.data?.error || orderError?.message || '').toString();
+                    if (status === 409 || /stock|out of stock|unavailable/i.test(msg)) {
+                        orderCreationOutOfStock = true;
+                    }
+                    // Do not proceed to payment flows if order creation failed.
                     serverOrder = null;
                 }
 
@@ -4782,6 +4788,13 @@
                 } catch (razorError) {
                     console.warn('Razorpay link creation failed, falling back to QR flow:', razorError);
                     // Fallback: prepare the pending payment and redirect to checkout-qr
+                    // If order creation failed due to out-of-stock, do NOT redirect to QR or payment link.
+                    if (orderCreationOutOfStock) {
+                        showAlert('One or more items in your cart are out of stock. Please adjust quantities or remove unavailable items before placing the order.', 'error');
+                        setPlaceOrderButtonState(false);
+                        return;
+                    }
+
                     const hasQr = String(checkoutGpaySettings.qrImageUrl || '').trim() !== '';
                     const hasUpi = String(checkoutGpaySettings.upiId || '').trim() !== '';
                     const hasPhone = String(checkoutGpaySettings.phoneNumber || '').trim() !== '';
