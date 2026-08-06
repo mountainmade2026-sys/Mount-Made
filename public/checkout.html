@@ -113,15 +113,30 @@
 
                         <!-- Payment Method Groups -->
                                 <div class="payment-groups-container">
-                            <div class="payment-group-wrapper" id="online-payment-wrapper" style="margin-bottom: 1rem; background: transparent; border: none; box-shadow: none; padding: 0;">
-                                <button type="button" id="online-payment-button" class="payment-group-header" style="width:100%; justify-content:center; display:flex; align-items:center; gap:0.5rem; padding: 0; border-radius: 0; background: transparent; box-shadow: none;">
-                                    <img id="online-payment-button-image" src="" alt="Pay online" style="width:auto; max-width:160px; height:auto; max-height:120px; object-fit:contain; margin:0 auto; display:block;">
-                                    <span id="online-payment-button-label" style="font-size: 1rem; font-weight: 600; line-height: 1.2; margin-left: 0.75rem;">Pay Online</span>
-                                </button>
-                                <div class="payment-group-content" style="display:block; margin-top:0.75rem;">
-                                    <p class="group-subtitle" style="margin:0;">One tap checkout for all enabled online payment methods: UPI, cards, net banking.</p>
-                                </div>
-                            </div>
+                                        <div class="payment-group-wrapper" id="online-payment-wrapper" style="margin-bottom: 1rem;">
+                                            <button type="button" id="online-group-toggle" class="payment-group-header">
+                                                <span class="group-header-left">
+                                                    <i class="fas fa-credit-card" style="margin-right: 0.6rem;"></i>
+                                                    <strong>Online Payment</strong>
+                                                    <span class="group-subtitle">(One tap)</span>
+                                                </span>
+                                                <span class="group-toggle-icon">
+                                                    <i class="fas fa-chevron-down"></i>
+                                                </span>
+                                            </button>
+                                            <div class="payment-group-content" id="online-group-content" style="display: none; margin-top:0.75rem;">
+                                                <div class="pm-grid" id="pm-grid-online">
+                                                    <button type="button" class="pm-tile" id="pm-tile-online" data-method="online" data-group="online">
+                                                        <span class="pm-tile-icon pm-online-bg" style="display:flex; align-items:center; justify-content:center; padding:0.5rem;">
+                                                            <img id="online-pm-image" src="" alt="Online payments" style="max-width:100%; max-height:72px; object-fit:contain; display:block;">
+                                                        </span>
+                                                        <span class="pm-tile-label">Online Payment<br><small>One tap checkout</small></span>
+                                                        <span class="pm-tile-check"><i class="fas fa-check-circle"></i></span>
+                                                    </button>
+                                                </div>
+                                                <p class="group-subtitle" style="margin:0; margin-top:0.75rem;">One tap checkout for all enabled online payment methods: UPI, cards, net banking.</p>
+                                            </div>
+                                        </div>
 
                             <div class="payment-group-wrapper">
                                 <button type="button" class="payment-group-header" id="cod-group-toggle">
@@ -3473,30 +3488,35 @@
         }
 
         function renderOnlinePaymentButton() {
-            const button = document.getElementById('online-payment-button');
-            const image = document.getElementById('online-payment-button-image');
-            const label = document.getElementById('online-payment-button-label');
-            if (!button || !label) return;
-
+            // Populate the online payment tile (if present) and control visibility
+            const pmTile = document.getElementById('pm-tile-online');
+            const pmImage = document.getElementById('online-pm-image');
+            const onlineLabel = document.getElementById('online-payment-button-label');
             const hasImage = String(checkoutOnlinePaymentButtonImageUrl || '').trim();
-            if (image) {
+
+            if (pmTile) {
+                // Use effective method as the tile's data-method so clicks select the correct backend method
+                const effective = getEffectiveOnlinePaymentMethod();
+                pmTile.dataset.method = effective;
+                // Attach click handler
+                pmTile.onclick = () => selectPaymentMethod(pmTile.dataset.method || effective);
+            }
+
+            if (pmImage) {
                 if (hasImage) {
-                    image.src = checkoutOnlinePaymentButtonImageUrl;
-                    image.style.display = 'inline-block';
-                    label.style.display = 'none';
+                    pmImage.src = checkoutOnlinePaymentButtonImageUrl;
+                    pmImage.style.display = 'block';
+                    if (onlineLabel) onlineLabel.style.display = 'none';
                 } else {
-                    image.removeAttribute('src');
-                    image.style.display = 'none';
-                    label.style.display = 'inline-block';
+                    pmImage.removeAttribute('src');
+                    pmImage.style.display = 'none';
+                    if (onlineLabel) onlineLabel.style.display = 'inline-block';
                 }
             }
 
-            button.disabled = !isOnlinePaymentAvailable();
-            if (!isOnlinePaymentAvailable()) {
-                label.textContent = 'Online payment unavailable';
-            } else if (!hasImage) {
-                label.textContent = 'Pay Online';
-            }
+            // Show/hide the online header (group) based on availability
+            const onlineWrapper = document.getElementById('online-payment-wrapper');
+            if (onlineWrapper) onlineWrapper.style.display = isOnlinePaymentAvailable() ? '' : 'none';
         }
 
         function getPaymentMethodGroup(method) {
@@ -3563,6 +3583,15 @@
                 codToggle.addEventListener('click', (e) => {
                     e.preventDefault();
                     togglePaymentGroup('cod');
+                });
+            }
+
+            // Online Group
+            const onlineToggle = document.getElementById('online-group-toggle');
+            if (onlineToggle) {
+                onlineToggle.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    togglePaymentGroup('online');
                 });
             }
         }
