@@ -4069,20 +4069,17 @@ exports.resetStockReports = async (req, res) => {
     }
 
     const parentTables = ['categories', 'homepage_sections'];
-    const truncateCascadeTables = tables.filter((tableName) => !parentTables.includes(tableName));
-    if (truncateCascadeTables.length > 0) {
-      const tableList = truncateCascadeTables
-        .map((name) => `"public"."${name.replace(/"/g, '""')}"`)
-        .join(', ');
-      await client.query(`TRUNCATE TABLE ${tableList} RESTART IDENTITY CASCADE`);
-    }
+    const tableList = tables
+      .map((name) => `"public"."${name.replace(/"/g, '""')}"`)
+      .join(', ');
 
-    const truncateParentTables = tables.filter((tableName) => parentTables.includes(tableName));
-    if (truncateParentTables.length > 0) {
-      const parentList = truncateParentTables
-        .map((name) => `"public"."${name.replace(/"/g, '""')}"`)
-        .join(', ');
-      await client.query(`TRUNCATE TABLE ${parentList} RESTART IDENTITY`);
+    if (tableList) {
+      await client.query(`SET session_replication_role = replica`);
+      try {
+        await client.query(`TRUNCATE TABLE ${tableList} RESTART IDENTITY CASCADE`);
+      } finally {
+        await client.query(`SET session_replication_role = DEFAULT`);
+      }
     }
 
     await client.query('INSERT INTO product_stock_report_table SELECT * FROM product_stock_report');
