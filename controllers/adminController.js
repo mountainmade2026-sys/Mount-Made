@@ -4074,12 +4074,7 @@ exports.resetStockReports = async (req, res) => {
       .join(', ');
 
     if (tableList) {
-      await client.query(`SET session_replication_role = replica`);
-      try {
-        await client.query(`TRUNCATE TABLE ${tableList} RESTART IDENTITY CASCADE`);
-      } finally {
-        await client.query(`SET session_replication_role = DEFAULT`);
-      }
+      await client.query(`TRUNCATE TABLE ${tableList} RESTART IDENTITY CASCADE`);
     }
 
     await client.query('INSERT INTO product_stock_report_table SELECT * FROM product_stock_report');
