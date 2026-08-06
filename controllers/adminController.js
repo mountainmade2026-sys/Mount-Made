@@ -4032,7 +4032,7 @@ exports.resetStockReports = async (req, res) => {
   try {
     await client.query('BEGIN');
 
-    const excludedTables = ['users', 'products'];
+    const excludedTables = ['users', 'products', 'categories', 'homepage_sections'];
     const tablesResult = await client.query(
       `SELECT tablename
        FROM pg_tables
@@ -4045,30 +4045,8 @@ exports.resetStockReports = async (req, res) => {
     const tables = tablesResult.rows.map((row) => row.tablename).filter(Boolean);
     if (tables.length === 0) {
       await client.query('COMMIT');
-      return res.json({ message: 'No tables to reset. Only users and products remain.' });
+      return res.json({ message: 'No tables to reset. Users, products, categories, and homepage sections remain.' });
     }
-
-    const hasCategoryColumnResult = await client.query(
-      `SELECT 1 FROM information_schema.columns
-       WHERE table_schema = 'public' AND table_name = 'products' AND column_name = 'category_id'
-       LIMIT 1`
-    );
-    const hasHomepageSectionColumnResult = await client.query(
-      `SELECT 1 FROM information_schema.columns
-       WHERE table_schema = 'public' AND table_name = 'products' AND column_name = 'homepage_section_id'
-       LIMIT 1`
-    );
-
-    if (hasCategoryColumnResult.rowCount > 0 || hasHomepageSectionColumnResult.rowCount > 0) {
-      const updates = [];
-      if (hasCategoryColumnResult.rowCount > 0) updates.push('category_id = NULL');
-      if (hasHomepageSectionColumnResult.rowCount > 0) updates.push('homepage_section_id = NULL');
-      if (updates.length > 0) {
-        await client.query(`UPDATE products SET ${updates.join(', ')}`);
-      }
-    }
-
-    const parentTables = ['categories', 'homepage_sections'];
     const tableList = tables
       .map((name) => `"public"."${name.replace(/"/g, '""')}"`)
       .join(', ');
@@ -4080,7 +4058,7 @@ exports.resetStockReports = async (req, res) => {
     await client.query('INSERT INTO product_stock_report_table SELECT * FROM product_stock_report');
     await client.query('COMMIT');
 
-    res.json({ message: 'All data except users and products has been reset permanently.' });
+    res.json({ message: 'All data except users, products, categories, and homepage sections has been reset permanently.' });
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('Reset everything except users/products error:', error);
