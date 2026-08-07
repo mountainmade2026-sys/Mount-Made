@@ -1276,8 +1276,11 @@
                     const img = el.querySelector('img');
                     if (img) {
                         if (iosImg) {
-                            img.src = iosImg + (iosImg.includes('?') ? '&_=' : '?_=') + Date.now();
+                            const suffix = (iosImg.includes('?') ? '&_=' : '?_=') + Date.now();
+                            const resolved = iosImg.startsWith('/') ? (window.location.origin + iosImg) : iosImg;
+                            img.src = resolved + suffix;
                             img.style.display = 'inline-block';
+                            img.onerror = function(e) { console.warn('App badge iOS image failed to load:', this.src, e); this.style.display = 'none'; };
                         }
                         else { img.style.display = 'none'; }
                     }
@@ -1290,8 +1293,11 @@
                     const img = el.querySelector('img');
                     if (img) {
                         if (androidImg) {
-                            img.src = androidImg + (androidImg.includes('?') ? '&_=' : '?_=') + Date.now();
+                            const suffix = (androidImg.includes('?') ? '&_=' : '?_=') + Date.now();
+                            const resolved = androidImg.startsWith('/') ? (window.location.origin + androidImg) : androidImg;
+                            img.src = resolved + suffix;
                             img.style.display = 'inline-block';
+                            img.onerror = function(e) { console.warn('App badge Android image failed to load:', this.src, e); this.style.display = 'none'; };
                         }
                         else { img.style.display = 'none'; }
                     }
