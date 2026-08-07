@@ -84,6 +84,36 @@ async function razorpayWebhookHandler(req, res) {
           ['paid', orderId]
         );
       }
+    } else if (evt.includes('refund')) {
+      const refundEntity = event.payload?.refund?.entity || event.payload?.payment?.entity || {};
+      const refundId = refundEntity.id || refundEntity.payment_id || null;
+      const paymentId = refundEntity.payment_id || refundEntity.entity?.payment_id || null;
+      const status = String(refundEntity.status || '').toLowerCase();
+      const amount = Number.isFinite(Number(refundEntity.amount)) ? Number(refundEntity.amount) / 100 : null;
+
+      if (paymentId) {
+        const orderResult = await db.query(
+          'SELECT * FROM orders WHERE payment_gateway_payment_id = $1',
+          [paymentId]
+        );
+        const order = orderResult.rows[0];
+        if (order) {
+          const refundStatusValue = status === 'processed' ? 'refunded' : status === 'failed' ? 'refund_failed' : 'refund_pending';
+          const paymentStatusValue = refundStatusValue === 'refunded' ? 'refunded' : 'refund_pending';
+          await db.query(
+            `UPDATE orders
+             SET refund_status = $1,
+                 refund_id = $2,
+                 refund_amount = COALESCE($3::numeric, refund_amount),
+                 payment_status = $4,
+                 refunded_at = CASE WHEN $1 = 'refunded' THEN NOW() ELSE refunded_at END,
+                 status = CASE WHEN $1 = 'refunded' AND status != 'cancelled' THEN 'cancelled' ELSE status END,
+                 updated_at = NOW()
+             WHERE id = $5`,
+            [refundStatusValue, refundId, amount, paymentStatusValue, order.id]
+          );
+        }
+      }
     }
 
     return res.status(200).send('OK');
@@ -880,4 +910,6 @@ router.get('/idfc/status/:transactionId', async (req, res) => {
   }
 });
 
-module.exports = router;
+module.exports = Object.assign(router, {
+  webhookHandler: razorpayWebhookHandler
+});
