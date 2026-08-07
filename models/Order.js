@@ -308,27 +308,31 @@ class Order {
 
   static async findById(id) {
     const query = `
-      SELECT o.*, 
+      SELECT o.*,
+             u.full_name,
+             u.email,
+             u.phone,
              (SELECT r.status FROM returns r WHERE r.order_id = o.id AND r.status != 'rejected' ORDER BY r.created_at DESC LIMIT 1) AS return_status,
-            json_agg(
-                     json_build_object(
-                       'id', oi.id,
-                       'product_id', oi.product_id,
-                       'product_name', oi.product_name,
-                       'quantity', oi.quantity,
-                       'price', oi.price,
-                       'subtotal', oi.subtotal,
-                       'original_price', p.price,
-                       'product_discount_price', p.discount_price
-                     )
-                   ) as items
+             json_agg(
+               json_build_object(
+                 'id', oi.id,
+                 'product_id', oi.product_id,
+                 'product_name', oi.product_name,
+                 'quantity', oi.quantity,
+                 'price', oi.price,
+                 'subtotal', oi.subtotal,
+                 'original_price', p.price,
+                 'product_discount_price', p.discount_price
+               )
+             ) as items
       FROM orders o
+      LEFT JOIN users u ON o.user_id = u.id
       LEFT JOIN order_items oi ON o.id = oi.order_id
       LEFT JOIN products p ON oi.product_id = p.id
       WHERE o.id = $1
-      GROUP BY o.id
+      GROUP BY o.id, u.id
     `;
-    
+
     const result = await db.query(query, [id]);
     return result.rows[0];
   }

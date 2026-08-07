@@ -1089,10 +1089,17 @@ exports.getOrderDetails = async (req, res) => {
       'SELECT id, email, full_name, phone FROM users WHERE id = $1', 
       [order.user_id]
     );
-    
-    res.json({ 
+    const customer = userQuery.rows[0] || null;
+
+    if (order) {
+      order.full_name = order.full_name || customer?.full_name || '';
+      order.email = order.email || customer?.email || '';
+      order.phone = order.phone || customer?.phone || '';
+    }
+
+    res.json({
       order,
-      customer: userQuery.rows[0] || null
+      customer
     });
   } catch (error) {
     console.error('Get order details error:', error);
