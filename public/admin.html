@@ -10329,13 +10329,29 @@
                 payload.app_badge_android_visible = androidVisible ? 'true' : 'false';
 
                 // Upload images if selected
-                if (iosFileInput && iosFileInput.files && iosFileInput.files[0]) {
-                    const uploaded = await uploadProductImage(iosFileInput);
+                const iosFile = iosFileInput?.files?.[0] || null;
+                const androidFile = androidFileInput?.files?.[0] || null;
+                if (iosFile) {
+                    const validation = validateImageFile(iosFile);
+                    if (!validation.valid) {
+                        throw new Error(`iOS badge image error: ${validation.error}`);
+                    }
+                    if (iosFile.size > 1 * 1024 * 1024) {
+                        throw new Error('iOS badge image must be smaller than 1MB.');
+                    }
+                    const uploaded = await uploadProductImage(iosFile);
                     if (!uploaded) throw new Error('Failed to upload iOS badge image');
                     payload.app_badge_ios_image_url = uploaded;
                 }
-                if (androidFileInput && androidFileInput.files && androidFileInput.files[0]) {
-                    const uploaded = await uploadProductImage(androidFileInput);
+                if (androidFile) {
+                    const validation = validateImageFile(androidFile);
+                    if (!validation.valid) {
+                        throw new Error(`Android badge image error: ${validation.error}`);
+                    }
+                    if (androidFile.size > 1 * 1024 * 1024) {
+                        throw new Error('Android badge image must be smaller than 1MB.');
+                    }
+                    const uploaded = await uploadProductImage(androidFile);
                     if (!uploaded) throw new Error('Failed to upload Android badge image');
                     payload.app_badge_android_image_url = uploaded;
                 }
@@ -10348,6 +10364,7 @@
                     if (androidFileInput) androidFileInput.value = '';
                     await loadSiteSettings();
                 } else {
+                    console.error('Admin settings save response:', response);
                     throw new Error(response?.error || 'Failed to save app badge settings');
                 }
             } catch (error) {
@@ -13645,7 +13662,7 @@
                 `;
             }).join('');
 
-            const total = subtotal - discount + delivery;
+            total = subtotal - discount + delivery;
 
             const html = `
                 <div style="border: 1px solid #ddd; border-radius: 8px; padding: 1rem; background: white; font-family: Arial, sans-serif;">

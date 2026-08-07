@@ -2379,20 +2379,18 @@ function validatePassword(password) {
 
 // File validation helper
 function validateImageFile(file) {
-  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
-  const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif'];
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+  const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
   const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
-  
 
-  
   if (!allowedTypes.includes(file.type) || !allowedExtensions.includes(fileExtension)) {
-    return { valid: false, error: 'Invalid file type. Only JPG, PNG and GIF images are allowed.' };
+    return { valid: false, error: 'Invalid file type. Only JPG, PNG, GIF, and WEBP images are allowed.' };
   }
-  
+
   if (file.size > 6 * 1024 * 1024) {
     return { valid: false, error: 'File size too large. Maximum size is 6MB.' };
   }
-  
+
   return { valid: true };
 }
 
