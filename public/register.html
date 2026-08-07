@@ -435,6 +435,12 @@
         .app-badge-ios { background: linear-gradient(180deg,#111,#222); padding-left:0.6rem; padding-right:0.9rem; }
         .app-badge-android { background: linear-gradient(180deg,#2b6cb0,#2c5282); padding-left:0.6rem; padding-right:0.9rem; }
         .auth-card { position: relative; z-index: 1; }
+        /* Hide app badges on the register page (login page keeps them) */
+        body.register-page .auth-footer-bar,
+        body.register-page #app-badges,
+        body.register-page .app-badges-left {
+            display: none !important;
+        }
     </style>
 </head>
 <body class="register-page">
