@@ -1142,14 +1142,21 @@ exports.refundOrder = async (req, res) => {
       return res.status(400).json({ error: 'This order does not have a Razorpay payment ID to refund.' });
     }
 
-    const refundResponse = await razorpay.payments.refund(paymentId, {
-      amount: Math.round(refundAmount * 100),
-      notes: {
-        order_id: String(order.id),
-        order_number: String(order.order_number || ''),
-        reason: String(reason || 'Admin initiated refund')
-      }
-    });
+    let refundResponse;
+    try {
+      refundResponse = await razorpay.payments.refund(paymentId, {
+        amount: Math.round(refundAmount * 100),
+        notes: {
+          order_id: String(order.id),
+          order_number: String(order.order_number || ''),
+          reason: String(reason || 'Admin initiated refund')
+        }
+      });
+    } catch (refundError) {
+      const razorpayMessage = refundError?.error?.description || refundError?.response?.data?.error?.description || refundError?.message || 'Razorpay refund failed.';
+      console.error('Razorpay refund request failed:', razorpayMessage);
+      return res.status(502).json({ error: `Razorpay refund failed: ${razorpayMessage}` });
+    }
 
     const normalizedRefundStatus = normalizeRazorpayRefundStatus(refundResponse);
     const normalizedPaymentStatus = normalizedRefundStatus === 'refunded' ? 'refunded' : 'refund_pending';
