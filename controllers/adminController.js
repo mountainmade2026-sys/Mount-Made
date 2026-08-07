@@ -14,6 +14,7 @@ const { normalizeWeightProductData } = require('../utils/productWeightOptions');
 const { parseProductGstOverrides, getItemGstAmount } = require('../utils/deliverySettings');
 const Razorpay = require('razorpay');
 const { getRefundAmount, shouldRestoreStockOnRefund, normalizeRazorpayRefundStatus, isAlreadyRefundedError } = require('../utils/refundUtils');
+const { collectInvoiceThankYouUpdates } = require('../utils/siteSettingsUtils');
 
 const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID || '';
 const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN || '';
@@ -2498,6 +2499,8 @@ exports.updateSiteSettings = async (req, res) => {
       logo_url,
       logo_size,
       logo_size_mobile,
+      invoice_thank_you_message,
+      invoice_thank_you,
       homepage_hero_title,
       homepage_hero_subtitle,
       homepage_hero_image_url,
@@ -3289,6 +3292,11 @@ exports.updateSiteSettings = async (req, res) => {
         }
         return res.status(400).json({ error: `${key}: unrecognised banner format` });
       }
+    }
+
+    const invoiceThankYouUpdates = collectInvoiceThankYouUpdates(req.body || {});
+    if (invoiceThankYouUpdates.length > 0) {
+      updates.push(...invoiceThankYouUpdates);
     }
 
     if (updates.length === 0) {
