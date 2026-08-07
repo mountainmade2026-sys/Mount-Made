@@ -1257,7 +1257,7 @@
                 // Try to fetch site settings for badge image URLs and links
                 let settings = {};
                 try {
-                    const resp = await fetch('/products/settings');
+                    const resp = await fetch('/products/settings?_=' + Date.now());
                     const json = await resp.json();
                     settings = json?.settings || {};
                 } catch (e) {
@@ -1275,7 +1275,10 @@
                 document.querySelectorAll('.app-badge[data-platform="ios"]').forEach(el => {
                     const img = el.querySelector('img');
                     if (img) {
-                        if (iosImg) { img.src = iosImg; img.style.display = 'inline-block'; }
+                        if (iosImg) {
+                            img.src = iosImg + (iosImg.includes('?') ? '&_=' : '?_=') + Date.now();
+                            img.style.display = 'inline-block';
+                        }
                         else { img.style.display = 'none'; }
                     }
                     if (iosLink) { el.href = iosLink; el.setAttribute('data-has-link', '1'); }
@@ -1286,7 +1289,10 @@
                 document.querySelectorAll('.app-badge[data-platform="android"]').forEach(el => {
                     const img = el.querySelector('img');
                     if (img) {
-                        if (androidImg) { img.src = androidImg; img.style.display = 'inline-block'; }
+                        if (androidImg) {
+                            img.src = androidImg + (androidImg.includes('?') ? '&_=' : '?_=') + Date.now();
+                            img.style.display = 'inline-block';
+                        }
                         else { img.style.display = 'none'; }
                     }
                     if (androidLink) { el.href = androidLink; el.setAttribute('data-has-link', '1'); }

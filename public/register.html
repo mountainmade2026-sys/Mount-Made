@@ -1380,7 +1380,7 @@
         async function setupAppBadges() {
             try {
                 let settings = {};
-                try { const resp = await fetch('/products/settings'); const json = await resp.json(); settings = json?.settings || {}; } catch(e){ console.warn('Failed to load site settings for app badges', e); }
+                try { const resp = await fetch('/products/settings?_=' + Date.now()); const json = await resp.json(); settings = json?.settings || {}; } catch(e){ console.warn('Failed to load site settings for app badges', e); }
 
                 const iosLink = String(settings.app_ios_store_url || '').trim() || document.querySelector('meta[name="app-ios-url"]')?.content?.trim() || (window.APP_LINKS && window.APP_LINKS.ios) || '';
                 const androidLink = String(settings.app_android_store_url || settings.play_store_url || '').trim() || document.querySelector('meta[name="app-android-url"]')?.content?.trim() || (window.APP_LINKS && window.APP_LINKS.android) || '';
@@ -1390,12 +1390,24 @@
                 const androidVisible = String(settings.app_badge_android_visible || 'true').toLowerCase() === 'true';
 
                 document.querySelectorAll('.app-badge[data-platform="ios"]').forEach(el => {
-                    const img = el.querySelector('img'); if (img) { if (iosImg) { img.src = iosImg; img.style.display = 'inline-block'; } else img.style.display = 'none'; }
+                    const img = el.querySelector('img');
+                    if (img) {
+                        if (iosImg) {
+                            img.src = iosImg + (iosImg.includes('?') ? '&_=' : '?_=') + Date.now();
+                            img.style.display = 'inline-block';
+                        } else img.style.display = 'none';
+                    }
                     if (iosLink) { el.href = iosLink; el.setAttribute('data-has-link','1'); } else { el.href = '#'; el.removeAttribute('data-has-link'); }
                     el.style.display = iosVisible ? 'flex' : 'none';
                 });
                 document.querySelectorAll('.app-badge[data-platform="android"]').forEach(el => {
-                    const img = el.querySelector('img'); if (img) { if (androidImg) { img.src = androidImg; img.style.display = 'inline-block'; } else img.style.display = 'none'; }
+                    const img = el.querySelector('img');
+                    if (img) {
+                        if (androidImg) {
+                            img.src = androidImg + (androidImg.includes('?') ? '&_=' : '?_=') + Date.now();
+                            img.style.display = 'inline-block';
+                        } else img.style.display = 'none';
+                    }
                     if (androidLink) { el.href = androidLink; el.setAttribute('data-has-link','1'); } else { el.href = '#'; el.removeAttribute('data-has-link'); }
                     el.style.display = androidVisible ? 'flex' : 'none';
                 });
