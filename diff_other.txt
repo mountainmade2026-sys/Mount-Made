@@ -1,0 +1,86 @@
+diff --git a/controllers/adminController.js b/controllers/adminController.js
+index 1f96b67..f134d3f 100644
+--- a/controllers/adminController.js
++++ b/controllers/adminController.js
+@@ -1089,10 +1089,17 @@ exports.getOrderDetails = async (req, res) => {
+       'SELECT id, email, full_name, phone FROM users WHERE id = $1', 
+       [order.user_id]
+     );
+-    
+-    res.json({ 
++    const customer = userQuery.rows[0] || null;
++
++    if (order) {
++      order.full_name = order.full_name || customer?.full_name || '';
++      order.email = order.email || customer?.email || '';
++      order.phone = order.phone || customer?.phone || '';
++    }
++
++    res.json({
+       order,
+-      customer: userQuery.rows[0] || null
++      customer
+     });
+   } catch (error) {
+     console.error('Get order details error:', error);
+diff --git a/models/Order.js b/models/Order.js
+index 8968c39..e85e927 100644
+--- a/models/Order.js
++++ b/models/Order.js
+@@ -308,27 +308,31 @@ class Order {
+ 
+   static async findById(id) {
+     const query = `
+-      SELECT o.*, 
++      SELECT o.*,
++             u.full_name,
++             u.email,
++             u.phone,
+              (SELECT r.status FROM returns r WHERE r.order_id = o.id AND r.status != 'rejected' ORDER BY r.created_at DESC LIMIT 1) AS return_status,
+-            json_agg(
+-                     json_build_object(
+-                       'id', oi.id,
+-                       'product_id', oi.product_id,
+-                       'product_name', oi.product_name,
+-                       'quantity', oi.quantity,
+-                       'price', oi.price,
+-                       'subtotal', oi.subtotal,
+-                       'original_price', p.price,
+-                       'product_discount_price', p.discount_price
+-                     )
+-                   ) as items
++             json_agg(
++               json_build_object(
++                 'id', oi.id,
++                 'product_id', oi.product_id,
++                 'product_name', oi.product_name,
++                 'quantity', oi.quantity,
++                 'price', oi.price,
++                 'subtotal', oi.subtotal,
++                 'original_price', p.price,
++                 'product_discount_price', p.discount_price
++               )
++             ) as items
+       FROM orders o
++      LEFT JOIN users u ON o.user_id = u.id
+       LEFT JOIN order_items oi ON o.id = oi.order_id
+       LEFT JOIN products p ON oi.product_id = p.id
+       WHERE o.id = $1
+-      GROUP BY o.id
++      GROUP BY o.id, u.id
+     `;
+-    
++
+     const result = await db.query(query, [id]);
+     return result.rows[0];
+   }
+diff --git a/public/admin_last_payload.json b/public/admin_last_payload.json
+index 9ea7665..eb8ab87 100644
+--- a/public/admin_last_payload.json
++++ b/public/admin_last_payload.json
+@@ -1,3 +1,3 @@
+ {
+-  "checkout_online_payment_button_image_url": "/uploads/373?v=mshi0n8w"
++  "invoice_thank_you_message": "xdvsdvsdg"
+ }
+\ No newline at end of file

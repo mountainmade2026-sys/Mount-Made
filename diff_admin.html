@@ -1,0 +1,600 @@
+diff --git a/public/admin.html b/public/admin.html
+index f568eb6..8977532 100644
+--- a/public/admin.html
++++ b/public/admin.html
+@@ -1689,9 +1689,6 @@
+             <div class="admin-nav-item" onclick="showSection('order-history')" data-section="order-history">
+                 <i class="fas fa-history"></i> Order History
+             </div>
+-            <div class="admin-nav-item" onclick="showSection('invoice-editor')" data-section="invoice-editor">
+-                <i class="fas fa-file-invoice-dollar"></i> Invoice Editor
+-            </div>
+             <div class="admin-nav-item" onclick="showSection('customers-orders')">
+                 <i class="fas fa-shopping-bag"></i> Customers Orders
+                 <span id="customer-orders-dot" class="dot-indicator hidden" title="New orders"></span>
+@@ -3449,6 +3446,27 @@
+                     </div>
+                 </div>
+ 
++                <div id="ss-sub-invoice-thankyou" class="data-table-container" style="margin-top: 1.5rem;">
++                    <div class="table-header">
++                        <h3>Invoice Thank You Message</h3>
++                    </div>
++                    <div style="padding: 2rem;">
++                        <p style="color: var(--text-muted); margin-bottom: 1rem;">
++                            Update the default thank-you text shown on printed invoices and invoices opened from order history.
++                        </p>
++
++                        <div class="form-group" style="margin-bottom: 1rem; max-width: 720px;">
++                            <label class="form-label" for="invoice-thank-you-message">Thank You Message</label>
++                            <textarea id="invoice-thank-you-message" class="form-textarea" rows="4" placeholder="Thank you for shopping with Mount Made!"></textarea>
++                            <small style="color: var(--text-muted); display: block; margin-top: 0.35rem;">This message will be used as the default thank-you footer on invoice previews.</small>
++                        </div>
++
++                        <button class="btn btn-primary" onclick="saveInvoiceThankYouMessageSettings()">
++                            <i class="fas fa-save"></i> Save Invoice Thank You Message
++                        </button>
++                    </div>
++                </div>
++
+                 <div id="ss-sub-email" class="data-table-container" style="margin-top: 1.5rem;">
+                     <div class="table-header">
+                         <h3>Business Email Integration</h3>
+@@ -5057,41 +5075,76 @@
+                 </div>
+ 
+                 <div style="padding: 1rem;">
+-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
++                    <div id="invoice-editor-help" style="margin-bottom: 1rem; color: var(--text-muted); font-size: 0.95rem;">
++                        Open an order from Order History and click <strong>Edit Invoice</strong> to begin customizing an invoice.
++                    </div>
++                    <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 1.5rem;">
+                         <!-- Editor Panel -->
+-                        <div style="border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; background: var(--bg-card);">
+-                            <h3 style="margin-bottom: 1rem; color: var(--text-dark);">Edit Invoice Details</h3>
++                        <div style="border: 1px solid var(--border-primary, #d1d5db); border-radius: 10px; padding: 1.5rem; background: var(--bg-primary, #ffffff); color: var(--text-primary, #111827);">
++                            <h3 style="margin-bottom: 1rem; color: var(--text-primary, #111827);">Edit Invoice Details</h3>
+ 
+                             <input type="hidden" id="invoice-editor-order-id">
+-                            <!-- Hidden legacy inputs required by existing editor scripts (kept for compatibility) -->
+-                            <div style="display:none;" aria-hidden="true">
+-                                <input type="text" id="invoice-editor-number" class="form-input">
+-                                <input type="text" id="invoice-editor-company" class="form-input" value="Mount Made">
+-                                <input type="text" id="invoice-editor-customer" class="form-input">
+-                                <input type="email" id="invoice-editor-email" class="form-input">
+-                                <input type="text" id="invoice-editor-phone" class="form-input">
+-                                <textarea id="invoice-editor-address" class="form-textarea"></textarea>
+-                                <div id="invoice-editor-items"></div>
+-                                <input type="number" id="invoice-editor-discount" class="form-input" value="0">
+-                                <input type="number" id="invoice-editor-delivery" class="form-input" value="0">
+-                            </div>
+ 
+-                            <div style="margin-bottom: 1rem;">
+-                                <label class="form-label">Thank You Message</label>
+-                                <textarea id="invoice-editor-thankyou" class="form-textarea" rows="4" placeholder="Thank you for shopping with Mount Made!" oninput="updateInvoicePreview()">Thank you for shopping with Mount Made!</textarea>
++                            <div style="display:grid; gap:1rem;">
++                                <div>
++                                    <label class="form-label" for="invoice-editor-number">Invoice Number</label>
++                                    <input type="text" id="invoice-editor-number" class="form-input">
++                                </div>
++                                <div>
++                                    <label class="form-label" for="invoice-editor-company">Company</label>
++                                    <input type="text" id="invoice-editor-company" class="form-input" value="Mount Made">
++                                </div>
++                                <div>
++                                    <label class="form-label" for="invoice-editor-customer">Customer Name</label>
++                                    <input type="text" id="invoice-editor-customer" class="form-input">
++                                </div>
++                                <div>
++                                    <label class="form-label" for="invoice-editor-email">Customer Email</label>
++                                    <input type="email" id="invoice-editor-email" class="form-input">
++                                </div>
++                                <div>
++                                    <label class="form-label" for="invoice-editor-phone">Customer Phone</label>
++                                    <input type="text" id="invoice-editor-phone" class="form-input">
++                                </div>
++                                <div>
++                                    <label class="form-label" for="invoice-editor-address">Customer Address</label>
++                                    <textarea id="invoice-editor-address" class="form-textarea" rows="3"></textarea>
++                                </div>
++                                <div>
++                                    <label class="form-label">Invoice Items</label>
++                                    <div id="invoice-editor-items" style="display:grid; gap:0.75rem;"></div>
++                                    <button type="button" class="btn btn-secondary" style="margin-top:0.75rem;" onclick="addInvoiceItem()">Add line item</button>
++                                </div>
++                                <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
++                                    <div>
++                                        <label class="form-label" for="invoice-editor-discount">Discount</label>
++                                        <input type="number" id="invoice-editor-discount" class="form-input" value="0" oninput="updateInvoicePreview()">
++                                    </div>
++                                    <div>
++                                        <label class="form-label" for="invoice-editor-delivery">Delivery Charge</label>
++                                        <input type="number" id="invoice-editor-delivery" class="form-input" value="0" oninput="updateInvoicePreview()">
++                                    </div>
++                                </div>
++                                <div>
++                                    <label class="form-label" for="invoice-editor-thankyou">Thank You Message</label>
++                                    <textarea id="invoice-editor-thankyou" class="form-textarea" rows="4" placeholder="Thank you for shopping with Mount Made!" oninput="updateInvoicePreview()">Thank you for shopping with Mount Made!</textarea>
++                                </div>
+                             </div>
+ 
+                             <div style="margin-top:1rem;">
+-                                <div style="font-size:0.95rem;color:var(--text-secondary);margin-bottom:0.5rem;">The site homepage logo will be used automatically on printed invoices.</div>
++                                <div style="font-size:0.95rem;color:var(--text-secondary, #6b7280);margin-bottom:0.5rem;">You can change invoice details and preview them instantly.</div>
+                             </div>
+                         </div>
+-                        
++
+                         <!-- Preview Panel -->
+-                        <div style="border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; background: var(--bg-card); overflow-y: auto; max-height: 500px;">
+-                            <h3 style="margin-bottom: 1rem; color: var(--text-dark);">Invoice Preview</h3>
+-                            <div id="invoice-editor-preview" style="background: white; border: 1px solid #ddd; border-radius: 6px; padding: 1rem; font-size: 0.9rem;">
+-                                <p style="color: #999; text-align: center;">Load an order to preview invoice...</p>
++                        <div style="border: 1px solid var(--border-primary, #d1d5db); border-radius: 10px; padding: 1.5rem; background: var(--bg-primary, #ffffff); color: var(--text-primary, #111827); display:flex; flex-direction:column; gap:1rem;">
++                            <h3 style="margin-bottom: 1rem; color: var(--text-primary, #111827);">Invoice Preview</h3>
++                            <div id="invoice-editor-preview" style="flex:1; min-height:420px; overflow:auto; background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px; padding:1rem;"></div>
++                            <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem;">
++                                <div style="font-weight:700;">Estimated Total</div>
++                                <div style="font-size:1.25rem; font-weight:800; color:#1a4731;">₹<span id="invoice-editor-total">0.00</span></div>
+                             </div>
++                            <button type="button" class="btn btn-secondary" onclick="printEditedInvoice()" style="width:100%;">Preview Print</button>
+                         </div>
+                     </div>
+ 
+@@ -5451,6 +5504,7 @@
+                 { id: 'ss-sub-delivery',  label: 'Delivery' },
+                 { id: 'ss-sub-about',     label: 'About Us' },
+                 { id: 'ss-sub-contact',   label: 'Contact Info' },
++                { id: 'ss-sub-invoice-thankyou', label: 'Invoice Thank You' },
+                 { id: 'ss-sub-email',     label: 'Business Email' },
+                 { id: 'ss-sub-payments',  label: 'Payment Methods' },
+                 { id: 'ss-sub-policies',  label: 'Policy Pages' },
+@@ -9839,9 +9893,25 @@
+                 const contactEmailEl = document.getElementById('contact-email');
+                 const contactPhoneEl = document.getElementById('contact-phone');
+                 const contactLocationEl = document.getElementById('contact-location');
++                const invoiceThankYouEl = document.getElementById('invoice-thank-you-message');
+                 if (contactEmailEl) contactEmailEl.value = settings.contact_email || '';
+                 if (contactPhoneEl) contactPhoneEl.value = settings.contact_phone || '';
+                 if (contactLocationEl) contactLocationEl.value = settings.contact_location || '';
++                if (invoiceThankYouEl) invoiceThankYouEl.value = settings.invoice_thank_you_message || settings.invoice_thank_you || '';
++
++                const previousInvoiceThankYouDefault = window._invoiceThankYouMessageDefault;
++                const newInvoiceThankYouDefault = String(settings.invoice_thank_you_message || settings.invoice_thank_you || '').trim();
++                window._invoiceThankYouMessageDefault = newInvoiceThankYouDefault;
++                const invoiceEditorThankYouEl = document.getElementById('invoice-editor-thankyou');
++                if (invoiceEditorThankYouEl) {
++                    const currentEditorThankYou = String(invoiceEditorThankYouEl.value || '').trim();
++                    const companyName = document.getElementById('invoice-editor-company')?.value || 'Mount Made';
++                    const previousFallback = String(previousInvoiceThankYouDefault || `Thank you for shopping with ${companyName}!`).trim();
++                    if (!currentEditorThankYou || currentEditorThankYou === previousFallback) {
++                        invoiceEditorThankYouEl.value = newInvoiceThankYouDefault;
++                        try { window.updateInvoicePreview(); } catch (e) {}
++                    }
++                }
+ 
+                 // Populate delivery settings
+                 const stdEnabledInput = document.getElementById('standard-delivery-enabled');
+@@ -11362,6 +11432,39 @@
+             }
+         };
+ 
++        window.saveInvoiceThankYouMessageSettings = async function() {
++            try {
++                const invoiceThankYouMessage = (document.getElementById('invoice-thank-you-message')?.value || '').trim();
++
++                showAlert('Saving invoice thank you message...', 'info');
++                const response = await api.post('/admin/settings', {
++                    invoice_thank_you_message: invoiceThankYouMessage
++                });
++
++                if (response && (response.success || response.message)) {
++                    const previousDefault = String(window._invoiceThankYouMessageDefault || '').trim();
++                    window._invoiceThankYouMessageDefault = invoiceThankYouMessage;
++                    const invoiceEditorThankYouEl = document.getElementById('invoice-editor-thankyou');
++                    if (invoiceEditorThankYouEl) {
++                        const currentEditorThankYou = String(invoiceEditorThankYouEl.value || '').trim();
++                        const companyName = document.getElementById('invoice-editor-company')?.value || 'Mount Made';
++                        const previousFallback = String(previousDefault || `Thank you for shopping with ${companyName}!`).trim();
++                        if (!currentEditorThankYou || currentEditorThankYou === previousFallback) {
++                            invoiceEditorThankYouEl.value = invoiceThankYouMessage;
++                            try { window.updateInvoicePreview(); } catch (_) {}
++                        }
++                    }
++                    showAlert('Invoice thank you message saved successfully!', 'success');
++                    await loadSiteSettings();
++                } else {
++                    throw new Error(response?.error || 'Failed to save invoice thank you message');
++                }
++            } catch (error) {
++                console.error('Save invoice thank you message error:', error);
++                showAlert(error.message || 'Failed to save invoice thank you message', 'error');
++            }
++        };
++
+         window.saveBusinessEmailSettings = async function() {
+             if (!_isSuperAdminUser()) {
+                 showAlert('Only super admin can update Business Email integration.', 'error');
+@@ -12907,6 +13010,14 @@
+                             freshResp.order.edited_invoice = JSON.parse(freshResp.order.edited_invoice);
+                         } catch (e) {}
+                     }
++
++                    const customer = freshResp.customer || null;
++                    if (customer) {
++                        freshResp.order.full_name = freshResp.order.full_name || customer.full_name || '';
++                        freshResp.order.email = freshResp.order.email || customer.email || '';
++                        freshResp.order.phone = freshResp.order.phone || customer.phone || '';
++                    }
++
+                     // Update cache with fresh data
+                     const idx = (window._ordersCache || []).findIndex(o => String(o.id) === String(orderId));
+                     if (idx >= 0) {
+@@ -12918,6 +13029,7 @@
+                 // Continue with cached data if refresh fails
+             }
+ 
++            await window.ensureInvoiceThankYouMessageLoaded();
+             const orders = window._ordersCache || [];
+             const o = orders.find(x => x.id == orderId);
+             if (!o) { showAlert('Order not found', 'error'); return; }
+@@ -12947,12 +13059,14 @@
+ 
+             const invoiceNumber = edited.invoice_number || o.order_number || String(o.id);
+             const company = edited.company || 'Mount Made';
+-            const customerName = edited.customer || o.full_name || 'N/A';
+-            const email = edited.email || o.email || 'N/A';
+-            const phone = edited.phone || o.phone || '';
++            const customerName = edited.customer || o.full_name || o.customer?.full_name || o.user_full_name || 'Customer';
++            const email = edited.email || o.email || o.customer?.email || o.user_email || 'N/A';
++            const phone = edited.phone || o.phone || o.customer?.phone || o.user_phone || '';
+             const rawAddress = edited.address || o.delivery_address || o.shipping_address || o.address || '';
+             const deliveryAddress = formatAddressValue(rawAddress);
+-            
++            const deliveryAddressHtml = deliveryAddress
++                ? `<br><strong>Delivery Address:</strong><br>${escapeHtml(deliveryAddress).replace(/\n/g, '<br>')}`
++                : '';
+             const explicitDiscount = Number.isFinite(Number(edited.discount))
+                 ? Number(edited.discount)
+                 : Number.isFinite(Number(edited.discount_amount))
+@@ -12987,20 +13101,33 @@
+                 return sum + ((listPrice != null && listPrice > itemPrice) ? (listPrice - itemPrice) : 0);
+             }, 0);
+ 
+-            let subtotal = 0;
+-            const receiptRows = items.map(it => {
++            const rows = items.map(it => {
+                 const qty = Number.isFinite(Number(it.quantity)) ? Number(it.quantity) : 1;
+                 const price = Number.isFinite(Number(it.price)) ? Number(it.price) : 0;
+-                const lineTotal = qty * price;
+-                subtotal += lineTotal;
++                const product = productCatalog.find(p => String(p.id) === String(it.product_id || it.id));
++                const originalPrice = product && Number.isFinite(Number(product.price)) ? Number(product.price) : null;
++                const unitPriceHtml = (originalPrice != null && originalPrice > 0)
++                    ? `₹${originalPrice.toFixed(2)}`
++                    : `₹${price.toFixed(2)}`;
++                const subtotal = qty * price;
+                 const label = escapeHtml(it.product_name || it.name || 'Item');
+-                return `<div style="display:flex;justify-content:space-between;margin-bottom:0.3rem;font-size:11px;font-family:monospace;line-height:1.2;">
+-                    <span>${label}</span>
+-                    <span>${qty}x₹${price.toFixed(2)}</span>
+-                </div>
+-                <div style="display:flex;justify-content:flex-end;margin-bottom:0.5rem;font-size:11px;font-weight:600;font-family:monospace;">₹${lineTotal.toFixed(2)}</div>`;
++                return `
++                <tr>
++                    <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;vertical-align:top;">
++                        <div style="font-weight:600;color:#111827;">${label}</div>
++                    </td>
++                    <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:center;vertical-align:middle;">${qty}</td>
++                    <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;vertical-align:middle;">${unitPriceHtml}</td>
++                    <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;vertical-align:middle;">&#8377;${subtotal.toFixed(2)}</td>
++                </tr>`;
+             }).join('');
+ 
++            let subtotal = 0;
++            items.forEach(it => {
++                const qty = Number.isFinite(Number(it.quantity)) ? Number(it.quantity) : 1;
++                const price = Number.isFinite(Number(it.price)) ? Number(it.price) : 0;
++                subtotal += qty * price;
++            });
+             if (discount <= 0) {
+                 const impliedDiscount = Number.isFinite(Number(o.total_amount))
+                     ? subtotal + deliveryCharge - Number.parseFloat(o.total_amount)
+@@ -13011,111 +13138,36 @@
+                 }
+             }
+             const total = subtotal - discount + deliveryCharge;
+-            const thankYouVal = edited.thankYou || `Thank you for shopping with ${company}!`;
+-
+-            // Thermal receipt HTML (80mm width = ~240px at 3dpi / ~380px at 96dpi)
+-            const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Receipt ${escapeHtml(invoiceNumber)}</title>
+-            <style>
+-                * { margin: 0; padding: 0; box-sizing: border-box; }
+-                body {
+-                    font-family: 'Courier New', monospace;
+-                    width: 80mm;
+-                    padding: 5mm;
+-                    background: white;
+-                    color: #000;
+-                }
+-                .receipt {
+-                    width: 100%;
+-                    text-align: center;
+-                }
+-                .logo-area { margin-bottom: 5px; }
+-                .logo-area img { max-width: 100%; height: auto; max-height: 30mm; }
+-                .header { font-weight: bold; font-size: 13px; margin-bottom: 3px; }
+-                .divider { border-top: 1px dashed #000; margin: 3px 0; }
+-                .info-section { font-size: 10px; text-align: left; margin: 3px 0; line-height: 1.3; }
+-                .item-row { font-size: 9px; font-family: monospace; margin: 2px 0; }
+-                .total-section { font-size: 12px; font-weight: bold; margin: 5px 0 3px 0; }
+-                .total-amount { font-size: 14px; font-weight: bold; margin: 3px 0 5px 0; }
+-                .thank-you { font-size: 9px; font-style: italic; margin-top: 5px; line-height: 1.3; }
+-                .footer { font-size: 8px; color: #666; margin-top: 5px; }
+-                @media print {
+-                    body { margin: 0; padding: 0; width: 80mm; }
+-                    .no-print { display: none; }
+-                }
+-            </style></head><body>
+-            <div class="receipt">
+-                <div class="logo-area" id="logo-container"></div>
+-                <div class="header">${escapeHtml(company)}</div>
+-                <div class="divider"></div>
+-                
+-                <div class="info-section">
+-                    <div><strong>Invoice:</strong> ${escapeHtml(invoiceNumber)}</div>
+-                    <div><strong>Date:</strong> ${new Date().toLocaleDateString('en-IN', { year: 'numeric', month: '2-digit', day: '2-digit' })}</div>
+-                </div>
+-                <div class="divider"></div>
+-                
+-                <div class="info-section">
+-                    <div><strong>Bill To:</strong></div>
+-                    <div>${escapeHtml(customerName)}</div>
+-                    ${phone ? `<div>Ph: ${escapeHtml(phone)}</div>` : ''}
+-                </div>
+-                ${deliveryAddress ? `<div class="info-section"><strong>Delivery:</strong> ${escapeHtml(deliveryAddress).replace(/\n/g, '<br>')}</div>` : ''}
+-                <div class="divider"></div>
+-                
+-                <div style="font-size:9px;margin:3px 0;"><strong>Item</strong> <strong style="float:right">Amount</strong></div>
+-                <div class="divider"></div>
+-                ${receiptRows}
+-                <div class="divider"></div>
+-                
+-                <div style="display:flex;justify-content:space-between;font-size:10px;margin:2px 0;">
+-                    <span><strong>Subtotal:</strong></span>
+-                    <span>₹${subtotal.toFixed(2)}</span>
+-                </div>
+-                ${discount > 0 ? `<div style="display:flex;justify-content:space-between;font-size:10px;margin:2px 0;color:#059669;">
+-                    <span><strong>Discount:</strong></span>
+-                    <span>-₹${discount.toFixed(2)}</span>
+-                </div>` : ''}
+-                ${deliveryCharge > 0 ? `<div style="display:flex;justify-content:space-between;font-size:10px;margin:2px 0;">
+-                    <span><strong>Delivery:</strong></span>
+-                    <span>₹${deliveryCharge.toFixed(2)}</span>
+-                </div>` : ''}
+-                
+-                <div class="divider"></div>
+-                <div class="total-section">TOTAL</div>
+-                <div class="total-amount">₹${total.toFixed(2)}</div>
+-                
+-                <div class="divider"></div>
+-                <div class="thank-you">${escapeHtml(thankYouVal).replace(/\n/g, '<br>')}</div>
+-                <div class="footer" style="margin-top:8px;text-align:center;">
+-                    <div>Powered by Mount Made</div>
+-                    <div style="font-size:7px;margin-top:2px;">${new Date().toLocaleTimeString('en-IN')}</div>
+-                </div>
+-            </div>
+-            
+-            <script>
+-                // Try to load logo from site
+-                try {
+-                    const logoEl = document.querySelector('.navbar-brand img.site-logo-dynamic');
+-                    if (logoEl && logoEl.src) {
+-                        const imgTag = document.createElement('img');
+-                        imgTag.src = logoEl.src;
+-                        imgTag.style.maxWidth = '100%';
+-                        imgTag.style.height = 'auto';
+-                        imgTag.style.maxHeight = '30mm';
+-                        document.getElementById('logo-container').appendChild(imgTag);
+-                    }
+-                } catch(e) {}
+-                
+-                window.addEventListener('load', () => {
+-                    setTimeout(() => window.print(), 500);
+-                });
+-            </script>
+-            <div class="no-print" style="margin-top:10mm;text-align:center;">
+-                <button onclick="window.print()" style="padding:8px 16px;background:#1a4731;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px;">🖨️ Print / Save PDF</button>
++            const thankYouVal = edited.thankYou || window.getInvoiceThankYouMessageDefault(company);
++            const layout = (edited.layout && typeof edited.layout === 'object') ? edited.layout : (window.getInvoiceLayoutState ? window.getInvoiceLayoutState() : {});
++            const invoiceMarkup = window.renderInvoiceLayoutMarkup ? window.renderInvoiceLayoutMarkup({
++                company,
++                invNum: invoiceNumber,
++                customer: customerName,
++                email,
++                phone,
++                address: deliveryAddress,
++                items: items,
++                discount,
++                delivery: deliveryCharge,
++                total,
++                thankYou: thankYouVal,
++                layout,
++                selectedBlock: 'logo'
++            }) : '';
++
++            const html = `<!DOCTYPE html><html><head><title>Invoice ${escapeHtml(invoiceNumber)}</title>
++            <style>body{font-family:Arial,sans-serif;max-width:760px;margin:40px auto;color:#222;font-size:14px;}
++            table{width:100%;border-collapse:collapse;margin-top:1rem;}
++            th{background:#f0fdf4;padding:0.5rem 0.75rem;border:1px solid #ddd;font-weight:700;text-align:left;}
++            .total-row td{font-weight:700;}
++            @media print{body{margin:20px;}.no-print{display:none}}</style></head><body>
++            <div style="border:1px solid #ddd;border-radius:10px;padding:1rem;background:#fff;">
++                ${invoiceMarkup}
+             </div>
++            <div class="no-print" style="margin-top:1.5rem;"><button onclick="window.print()" style="padding:0.5rem 1rem;background:#1a4731;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:1rem;">&#128424; Print / Save PDF</button></div>
+             </body></html>`;
+-            
+-            const w = window.open('', '_blank', 'width=400,height=600');
++            const w = window.open('', '_blank', 'width=760,height=920');
+             if (!w) { showAlert('Pop-up blocked. Please allow pop-ups for this site.', 'error'); return; }
+             w.document.write(html);
+             w.document.close();
+@@ -13130,7 +13182,8 @@
+             deliveryCharge: 0
+         };
+ 
+-        window.openInvoiceEditor = function(orderId) {
++        window.openInvoiceEditor = async function(orderId) {
++            await window.ensureInvoiceThankYouMessageLoaded();
+             const orders = window._ordersCache || [];
+             const order = orders.find(x => x.id == orderId);
+             if (!order) { showAlert('Order not found', 'error'); return; }
+@@ -13192,13 +13245,13 @@
+             document.getElementById('invoice-editor-order-id').value = orderId;
+             document.getElementById('invoice-editor-number').value = edited.invoice_number || order.order_number || String(orderId);
+             document.getElementById('invoice-editor-company').value = edited.company || 'Mount Made';
+-            document.getElementById('invoice-editor-customer').value = edited.customer || order.full_name || '';
+-            document.getElementById('invoice-editor-email').value = edited.email || order.email || '';
+-            document.getElementById('invoice-editor-phone').value = edited.phone || order.phone || '';
++            document.getElementById('invoice-editor-customer').value = edited.customer || order.full_name || order.customer?.full_name || order.user_full_name || '';
++            document.getElementById('invoice-editor-email').value = edited.email || order.email || order.customer?.email || order.user_email || '';
++            document.getElementById('invoice-editor-phone').value = edited.phone || order.phone || order.customer?.phone || order.user_phone || '';
+             document.getElementById('invoice-editor-discount').value = window.invoiceEditorData.discount;
+             document.getElementById('invoice-editor-delivery').value = window.invoiceEditorData.deliveryCharge;
+             document.getElementById('invoice-editor-address').value = edited.address || addrStr;
+-            document.getElementById('invoice-editor-thankyou').value = edited.thankYou || 'Thank you for shopping with Mount Made!';
++            document.getElementById('invoice-editor-thankyou').value = edited.thankYou || window.getInvoiceThankYouMessageDefault(document.getElementById('invoice-editor-company').value || 'Mount Made');
+ 
+             renderInvoiceItems();
+             updateInvoicePreview();
+@@ -13217,12 +13270,23 @@
+             const container = document.getElementById('invoice-editor-items');
+             container.innerHTML = '';
+ 
++            if (!Array.isArray(window.invoiceEditorData.items) || window.invoiceEditorData.items.length === 0) {
++                const placeholder = document.createElement('div');
++                placeholder.style.cssText = 'padding: 1rem; border: 1px dashed var(--border); border-radius: 10px; background: var(--bg); color: var(--text-muted);';
++                placeholder.innerHTML = `
++                    <div style="font-weight: 600; margin-bottom: 0.5rem;">No invoice items available</div>
++                    <div style="font-size: 0.92rem; line-height: 1.5;">Add a line item to populate the invoice preview or open an order invoice from order history.</div>
++                `;
++                container.appendChild(placeholder);
++                return;
++            }
++
+             window.invoiceEditorData.items.forEach((item, index) => {
+                 const itemDiv = document.createElement('div');
+-                itemDiv.style.cssText = 'margin-bottom: 1rem; padding: 0.75rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg);';
++                itemDiv.style.cssText = 'margin-bottom: 1rem; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 8px; background: #ffffff; color: #111827;';
+                 itemDiv.innerHTML = `
+                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+-                        <strong style="color: var(--text-dark);">Item ${index + 1}</strong>
++                        <strong style="color: #111827;">Item ${index + 1}</strong>
+                         <button type="button" class="btn btn-danger btn-sm" onclick="removeInvoiceItem(${index})" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">
+                             <i class="fas fa-trash"></i> Remove
+                         </button>
+@@ -13232,7 +13296,7 @@
+                         <input type="number" placeholder="Qty" value="${item.quantity}" min="1" class="form-input" style="font-size: 0.9rem;" oninput="updateInvoiceItem(${index}, 'quantity', parseInt(this.value) || 1)">
+                         <input type="number" placeholder="Price" value="${item.price.toFixed(2)}" min="0" step="0.01" class="form-input" style="font-size: 0.9rem;" oninput="updateInvoiceItem(${index}, 'price', parseFloat(this.value) || 0)">
+                     </div>
+-                    <div style="text-align: right; font-weight: 700; color: var(--primary);">
++                    <div style="text-align: right; font-weight: 700; color: #059669;">
+                         Subtotal: ₹${(item.price * item.quantity).toFixed(2)}
+                     </div>
+                 `;
+@@ -13489,7 +13553,7 @@
+             const email = options.email || document.getElementById('invoice-editor-email')?.value || '';
+             const phone = options.phone || document.getElementById('invoice-editor-phone')?.value || '';
+             const address = options.address || document.getElementById('invoice-editor-address')?.value || '';
+-            const thankYou = options.thankYou || (document.getElementById('invoice-editor-thankyou') && document.getElementById('invoice-editor-thankyou').value) || (`Thank you for shopping with ${company}!`);
++            const thankYou = options.thankYou || (document.getElementById('invoice-editor-thankyou') && document.getElementById('invoice-editor-thankyou').value) || window.getInvoiceThankYouMessageDefault(company);
+             const layout = options.layout || window.invoiceEditorLayout || (window.getInvoiceLayoutState ? window.getInvoiceLayoutState() : {});
+             const selectedBlock = options.selectedBlock || window.invoiceEditorSelectedLayoutBlock || 'logo';
+ 
+@@ -13700,20 +13764,60 @@
+             });
+         };
+ 
+-        window.updateInvoicePreview = function() {
++        window.ensureInvoiceThankYouMessageLoaded = async function() {
++            if (typeof window._invoiceThankYouMessageDefault !== 'undefined') {
++                return window._invoiceThankYouMessageDefault;
++            }
++
++            try {
++                const response = await api.get('/admin/settings');
++                const settings = response.settings || {};
++                window._invoiceThankYouMessageDefault = String(settings.invoice_thank_you_message || settings.invoice_thank_you || '').trim();
++            } catch (err) {
++                console.warn('Could not load invoice thank you message from site settings:', err);
++                window._invoiceThankYouMessageDefault = '';
++            }
++
++            return window._invoiceThankYouMessageDefault;
++        };
++
++        window.getInvoiceThankYouMessageDefault = function(company = 'Mount Made') {
++            const message = String(window._invoiceThankYouMessageDefault || '').trim();
++            return message || `Thank you for shopping with ${company}!`;
++        };
++
++        window.updateInvoicePreview = async function() {
++            await window.ensureInvoiceThankYouMessageLoaded();
+             const company = document.getElementById('invoice-editor-company').value || 'Mount Made';
+             const invNum = document.getElementById('invoice-editor-number').value || 'INV-0001';
+             const customer = document.getElementById('invoice-editor-customer').value || 'Customer';
+             const email = document.getElementById('invoice-editor-email').value || '';
+             const phone = document.getElementById('invoice-editor-phone').value || '';
+             const address = document.getElementById('invoice-editor-address').value || '';
+-            const thankYou = (document.getElementById('invoice-editor-thankyou') && document.getElementById('invoice-editor-thankyou').value) || (`Thank you for shopping with ${company}!`);
++            const thankYou = (document.getElementById('invoice-editor-thankyou') && document.getElementById('invoice-editor-thankyou').value) || window.getInvoiceThankYouMessageDefault(company);
+             const discount = parseFloat(document.getElementById('invoice-editor-discount').value || 0);
+             const delivery = parseFloat(document.getElementById('invoice-editor-delivery').value || 0);
+ 
+             window.invoiceEditorData.discount = discount;
+             window.invoiceEditorData.deliveryCharge = delivery;
+ 
++            const previewEl = document.getElementById('invoice-editor-preview');
++            const totalEl = document.getElementById('invoice-editor-total');
++            if (!Array.isArray(window.invoiceEditorData.items) || window.invoiceEditorData.items.length === 0) {
++                if (previewEl) {
++                    previewEl.innerHTML = `
++                        <div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-size:0.95rem;text-align:center;padding:2rem;">
++                            <div>
++                                <strong style="display:block;margin-bottom:0.75rem;color:var(--text-dark);">No invoice items to preview</strong>
++                                Add line items or open an order invoice from Order History to populate the preview.
++                            </div>
++                        </div>
++                    `;
++                }
++                if (totalEl) totalEl.textContent = total.toFixed(2);
++                return;
++            }
++
+             if (!window.invoiceEditorLayout) window.invoiceEditorLayout = window.getInvoiceLayoutState();
+             const layout = window.invoiceEditorLayout;
+             let subtotal = 0;
+@@ -13750,13 +13854,11 @@
+                 </div>
+             `;
+ 
+-            const previewEl = document.getElementById('invoice-editor-preview');
+             if (previewEl) {
+                 previewEl.innerHTML = html;
+                 try { window.syncInvoiceLayoutControls(); } catch (e) {}
+                 try { window.attachInvoiceLayoutDragHandlers(); } catch (e) {}
+             }
+-            const totalEl = document.getElementById('invoice-editor-total');
+             if (totalEl) totalEl.textContent = total.toFixed(2);
+         };
+ 
+@@ -13768,7 +13870,7 @@
+             const email = document.getElementById('invoice-editor-email').value || '';
+             const phone = document.getElementById('invoice-editor-phone').value || '';
+             const address = document.getElementById('invoice-editor-address').value || '';
+-            const thankYouVal = (document.getElementById('invoice-editor-thankyou') && document.getElementById('invoice-editor-thankyou').value) || (`Thank you for shopping with ${company}!`);
++            const thankYouVal = (document.getElementById('invoice-editor-thankyou') && document.getElementById('invoice-editor-thankyou').value) || window.getInvoiceThankYouMessageDefault(company);
+             const discount = parseFloat(document.getElementById('invoice-editor-discount').value || 0);
+             const delivery = parseFloat(document.getElementById('invoice-editor-delivery').value || 0);
+ 

@@ -394,177 +394,6 @@
             }
         }
 
-        /* ── Return Modal ─────────────────────────── */
-        .return-modal-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 9999;
-            display: flex; align-items: center; justify-content: center; padding: 1rem;
-            animation: rmFadeIn .2s ease;
-        }
-        @keyframes rmFadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes rmSlideUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
-
-        .return-modal {
-            background: var(--bg-primary, #fff); border-radius: 16px; max-width: 560px; width: 100%;
-            max-height: 92vh; overflow-y: auto; box-shadow: 0 12px 48px rgba(0,0,0,0.22);
-            animation: rmSlideUp .3s ease;
-        }
-        .return-modal-header {
-            padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border, #e5e7eb);
-            display: flex; justify-content: space-between; align-items: center;
-            position: sticky; top: 0; background: var(--bg-primary, #fff); z-index: 1; border-radius: 16px 16px 0 0;
-        }
-        .return-modal-header h3 { margin: 0; font-size: 1.15rem; display: flex; align-items: center; gap: 0.5rem; }
-        .return-modal-body { padding: 1.25rem 1.5rem; }
-        .return-modal-footer {
-            padding: 1rem 1.5rem; border-top: 1px solid var(--border, #e5e7eb);
-            display: flex; justify-content: flex-end; gap: 0.75rem;
-            position: sticky; bottom: 0; background: var(--bg-primary, #fff); border-radius: 0 0 16px 16px;
-        }
-        .return-modal-close {
-            background: none; border: none; font-size: 1.5rem; cursor: pointer;
-            color: var(--text-light); width: 36px; height: 36px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center; transition: background .15s;
-        }
-        .return-modal-close:hover { background: var(--bg-secondary, #f1f5f9); }
-
-        /* Stepper */
-        .rm-stepper { display: flex; align-items: center; gap: 0; margin-bottom: 1.5rem; }
-        .rm-step {
-            display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; font-weight: 600;
-            color: var(--text-light, #94a3b8); transition: color .2s;
-        }
-        .rm-step.active { color: var(--primary, #1a4731); }
-        .rm-step.done { color: var(--success, #10b981); }
-        .rm-step-num {
-            width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            font-size: 0.72rem; border: 2px solid var(--border, #e5e7eb); background: var(--bg-primary, #fff); transition: all .2s;
-        }
-        .rm-step.active .rm-step-num { border-color: var(--primary, #1a4731); background: var(--primary, #1a4731); color: #fff; }
-        .rm-step.done .rm-step-num { border-color: var(--success, #10b981); background: var(--success, #10b981); color: #fff; }
-        .rm-step-line { flex: 1; height: 2px; background: var(--border, #e5e7eb); margin: 0 0.5rem; transition: background .2s; }
-        .rm-step-line.done { background: var(--success, #10b981); }
-
-        /* Item Selection */
-        .return-item-check {
-            display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; border-radius: 10px;
-            border: 2px solid var(--border, #e5e7eb); margin-bottom: 0.5rem; cursor: pointer; transition: all .15s;
-        }
-        .return-item-check:hover { border-color: var(--primary, #1a4731); background: rgba(26,71,49,0.02); }
-        .return-item-check.selected { border-color: var(--primary, #1a4731); background: rgba(26,71,49,0.04); }
-        .return-item-check input[type="checkbox"] { accent-color: var(--primary, #1a4731); width: 18px; height: 18px; cursor: pointer; }
-
-        /* Reason Options */
-        .rm-reason-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 1rem; }
-        .rm-reason-option {
-            display: flex; align-items: center; gap: 0.5rem; padding: 0.7rem 0.85rem;
-            border: 2px solid var(--border, #e5e7eb); border-radius: 10px; cursor: pointer;
-            font-size: 0.85rem; transition: all .15s; background: var(--bg-primary, #fff);
-        }
-        .rm-reason-option:hover { border-color: var(--primary, #1a4731); }
-        .rm-reason-option.selected { border-color: var(--primary, #1a4731); background: rgba(26,71,49,0.04); font-weight: 600; }
-        .rm-reason-option i { font-size: 1rem; color: var(--text-light); transition: color .15s; }
-        .rm-reason-option.selected i { color: var(--primary, #1a4731); }
-        .rm-reason-option input { display: none; }
-
-        /* Condition Options */
-        .rm-condition-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; margin-bottom: 1rem; }
-        .rm-condition-option {
-            display: flex; flex-direction: column; align-items: center; gap: 0.35rem; padding: 0.85rem 0.5rem;
-            border: 2px solid var(--border, #e5e7eb); border-radius: 10px; cursor: pointer;
-            font-size: 0.78rem; text-align: center; transition: all .15s; background: var(--bg-primary, #fff);
-        }
-        .rm-condition-option:hover { border-color: var(--primary, #1a4731); }
-        .rm-condition-option.selected { border-color: var(--primary, #1a4731); background: rgba(26,71,49,0.04); font-weight: 600; }
-        .rm-condition-option i { font-size: 1.3rem; color: var(--text-light); transition: color .15s; }
-        .rm-condition-option.selected i { color: var(--primary, #1a4731); }
-        .rm-condition-option input { display: none; }
-
-        .rm-textarea {
-            width: 100%; padding: 0.75rem; border: 2px solid var(--border, #e5e7eb); border-radius: 10px;
-            font-size: 0.92rem; resize: vertical; min-height: 80px; font-family: inherit; transition: border-color .15s;
-        }
-        .rm-textarea:focus { outline: none; border-color: var(--primary, #1a4731); }
-
-        .rm-section-title { font-weight: 700; font-size: 0.9rem; margin-bottom: 0.6rem; color: var(--text-primary, #1e293b); }
-
-        /* Summary */
-        .rm-summary-card {
-            background: var(--bg-secondary, #f8fafc); border-radius: 10px; padding: 1rem; margin-bottom: 0.75rem;
-            border: 1px solid var(--border, #e5e7eb);
-        }
-        .rm-summary-row { display: flex; justify-content: space-between; padding: 0.3rem 0; font-size: 0.88rem; }
-        .rm-summary-row.total { font-weight: 700; border-top: 1px solid var(--border); padding-top: 0.6rem; margin-top: 0.3rem; }
-
-        /* Action Buttons */
-        .rm-btn-return {
-            padding: 0.6rem 1.25rem; border: none; border-radius: 10px; font-weight: 600; font-size: 0.9rem;
-            cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem; transition: all .15s;
-            background: var(--primary, #1a4731); color: #fff;
-        }
-        .rm-btn-return:hover { opacity: 0.9; transform: translateY(-1px); }
-        .rm-btn-return:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-        .rm-btn-discard {
-            padding: 0.6rem 1.25rem; border: 2px solid var(--border, #e5e7eb); border-radius: 10px;
-            font-weight: 600; font-size: 0.9rem; cursor: pointer; background: transparent;
-            color: var(--text-primary); display: inline-flex; align-items: center; gap: 0.4rem; transition: all .15s;
-        }
-        .rm-btn-discard:hover { border-color: var(--error, #ef4444); color: var(--error, #ef4444); }
-
-        @media (max-width: 500px) {
-            .rm-reason-grid { grid-template-columns: 1fr; }
-            .rm-condition-grid { grid-template-columns: 1fr 1fr; }
-            .return-modal {
-                width: min(100%, calc(100vw - 1rem));
-                max-width: 100%;
-                border-radius: 18px 18px 0 0;
-                max-height: 95vh;
-                margin: 0;
-            }
-            .return-modal-header,
-            .return-modal-body,
-            .return-modal-footer {
-                padding-left: 1rem;
-                padding-right: 1rem;
-            }
-            .return-modal-header { padding-top: 1rem; padding-bottom: 1rem; }
-            .return-modal-body { padding-top: 0.75rem; padding-bottom: 0.75rem; }
-            .return-modal-body .form-group {
-                display: flex;
-                flex-direction: column;
-                align-items: stretch;
-                gap: 0.45rem;
-                margin-bottom: 1rem;
-            }
-            .return-modal-body .form-group label {
-                width: 100%;
-                margin-bottom: 0;
-                white-space: normal;
-            }
-            .return-modal-body .form-group .form-control {
-                width: 100%;
-                min-width: 0;
-                display: block;
-            }
-            .return-modal-body .form-group textarea {
-                min-height: 120px;
-            }
-            .return-modal-footer {
-                flex-direction: column;
-                align-items: stretch;
-                gap: 0.75rem;
-                padding-top: 0.75rem;
-                padding-bottom: calc(1rem + env(safe-area-inset-bottom));
-            }
-            .return-modal-footer .btn {
-                width: 100%;
-            }
-            .return-modal-overlay {
-                align-items: flex-end;
-                justify-content: center;
-                padding: 0.5rem 0.5rem calc(0.75rem + env(safe-area-inset-bottom));
-            }
-        }
-
         /* account dropdown styles moved to styles.css */
     </style>
 
@@ -612,36 +441,7 @@
             }
         }
 
-        function normalizeReturnStatus(status) {
-            if (!status) return '';
-            const s = String(status).toLowerCase();
-            if (s === 'requested') return 'pending';
-            return s;
-        }
-
         function getEffectiveCustomerStatus(order) {
-            // If a return exists for this order, prefer showing the return lifecycle
-            const rawReturn = order.return_status || order.returnStatus || null;
-            const rstatus = normalizeReturnStatus(rawReturn);
-            if (rstatus) {
-                switch (rstatus) {
-                    case 'pending':
-                    case 'requested':
-                        return { text: 'Return In Progress', cls: 'order-status-badge order-status-pending' };
-                    case 'approved':
-                        return { text: 'Return Approved', cls: 'order-status-badge order-status-approved' };
-                    case 'rejected':
-                        return { text: 'Return Rejected', cls: 'order-status-badge order-status-cancelled' };
-                    case 'shipped':
-                        return { text: 'Return Shipped', cls: 'order-status-badge order-status-shipped' };
-                    case 'completed':
-                        return { text: 'Return Completed', cls: 'order-status-badge order-status-delivered' };
-                    default:
-                        return { text: String(rstatus).toUpperCase(), cls: 'order-status-badge' };
-                }
-            }
-
-            // Fallback to order status
             return { text: getCustomerOrderStatusText(order.status), cls: getCustomerOrderStatusClass(order.status) };
         }
 
@@ -827,7 +627,13 @@
                 ].join('');
 
                 const itemsHtml = (order.items || []).map(item => 
-                    `<div style="display:flex;justify-content:space-between;padding:0.5rem 0;gap:0.75rem;"><span>${item.product_name} x ${item.quantity}</span><span>${formatCurrency(item.subtotal)}</span></div>`
+                    `<div style="margin-bottom:0.8rem;">
+                        <div style="display:flex;justify-content:space-between;padding:0.5rem 0;gap:0.75rem;">
+                            <span>${item.product_name} x ${item.quantity}</span>
+                            <span>${formatCurrency(item.subtotal)}</span>
+                        </div>
+                        <div style="color: var(--text-light); font-size: 0.85rem; line-height: 1.4; margin: 0.25rem 0 0 0;">&ndash; Any refunded amount will be credited to your account within 3&ndash;5 business days.</div>
+                    </div>`
                 ).join('');
 
                 const refundHtml = getRefundDisplay(order)
@@ -841,15 +647,8 @@
                     ? `<button class="btn btn-danger btn-sm" onclick="cancelOrder(${order.id})"><i class="fas fa-times"></i> Cancel Order</button>`
                     : '';
 
-                const normReturn = normalizeReturnStatus(order.return_status || order.returnStatus || order.returnStatusRaw || null);
-                const hasActiveReturn = normReturn && normReturn !== 'rejected' && normReturn !== '';
-
-                const returnBtn = (order.status === 'delivered' && !hasActiveReturn)
-                    ? `<button class="btn btn-secondary btn-sm" onclick="openReturnModal(${order.id}, '${order.order_number}')"><i class="fas fa-undo"></i> Return Items</button>`
-                    : '';
-
-                const actionsHtml = (canCustomerCancel(order) || returnBtn)
-                    ? `<div style="margin-top:1rem;display:flex;justify-content:flex-end;gap:0.5rem;flex-wrap:wrap;">${cancelBtn}${returnBtn}</div>`
+                const actionsHtml = canCustomerCancel(order)
+                    ? `<div style="margin-top:1rem;display:flex;justify-content:flex-end;gap:0.5rem;flex-wrap:wrap;">${cancelBtn}</div>`
                     : '';
 
                 return [
@@ -896,132 +695,6 @@
             ordersRefreshInterval = setInterval(() => {
                 loadOrders().catch(err => console.error('Auto-refresh orders error:', err));
             }, refreshDelay);
-        }
-
-        // Return functionality
-        async function openReturnModal(orderId, orderNumber) {
-            const order = _ordersCache.find(o => o.id === orderId);
-            if (!order) return;
-
-            const modalHtml = `
-                <div id="return-modal-overlay" class="return-modal-overlay">
-                    <div class="return-modal" style="max-width: 500px;">
-                        <div class="return-modal-header">
-                            <h2><i class="fas fa-undo"></i> Return Items from Order #${orderNumber}</h2>
-                            <button id="return-close-btn" class="return-modal-close"><i class="fas fa-times"></i></button>
-                        </div>
-                        <div class="return-modal-body">
-                            <div class="form-group">
-                                <label for="return-reason">Return Reason *</label>
-                                <select id="return-reason" class="form-control" required>
-                                    <option value="">Select a reason...</option>
-                                    <option value="Damaged">Damaged</option>
-                                    <option value="Defective">Defective</option>
-                                    <option value="Not as described">Not as described</option>
-                                    <option value="Changed mind">Changed mind</option>
-                                    <option value="Wrong item">Wrong item</option>
-                                    <option value="Other">Other</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="return-description">Description (optional)</label>
-                                <textarea id="return-description" class="form-control" placeholder="Explain why you want to return this item..." maxlength="500" style="resize: vertical; min-height: 100px;"></textarea>
-                                <small style="color: var(--text-light);" id="char-count">0/500 characters</small>
-                            </div>
-                        </div>
-                        <div class="return-modal-footer">
-                            <button id="return-cancel-btn" class="btn btn-secondary">Cancel</button>
-                            <button id="return-submit-btn" class="btn btn-primary">Submit Return Request</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
-
-            // Wire up controls (use JS listeners instead of inline onclick to avoid mobile/stacking issues)
-            const overlay = document.getElementById('return-modal-overlay');
-            // ensure overlay sits above other UI layers
-            if (overlay && overlay.style) overlay.style.zIndex = 200000;
-            const textarea = document.getElementById('return-description');
-            const btnSubmit = document.getElementById('return-submit-btn');
-            const btnClose = document.getElementById('return-close-btn');
-            const btnCancel = document.getElementById('return-cancel-btn');
-
-            // Character counter
-            if (textarea) {
-                textarea.addEventListener('input', () => {
-                    const cc = document.getElementById('char-count');
-                    if (cc) cc.textContent = textarea.value.length + '/500 characters';
-                });
-            }
-
-            // Ensure overlay accepts pointer events
-            if (overlay && overlay.style) overlay.style.pointerEvents = 'auto';
-            // Helper: add listeners for touch/mouse/click to improve cross-browser tap responsiveness
-            function addTapListener(el, fn) {
-                if (!el) return;
-                try { el.style.pointerEvents = 'auto'; } catch (e) {}
-                try { el.style.cursor = 'pointer'; } catch (e) {}
-                try { el.disabled = false; } catch (e) {}
-                el.style.touchAction = el.style.touchAction || 'manipulation';
-                const handler = (ev) => { ev.preventDefault && ev.preventDefault(); ev.stopPropagation && ev.stopPropagation(); fn(ev); };
-                el.addEventListener('touchstart', handler, { passive: false });
-                el.addEventListener('mousedown', handler);
-                el.addEventListener('click', handler);
-            }
-
-            // Submit
-            addTapListener(btnSubmit, () => { console.log('DEBUG: return-submit clicked'); submitReturn(orderId); });
-
-            // Close / Cancel
-            const closeHandlers = () => { closeReturnModal(); };
-            addTapListener(btnClose, closeHandlers);
-            addTapListener(btnCancel, closeHandlers);
-
-            // Backdrop click closes modal when clicking outside content
-            if (overlay) {
-                overlay.addEventListener('click', function (e) {
-                    if (e.target === overlay) closeReturnModal();
-                });
-            }
-        }
-
-        function closeReturnModal() {
-            const overlay = document.getElementById('return-modal-overlay');
-            if (overlay) overlay.remove();
-        }
-
-        async function submitReturn(orderId) {
-            try {
-                console.log('DEBUG: submitReturn called for orderId=', orderId);
-                const reason = document.getElementById('return-reason').value;
-                const description = document.getElementById('return-description').value;
-                const quantity = 1;
-
-                if (!reason) {
-                    showAlert('Please select a return reason', 'error');
-                    return;
-                }
-
-                const resp = await api.post('/returns/request', {
-                    orderId,
-                    reason,
-                    description,
-                    quantity
-                });
-
-                if (resp.success) {
-                    showAlert('Return request submitted successfully!', 'success');
-                    closeReturnModal();
-                    await loadOrders();
-                } else {
-                    showAlert(resp.error || 'Failed to submit return request', 'error');
-                }
-            } catch (err) {
-                console.error('Return submission error:', err);
-                showAlert(err.message || 'Failed to submit return request', 'error');
-            }
         }
 
         window.addEventListener('beforeunload', () => {
