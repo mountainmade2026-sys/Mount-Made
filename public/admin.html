@@ -12461,6 +12461,21 @@
             html += '</tbody></table></div></div>';
             document.getElementById('products-list').innerHTML = html;
         };
+        function getAdminOrderStatusLabel(order) {
+            const effectiveStatus = order.status || 'pending';
+            if (effectiveStatus === 'cancelled') {
+                const isCustomerCancelled = String(order.cancel_reason || '').toLowerCase().includes('customer');
+                return isCustomerCancelled ? 'Cancelled by the Customer' : 'Cancelled';
+            }
+            if (effectiveStatus === 'out_for_delivery') {
+                return 'Out for Delivery';
+            }
+            if (effectiveStatus === 'not_received') {
+                return 'Not Received';
+            }
+            return effectiveStatus;
+        }
+
         window.filterOrders = function() {
             const search = (document.getElementById('order-search')?.value || '').toLowerCase().trim();
             const status = document.getElementById('order-status-filter')?.value || '';
@@ -12503,6 +12518,7 @@
                     : '<span style="color:var(--text-muted);">—</span>';
 
                 const effectiveStatus = o.status || 'pending';
+                const statusLabel = getAdminOrderStatusLabel(o);
                 const isFinal = effectiveStatus === 'delivered' || effectiveStatus === 'cancelled' || effectiveStatus === 'returned' || effectiveStatus === 'not_received';
                 const isPending = effectiveStatus === 'pending';
                 const canTrack = effectiveStatus === 'processing' || effectiveStatus === 'shipped' || effectiveStatus === 'out_for_delivery';
@@ -12563,7 +12579,7 @@
                         <td>${formatCurrency(o.total_amount)}</td>
                         <td>${getPaymentDisplay(o, { showRefundBadge: false })}</td>
                         <td>${deliveryLabel}</td>
-                        <td><span class="badge badge-${effectiveStatus === 'delivered' ? 'success' : effectiveStatus === 'returned' ? 'info' : effectiveStatus === 'cancelled' ? 'danger' : effectiveStatus === 'not_received' ? 'danger' : effectiveStatus === 'out_for_delivery' ? 'warning' : 'warning'}">${effectiveStatus === 'out_for_delivery' ? 'Out for Delivery' : effectiveStatus === 'not_received' ? 'Not Received' : effectiveStatus}</span></td>
+                        <td><span class="badge badge-${effectiveStatus === 'delivered' ? 'success' : effectiveStatus === 'returned' ? 'info' : effectiveStatus === 'cancelled' ? 'danger' : effectiveStatus === 'not_received' ? 'danger' : effectiveStatus === 'out_for_delivery' ? 'warning' : 'warning'}">${statusLabel}</span></td>
                         <td>${formatDate(o.created_at)}</td>
                         <td>
                             ${actionsHtml}
@@ -13744,9 +13760,10 @@
                 const items = Array.isArray(o.items) ? o.items.map(it => `${it.product_name}x${it.quantity}`).join('; ') : '';
                 const deliveryCharge = parseFloat(o.delivery_charge)||0;
                 const deliveryLabel = `Standard${deliveryCharge > 0 ? ' +'+deliveryCharge : ' Free'}`;
+                const statusLabel = getAdminOrderStatusLabel(o);
                 return [
                     o.order_number||o.id, o.id, o.full_name||'', o.email||'', o.phone||'',
-                    items, parseFloat(o.total_amount||0).toFixed(2), deliveryLabel, o.status||'',
+                    items, parseFloat(o.total_amount||0).toFixed(2), deliveryLabel, statusLabel,
                     o.created_at ? new Date(o.created_at).toLocaleDateString('en-IN') : ''
                 ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(',');
             });
