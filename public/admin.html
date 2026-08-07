@@ -5057,8 +5057,8 @@
                 </div>
 
                 <div style="padding: 1rem;">
-                    <div style="display: grid; grid-template-columns: 1fr; gap: 1.5rem;">
-                        <!-- Editor Panel (simplified) -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                        <!-- Editor Panel -->
                         <div style="border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; background: var(--bg-card);">
                             <h3 style="margin-bottom: 1rem; color: var(--text-dark);">Edit Invoice Details</h3>
 
@@ -5082,14 +5082,17 @@
                             </div>
 
                             <div style="margin-top:1rem;">
-                                <div style="font-size:0.95rem;color:var(--text-secondary);margin-bottom:0.5rem;">Only the Thank You message is editable here. The site homepage logo will be used automatically on printed invoices.</div>
-                                <div style="margin-bottom: 0.5rem;">
-                                    <!-- Reset Thank You button removed as per request -->
-                                </div>
+                                <div style="font-size:0.95rem;color:var(--text-secondary);margin-bottom:0.5rem;">The site homepage logo will be used automatically on printed invoices.</div>
                             </div>
                         </div>
                         
-                        <!-- Preview Panel removed as requested -->
+                        <!-- Preview Panel -->
+                        <div style="border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; background: var(--bg-card); overflow-y: auto; max-height: 500px;">
+                            <h3 style="margin-bottom: 1rem; color: var(--text-dark);">Invoice Preview</h3>
+                            <div id="invoice-editor-preview" style="background: white; border: 1px solid #ddd; border-radius: 6px; padding: 1rem; font-size: 0.9rem;">
+                                <p style="color: #999; text-align: center;">Load an order to preview invoice...</p>
+                            </div>
+                        </div>
                     </div>
 
                     <div style="display:flex; justify-content:flex-end; gap:0.75rem; margin-top:1rem;">
@@ -12949,9 +12952,7 @@
             const phone = edited.phone || o.phone || '';
             const rawAddress = edited.address || o.delivery_address || o.shipping_address || o.address || '';
             const deliveryAddress = formatAddressValue(rawAddress);
-            const deliveryAddressHtml = deliveryAddress
-                ? `<br><strong>Delivery Address:</strong><br>${escapeHtml(deliveryAddress).replace(/\n/g, '<br>')}`
-                : '';
+            
             const explicitDiscount = Number.isFinite(Number(edited.discount))
                 ? Number(edited.discount)
                 : Number.isFinite(Number(edited.discount_amount))
@@ -12986,33 +12987,20 @@
                 return sum + ((listPrice != null && listPrice > itemPrice) ? (listPrice - itemPrice) : 0);
             }, 0);
 
-            const rows = items.map(it => {
+            let subtotal = 0;
+            const receiptRows = items.map(it => {
                 const qty = Number.isFinite(Number(it.quantity)) ? Number(it.quantity) : 1;
                 const price = Number.isFinite(Number(it.price)) ? Number(it.price) : 0;
-                const product = productCatalog.find(p => String(p.id) === String(it.product_id || it.id));
-                const originalPrice = product && Number.isFinite(Number(product.price)) ? Number(product.price) : null;
-                const unitPriceHtml = (originalPrice != null && originalPrice > 0)
-                    ? `₹${originalPrice.toFixed(2)}`
-                    : `₹${price.toFixed(2)}`;
-                const subtotal = qty * price;
+                const lineTotal = qty * price;
+                subtotal += lineTotal;
                 const label = escapeHtml(it.product_name || it.name || 'Item');
-                return `
-                <tr>
-                    <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;vertical-align:top;">
-                        <div style="font-weight:600;color:#111827;">${label}</div>
-                    </td>
-                    <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:center;vertical-align:middle;">${qty}</td>
-                    <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;vertical-align:middle;">${unitPriceHtml}</td>
-                    <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;vertical-align:middle;">&#8377;${subtotal.toFixed(2)}</td>
-                </tr>`;
+                return `<div style="display:flex;justify-content:space-between;margin-bottom:0.3rem;font-size:11px;font-family:monospace;line-height:1.2;">
+                    <span>${label}</span>
+                    <span>${qty}x₹${price.toFixed(2)}</span>
+                </div>
+                <div style="display:flex;justify-content:flex-end;margin-bottom:0.5rem;font-size:11px;font-weight:600;font-family:monospace;">₹${lineTotal.toFixed(2)}</div>`;
             }).join('');
 
-            let subtotal = 0;
-            items.forEach(it => {
-                const qty = Number.isFinite(Number(it.quantity)) ? Number(it.quantity) : 1;
-                const price = Number.isFinite(Number(it.price)) ? Number(it.price) : 0;
-                subtotal += qty * price;
-            });
             if (discount <= 0) {
                 const impliedDiscount = Number.isFinite(Number(o.total_amount))
                     ? subtotal + deliveryCharge - Number.parseFloat(o.total_amount)
@@ -13024,35 +13012,110 @@
             }
             const total = subtotal - discount + deliveryCharge;
             const thankYouVal = edited.thankYou || `Thank you for shopping with ${company}!`;
-            const layout = (edited.layout && typeof edited.layout === 'object') ? edited.layout : (window.getInvoiceLayoutState ? window.getInvoiceLayoutState() : {});
-            const invoiceMarkup = window.renderInvoiceLayoutMarkup ? window.renderInvoiceLayoutMarkup({
-                company,
-                invNum: invoiceNumber,
-                customer: customerName,
-                email,
-                phone,
-                address: deliveryAddress,
-                items: items,
-                discount,
-                delivery: deliveryCharge,
-                total,
-                thankYou: thankYouVal,
-                layout,
-                selectedBlock: 'logo'
-            }) : '';
 
-            const html = `<!DOCTYPE html><html><head><title>Invoice ${escapeHtml(invoiceNumber)}</title>
-            <style>body{font-family:Arial,sans-serif;max-width:760px;margin:40px auto;color:#222;font-size:14px;}
-            table{width:100%;border-collapse:collapse;margin-top:1rem;}
-            th{background:#f0fdf4;padding:0.5rem 0.75rem;border:1px solid #ddd;font-weight:700;text-align:left;}
-            .total-row td{font-weight:700;}
-            @media print{body{margin:20px;}.no-print{display:none}}</style></head><body>
-            <div style="border:1px solid #ddd;border-radius:10px;padding:1rem;background:#fff;">
-                ${invoiceMarkup}
+            // Thermal receipt HTML (80mm width = ~240px at 3dpi / ~380px at 96dpi)
+            const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Receipt ${escapeHtml(invoiceNumber)}</title>
+            <style>
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+                body {
+                    font-family: 'Courier New', monospace;
+                    width: 80mm;
+                    padding: 5mm;
+                    background: white;
+                    color: #000;
+                }
+                .receipt {
+                    width: 100%;
+                    text-align: center;
+                }
+                .logo-area { margin-bottom: 5px; }
+                .logo-area img { max-width: 100%; height: auto; max-height: 30mm; }
+                .header { font-weight: bold; font-size: 13px; margin-bottom: 3px; }
+                .divider { border-top: 1px dashed #000; margin: 3px 0; }
+                .info-section { font-size: 10px; text-align: left; margin: 3px 0; line-height: 1.3; }
+                .item-row { font-size: 9px; font-family: monospace; margin: 2px 0; }
+                .total-section { font-size: 12px; font-weight: bold; margin: 5px 0 3px 0; }
+                .total-amount { font-size: 14px; font-weight: bold; margin: 3px 0 5px 0; }
+                .thank-you { font-size: 9px; font-style: italic; margin-top: 5px; line-height: 1.3; }
+                .footer { font-size: 8px; color: #666; margin-top: 5px; }
+                @media print {
+                    body { margin: 0; padding: 0; width: 80mm; }
+                    .no-print { display: none; }
+                }
+            </style></head><body>
+            <div class="receipt">
+                <div class="logo-area" id="logo-container"></div>
+                <div class="header">${escapeHtml(company)}</div>
+                <div class="divider"></div>
+                
+                <div class="info-section">
+                    <div><strong>Invoice:</strong> ${escapeHtml(invoiceNumber)}</div>
+                    <div><strong>Date:</strong> ${new Date().toLocaleDateString('en-IN', { year: 'numeric', month: '2-digit', day: '2-digit' })}</div>
+                </div>
+                <div class="divider"></div>
+                
+                <div class="info-section">
+                    <div><strong>Bill To:</strong></div>
+                    <div>${escapeHtml(customerName)}</div>
+                    ${phone ? `<div>Ph: ${escapeHtml(phone)}</div>` : ''}
+                </div>
+                ${deliveryAddress ? `<div class="info-section"><strong>Delivery:</strong> ${escapeHtml(deliveryAddress).replace(/\n/g, '<br>')}</div>` : ''}
+                <div class="divider"></div>
+                
+                <div style="font-size:9px;margin:3px 0;"><strong>Item</strong> <strong style="float:right">Amount</strong></div>
+                <div class="divider"></div>
+                ${receiptRows}
+                <div class="divider"></div>
+                
+                <div style="display:flex;justify-content:space-between;font-size:10px;margin:2px 0;">
+                    <span><strong>Subtotal:</strong></span>
+                    <span>₹${subtotal.toFixed(2)}</span>
+                </div>
+                ${discount > 0 ? `<div style="display:flex;justify-content:space-between;font-size:10px;margin:2px 0;color:#059669;">
+                    <span><strong>Discount:</strong></span>
+                    <span>-₹${discount.toFixed(2)}</span>
+                </div>` : ''}
+                ${deliveryCharge > 0 ? `<div style="display:flex;justify-content:space-between;font-size:10px;margin:2px 0;">
+                    <span><strong>Delivery:</strong></span>
+                    <span>₹${deliveryCharge.toFixed(2)}</span>
+                </div>` : ''}
+                
+                <div class="divider"></div>
+                <div class="total-section">TOTAL</div>
+                <div class="total-amount">₹${total.toFixed(2)}</div>
+                
+                <div class="divider"></div>
+                <div class="thank-you">${escapeHtml(thankYouVal).replace(/\n/g, '<br>')}</div>
+                <div class="footer" style="margin-top:8px;text-align:center;">
+                    <div>Powered by Mount Made</div>
+                    <div style="font-size:7px;margin-top:2px;">${new Date().toLocaleTimeString('en-IN')}</div>
+                </div>
             </div>
-            <div class="no-print" style="margin-top:1.5rem;"><button onclick="window.print()" style="padding:0.5rem 1rem;background:#1a4731;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:1rem;">&#128424; Print / Save PDF</button></div>
+            
+            <script>
+                // Try to load logo from site
+                try {
+                    const logoEl = document.querySelector('.navbar-brand img.site-logo-dynamic');
+                    if (logoEl && logoEl.src) {
+                        const imgTag = document.createElement('img');
+                        imgTag.src = logoEl.src;
+                        imgTag.style.maxWidth = '100%';
+                        imgTag.style.height = 'auto';
+                        imgTag.style.maxHeight = '30mm';
+                        document.getElementById('logo-container').appendChild(imgTag);
+                    }
+                } catch(e) {}
+                
+                window.addEventListener('load', () => {
+                    setTimeout(() => window.print(), 500);
+                });
+            </script>
+            <div class="no-print" style="margin-top:10mm;text-align:center;">
+                <button onclick="window.print()" style="padding:8px 16px;background:#1a4731;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px;">🖨️ Print / Save PDF</button>
+            </div>
             </body></html>`;
-            const w = window.open('', '_blank', 'width=760,height=920');
+            
+            const w = window.open('', '_blank', 'width=400,height=600');
             if (!w) { showAlert('Pop-up blocked. Please allow pop-ups for this site.', 'error'); return; }
             w.document.write(html);
             w.document.close();
