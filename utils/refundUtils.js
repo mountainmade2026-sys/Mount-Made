@@ -44,9 +44,22 @@ function normalizeRazorpayRefundStatus(refundResponse = {}) {
   return 'refund_pending';
 }
 
+function isAlreadyRefundedError(error = {}) {
+  const message = String(
+    error?.error?.description ||
+    error?.response?.data?.error?.description ||
+    error?.response?.data?.description ||
+    error?.message ||
+    ''
+  ).toLowerCase();
+
+  return /fully refunded already|already refunded|already been refunded|refund has already been/i.test(message);
+}
+
 module.exports = {
   toNumber,
   getRefundAmount,
   shouldRestoreStockOnRefund,
-  normalizeRazorpayRefundStatus
+  normalizeRazorpayRefundStatus,
+  isAlreadyRefundedError
 };

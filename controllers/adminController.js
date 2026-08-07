@@ -13,7 +13,7 @@ const { notifyOrderConfirmed, notifyOrderShipped, notifyOutForDelivery } = requi
 const { normalizeWeightProductData } = require('../utils/productWeightOptions');
 const { parseProductGstOverrides, getItemGstAmount } = require('../utils/deliverySettings');
 const Razorpay = require('razorpay');
-const { getRefundAmount, shouldRestoreStockOnRefund, normalizeRazorpayRefundStatus } = require('../utils/refundUtils');
+const { getRefundAmount, shouldRestoreStockOnRefund, normalizeRazorpayRefundStatus, isAlreadyRefundedError } = require('../utils/refundUtils');
 
 const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID || '';
 const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN || '';
@@ -1154,6 +1154,41 @@ exports.refundOrder = async (req, res) => {
       });
     } catch (refundError) {
       const razorpayMessage = refundError?.error?.description || refundError?.response?.data?.error?.description || refundError?.message || 'Razorpay refund failed.';
+      if (isAlreadyRefundedError(refundError)) {
+        const refundAmountValue = Number.isFinite(refundAmount) ? Number(refundAmount) : 0;
+        const alreadyRefundedOrderResult = await db.query(
+          `UPDATE orders
+           SET refund_status = 'refunded',
+               refund_amount = $1::numeric,
+               refunded_at = CURRENT_TIMESTAMP,
+               payment_status = 'refunded',
+               status = CASE WHEN status != 'cancelled' THEN 'cancelled' ELSE status END,
+               updated_at = CURRENT_TIMESTAMP
+           WHERE id = $2
+           RETURNING *`,
+          [refundAmountValue, order.id]
+        );
+
+        if (shouldRestoreStockOnRefund(order)) {
+          const itemsResult = await db.query('SELECT product_id, quantity FROM order_items WHERE order_id = $1', [order.id]);
+          for (const item of itemsResult.rows || []) {
+            if (!item.product_id || !item.quantity) continue;
+            await db.query('UPDATE products SET stock_quantity = stock_quantity + $1 WHERE id = $2', [item.quantity, item.product_id]);
+          }
+        }
+
+        return res.json({
+          message: 'This order was already refunded in Razorpay. The order status has been updated.',
+          order: alreadyRefundedOrderResult.rows[0],
+          refund: {
+            id: null,
+            status: 'refunded',
+            amount: refundAmountValue,
+            alreadyRefunded: true
+          }
+        });
+      }
+
       console.error('Razorpay refund request failed:', razorpayMessage);
       return res.status(502).json({ error: `Razorpay refund failed: ${razorpayMessage}` });
     }

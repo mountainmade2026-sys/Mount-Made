@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { getRefundAmount, shouldRestoreStockOnRefund, normalizeRazorpayRefundStatus } = require('../utils/refundUtils');
+const { getRefundAmount, shouldRestoreStockOnRefund, normalizeRazorpayRefundStatus, isAlreadyRefundedError } = require('../utils/refundUtils');
 
 test('uses payment amount when present for a refund', () => {
   const order = { payment_amount: 349.99, total_amount: 400 };
@@ -26,4 +26,14 @@ test('maps Razorpay refund states to the app refund status', () => {
   assert.equal(normalizeRazorpayRefundStatus({ status: 'processed' }), 'refunded');
   assert.equal(normalizeRazorpayRefundStatus({ status: 'created' }), 'refund_pending');
   assert.equal(normalizeRazorpayRefundStatus({ status: 'failed' }), 'refund_failed');
+});
+
+test('detects Razorpay errors that mean the payment is already fully refunded', () => {
+  const error = { error: { description: 'The payment has been fully refunded already' } };
+  assert.equal(isAlreadyRefundedError(error), true);
+});
+
+test('ignores unrelated Razorpay refund errors', () => {
+  const error = { error: { description: 'The refund amount exceeds the captured amount' } };
+  assert.equal(isAlreadyRefundedError(error), false);
 });
