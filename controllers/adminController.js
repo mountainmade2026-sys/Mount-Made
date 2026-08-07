@@ -3096,6 +3096,38 @@ exports.updateSiteSettings = async (req, res) => {
       updates.push({ key: 'checkout_online_payment_button_image_url', value: buttonImageUrl });
     }
 
+    // App badges: image URLs, store links, and visibility toggles
+    if (req.body.app_badge_ios_image_url !== undefined) {
+      const v = String(req.body.app_badge_ios_image_url || '').trim();
+      if (v && v !== 'default' && !/^(https?:\/\/|\/uploads\/)/i.test(v)) {
+        return res.status(400).json({ error: 'app_badge_ios_image_url must be an uploaded image path or a valid http/https URL.' });
+      }
+      updates.push({ key: 'app_badge_ios_image_url', value: v });
+    }
+    if (req.body.app_badge_android_image_url !== undefined) {
+      const v = String(req.body.app_badge_android_image_url || '').trim();
+      if (v && v !== 'default' && !/^(https?:\/\/|\/uploads\/)/i.test(v)) {
+        return res.status(400).json({ error: 'app_badge_android_image_url must be an uploaded image path or a valid http/https URL.' });
+      }
+      updates.push({ key: 'app_badge_android_image_url', value: v });
+    }
+    if (req.body.app_ios_store_url !== undefined) {
+      const v = String(req.body.app_ios_store_url || '').trim();
+      updates.push({ key: 'app_ios_store_url', value: v });
+    }
+    if (req.body.app_android_store_url !== undefined) {
+      const v = String(req.body.app_android_store_url || '').trim();
+      updates.push({ key: 'app_android_store_url', value: v });
+    }
+    if (req.body.app_badge_ios_visible !== undefined) {
+      const enabled = typeof req.body.app_badge_ios_visible === 'boolean' ? req.body.app_badge_ios_visible : String(req.body.app_badge_ios_visible).toLowerCase() === 'true';
+      updates.push({ key: 'app_badge_ios_visible', value: enabled ? 'true' : 'false' });
+    }
+    if (req.body.app_badge_android_visible !== undefined) {
+      const enabled = typeof req.body.app_badge_android_visible === 'boolean' ? req.body.app_badge_android_visible : String(req.body.app_badge_android_visible).toLowerCase() === 'true';
+      updates.push({ key: 'app_badge_android_visible', value: enabled ? 'true' : 'false' });
+    }
+
     if (req.body.product_gst_overrides !== undefined) {
       let parsedProductGstOverrides = req.body.product_gst_overrides;
       if (typeof parsedProductGstOverrides === 'string') {

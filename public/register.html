@@ -365,6 +365,37 @@
             .terms-footer { border-radius: 0 0 12px 12px; }
             .agreement-section { padding: 0.6rem 0.7rem; }
         }
+        /* Footer app badges (register/login only) */
+        .app-badges {
+            display: flex;
+            gap: 0.6rem;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            flex-wrap: wrap;
+        }
+        .auth-footer-bar {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            bottom: 22px;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            pointer-events: auto;
+        }
+        @media (min-width: 769px) {
+            /* On desktop, push the footer a bit below the auth card so it doesn't overlay */
+            .auth-footer-bar { bottom: -28px; }
+            /* Hide footer badges on desktop when left stacked badges are shown */
+            .auth-footer-bar { display: none; }
+        }
+        .app-badge { display: inline-flex; align-items:center; gap:0.6rem; padding:0.45rem 0.75rem; border-radius:10px; color:#fff; font-weight:700; box-shadow:0 6px 18px rgba(2,6,23,0.12); }
+        .app-badge-ios { background: linear-gradient(180deg,#111,#222); }
+        .app-badge-android { background: linear-gradient(180deg,#2b6cb0,#2c5282); }
+        .auth-card { position: relative; z-index: 1; }
     </style>
 </head>
 <body class="register-page">
@@ -591,6 +622,36 @@
                 <p style="font-size: 0.85rem; margin: 0; color: #374151; font-weight: 500; text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);">Already have an account? <a href="/login" id="login-link" style="color: #059669; font-weight: 600; text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);">Sign in</a></p>
             </div>
         </div>
+            <div class="auth-footer-bar" aria-hidden="false">
+                <div class="app-badges" id="app-badges">
+                    <a id="app-badge-ios-footer" class="app-badge app-badge-ios" data-platform="ios" href="#" target="_blank" rel="noopener noreferrer" aria-label="Open on the App Store">
+                        <img id="app-badge-ios-img-footer" src="" alt="App Store" style="height:36px; display:none; object-fit:contain;">
+                        <div style="display:flex;flex-direction:column;align-items:flex-start;">
+                            <span class="badge-sub">Download on the</span>
+                            <span class="badge-title">App Store</span>
+                        </div>
+                    </a>
+                    <a id="app-badge-android-footer" class="app-badge app-badge-android" data-platform="android" href="#" target="_blank" rel="noopener noreferrer" aria-label="Get it on Google Play">
+                        <img id="app-badge-android-img-footer" src="" alt="Google Play" style="height:36px; display:none; object-fit:contain;">
+                        <div style="display:flex;flex-direction:column;align-items:flex-start;">
+                            <span class="badge-sub">Get it on</span>
+                            <span class="badge-title">Google Play</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+    </div>
+
+    <!-- Coming soon modal for app links not yet provided -->
+    <div id="app-coming-modal" style="display:none; position:fixed; inset:0; z-index:12000; align-items:center; justify-content:center; background:rgba(6,8,10,0.45);">
+        <div style="background:#fff; border-radius:12px; padding:1.1rem 1.25rem; width:360px; max-width:calc(100vw - 2rem); box-shadow:0 18px 40px rgba(2,6,23,0.18); text-align:center;">
+            <div style="font-size:1.1rem; font-weight:700; margin-bottom:0.5rem; color:#0f172a;">App Coming Soon</div>
+            <div style="color:#475569; font-size:0.95rem; margin-bottom:1rem;">We're preparing our mobile app. Click the button below to be notified when it is available.</div>
+            <div style="display:flex; gap:0.5rem; justify-content:center;">
+                <button id="app-coming-close" class="btn btn-secondary" style="min-width:120px;">Close</button>
+                <button id="app-coming-notify" class="btn btn-primary" style="min-width:140px;">Notify Me</button>
+            </div>
+        </div>
     </div>
 
     <!-- Terms & Privacy Policy Modal -->
@@ -665,6 +726,22 @@
         </div>
     </div>
 
+    <div class="app-badges-left" id="app-badges-left" aria-hidden="false">
+        <a id="app-badge-ios-left" class="app-badge app-badge-ios" data-platform="ios" href="#" target="_blank" rel="noopener noreferrer" aria-label="Open on the App Store">
+            <img id="app-badge-ios-img-left" src="" alt="App Store" style="height:40px; display:none; object-fit:contain;">
+            <div style="display:flex;flex-direction:column;align-items:flex-start;">
+                <span class="badge-sub">Download on the</span>
+                <span class="badge-title">App Store</span>
+            </div>
+        </a>
+        <a id="app-badge-android-left" class="app-badge app-badge-android" data-platform="android" href="#" target="_blank" rel="noopener noreferrer" aria-label="Get it on Google Play">
+            <img id="app-badge-android-img-left" src="" alt="Google Play" style="height:40px; display:none; object-fit:contain;">
+            <div style="display:flex;flex-direction:column;align-items:flex-start;">
+                <span class="badge-sub">Get it on</span>
+                <span class="badge-title">Google Play</span>
+            </div>
+        </a>
+    </div>
     <script src="/js/main.js"></script>
     <script>
         const roleOptions = document.querySelectorAll('.role-option');
@@ -1297,6 +1374,58 @@
                 }
             }
         });
+    </script>
+    <script>
+        // Initialize app badges on register page
+        async function setupAppBadges() {
+            try {
+                let settings = {};
+                try { const resp = await fetch('/products/settings'); const json = await resp.json(); settings = json?.settings || {}; } catch(e){ console.warn('Failed to load site settings for app badges', e); }
+
+                const iosLink = String(settings.app_ios_store_url || '').trim() || document.querySelector('meta[name="app-ios-url"]')?.content?.trim() || (window.APP_LINKS && window.APP_LINKS.ios) || '';
+                const androidLink = String(settings.app_android_store_url || settings.play_store_url || '').trim() || document.querySelector('meta[name="app-android-url"]')?.content?.trim() || (window.APP_LINKS && window.APP_LINKS.android) || '';
+                const iosImg = String(settings.app_badge_ios_image_url || '').trim();
+                const androidImg = String(settings.app_badge_android_image_url || '').trim();
+                const iosVisible = String(settings.app_badge_ios_visible || 'true').toLowerCase() === 'true';
+                const androidVisible = String(settings.app_badge_android_visible || 'true').toLowerCase() === 'true';
+
+                document.querySelectorAll('.app-badge[data-platform="ios"]').forEach(el => {
+                    const img = el.querySelector('img'); if (img) { if (iosImg) { img.src = iosImg; img.style.display = 'inline-block'; } else img.style.display = 'none'; }
+                    if (iosLink) { el.href = iosLink; el.setAttribute('data-has-link','1'); } else { el.href = '#'; el.removeAttribute('data-has-link'); }
+                    el.style.display = iosVisible ? 'flex' : 'none';
+                });
+                document.querySelectorAll('.app-badge[data-platform="android"]').forEach(el => {
+                    const img = el.querySelector('img'); if (img) { if (androidImg) { img.src = androidImg; img.style.display = 'inline-block'; } else img.style.display = 'none'; }
+                    if (androidLink) { el.href = androidLink; el.setAttribute('data-has-link','1'); } else { el.href = '#'; el.removeAttribute('data-has-link'); }
+                    el.style.display = androidVisible ? 'flex' : 'none';
+                });
+
+                document.querySelectorAll('.app-badge').forEach(el => {
+                    el.addEventListener('click', (ev) => {
+                        try { if (window.dataLayer) window.dataLayer.push({ event: 'app_badge_click', badge: el.dataset.platform }); } catch(e){}
+                        const has = el.getAttribute('data-has-link');
+                        if (!has) { ev.preventDefault(); const modal = document.getElementById('app-coming-modal'); if (modal) modal.style.display = 'flex'; }
+                    });
+                });
+            } catch (e) { console.warn('app badges init failed', e); }
+        }
+
+        (function(){
+            setupAppBadges();
+            const modal = document.getElementById('app-coming-modal');
+            const closeBtn = document.getElementById('app-coming-close');
+            const notifyBtn = document.getElementById('app-coming-notify');
+            if (closeBtn) closeBtn.addEventListener('click', () => { if (modal) modal.style.display = 'none'; });
+            if (modal) modal.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
+            if (notifyBtn) notifyBtn.addEventListener('click', async () => {
+                try {
+                    notifyBtn.disabled = true;
+                    notifyBtn.innerText = 'Subscribed';
+                    try { await fetch('/api/notify-app-interest', { method: 'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ page: 'register' }) }); } catch(_){}
+                    setTimeout(() => { if (modal) modal.style.display = 'none'; notifyBtn.disabled = false; notifyBtn.innerText = 'Notify Me'; }, 900);
+                } catch(_) { if (modal) modal.style.display = 'none'; }
+            });
+        })();
     </script>
 </body>
 </html>

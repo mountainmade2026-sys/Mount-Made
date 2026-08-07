@@ -2486,6 +2486,57 @@
                             </div>
                         </div>
 
+                        <div id="ss-app-badges" class="data-table-container" style="margin-top: 2rem;">
+                            <div class="table-header">
+                                <h3><i class="fas fa-mobile-alt"></i> App Store & Google Play Badges</h3>
+                            </div>
+                            <div style="padding: 2rem;">
+                                <p style="color: var(--text-muted); margin-bottom: 1rem;">Upload professional App Store and Google Play badge images, set their target links, and choose visibility for each badge. These images will be used on Login and Register pages.</p>
+
+                                <div style="display:flex; gap:2rem; align-items:flex-start; flex-wrap:wrap;">
+                                    <div style="flex:1; min-width:300px;">
+                                        <label class="form-label">iOS Badge Image (PNG/JPG)</label>
+                                        <input type="file" id="app-badge-ios-upload" class="form-input" accept=".png,.jpg,.jpeg" onchange="previewAppBadge('ios', event)">
+                                        <small style="color: var(--text-muted); display:block; margin-top:0.4rem;">Recommended size: ~120x40px. Max 1MB.</small>
+
+                                        <div class="form-group" style="margin-top:0.8rem;">
+                                            <label class="form-label">App Store Link</label>
+                                            <input id="app-ios-store-url" class="form-input" placeholder="https://apps.apple.com/...">
+                                        </div>
+                                        <div style="margin-top:0.6rem;"><label><input type="checkbox" id="app-badge-ios-visible"> Show iOS badge</label></div>
+                                    </div>
+
+                                    <div style="flex:1; min-width:300px;">
+                                        <label class="form-label">Android Badge Image (PNG/JPG)</label>
+                                        <input type="file" id="app-badge-android-upload" class="form-input" accept=".png,.jpg,.jpeg" onchange="previewAppBadge('android', event)">
+                                        <small style="color: var(--text-muted); display:block; margin-top:0.4rem;">Recommended size: ~120x40px. Max 1MB.</small>
+
+                                        <div class="form-group" style="margin-top:0.8rem;">
+                                            <label class="form-label">Google Play Link</label>
+                                            <input id="app-android-store-url" class="form-input" placeholder="https://play.google.com/store/apps/details?id=...">
+                                        </div>
+                                        <div style="margin-top:0.6rem;"><label><input type="checkbox" id="app-badge-android-visible"> Show Android badge</label></div>
+                                    </div>
+
+                                    <div style="min-width:220px; text-align:center;">
+                                        <label class="form-label">Preview</label>
+                                        <div id="app-badge-preview" style="background:white; padding:1rem; border:1px solid var(--border); border-radius:8px; display:flex; flex-direction:column; gap:0.6rem; align-items:center;">
+                                            <img id="app-badge-ios-img-preview" src="" alt="iOS badge preview" style="height:40px; display:none;">
+                                            <img id="app-badge-android-img-preview" src="" alt="Android badge preview" style="height:40px; display:none;">
+                                            <div id="app-badge-preview-placeholder" style="color:var(--text-muted);">
+                                                <i class="fas fa-image" style="font-size:1.4rem; opacity:0.35"></i>
+                                                <div style="font-size:0.9rem; margin-top:0.5rem;">No badge selected</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style="margin-top:1rem;">
+                                    <button class="btn btn-primary" onclick="saveAppBadgeSettings()"><i class="fas fa-save"></i> Save Badges & Links</button>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
@@ -9598,6 +9649,30 @@
                 });
                 _updateNoticePreview();
 
+                // Populate App Badge settings
+                try {
+                    const iosUrlEl = document.getElementById('app-ios-store-url');
+                    const androidUrlEl = document.getElementById('app-android-store-url');
+                    const iosPreview = document.getElementById('app-badge-ios-img-preview');
+                    const androidPreview = document.getElementById('app-badge-android-img-preview');
+                    const iosVisibleEl = document.getElementById('app-badge-ios-visible');
+                    const androidVisibleEl = document.getElementById('app-badge-android-visible');
+                    const savedIosImg = String(settings.app_badge_ios_image_url || '').trim();
+                    const savedAndroidImg = String(settings.app_badge_android_image_url || '').trim();
+                    if (iosUrlEl) iosUrlEl.value = settings.app_ios_store_url || '';
+                    if (androidUrlEl) androidUrlEl.value = settings.app_android_store_url || settings.play_store_url || '';
+                    if (iosPreview) {
+                        if (savedIosImg) { iosPreview.src = savedIosImg; iosPreview.style.display = 'block'; }
+                        else { iosPreview.style.display = 'none'; }
+                    }
+                    if (androidPreview) {
+                        if (savedAndroidImg) { androidPreview.src = savedAndroidImg; androidPreview.style.display = 'block'; }
+                        else { androidPreview.style.display = 'none'; }
+                    }
+                    if (iosVisibleEl) iosVisibleEl.checked = String(settings.app_badge_ios_visible || 'true').toLowerCase() === 'true';
+                    if (androidVisibleEl) androidVisibleEl.checked = String(settings.app_badge_android_visible || 'true').toLowerCase() === 'true';
+                } catch (e) { console.warn('Could not populate app badge settings', e); }
+
                 await loadAdminAccountSettings();
             } catch (error) {
                 console.error('Load site settings error:', error);
@@ -10217,6 +10292,67 @@
             } catch (error) {
                 console.error('Save homepage headings error:', error);
                 showAlert(error.message || 'Failed to save homepage headings', 'error');
+            }
+        };
+
+        // App badge preview and save functions
+        window.previewAppBadge = function(type, event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const validation = validateImageFile(file);
+            if (!validation.valid) { showAlert(validation.error, 'error'); event.target.value = ''; return; }
+            if (file.size > 1 * 1024 * 1024) { showAlert('Badge file must be less than 1MB', 'error'); event.target.value = ''; return; }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.getElementById(`app-badge-${type}-img-preview`);
+                const placeholder = document.getElementById('app-badge-preview-placeholder');
+                if (img) { img.src = e.target.result; img.style.display = 'block'; }
+                if (placeholder) placeholder.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        };
+
+        window.saveAppBadgeSettings = async function() {
+            try {
+                showAlert('Saving app badge settings...', 'info');
+                const iosFileInput = document.getElementById('app-badge-ios-upload');
+                const androidFileInput = document.getElementById('app-badge-android-upload');
+                const iosUrl = (document.getElementById('app-ios-store-url')?.value || '').trim();
+                const androidUrl = (document.getElementById('app-android-store-url')?.value || '').trim();
+                const iosVisible = !!document.getElementById('app-badge-ios-visible')?.checked;
+                const androidVisible = !!document.getElementById('app-badge-android-visible')?.checked;
+
+                const payload = {};
+                if (iosUrl !== undefined) payload.app_ios_store_url = iosUrl;
+                if (androidUrl !== undefined) payload.app_android_store_url = androidUrl;
+                payload.app_badge_ios_visible = iosVisible ? 'true' : 'false';
+                payload.app_badge_android_visible = androidVisible ? 'true' : 'false';
+
+                // Upload images if selected
+                if (iosFileInput && iosFileInput.files && iosFileInput.files[0]) {
+                    const uploaded = await uploadProductImage(iosFileInput);
+                    if (!uploaded) throw new Error('Failed to upload iOS badge image');
+                    payload.app_badge_ios_image_url = uploaded;
+                }
+                if (androidFileInput && androidFileInput.files && androidFileInput.files[0]) {
+                    const uploaded = await uploadProductImage(androidFileInput);
+                    if (!uploaded) throw new Error('Failed to upload Android badge image');
+                    payload.app_badge_android_image_url = uploaded;
+                }
+
+                const response = await api.post('/admin/settings', payload);
+                if (response && (response.success || response.message)) {
+                    showAlert('App badge settings saved.', 'success');
+                    // Clear file inputs
+                    if (iosFileInput) iosFileInput.value = '';
+                    if (androidFileInput) androidFileInput.value = '';
+                    await loadSiteSettings();
+                } else {
+                    throw new Error(response?.error || 'Failed to save app badge settings');
+                }
+            } catch (error) {
+                console.error('Save app badge settings error:', error);
+                showAlert(error.message || 'Failed to save app badge settings', 'error');
             }
         };
 
