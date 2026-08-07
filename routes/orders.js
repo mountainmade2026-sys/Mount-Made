@@ -158,6 +158,9 @@ router.get('/:id', async (req, res) => {
 
     // Check if order belongs to user (unless admin)
     const isAdminLike = req.user.role === 'admin' || req.user.role === 'super_admin';
+    if (!isAdminLike && order.status === 'payment_pending') {
+      return res.status(404).json({ error: 'Order not found.' });
+    }
     if (order.user_id !== req.user.id && !isAdminLike) {
       return res.status(403).json({ error: 'Access denied.' });
     }

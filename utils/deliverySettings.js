@@ -71,19 +71,22 @@ function getProductGstPercent(item, overrides = {}) {
   return 5;
 }
 
+function getItemGstAmount(item, overrides = {}) {
+  const subtotal = resolveItemSubtotal(item);
+  const percent = getProductGstPercent(item, overrides);
+  if (!Number.isFinite(subtotal) || subtotal <= 0) {
+    return 0;
+  }
+
+  return Math.round((subtotal * percent / 100) * 100) / 100;
+}
+
 function computeCartGst(cartItems, overrides = {}) {
   if (!Array.isArray(cartItems) || cartItems.length === 0) {
     return 0;
   }
 
-  return cartItems.reduce((sum, item) => {
-    const subtotal = resolveItemSubtotal(item);
-    const percent = getProductGstPercent(item, overrides);
-    if (!Number.isFinite(subtotal) || subtotal <= 0) {
-      return sum;
-    }
-    return sum + Math.round((subtotal * percent / 100) * 100) / 100;
-  }, 0);
+  return cartItems.reduce((sum, item) => sum + getItemGstAmount(item, overrides), 0);
 }
 
 function getDeliveryChargeForSubtotal(subtotal, settings = {}, gstAmount = null) {
@@ -134,6 +137,7 @@ module.exports = {
   parseNonNegativeNumber,
   parseProductGstOverrides,
   getProductGstPercent,
+  getItemGstAmount,
   computeCartGst,
   getDeliveryChargeForSubtotal
 };

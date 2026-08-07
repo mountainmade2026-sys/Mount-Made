@@ -11,6 +11,7 @@ const db = require('../config/database');
 const { getLicenseState, LICENSE_EXPIRED_MESSAGE } = require('../middleware/adminLicense');
 const { notifyOrderConfirmed, notifyOrderShipped, notifyOutForDelivery } = require('../utils/whatsappService');
 const { normalizeWeightProductData } = require('../utils/productWeightOptions');
+const { parseProductGstOverrides, getItemGstAmount } = require('../utils/deliverySettings');
 
 const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID || '';
 const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN || '';
@@ -1692,6 +1693,13 @@ exports.getStockReports = async (req, res) => {
 
     const categoryId = /^[0-9]+$/.test(rawCategoryId) ? parseInt(rawCategoryId, 10) : null;
 
+    const siteSettingsResult = await db.query('SELECT setting_key, setting_value FROM site_settings');
+    const siteSettings = {};
+    for (const row of siteSettingsResult.rows || []) {
+      siteSettings[row.setting_key] = row.setting_value;
+    }
+    const gstOverrides = parseProductGstOverrides(siteSettings);
+
     const where = ['p.is_active = true'];
     const params = [];
 
@@ -1740,10 +1748,16 @@ exports.getStockReports = async (req, res) => {
         p.images,
         p.is_active,
         p.created_at,
-        COALESCE(SUM(CASE WHEN o.status != 'cancelled' THEN oi.quantity ELSE 0 END), 0)
+        COALESCE(SUM(CASE WHEN o.status != 'cancelled'
+          AND o.status != 'payment_pending'
+          AND NOT (o.payment_provider IS NOT NULL AND o.payment_status IN ('pending', 'failed'))
+          THEN oi.quantity ELSE 0 END), 0)
           + COALESCE((SELECT SUM(quantity) FROM offline_sales os WHERE os.product_id = p.id), 0) AS total_sold,
         p.stock_quantity
-          + COALESCE(SUM(CASE WHEN o.status != 'cancelled' THEN oi.quantity ELSE 0 END), 0)
+          + COALESCE(SUM(CASE WHEN o.status != 'cancelled'
+            AND o.status != 'payment_pending'
+            AND NOT (o.payment_provider IS NOT NULL AND o.payment_status IN ('pending', 'failed'))
+            THEN oi.quantity ELSE 0 END), 0)
           + COALESCE((SELECT SUM(quantity) FROM offline_sales os WHERE os.product_id = p.id), 0) AS initial_stock,
         COALESCE(SUM(CASE WHEN o.status = 'delivered' AND NOT (
           p.wholesale_price IS NOT NULL AND p.wholesale_price > 0 AND oi.price IS NOT NULL AND ABS(oi.price - p.wholesale_price) <= 0.01
@@ -1786,6 +1800,7 @@ exports.getStockReports = async (req, res) => {
           o.delivery_charge,
           u.full_name      AS customer_name,
           u.email          AS customer_email,
+          oi.product_id,
           oi.quantity,
           oi.price,
           oi.subtotal,
@@ -1802,6 +1817,9 @@ exports.getStockReports = async (req, res) => {
         LEFT JOIN users u ON o.user_id = u.id
         LEFT JOIN order_items oi2 ON oi2.order_id = o.id
         WHERE oi.product_id = $1
+          AND o.status != 'cancelled'
+          AND o.status != 'payment_pending'
+          AND NOT (o.payment_provider IS NOT NULL AND o.payment_status IN ('pending', 'failed'))
 
         UNION ALL
 
@@ -1815,6 +1833,7 @@ exports.getStockReports = async (req, res) => {
           0                                                AS delivery_charge,
           NULL                                             AS customer_name,
           NULL                                             AS customer_email,
+          os.product_id,
           os.quantity,
           CASE
             WHEN os.quantity > 0 THEN ROUND((os.amount_paid / os.quantity)::numeric, 2)
@@ -1838,6 +1857,7 @@ exports.getStockReports = async (req, res) => {
           0                                               AS delivery_charge,
           u.full_name  AS customer_name,
           u.email      AS customer_email,
+          ri.product_id,
           ri.quantity,
           ri.price,
           (ri.quantity * ri.price)::DECIMAL(10,2)          AS subtotal,
@@ -1861,6 +1881,15 @@ exports.getStockReports = async (req, res) => {
       const offlineCost = parseFloat(product.offline_cost) || 0;
       const effectiveRetailPrice = getEffectiveRetailPrice(product);
       const wholesalePrice = product.wholesale_price ? parseFloat(product.wholesale_price) : null;
+      const totalGstAmount = (transactionsResult.rows || []).reduce((sum, transaction) => {
+        return sum + getItemGstAmount({
+          product_id: transaction.product_id,
+          quantity: transaction.quantity,
+          price: transaction.price,
+          subtotal: transaction.subtotal
+        }, gstOverrides);
+      }, 0);
+      const totalRevenue = normalRevenue + wholesaleRevenue + totalGstAmount;
       const broughtPrice = product.brought_price ? parseFloat(product.brought_price) : null;
       const stockNormalProfit = (parseInt(product.current_stock) || 0) * (Number.isFinite(effectiveRetailPrice) ? effectiveRetailPrice : 0)
         - (parseInt(product.current_stock) || 0) * (Number.isFinite(broughtPrice) ? broughtPrice : 0);
@@ -1880,7 +1909,8 @@ exports.getStockReports = async (req, res) => {
         current_stock: parseInt(product.current_stock) || 0,
         total_sold: parseInt(product.total_sold) || 0,
         initial_stock: parseInt(product.initial_stock) || 0,
-        total_revenue: normalRevenue + wholesaleRevenue,
+        total_revenue: totalRevenue,
+        gst_amount: totalGstAmount,
         total_cost: normalCost + wholesaleCost + offlineCost,
         normal_profit: normalRevenue - normalCost,
         wholesale_profit: wholesaleRevenue - wholesaleCost,

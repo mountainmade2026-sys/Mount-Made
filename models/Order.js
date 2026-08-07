@@ -353,6 +353,7 @@ class Order {
       LEFT JOIN order_items oi ON o.id = oi.order_id
       LEFT JOIN products p ON oi.product_id = p.id
       WHERE o.user_id = $1
+        AND o.status != 'payment_pending'
     `;
 
     const values = [userId];

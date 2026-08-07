@@ -7463,7 +7463,7 @@
             
             // Inner scroll wrapper — allows horizontal scroll on mobile while keeping card border-radius
             html += '<div class="data-table-scroll">';
-            html += '<table class="data-table stock-table" style="min-width:980px"><thead><tr>' +
+            html += '<table class="data-table stock-table" style="min-width:1080px"><thead><tr>' +
                 '<th>Product</th>' +
                 '<th class="col-hide-xs">Category</th>' +
                 '<th>Price</th>' +
@@ -7472,6 +7472,7 @@
                 '<th>Remaining</th>' +
                 '<th class="col-hide-xs">Stock Value</th>' +
                 '<th>Revenue</th>' +
+                '<th>GST</th>' +
                 '<th>Normal Stock Profit</th>' +
                 '<th>Wholesale Stock Profit</th>' +
                 '<th>Status</th>' +
@@ -7485,6 +7486,7 @@
                 const price = parseFloat(product.price) || 0;
                 const stockValue = currentStock * price;
                 const totalRevenue = parseFloat(product.total_revenue) || 0;
+                const gstAmount = parseFloat(product.gst_amount) || 0;
                 const normalStockProfit = parseFloat(product.normal_stock_profit) || 0;
                 const wholesaleStockProfit = parseFloat(product.wholesale_stock_profit) || 0;
                 const totalProfit = normalStockProfit + wholesaleStockProfit;
@@ -7511,6 +7513,7 @@
                         <td><strong>${currentStock}</strong></td>
                         <td class="col-hide-xs" style="white-space: nowrap;">${formatCurrency(stockValue)}</td>
                         <td style="white-space: nowrap;">${formatCurrency(totalRevenue)}</td>
+                        <td style="white-space: nowrap;">${formatCurrency(gstAmount)}</td>
                         <td style="color: ${normalStockProfit >= 0 ? 'var(--success)' : 'var(--danger)'}; font-weight: 600; white-space: nowrap;">${formatCurrency(normalStockProfit)}</td>
                         <td style="color: ${wholesaleStockProfit >= 0 ? 'var(--success)' : 'var(--danger)'}; font-weight: 600; white-space: nowrap;">${formatCurrency(wholesaleStockProfit)}</td>
                         <td><span class="badge badge-${statusClass}" style="white-space: nowrap;">${statusText}</span></td>
@@ -7614,7 +7617,7 @@
                 if (!document.querySelector('.stock-table-no-results')) {
                     const noResultsRow = document.createElement('tr');
                     noResultsRow.className = 'stock-table-no-results';
-                    noResultsRow.innerHTML = '<td colspan="12" style="text-align: center; padding: 2rem; color: var(--text-muted);">No products match your search criteria</td>';
+                    noResultsRow.innerHTML = '<td colspan="13" style="text-align: center; padding: 2rem; color: var(--text-muted);">No products match your search criteria</td>';
                     tbody.appendChild(noResultsRow);
                 }
             } else {
