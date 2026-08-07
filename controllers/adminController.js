@@ -1481,7 +1481,7 @@ exports.getDashboardHistory = async (req, res) => {
   try {
     const { from, to, year } = req.query;
     const params = [];
-    const conditions = ["o.status != 'cancelled'"];
+    const conditions = ["o.status = 'delivered'", "o.status != 'cancelled'"];
 
     if (from && to) {
       params.push(from, to);
@@ -1497,18 +1497,36 @@ exports.getDashboardHistory = async (req, res) => {
     const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
 
     const rowsResult = await db.query(`
+      WITH return_flags AS (
+        SELECT
+          order_id,
+          BOOL_OR(status NOT IN ('rejected')) AS has_active_return
+        FROM returns
+        GROUP BY order_id
+      ),
+      order_daily_totals AS (
+        SELECT
+          o.created_at::date AS date,
+          o.id,
+          SUM(oi.subtotal) AS order_revenue,
+          SUM(oi.quantity * COALESCE(p.brought_price, 0)) AS order_cost
+        FROM orders o
+        LEFT JOIN order_items oi ON oi.order_id = o.id
+        LEFT JOIN products p ON p.id = oi.product_id
+        LEFT JOIN return_flags rf ON rf.order_id = o.id
+        ${where}
+          AND COALESCE(rf.has_active_return, false) = false
+        GROUP BY o.created_at::date, o.id
+      )
       SELECT
-        o.created_at::date AS date,
-        COUNT(DISTINCT o.id) AS orders,
-        COALESCE(SUM(oi.subtotal) FILTER (WHERE o.status = 'delivered'), 0) AS revenue,
-        COALESCE(SUM(oi.quantity * COALESCE(p.brought_price, 0)) FILTER (WHERE o.status = 'delivered'), 0) AS cost,
-        COALESCE(SUM(o.delivery_charge) FILTER (WHERE o.status = 'delivered'), 0) AS delivery_fees
-      FROM orders o
-      LEFT JOIN order_items oi ON oi.order_id = o.id
-      LEFT JOIN products p ON p.id = oi.product_id
-      ${where}
-      GROUP BY o.created_at::date
-      ORDER BY o.created_at::date DESC
+        date,
+        COUNT(DISTINCT id) AS orders,
+        COALESCE(SUM(order_revenue), 0) AS revenue,
+        COALESCE(SUM(order_cost), 0) AS cost,
+        0 AS delivery_fees
+      FROM order_daily_totals
+      GROUP BY date
+      ORDER BY date DESC
     `, params);
 
     const refundParams = [];
@@ -1557,43 +1575,27 @@ exports.getDashboardHistory = async (req, res) => {
 // Dashboard Statistics
 exports.getDashboardStats = async (req, res) => {
   try {
-    const orderCountQuery = await db.query('SELECT COUNT(*) as total_orders FROM orders');
-    const offlineSaleCountQuery = await db.query('SELECT COUNT(*) as total_offline_sales FROM offline_sales');
+    const orderCountQuery = await db.query(
+      "SELECT COUNT(*) as total_orders FROM orders WHERE status NOT IN ('cancelled', 'payment_pending')"
+    );
 
     const salesProfitQuery = await db.query(`
+      WITH return_flags AS (
+        SELECT
+          order_id,
+          BOOL_OR(status NOT IN ('rejected')) AS has_active_return
+        FROM returns
+        GROUP BY order_id
+      )
       SELECT
-        COALESCE(
-          SUM(CASE
-            WHEN o.status = 'delivered' AND (
-              p.wholesale_price IS NOT NULL AND p.wholesale_price > 0 AND oi.price IS NOT NULL AND ABS(oi.price - p.wholesale_price) <= 0.01
-            ) THEN oi.subtotal ELSE 0 END),
-          0
-        ) AS wholesale_revenue,
-        COALESCE(
-          SUM(CASE
-            WHEN o.status = 'delivered' AND NOT (
-              p.wholesale_price IS NOT NULL AND p.wholesale_price > 0 AND oi.price IS NOT NULL AND ABS(oi.price - p.wholesale_price) <= 0.01
-            ) THEN oi.subtotal ELSE 0 END),
-          0
-        ) AS normal_revenue,
-        COALESCE(
-          SUM(CASE
-            WHEN o.status = 'delivered' AND (
-              p.wholesale_price IS NOT NULL AND p.wholesale_price > 0 AND oi.price IS NOT NULL AND ABS(oi.price - p.wholesale_price) <= 0.01
-            ) THEN oi.quantity * COALESCE(p.brought_price, 0) ELSE 0 END),
-          0
-        ) AS wholesale_cost,
-        COALESCE(
-          SUM(CASE
-            WHEN o.status = 'delivered' AND NOT (
-              p.wholesale_price IS NOT NULL AND p.wholesale_price > 0 AND oi.price IS NOT NULL AND ABS(oi.price - p.wholesale_price) <= 0.01
-            ) THEN oi.quantity * COALESCE(p.brought_price, 0) ELSE 0 END),
-          0
-        ) AS normal_cost
-      FROM order_items oi
-      JOIN orders o ON o.id = oi.order_id
+        COALESCE(SUM(CASE WHEN o.status = 'delivered' AND COALESCE(rf.has_active_return, false) = false THEN oi.subtotal ELSE 0 END), 0) AS delivered_revenue,
+        COALESCE(SUM(CASE WHEN o.status = 'delivered' AND COALESCE(rf.has_active_return, false) = false THEN oi.quantity * COALESCE(p.brought_price, 0) ELSE 0 END), 0) AS delivered_cost
+      FROM orders o
+      LEFT JOIN order_items oi ON oi.order_id = o.id
       LEFT JOIN products p ON p.id = oi.product_id
+      LEFT JOIN return_flags rf ON rf.order_id = o.id
       WHERE o.status = 'delivered'
+        AND o.status != 'cancelled'
     `);
 
     const offlineSalesProfitQuery = await db.query(`
@@ -1610,75 +1612,60 @@ exports.getDashboardStats = async (req, res) => {
       WHERE status = 'refunded' AND refund_amount IS NOT NULL
     `);
 
-    const userCountQuery = await db.query(
-      "SELECT COUNT(*) as total_customers FROM users WHERE role IN ('customer','wholesale')"
+    const customerCountQuery = await db.query(
+      "SELECT COUNT(*) as total_customers FROM users WHERE role = 'customer'"
+    );
+
+    const wholesaleBuyerCountQuery = await db.query(
+      "SELECT COUNT(*) as total_wholesale_buyers FROM users WHERE role = 'wholesale'"
     );
 
     const productCountQuery = await db.query(
       'SELECT COUNT(*) as total_products FROM products WHERE is_active = true'
     );
 
-    const stockTotalsQuery = await db.query(
+    const lowStockCountQuery = await db.query(
       `
-        SELECT
-          COALESCE(SUM(stock_quantity), 0) as stock_units,
-          COALESCE(SUM(stock_quantity * price), 0) as stock_value,
-          COALESCE(SUM(stock_quantity * COALESCE(
-            CASE
-              WHEN discount_price IS NOT NULL AND discount_price > 0 AND discount_price < price THEN discount_price
-              ELSE price
-            END,
-            0
-          )), 0) as normal_stock_value,
-          COALESCE(SUM(stock_quantity * COALESCE(wholesale_price, 0)), 0) as wholesale_stock_value,
-          COALESCE(SUM(stock_quantity * COALESCE(brought_price, 0)), 0) as stock_spent
+        SELECT COUNT(*)::int AS low_stock_products
         FROM products
-        WHERE is_active = true
+        WHERE is_active = true AND stock_quantity <= 10
+      `
+    );
+
+    const unreadSupportMessagesQuery = await db.query(
+      `
+        SELECT COUNT(*)::int AS unread_support_messages
+        FROM contact_messages
+        WHERE message_type = 'message' AND is_read = FALSE
       `
     );
 
     const totalOrders = parseInt(orderCountQuery.rows[0]?.total_orders, 10) || 0;
-    const wholesaleRevenue = parseFloat(salesProfitQuery.rows[0]?.wholesale_revenue) || 0;
-    const normalRevenue = parseFloat(salesProfitQuery.rows[0]?.normal_revenue) || 0;
-    const wholesaleCost = parseFloat(salesProfitQuery.rows[0]?.wholesale_cost) || 0;
-    const normalCost = parseFloat(salesProfitQuery.rows[0]?.normal_cost) || 0;
+    const deliveredRevenue = parseFloat(salesProfitQuery.rows[0]?.delivered_revenue) || 0;
+    const deliveredCost = parseFloat(salesProfitQuery.rows[0]?.delivered_cost) || 0;
     const offlineRevenue = parseFloat(offlineSalesProfitQuery.rows[0]?.offline_revenue) || 0;
     const offlineCost = parseFloat(offlineSalesProfitQuery.rows[0]?.offline_cost) || 0;
     const totalRefunds = parseFloat(refundQuery.rows[0]?.total_refunds) || 0;
 
-    const totalRevenue = normalRevenue + wholesaleRevenue + offlineRevenue - totalRefunds;
-    const totalSpent = normalCost + wholesaleCost + offlineCost;
-    const normalProfit = normalRevenue + offlineRevenue - normalCost - offlineCost;
-    const wholesaleProfit = wholesaleRevenue - wholesaleCost;
-    const totalProfit = normalProfit + wholesaleProfit;
+    const totalRevenue = deliveredRevenue + offlineRevenue - totalRefunds;
+    const totalCost = deliveredCost + offlineCost;
 
-    const totalCustomers = parseInt(userCountQuery.rows[0]?.total_customers, 10) || 0;
+    const totalCustomers = parseInt(customerCountQuery.rows[0]?.total_customers, 10) || 0;
+    const totalWholesaleBuyers = parseInt(wholesaleBuyerCountQuery.rows[0]?.total_wholesale_buyers, 10) || 0;
     const totalProducts = parseInt(productCountQuery.rows[0]?.total_products, 10) || 0;
-    const stockUnits = parseInt(stockTotalsQuery.rows[0]?.stock_units, 10) || 0;
-    const stockValue = parseFloat(stockTotalsQuery.rows[0]?.stock_value) || 0;
-    const normalStockValue = parseFloat(stockTotalsQuery.rows[0]?.normal_stock_value) || 0;
-    const wholesaleStockValue = parseFloat(stockTotalsQuery.rows[0]?.wholesale_stock_value) || 0;
-    const stockSpent = parseFloat(stockTotalsQuery.rows[0]?.stock_spent) || 0;
-    const stockProfit = stockValue - stockSpent;
-    const stockNormalProfit = normalStockValue - stockSpent;
-    const stockWholesaleProfit = wholesaleStockValue - stockSpent;
+    const lowStockProducts = parseInt(lowStockCountQuery.rows[0]?.low_stock_products, 10) || 0;
+    const unreadSupportMessages = parseInt(unreadSupportMessagesQuery.rows[0]?.unread_support_messages, 10) || 0;
 
     res.json({
       stats: {
         total_orders: totalOrders,
         total_revenue: totalRevenue,
-        total_spent: totalSpent,
-        total_profit: totalProfit,
-        normal_profit: normalProfit,
-        wholesale_profit: wholesaleProfit,
+        total_cost: totalCost,
         total_customers: totalCustomers,
+        total_wholesale_buyers: totalWholesaleBuyers,
         total_products: totalProducts,
-        stock_units: stockUnits,
-        stock_value: stockValue,
-        stock_spent: stockSpent,
-        stock_profit: stockProfit,
-        normal_stock_profit: stockNormalProfit,
-        wholesale_stock_profit: stockWholesaleProfit
+        low_stock_products: lowStockProducts,
+        unread_support_messages: unreadSupportMessages
       }
     });
   } catch (error) {

@@ -6724,69 +6724,48 @@
                 const stats = data.stats || {
                     total_orders: 0,
                     total_revenue: 0,
-                    total_profit: 0,
-                    normal_profit: 0,
-                    wholesale_profit: 0,
-                    total_spent: 0,
                     total_customers: 0,
+                    total_wholesale_buyers: 0,
                     total_products: 0,
-                    stock_units: 0,
-                    stock_value: 0,
-                    stock_profit: 0,
-                    normal_stock_profit: 0,
-                    wholesale_stock_profit: 0
+                    low_stock_products: 0,
+                    unread_support_messages: 0
                 };
                 
                 document.getElementById('stats-container').innerHTML = `
-                    <div class="stat-card primary">
-                        <div class="stat-card-icon"><i class="fas fa-shopping-cart"></i></div>
-                        <div class="stat-card-label">Orders</div>
-                        <div class="stat-card-value" data-count="${parseInt(stats.total_orders) || 0}" data-prefix="" data-decimals="0">0</div>
-                    </div>
                     <div class="stat-card success">
                         <div class="stat-card-icon"><i class="fas fa-dollar-sign"></i></div>
-                        <div class="stat-card-label">Revenue</div>
+                        <div class="stat-card-label">Total Revenue</div>
                         <div class="stat-card-value" data-count="${parseFloat(stats.total_revenue || 0)}" data-prefix="₹" data-decimals="2">₹0.00</div>
                     </div>
-                    <div class="stat-card info">
-                        <div class="stat-card-icon"><i class="fas fa-chart-line"></i></div>
-                        <div class="stat-card-label">Normal Profit</div>
-                        <div class="stat-card-value" data-count="${parseFloat(stats.normal_profit || 0)}" data-prefix="₹" data-decimals="2">₹0.00</div>
-                    </div>
-                    <div class="stat-card info">
-                        <div class="stat-card-icon"><i class="fas fa-chart-line"></i></div>
-                        <div class="stat-card-label">Wholesale Profit</div>
-                        <div class="stat-card-value" data-count="${parseFloat(stats.wholesale_profit || 0)}" data-prefix="₹" data-decimals="2">₹0.00</div>
+                    <div class="stat-card primary">
+                        <div class="stat-card-icon"><i class="fas fa-shopping-cart"></i></div>
+                        <div class="stat-card-label">Total Orders</div>
+                        <div class="stat-card-value" data-count="${parseInt(stats.total_orders) || 0}" data-prefix="" data-decimals="0">0</div>
                     </div>
                     <div class="stat-card info">
                         <div class="stat-card-icon"><i class="fas fa-users"></i></div>
-                        <div class="stat-card-label">Customers</div>
+                        <div class="stat-card-label">Total Customers</div>
                         <div class="stat-card-value" data-count="${parseInt(stats.total_customers) || 0}" data-prefix="" data-decimals="0">0</div>
                     </div>
                     <div class="stat-card warning">
+                        <div class="stat-card-icon"><i class="fas fa-building"></i></div>
+                        <div class="stat-card-label">Total Wholesale Buyers</div>
+                        <div class="stat-card-value" data-count="${parseInt(stats.total_wholesale_buyers) || 0}" data-prefix="" data-decimals="0">0</div>
+                    </div>
+                    <div class="stat-card info">
                         <div class="stat-card-icon"><i class="fas fa-box"></i></div>
-                        <div class="stat-card-label">Products</div>
+                        <div class="stat-card-label">Total Products</div>
                         <div class="stat-card-value" data-count="${parseInt(stats.total_products) || 0}" data-prefix="" data-decimals="0">0</div>
                     </div>
-                    <div class="stat-card primary">
-                        <div class="stat-card-icon"><i class="fas fa-boxes"></i></div>
-                        <div class="stat-card-label">Stock Units</div>
-                        <div class="stat-card-value" data-count="${parseInt(stats.stock_units) || 0}" data-prefix="" data-decimals="0">0</div>
+                    <div class="stat-card warning">
+                        <div class="stat-card-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                        <div class="stat-card-label">Low Stock Products</div>
+                        <div class="stat-card-value" data-count="${parseInt(stats.low_stock_products) || 0}" data-prefix="" data-decimals="0">0</div>
                     </div>
-                    <div class="stat-card success">
-                        <div class="stat-card-icon"><i class="fas fa-warehouse"></i></div>
-                        <div class="stat-card-label">Stock Value</div>
-                        <div class="stat-card-value" data-count="${parseFloat(stats.stock_value || 0)}" data-prefix="₹" data-decimals="2">₹0.00</div>
-                    </div>
-                    <div class="stat-card info">
-                        <div class="stat-card-icon"><i class="fas fa-chart-pie"></i></div>
-                        <div class="stat-card-label">Normal Stock Profit</div>
-                        <div class="stat-card-value" data-count="${parseFloat(stats.normal_stock_profit || 0)}" data-prefix="₹" data-decimals="2">₹0.00</div>
-                    </div>
-                    <div class="stat-card info">
-                        <div class="stat-card-icon"><i class="fas fa-chart-pie"></i></div>
-                        <div class="stat-card-label">Wholesale Stock Profit</div>
-                        <div class="stat-card-value" data-count="${parseFloat(stats.wholesale_stock_profit || 0)}" data-prefix="₹" data-decimals="2">₹0.00</div>
+                    <div class="stat-card danger">
+                        <div class="stat-card-icon"><i class="fas fa-comments"></i></div>
+                        <div class="stat-card-label">Unread Support Messages</div>
+                        <div class="stat-card-value" data-count="${parseInt(stats.unread_support_messages) || 0}" data-prefix="" data-decimals="0">0</div>
                     </div>
                 `;
 
@@ -6810,44 +6789,6 @@
                 try {
                     const resp = await api.get('/admin/orders');
                     const orders = (resp && resp.orders) ? resp.orders : [];
-                    // Dynamically recalculate some dashboard totals from live orders + offline sales
-                    try {
-                        const computedTotalOrders = Array.isArray(orders) ? orders.length : 0;
-                        const deliveredRevenue = Array.isArray(orders)
-                            ? orders.reduce((s, o) => s + (String(o.status || '').toLowerCase() === 'delivered' ? (parseFloat(o.total_amount) || 0) : 0), 0)
-                            : 0;
-
-                        // Fetch offline sales and include their amounts in revenue
-                        let offlineSum = 0;
-                        try {
-                            const offResp = await api.get('/admin/offline-sales');
-                            const offline = (offResp && (offResp.offlineSales || offResp.offline_sales || offResp.sales)) || [];
-                            offlineSum = Array.isArray(offline) ? offline.reduce((s, r) => s + (parseFloat(r.amount_paid) || 0), 0) : 0;
-                        } catch (offErr) {
-                            console.warn('Failed to load offline sales for dashboard recalculation:', offErr);
-                        }
-
-                        const computedRevenue = deliveredRevenue + offlineSum;
-
-                        // Update stat cards if values differ (orders & revenue are first two cards)
-                        const statEls = document.querySelectorAll('#stats-container .stat-card-value[data-count]');
-                        if (statEls && statEls.length >= 2) {
-                            const ordersEl = statEls[0];
-                            const revenueEl = statEls[1];
-                            const prevOrders = parseInt(ordersEl.dataset.count) || 0;
-                            if (prevOrders !== computedTotalOrders) {
-                                ordersEl.dataset.count = computedTotalOrders;
-                                animateCountUp(ordersEl, computedTotalOrders, '', 0, 1000);
-                            }
-                            const prevRevenue = parseFloat(revenueEl.dataset.count) || 0;
-                            if (Math.abs(prevRevenue - computedRevenue) > 0.01) {
-                                revenueEl.dataset.count = computedRevenue;
-                                animateCountUp(revenueEl, computedRevenue, '₹', 2, 1000);
-                            }
-                        }
-                    } catch (calcErr) {
-                        console.warn('Dashboard dynamic totals calc failed:', calcErr);
-                    }
                     const sorted = orders
                         .slice()
                         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
@@ -6955,24 +6896,39 @@
             } catch (error) {
                 console.error('Load dashboard error:', error);
                 document.getElementById('stats-container').innerHTML = `
-                    <div class="stat-card primary">
-                        <div class="stat-card-icon"><i class="fas fa-shopping-cart"></i></div>
-                        <div class="stat-card-label">Orders</div>
-                        <div class="stat-card-value">0</div>
-                    </div>
                     <div class="stat-card success">
                         <div class="stat-card-icon"><i class="fas fa-dollar-sign"></i></div>
-                        <div class="stat-card-label">Revenue</div>
+                        <div class="stat-card-label">Total Revenue</div>
                         <div class="stat-card-value">₹0.00</div>
+                    </div>
+                    <div class="stat-card primary">
+                        <div class="stat-card-icon"><i class="fas fa-shopping-cart"></i></div>
+                        <div class="stat-card-label">Total Orders</div>
+                        <div class="stat-card-value">0</div>
                     </div>
                     <div class="stat-card info">
                         <div class="stat-card-icon"><i class="fas fa-users"></i></div>
-                        <div class="stat-card-label">Customers</div>
+                        <div class="stat-card-label">Total Customers</div>
                         <div class="stat-card-value">0</div>
                     </div>
                     <div class="stat-card warning">
+                        <div class="stat-card-icon"><i class="fas fa-building"></i></div>
+                        <div class="stat-card-label">Total Wholesale Buyers</div>
+                        <div class="stat-card-value">0</div>
+                    </div>
+                    <div class="stat-card info">
                         <div class="stat-card-icon"><i class="fas fa-box"></i></div>
-                        <div class="stat-card-label">Products</div>
+                        <div class="stat-card-label">Total Products</div>
+                        <div class="stat-card-value">0</div>
+                    </div>
+                    <div class="stat-card warning">
+                        <div class="stat-card-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                        <div class="stat-card-label">Low Stock Products</div>
+                        <div class="stat-card-value">0</div>
+                    </div>
+                    <div class="stat-card danger">
+                        <div class="stat-card-icon"><i class="fas fa-comments"></i></div>
+                        <div class="stat-card-label">Unread Support Messages</div>
                         <div class="stat-card-value">0</div>
                     </div>
                 `;
@@ -6985,16 +6941,13 @@
                 const data = await api.get('/admin/dashboard/stats');
                 const stats = data.stats || {};
                 const mapping = [
-                    { label: 'Orders',       value: parseInt(stats.total_orders) || 0,           prefix: '',  decimals: 0 },
-                    { label: 'Revenue',      value: parseFloat(stats.total_revenue || 0),        prefix: '₹', decimals: 2 },
-                    { label: 'Normal Profit', value: parseFloat(stats.normal_profit || 0),      prefix: '₹', decimals: 2 },
-                    { label: 'Wholesale Profit', value: parseFloat(stats.wholesale_profit || 0), prefix: '₹', decimals: 2 },
-                    { label: 'Customers',    value: parseInt(stats.total_customers) || 0,        prefix: '',  decimals: 0 },
-                    { label: 'Products',     value: parseInt(stats.total_products) || 0,         prefix: '',  decimals: 0 },
-                    { label: 'Stock Units',  value: parseInt(stats.stock_units) || 0,            prefix: '',  decimals: 0 },
-                    { label: 'Stock Value',  value: parseFloat(stats.stock_value || 0),          prefix: '₹', decimals: 2 },
-                    { label: 'Normal Stock Profit', value: parseFloat(stats.normal_stock_profit || 0), prefix: '₹', decimals: 2 },
-                    { label: 'Wholesale Stock Profit', value: parseFloat(stats.wholesale_stock_profit || 0), prefix: '₹', decimals: 2 },
+                    { label: 'Total Revenue', value: parseFloat(stats.total_revenue || 0), prefix: '₹', decimals: 2 },
+                    { label: 'Total Orders', value: parseInt(stats.total_orders) || 0, prefix: '', decimals: 0 },
+                    { label: 'Total Customers', value: parseInt(stats.total_customers) || 0, prefix: '', decimals: 0 },
+                    { label: 'Total Wholesale Buyers', value: parseInt(stats.total_wholesale_buyers) || 0, prefix: '', decimals: 0 },
+                    { label: 'Total Products', value: parseInt(stats.total_products) || 0, prefix: '', decimals: 0 },
+                    { label: 'Low Stock Products', value: parseInt(stats.low_stock_products) || 0, prefix: '', decimals: 0 },
+                    { label: 'Unread Support Messages', value: parseInt(stats.unread_support_messages) || 0, prefix: '', decimals: 0 },
                 ];
                 const cards = document.querySelectorAll('#stats-container .stat-card-value[data-count]');
                 cards.forEach((el, i) => {
