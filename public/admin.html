@@ -6540,7 +6540,9 @@
             const refundStatus = String(order.refund_status || '').toLowerCase();
             const hasPaymentId = !!String(order.payment_gateway_payment_id || '').trim();
             const isPaid = ['paid', 'captured', 'authorized'].includes(paymentStatus);
-            return provider === 'razorpay' && hasPaymentId && isPaid && !['refunded', 'refund_pending', 'refund_failed'].includes(refundStatus);
+            const isNotAlreadyRefunded = !['refunded', 'refund_pending', 'refund_failed'].includes(refundStatus);
+            // Allow refund for Razorpay orders that are paid, even if cancelled (admin rejected)
+            return provider === 'razorpay' && hasPaymentId && isPaid && isNotAlreadyRefunded;
         }
 
         /* ── Payment Display Helper ──────────────────────────────────── */
@@ -6555,8 +6557,16 @@
 
                 const result = await api.post(`/admin/orders/${orderId}/refund`, { reason: 'Admin initiated refund' });
                 showAlert(result?.message || 'Refund processed.', 'success');
+                
+                // Reload both views to reflect the refund status change
+                // The order should disappear from customer orders and appear in order history
                 await loadOrders();
                 await loadCustomerOrders();
+                
+                // If on customer orders section, refresh to remove refunded order from view
+                if (window._currentSection === 'customers-orders') {
+                    await loadCustomerOrders();
+                }
             } catch (error) {
                 console.error('Refund order error:', error);
                 showAlert(error?.message || error?.error || 'Failed to process refund.', 'error');
@@ -8066,6 +8076,8 @@
                             <i class="fas fa-times"></i> Reject
                         </button>
                       `
+                    : o.status === 'cancelled'
+                    ? '<span class="badge badge-secondary" title="This order was rejected. Process refund to complete.">Rejected</span>'
                     : '<span class="badge badge-secondary">No actions</span>';
 
                 html += `
@@ -8097,9 +8109,10 @@
             try {
                 showLoading('customer-orders-list');
 
-                // Show only pending customer orders here; once an admin confirms them, they move to the order history view.
+                // Show pending customer orders and cancelled orders that haven't been refunded yet.
+                // Cancelled orders can be refunded by admin, so they should remain visible until refund is processed.
                 const resp = await api.get('/admin/orders');
-                const orders = (resp.orders || []).filter(o => o.status === 'pending');
+                const orders = (resp.orders || []).filter(o => o.status === 'pending' || (o.status === 'cancelled' && !['refunded', 'refund_pending', 'refund_failed'].includes(String(o.refund_status || '').toLowerCase())));
                 window._customerOrdersCache = orders;
 
                 renderCustomerOrdersList(orders);
