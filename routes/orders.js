@@ -172,7 +172,8 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Cancel an order (customer initiated). If order was paid by Razorpay, initiate refund back to original payment method.
+// Cancel an order (customer initiated). Refunds are not automatically issued for Razorpay payments.
+// Admin must trigger the refund manually from order history.
 router.post('/:id/cancel', async (req, res) => {
   try {
     const { id } = req.params;
@@ -195,74 +196,15 @@ router.post('/:id/cancel', async (req, res) => {
       return res.status(409).json({ error: 'This order can no longer be cancelled.' });
     }
 
-    // Cancel + restock first (DB authoritative). Refund will be attempted after.
     const cancelled = await Order.cancelById({
       orderId: Number(id),
       userId: req.user.id,
       reason
     });
 
-    const needsRefund =
-      String(cancelled.payment_provider || '').toLowerCase() === 'razorpay' &&
-      String(cancelled.payment_status || '').toLowerCase() === 'paid' &&
-      !!String(cancelled.payment_gateway_payment_id || '').trim();
-
-    if (!needsRefund) {
-      return res.json({
-        message: 'Order cancelled successfully.',
-        order: cancelled
-      });
-    }
-
-    const keyId = getRequiredEnv('RAZORPAY_KEY_ID');
-    const keySecret = getRequiredEnv('RAZORPAY_KEY_SECRET');
-    if (!keyId || !keySecret) {
-      const updated = await Order.updateRefundStatus({
-        orderId: cancelled.id,
-        refund_status: 'refund_failed',
-        refund_id: null,
-        refund_amount: null,
-        refunded_at: new Date(),
-        payment_status: cancelled.payment_status
-      });
-
-      return res.status(501).json({
-        error: 'Refund could not be initiated (Razorpay not configured on server).',
-        order: updated
-      });
-    }
-
-    // Initiate real Razorpay refund (will go back to original UPI/bank based on gateway rules)
-    const razorpay = new Razorpay({ key_id: keyId, key_secret: keySecret });
-    const refundResponse = await razorpay.payments.refund(String(cancelled.payment_gateway_payment_id), {
-      notes: {
-        order_id: String(cancelled.id),
-        order_number: String(cancelled.order_number || ''),
-        reason
-      }
-    });
-
-    const refundAmount = Number(cancelled.payment_amount || cancelled.total_amount || 0) || null;
-    const refundStatusRaw = String(refundResponse?.status || '').toLowerCase();
-    const normalizedRefundStatus = refundStatusRaw === 'processed' ? 'refunded' : 'refund_pending';
-    const normalizedPaymentStatus = refundStatusRaw === 'processed' ? 'refunded' : 'refund_pending';
-
-    const updated = await Order.updateRefundStatus({
-      orderId: cancelled.id,
-      refund_status: normalizedRefundStatus,
-      refund_id: refundResponse?.id ? String(refundResponse.id) : null,
-      refund_amount: refundAmount,
-      refunded_at: new Date(),
-      payment_status: normalizedPaymentStatus
-    });
-
     return res.json({
-      message: 'Order cancelled and refund initiated.',
-      order: updated,
-      refund: {
-        id: refundResponse?.id,
-        status: refundResponse?.status
-      }
+      message: 'Order cancelled successfully. Refunds can be processed by admin from Order History.',
+      order: cancelled
     });
   } catch (error) {
     console.error('Cancel order error:', error);

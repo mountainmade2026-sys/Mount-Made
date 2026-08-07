@@ -478,7 +478,7 @@
 
         async function cancelOrder(orderId) {
             if (!orderId) return;
-            const ok = await showConfirmDialog('Cancel this order? If it was paid by UPI/GPay, the refund will be initiated back to your bank account.', {
+            const ok = await showConfirmDialog('Cancel this order? If it was paid via Razorpay, the refund will only be processed when an admin triggers it from order history.', {
                 title: 'Cancel Order',
                 confirmText: 'Cancel Order',
                 cancelText: 'Keep Order'
