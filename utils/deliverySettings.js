@@ -45,14 +45,25 @@ function resolveItemSubtotal(item) {
     return 0;
   }
 
+  const subtotalCandidates = [
+    item.subtotal,
+    item.line_total,
+    item.lineTotal,
+    item.total,
+    item.amount
+  ];
+
+  for (const candidate of subtotalCandidates) {
+    const parsedSubtotal = parseNonNegativeNumber(candidate);
+    if (parsedSubtotal > 0) {
+      return parsedSubtotal;
+    }
+  }
+
   const quantity = Number(item.quantity || item.qty || 1);
   const price = Number(item.price || item.unit_price || item.retail_price || item.sale_price || 0);
   if (!Number.isFinite(quantity) || quantity < 0 || !Number.isFinite(price) || price < 0) {
     return 0;
-  }
-
-  if (Number.isFinite(item.subtotal) && item.subtotal >= 0) {
-    return Number(item.subtotal);
   }
 
   return quantity * price;

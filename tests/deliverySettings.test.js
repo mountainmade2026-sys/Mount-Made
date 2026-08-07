@@ -43,3 +43,13 @@ test('returns the GST amount for a single item using the provided override', () 
   const item = { product_id: '101', quantity: 2, price: 250, subtotal: 500 };
   assert.equal(getItemGstAmount(item, { '101': 12 }), 60);
 });
+
+test('uses a string subtotal value when calculating GST', () => {
+  const item = { product_id: '101', quantity: 2, price: 250, subtotal: '500' };
+  assert.equal(getItemGstAmount(item, { '101': 12 }), 60);
+});
+
+test('falls back to price × quantity when subtotal is missing', () => {
+  const item = { product_id: '101', quantity: 2, price: 250 };
+  assert.equal(getItemGstAmount(item, { '101': 10 }), 50);
+});

@@ -1882,19 +1882,28 @@ exports.getStockReports = async (req, res) => {
       const effectiveRetailPrice = getEffectiveRetailPrice(product);
       const wholesalePrice = product.wholesale_price ? parseFloat(product.wholesale_price) : null;
       const totalGstAmount = (transactionsResult.rows || []).reduce((sum, transaction) => {
+        const normalizedSubtotal = parseFloat(transaction.subtotal) || (parseFloat(transaction.price || 0) * parseInt(transaction.quantity || 0, 10)) || 0;
         return sum + getItemGstAmount({
           product_id: transaction.product_id,
           quantity: transaction.quantity,
           price: transaction.price,
-          subtotal: transaction.subtotal
+          subtotal: normalizedSubtotal
         }, gstOverrides);
       }, 0);
       const totalRevenue = normalRevenue + wholesaleRevenue + totalGstAmount;
       const broughtPrice = product.brought_price ? parseFloat(product.brought_price) : null;
-      const stockNormalProfit = (parseInt(product.current_stock) || 0) * (Number.isFinite(effectiveRetailPrice) ? effectiveRetailPrice : 0)
-        - (parseInt(product.current_stock) || 0) * (Number.isFinite(broughtPrice) ? broughtPrice : 0);
-      const stockWholesaleProfit = (parseInt(product.current_stock) || 0) * (wholesalePrice || 0)
-        - (parseInt(product.current_stock) || 0) * (Number.isFinite(broughtPrice) ? broughtPrice : 0);
+
+      // Compute GST per transaction and attach to each transaction below
+      const transactionsWithGst = (transactionsResult.rows || []).map(tr => {
+        const normalizedSubtotal = parseFloat(tr.subtotal) || (parseFloat(tr.price || 0) * parseInt(tr.quantity || 0, 10)) || 0;
+        const gstForItem = getItemGstAmount({
+          product_id: tr.product_id,
+          quantity: tr.quantity,
+          price: tr.price,
+          subtotal: normalizedSubtotal
+        }, gstOverrides);
+        return Object.assign({}, tr, { gst: Number(gstForItem) });
+      });
 
       stockReports.push({
         id: product.id,
@@ -1914,12 +1923,10 @@ exports.getStockReports = async (req, res) => {
         total_cost: normalCost + wholesaleCost + offlineCost,
         normal_profit: normalRevenue - normalCost,
         wholesale_profit: wholesaleRevenue - wholesaleCost,
-        normal_stock_profit: stockNormalProfit,
-        wholesale_stock_profit: stockWholesaleProfit,
         images: product.images,
         is_active: product.is_active,
         created_at: product.created_at,
-        transactions: transactionsResult.rows.map(t => ({
+        transactions: transactionsWithGst.map(t => ({
           type: t.type,
           order_id: t.order_id,
           order_number: t.order_number,
@@ -1929,9 +1936,11 @@ exports.getStockReports = async (req, res) => {
           item_delivery_charge: parseFloat(t.item_delivery_charge) || 0,
           customer_name: t.customer_name,
           customer_email: t.customer_email,
+          product_id: t.product_id,
           quantity: parseInt(t.quantity),
           price: parseFloat(t.price),
-          subtotal: parseFloat(t.subtotal)
+          subtotal: parseFloat(t.subtotal),
+          gst: Number(t.gst || 0)
         }))
       });
     }

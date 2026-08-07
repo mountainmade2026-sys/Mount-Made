@@ -7618,6 +7618,25 @@
             }
         }
 
+        function getStockHistoryTransactionGstAmount(transaction, productId) {
+            const overridePercent = (() => {
+                const overrides = window._productGstOverrides || {};
+                const id = String(productId || transaction?.product_id || '').trim();
+                const parsed = Number(overrides[id]);
+                return Number.isFinite(parsed) && parsed >= 0 && parsed <= 100 ? parsed : 5;
+            })();
+
+            const subtotal = Number.isFinite(Number(transaction?.subtotal)) && Number(transaction.subtotal) > 0
+                ? Number(transaction.subtotal)
+                : ((Number(transaction?.quantity) || 0) * (Number(transaction?.price) || 0));
+
+            if (!Number.isFinite(subtotal) || subtotal <= 0) {
+                return 0;
+            }
+
+            return Math.round((subtotal * overridePercent / 100) * 100) / 100;
+        }
+
         // View stock transaction history for a single product
         window.viewStockHistory = function(productId) {
             const product = (window._stockReportsCache || []).find(p => p.id === productId || p.id == productId);
@@ -7741,7 +7760,13 @@
                                 ? `<span class="badge badge-warning">offline sale</span>`
                                 : `<span class="badge badge-${t.status === 'delivered' ? 'success' : t.status === 'cancelled' ? 'danger' : 'warning'}">${t.status}</span>`;
                         const deliveryCharge = parseFloat(t.item_delivery_charge) || 0;
-                        const gstAmount = parseFloat(t.gst) || 0;
+                        const gstAmount = (() => {
+                            const serverGst = Number(t.gst);
+                            if (Number.isFinite(serverGst) && serverGst > 0) {
+                                return serverGst;
+                            }
+                            return getStockHistoryTransactionGstAmount(t, product.id);
+                        })();
                         const deliveryCell = isReturn || isOfflineSale
                             ? `<span style="color:var(--text-muted);">—</span>`
                             : deliveryCharge > 0
