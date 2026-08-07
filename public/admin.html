@@ -6579,10 +6579,12 @@
                 return `<span class="pay-badge pay-cod"><i class="fas fa-money-bill-wave"></i> Cash on Delivery</span>`;
             }
 
-            if (method === 'gpay' || method === 'upi') {
+            const refundState = String(o.refund_status || o.payment_status || '').toLowerCase();
+            const hasRefundState = ['refunded', 'refund_pending', 'refund_failed'].includes(refundState);
+
+            if (method === 'gpay' || method === 'upi' || (provider === 'razorpay' && pgPayId && hasRefundState)) {
                 // ── Razorpay path ──
                 if (provider === 'razorpay' && pgPayId) {
-                    const refundState = String(o.refund_status || '').toLowerCase();
                     const refundHtml =
                         refundState === 'refunded' || pStatus === 'refunded' ? `<span class="pay-refund-badge pay-refunded">Refund Accepted</span>` :
                         refundState === 'refund_pending' || pStatus === 'refund_pending' ? `<span class="pay-refund-badge pay-refund-pending">Refund Initiated</span>` :
