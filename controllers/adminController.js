@@ -12,6 +12,8 @@ const { getLicenseState, LICENSE_EXPIRED_MESSAGE } = require('../middleware/admi
 const { notifyOrderConfirmed, notifyOrderShipped, notifyOutForDelivery } = require('../utils/whatsappService');
 const { normalizeWeightProductData } = require('../utils/productWeightOptions');
 const { parseProductGstOverrides, getItemGstAmount } = require('../utils/deliverySettings');
+const Razorpay = require('razorpay');
+const { getRefundAmount, shouldRestoreStockOnRefund, normalizeRazorpayRefundStatus } = require('../utils/refundUtils');
 
 const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID || '';
 const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN || '';
@@ -1095,6 +1097,99 @@ exports.getOrderDetails = async (req, res) => {
   } catch (error) {
     console.error('Get order details error:', error);
     res.status(500).json({ error: 'Failed to fetch order details.' });
+  }
+};
+
+exports.refundOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { amount, reason = 'Admin initiated refund' } = req.body || {};
+
+    const orderResult = await db.query('SELECT * FROM orders WHERE id = $1 FOR UPDATE', [id]);
+    const order = orderResult.rows[0];
+
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found.' });
+    }
+
+    if (String(order.payment_provider || '').toLowerCase() !== 'razorpay') {
+      return res.status(400).json({ error: 'Refunds are only supported for Razorpay orders.' });
+    }
+
+    const paymentStatus = String(order.payment_status || '').toLowerCase();
+    if (!['paid', 'captured', 'authorized'].includes(paymentStatus)) {
+      return res.status(400).json({ error: 'Only paid Razorpay orders can be refunded.' });
+    }
+
+    if (String(order.refund_status || '').toLowerCase() === 'refunded') {
+      return res.status(400).json({ error: 'This order has already been refunded.' });
+    }
+
+    const refundAmount = amount != null ? Number(amount) : getRefundAmount(order);
+    if (!Number.isFinite(refundAmount) || refundAmount <= 0) {
+      return res.status(400).json({ error: 'Refund amount must be greater than zero.' });
+    }
+
+    const keyId = process.env.RAZORPAY_KEY_ID;
+    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    if (!keyId || !keySecret) {
+      return res.status(501).json({ error: 'Razorpay is not configured on the server.' });
+    }
+
+    const razorpay = new Razorpay({ key_id: keyId, key_secret: keySecret });
+    const paymentId = String(order.payment_gateway_payment_id || '').trim();
+    if (!paymentId) {
+      return res.status(400).json({ error: 'This order does not have a Razorpay payment ID to refund.' });
+    }
+
+    const refundResponse = await razorpay.payments.refund(paymentId, {
+      amount: Math.round(refundAmount * 100),
+      notes: {
+        order_id: String(order.id),
+        order_number: String(order.order_number || ''),
+        reason: String(reason || 'Admin initiated refund')
+      }
+    });
+
+    const normalizedRefundStatus = normalizeRazorpayRefundStatus(refundResponse);
+    const normalizedPaymentStatus = normalizedRefundStatus === 'refunded' ? 'refunded' : 'refund_pending';
+
+    let updatedOrder = order;
+    if (normalizedRefundStatus === 'refunded' && shouldRestoreStockOnRefund(order)) {
+      const itemsResult = await db.query('SELECT product_id, quantity FROM order_items WHERE order_id = $1', [order.id]);
+      for (const item of itemsResult.rows || []) {
+        if (!item.product_id || !item.quantity) continue;
+        await db.query('UPDATE products SET stock_quantity = stock_quantity + $1 WHERE id = $2', [item.quantity, item.product_id]);
+      }
+    }
+
+    const updateResult = await db.query(
+      `UPDATE orders
+       SET refund_status = $1,
+           refund_id = $2,
+           refund_amount = $3,
+           refunded_at = CASE WHEN $1 = 'refunded' THEN CURRENT_TIMESTAMP ELSE refunded_at END,
+           payment_status = $4,
+           status = CASE WHEN $1 = 'refunded' AND status != 'cancelled' THEN 'cancelled' ELSE status END,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = $5
+       RETURNING *`,
+      [normalizedRefundStatus, refundResponse?.id ? String(refundResponse.id) : null, refundAmount, normalizedPaymentStatus, order.id]
+    );
+    updatedOrder = updateResult.rows[0];
+
+    res.json({
+      message: normalizedRefundStatus === 'refunded' ? 'Refund processed successfully.' : 'Refund initiated successfully.',
+      order: updatedOrder,
+      refund: {
+        id: refundResponse?.id,
+        status: refundResponse?.status,
+        amount: refundAmount
+      }
+    });
+  } catch (error) {
+    console.error('Refund order error:', error);
+    res.status(500).json({ error: error.message || 'Failed to process refund.' });
   }
 };
 

@@ -6533,7 +6533,36 @@
                 .replace(/'/g, '&#39;');
         }
 
+        function isRefundEligibleOrder(order) {
+            if (!order) return false;
+            const provider = String(order.payment_provider || '').toLowerCase();
+            const paymentStatus = String(order.payment_status || '').toLowerCase();
+            const refundStatus = String(order.refund_status || '').toLowerCase();
+            const hasPaymentId = !!String(order.payment_gateway_payment_id || '').trim();
+            const isPaid = ['paid', 'captured', 'authorized'].includes(paymentStatus);
+            return provider === 'razorpay' && hasPaymentId && isPaid && !['refunded', 'refund_pending', 'refund_failed'].includes(refundStatus);
+        }
+
         /* ── Payment Display Helper ──────────────────────────────────── */
+        window.refundOrder = async function(orderId) {
+            try {
+                const confirmed = await showConfirmDialog('Refund this paid Razorpay order and restore its stock?', {
+                    title: 'Refund Order',
+                    confirmText: 'Refund Now',
+                    cancelText: 'Cancel'
+                });
+                if (!confirmed) return;
+
+                const result = await api.post(`/admin/orders/${orderId}/refund`, { reason: 'Admin initiated refund' });
+                showAlert(result?.message || 'Refund processed.', 'success');
+                await loadOrders();
+                await loadCustomerOrders();
+            } catch (error) {
+                console.error('Refund order error:', error);
+                showAlert(error?.message || error?.error || 'Failed to process refund.', 'error');
+            }
+        };
+
         function getPaymentDisplay(o) {
             const method   = String(o.payment_method   || '').toLowerCase();
             const provider = String(o.payment_provider || '').toLowerCase();
@@ -7983,11 +8012,10 @@
         async function loadOrders() {
             try {
                 showLoading('orders-list');
-                // Fetch ALL orders without status filter to enable dynamic client-side filtering
+                // Fetch ALL orders without status filter so refund-eligible paid orders still appear here
                 const resp = await api.get('/admin/orders');
                 const allOrders = resp.orders || [];
-                // Exclude pending orders — they are managed in Customer Orders section until confirmed
-                const orders = allOrders.filter(o => o.status !== 'pending');
+                const orders = allOrders.filter(o => o.status !== 'payment_pending' && (o.status !== 'pending' || isRefundEligibleOrder(o)));
                 window._ordersCache = orders;
 
                 // Use filterOrders to render (ensures consistency with search/filter behavior)
@@ -8023,6 +8051,9 @@
                     : '<span style="color:var(--text-muted);">—</span>';
 
                 const proofBtn = getPaymentProofPreviewButton(o);
+                const refundBtn = isRefundEligibleOrder(o)
+                    ? `<button class="action-btn action-btn-warning" onclick="refundOrder(${o.id})"><i class="fas fa-undo-alt"></i> Refund</button>`
+                    : '';
                 const actionsHtml = o.status === 'pending'
                     ? `
                         <button class="action-btn action-btn-success" onclick="updateOrderStatus(${o.id}, 'processing')">
@@ -8048,6 +8079,7 @@
                         <td>
                             <div class="table-actions">
                                 ${actionsHtml}
+                                ${refundBtn}
                                 ${proofBtn}
                             </div>
                         </td>
@@ -8062,9 +8094,9 @@
             try {
                 showLoading('customer-orders-list');
 
-                // Show only pending customer orders here so admin can confirm/reject them
-                const resp = await api.get('/admin/orders?status=pending');
-                const orders = resp.orders || [];
+                // Show pending orders here for confirmation/rejection, plus any refund-eligible paid orders
+                const resp = await api.get('/admin/orders');
+                const orders = (resp.orders || []).filter(o => o.status === 'pending' || isRefundEligibleOrder(o));
                 window._customerOrdersCache = orders;
 
                 renderCustomerOrdersList(orders);
@@ -12812,6 +12844,9 @@
                 const invoiceBtn = `<button class="action-btn" style="background:#6c63ff;color:#fff;margin-top:4px;" onclick="printOrderInvoice(${o.id})" title="Download Invoice"><i class="fas fa-file-invoice"></i> Invoice</button>`;
                 const editInvoiceBtn = `<button class="action-btn" style="background:#8b5cf6;color:#fff;margin-top:4px;" onclick="openInvoiceEditor(${o.id})" title="Edit Invoice"><i class="fas fa-edit"></i> Edit</button>`;
                 const proofBtn = getPaymentProofPreviewButton(o);
+                const refundBtn = isRefundEligibleOrder(o)
+                    ? `<button class="action-btn action-btn-warning" style="margin-top:4px;" onclick="refundOrder(${o.id})" title="Refund this order"><i class="fas fa-undo-alt"></i> Refund</button>`
+                    : '';
 
                 html += `
                     <tr>
@@ -12831,6 +12866,7 @@
                             ${trackingBtn}
                             ${invoiceBtn}
                             ${editInvoiceBtn}
+                            ${refundBtn}
                             ${proofBtn}
                         </td>
                     </tr>
