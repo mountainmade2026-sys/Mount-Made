@@ -1153,6 +1153,9 @@ exports.refundOrder = async (req, res) => {
 
     const normalizedRefundStatus = normalizeRazorpayRefundStatus(refundResponse);
     const normalizedPaymentStatus = normalizedRefundStatus === 'refunded' ? 'refunded' : 'refund_pending';
+    const refundAmountValue = Number.isFinite(refundAmount) ? Number(refundAmount) : 0;
+    const refundStatusValue = String(normalizedRefundStatus);
+    const paymentStatusValue = String(normalizedPaymentStatus);
 
     let updatedOrder = order;
     if (normalizedRefundStatus === 'refunded' && shouldRestoreStockOnRefund(order)) {
@@ -1167,14 +1170,14 @@ exports.refundOrder = async (req, res) => {
       `UPDATE orders
        SET refund_status = $1,
            refund_id = $2,
-           refund_amount = $3,
+           refund_amount = $3::numeric,
            refunded_at = CASE WHEN $1 = 'refunded' THEN CURRENT_TIMESTAMP ELSE refunded_at END,
            payment_status = $4,
            status = CASE WHEN $1 = 'refunded' AND status != 'cancelled' THEN 'cancelled' ELSE status END,
            updated_at = CURRENT_TIMESTAMP
        WHERE id = $5
        RETURNING *`,
-      [normalizedRefundStatus, refundResponse?.id ? String(refundResponse.id) : null, refundAmount, normalizedPaymentStatus, order.id]
+      [refundStatusValue, refundResponse?.id ? String(refundResponse.id) : null, refundAmountValue, paymentStatusValue, order.id]
     );
     updatedOrder = updateResult.rows[0];
 

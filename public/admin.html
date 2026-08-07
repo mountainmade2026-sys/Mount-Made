@@ -8094,9 +8094,9 @@
             try {
                 showLoading('customer-orders-list');
 
-                // Show pending orders here for confirmation/rejection, plus any refund-eligible paid orders
+                // Show only pending customer orders here; once an admin confirms them, they move to the order history view.
                 const resp = await api.get('/admin/orders');
-                const orders = (resp.orders || []).filter(o => o.status === 'pending' || isRefundEligibleOrder(o));
+                const orders = (resp.orders || []).filter(o => o.status === 'pending');
                 window._customerOrdersCache = orders;
 
                 renderCustomerOrdersList(orders);
