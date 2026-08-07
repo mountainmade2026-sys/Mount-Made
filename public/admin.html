@@ -6586,7 +6586,11 @@
                 // ── Razorpay path ──
                 if (provider === 'razorpay' && pgPayId) {
                     const refundHtml =
-                                refundState === 'refunded' || pStatus === 'refunded' ? `<span class="pay-refund-badge pay-refunded" title="Razorpay has accepted the refund.">Refund Accepted</span>` :
+                        refundState === 'refunded' || pStatus === 'refunded' ? `<span class="pay-refund-badge pay-refunded" title="Razorpay has accepted the refund.">Refund Accepted</span>` :
+                        refundState === 'refund_pending' || pStatus === 'refund_pending' ? `<span class="pay-refund-badge pay-refund-pending" title="Refund request sent to Razorpay and waiting for confirmation.">Refund Initiated</span>` :
+                        refundState === 'refund_failed' || pStatus === 'refund_failed' ? `<span class="pay-refund-badge pay-refund-failed" title="Refund request failed. Review Razorpay status and retry if needed.">Refund Failed</span>` : '';
+                    const safeId = escapeHtml(pgPayId);
+                    return `<div class="pay-block">
                         <span class="pay-badge pay-gpay"><i class="fab fa-google-pay"></i> GPay</span>
                         <span class="pay-provider">via Razorpay</span>
                         ${refundHtml}
