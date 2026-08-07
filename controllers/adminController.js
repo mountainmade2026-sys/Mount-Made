@@ -1221,12 +1221,12 @@ exports.refundOrder = async (req, res) => {
     const refundIdValue = refundResponse?.id ? String(refundResponse.id) : null;
     const updateResult = await db.query(
       `UPDATE orders
-       SET refund_status = $1,
+       SET refund_status = $1::text,
            refund_id = $2::text,
            refund_amount = $3::numeric,
-           refunded_at = CASE WHEN $1 = 'refunded' THEN CURRENT_TIMESTAMP ELSE refunded_at END,
-           payment_status = $4,
-           status = CASE WHEN $1 = 'refunded' AND status != 'cancelled' THEN 'cancelled' ELSE status END,
+           refunded_at = CASE WHEN $1::text = 'refunded' THEN CURRENT_TIMESTAMP ELSE refunded_at END,
+           payment_status = $4::text,
+           status = CASE WHEN $1::text = 'refunded' AND status != 'cancelled' THEN 'cancelled' ELSE status END,
            updated_at = CURRENT_TIMESTAMP
        WHERE id = $5
        RETURNING *`,
