@@ -1,4 +1,4 @@
-﻿        
+        
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7419,11 +7419,10 @@
             const lowStock = stockReports.filter(p => p.current_stock > 0 && p.current_stock <= 10).length;
             const outOfStock = stockReports.filter(p => p.current_stock <= 0).length;
 
-            let totalRevenue = 0, normalStockProfit = 0, wholesaleStockProfit = 0;
+            let totalRevenue = 0, totalGst = 0;
             stockReports.forEach(p => {
                 totalRevenue += parseFloat(p.total_revenue) || 0;
-                normalStockProfit += parseFloat(p.normal_stock_profit) || 0;
-                wholesaleStockProfit += parseFloat(p.wholesale_stock_profit) || 0;
+                totalGst += parseFloat(p.gst_amount) || 0;
             });
 
             // Update stats cards
@@ -7433,9 +7432,9 @@
             document.getElementById('out-stock-count').textContent = outOfStock;
             document.getElementById('stock-total-revenue').textContent = formatCurrency(totalRevenue);
             const profitEl = document.getElementById('stock-total-profit');
-            const totalProfit = normalStockProfit + wholesaleStockProfit;
-            profitEl.textContent = formatCurrency(totalProfit);
-            profitEl.style.color = totalProfit >= 0 ? 'var(--success)' : 'var(--danger)';
+            // Reuse the profit stat element to show total GST for the stock reports summary
+            profitEl.textContent = formatCurrency(totalGst);
+            profitEl.style.color = 'var(--text-muted)';
         }
 
         function renderStockReportsTable(stockReports) {
@@ -7473,8 +7472,6 @@
                 '<th class="col-hide-xs">Stock Value</th>' +
                 '<th>Revenue</th>' +
                 '<th>GST</th>' +
-                '<th>Normal Stock Profit</th>' +
-                '<th>Wholesale Stock Profit</th>' +
                 '<th>Status</th>' +
                 '<th>Actions</th>' +
                 '</tr></thead><tbody>';
@@ -7487,13 +7484,9 @@
                 const stockValue = currentStock * price;
                 const totalRevenue = parseFloat(product.total_revenue) || 0;
                 const gstAmount = parseFloat(product.gst_amount) || 0;
-                const normalStockProfit = parseFloat(product.normal_stock_profit) || 0;
-                const wholesaleStockProfit = parseFloat(product.wholesale_stock_profit) || 0;
-                const totalProfit = normalStockProfit + wholesaleStockProfit;
 
                 const statusClass = currentStock > 10 ? 'success' : currentStock > 0 ? 'warning' : 'danger';
                 const statusText = currentStock > 10 ? 'In Stock' : currentStock > 0 ? 'Low Stock' : 'Out of Stock';
-                const profitColor = totalProfit >= 0 ? 'var(--success)' : 'var(--danger)';
 
                 html += `
                     <tr>
@@ -7514,8 +7507,6 @@
                         <td class="col-hide-xs" style="white-space: nowrap;">${formatCurrency(stockValue)}</td>
                         <td style="white-space: nowrap;">${formatCurrency(totalRevenue)}</td>
                         <td style="white-space: nowrap;">${formatCurrency(gstAmount)}</td>
-                        <td style="color: ${normalStockProfit >= 0 ? 'var(--success)' : 'var(--danger)'}; font-weight: 600; white-space: nowrap;">${formatCurrency(normalStockProfit)}</td>
-                        <td style="color: ${wholesaleStockProfit >= 0 ? 'var(--success)' : 'var(--danger)'}; font-weight: 600; white-space: nowrap;">${formatCurrency(wholesaleStockProfit)}</td>
                         <td><span class="badge badge-${statusClass}" style="white-space: nowrap;">${statusText}</span></td>
                         <td style="white-space: nowrap;">
                             <button class="action-btn action-btn-view" onclick="viewStockHistory(${product.id})">
@@ -7617,7 +7608,7 @@
                 if (!document.querySelector('.stock-table-no-results')) {
                     const noResultsRow = document.createElement('tr');
                     noResultsRow.className = 'stock-table-no-results';
-                    noResultsRow.innerHTML = '<td colspan="13" style="text-align: center; padding: 2rem; color: var(--text-muted);">No products match your search criteria</td>';
+                    noResultsRow.innerHTML = '<td colspan="11" style="text-align: center; padding: 2rem; color: var(--text-muted);">No products match your search criteria</td>';
                     tbody.appendChild(noResultsRow);
                 }
             } else {
@@ -7705,8 +7696,9 @@
                                     <th>Stock Before</th>
                                     <th>Stock After</th>
                                     <th>Price</th>
-                                    <th>Delivery</th>
-                                    <th>Total</th>
+                                        <th>GST</th>
+                                        <th>Delivery</th>
+                                        <th>Total</th>
                                     <th>Status</th>
                                 </tr>
                             </thead>
@@ -7749,12 +7741,13 @@
                                 ? `<span class="badge badge-warning">offline sale</span>`
                                 : `<span class="badge badge-${t.status === 'delivered' ? 'success' : t.status === 'cancelled' ? 'danger' : 'warning'}">${t.status}</span>`;
                         const deliveryCharge = parseFloat(t.item_delivery_charge) || 0;
+                        const gstAmount = parseFloat(t.gst) || 0;
                         const deliveryCell = isReturn || isOfflineSale
                             ? `<span style="color:var(--text-muted);">—</span>`
                             : deliveryCharge > 0
                                 ? `<span style="color:var(--warning);font-weight:600;">${formatCurrency(deliveryCharge)}</span>`
                                 : `<span style="color:var(--text-muted);">—</span>`;
-                        const totalWithDelivery = isReturn || isOfflineSale ? parseFloat(t.subtotal) : parseFloat(t.subtotal) + deliveryCharge;
+                        const totalWithDelivery = isReturn || isOfflineSale ? parseFloat(t.subtotal) : parseFloat(t.subtotal) + deliveryCharge + gstAmount;
                         const customerLabel = isOfflineSale ? 'Offline sale' : (t.customer_name || 'No account');
                         const customerEmail = isOfflineSale ? 'Manual / cash / walk-in' : (t.customer_email || '');
                         rowsHtml += `
@@ -7769,6 +7762,7 @@
                                 <td>${stockBefore}</td>
                                 <td>${stockAfter}</td>
                                 <td>${formatCurrency(t.price)}</td>
+                                <td>${formatCurrency(gstAmount)}</td>
                                 <td>${deliveryCell}</td>
                                 <td><strong>${formatCurrency(totalWithDelivery)}</strong></td>
                                 <td>${statusBadge}</td>
@@ -7844,7 +7838,7 @@
                     csv += `Exported At: ${new Date().toLocaleString()}\n`;
                 }
                 csv += '\n';
-                csv += 'Date,Type,Order/Return Number,Customer,Email,Quantity,Stock Before,Stock After,Price,Total,Status\n';
+                csv += 'Date,Type,Order/Return Number,Customer,Email,Quantity,Stock Before,Stock After,Price,GST,Total,Status\n';
 
                 rows.forEach(({ t, qty, stockBefore, stockAfter, isReturn }) => {
                     const dateStr = formatDate(t.order_date);
@@ -7857,6 +7851,7 @@
                     const subtotal = t.subtotal != null ? t.subtotal : '';
                     const status = isReturn ? 'refunded' : (t.status || '');
 
+                    const gstVal = t.gst != null ? parseFloat(t.gst) : 0;
                     csv += [
                         safe(dateStr),
                         safe(type),
@@ -7867,6 +7862,7 @@
                         safe(stockBefore),
                         safe(stockAfter),
                         safe(price),
+                        safe(gstVal),
                         safe(subtotal),
                         safe(status)
                     ].join(',') + '\n';
@@ -7930,9 +7926,10 @@
                 // Transaction history
                 if (p.transactions && p.transactions.length > 0) {
                     csv += 'Transaction History:\n';
-                    csv += 'Date,Order Number,Customer,Email,Quantity,Price,Total,Status\n';
+                    csv += 'Date,Order Number,Customer,Email,Quantity,Price,GST,Total,Status\n';
                     p.transactions.forEach(t => {
-                        csv += `${formatDate(t.order_date)},"${t.order_number}","${t.customer_name || 'No account'}","${t.customer_email || '-'}",${t.quantity},₹${parseFloat(t.price).toFixed(2)},₹${parseFloat(t.subtotal).toFixed(2)},${t.status}\n`;
+                        const gstVal = t.gst != null ? parseFloat(t.gst) : 0;
+                        csv += `${formatDate(t.order_date)},"${t.order_number}","${t.customer_name || 'No account'}","${t.customer_email || '-'}",${t.quantity},₹${parseFloat(t.price).toFixed(2)},₹${gstVal.toFixed(2)},₹${parseFloat(t.subtotal).toFixed(2)},${t.status}\n`;
                     });
                     csv += '\n';
                 } else {
