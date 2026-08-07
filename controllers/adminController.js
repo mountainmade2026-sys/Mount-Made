@@ -1909,14 +1909,12 @@ exports.getStockReports = async (req, res) => {
         p.images,
         p.is_active,
         p.created_at,
-        COALESCE(SUM(CASE WHEN o.status != 'cancelled'
-          AND o.status != 'payment_pending'
+        COALESCE(SUM(CASE WHEN o.status != 'payment_pending'
           AND NOT (o.payment_provider IS NOT NULL AND o.payment_status IN ('pending', 'failed'))
           THEN oi.quantity ELSE 0 END), 0)
           + COALESCE((SELECT SUM(quantity) FROM offline_sales os WHERE os.product_id = p.id), 0) AS total_sold,
         p.stock_quantity
-          + COALESCE(SUM(CASE WHEN o.status != 'cancelled'
-            AND o.status != 'payment_pending'
+          + COALESCE(SUM(CASE WHEN o.status != 'payment_pending'
             AND NOT (o.payment_provider IS NOT NULL AND o.payment_status IN ('pending', 'failed'))
             THEN oi.quantity ELSE 0 END), 0)
           + COALESCE((SELECT SUM(quantity) FROM offline_sales os WHERE os.product_id = p.id), 0) AS initial_stock,
@@ -1978,7 +1976,6 @@ exports.getStockReports = async (req, res) => {
         LEFT JOIN users u ON o.user_id = u.id
         LEFT JOIN order_items oi2 ON oi2.order_id = o.id
         WHERE oi.product_id = $1
-          AND o.status != 'cancelled'
           AND o.status != 'payment_pending'
           AND NOT (o.payment_provider IS NOT NULL AND o.payment_status IN ('pending', 'failed'))
 
