@@ -1146,7 +1146,7 @@ exports.refundOrder = async (req, res) => {
     const pendingOrderResult = await db.query(
       `UPDATE orders
        SET refund_status = 'refund_pending',
-           refund_id = NULL,
+           refund_id = NULL::text,
            refund_amount = $1::numeric,
            payment_status = 'refund_pending',
            updated_at = CURRENT_TIMESTAMP
@@ -1218,10 +1218,11 @@ exports.refundOrder = async (req, res) => {
       }
     }
 
+    const refundIdValue = refundResponse?.id ? String(refundResponse.id) : null;
     const updateResult = await db.query(
       `UPDATE orders
        SET refund_status = $1,
-           refund_id = $2,
+           refund_id = $2::text,
            refund_amount = $3::numeric,
            refunded_at = CASE WHEN $1 = 'refunded' THEN CURRENT_TIMESTAMP ELSE refunded_at END,
            payment_status = $4,
@@ -1229,7 +1230,7 @@ exports.refundOrder = async (req, res) => {
            updated_at = CURRENT_TIMESTAMP
        WHERE id = $5
        RETURNING *`,
-      [refundStatusValue, refundResponse?.id ? String(refundResponse.id) : null, refundAmountValue, paymentStatusValue, order.id]
+      [refundStatusValue, refundIdValue, refundAmountValue, paymentStatusValue, order.id]
     );
     updatedOrder = updateResult.rows[0];
 
