@@ -6582,10 +6582,11 @@
             if (method === 'gpay' || method === 'upi') {
                 // ── Razorpay path ──
                 if (provider === 'razorpay' && pgPayId) {
+                    const refundState = String(o.refund_status || '').toLowerCase();
                     const refundHtml =
-                        pStatus === 'refunded'       ? `<span class="pay-refund-badge pay-refunded">Refunded</span>` :
-                        pStatus === 'refund_pending' ? `<span class="pay-refund-badge pay-refund-pending">Refund Pending</span>` :
-                        pStatus === 'refund_failed'  ? `<span class="pay-refund-badge pay-refund-failed">Refund Failed</span>` : '';
+                        refundState === 'refunded' || pStatus === 'refunded' ? `<span class="pay-refund-badge pay-refunded">Refunded</span>` :
+                        refundState === 'refund_pending' || pStatus === 'refund_pending' ? `<span class="pay-refund-badge pay-refund-pending">Processing Refund</span>` :
+                        refundState === 'refund_failed' || pStatus === 'refund_failed' ? `<span class="pay-refund-badge pay-refund-failed">Refund Failed</span>` : '';
                     const safeId = escapeHtml(pgPayId);
                     return `<div class="pay-block">
                         <span class="pay-badge pay-gpay"><i class="fab fa-google-pay"></i> GPay</span>

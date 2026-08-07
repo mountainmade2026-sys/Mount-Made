@@ -1142,6 +1142,20 @@ exports.refundOrder = async (req, res) => {
       return res.status(400).json({ error: 'This order does not have a Razorpay payment ID to refund.' });
     }
 
+    const refundAmountValue = Number.isFinite(refundAmount) ? Number(refundAmount) : 0;
+    const pendingOrderResult = await db.query(
+      `UPDATE orders
+       SET refund_status = 'refund_pending',
+           refund_id = NULL,
+           refund_amount = $1::numeric,
+           payment_status = 'refund_pending',
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = $2
+       RETURNING *`,
+      [refundAmountValue, order.id]
+    );
+    let updatedOrder = pendingOrderResult.rows[0] || order;
+
     let refundResponse;
     try {
       refundResponse = await razorpay.payments.refund(paymentId, {
@@ -1155,7 +1169,6 @@ exports.refundOrder = async (req, res) => {
     } catch (refundError) {
       const razorpayMessage = refundError?.error?.description || refundError?.response?.data?.error?.description || refundError?.message || 'Razorpay refund failed.';
       if (isAlreadyRefundedError(refundError)) {
-        const refundAmountValue = Number.isFinite(refundAmount) ? Number(refundAmount) : 0;
         const alreadyRefundedOrderResult = await db.query(
           `UPDATE orders
            SET refund_status = 'refunded',
@@ -1195,11 +1208,8 @@ exports.refundOrder = async (req, res) => {
 
     const normalizedRefundStatus = normalizeRazorpayRefundStatus(refundResponse);
     const normalizedPaymentStatus = normalizedRefundStatus === 'refunded' ? 'refunded' : 'refund_pending';
-    const refundAmountValue = Number.isFinite(refundAmount) ? Number(refundAmount) : 0;
     const refundStatusValue = String(normalizedRefundStatus);
     const paymentStatusValue = String(normalizedPaymentStatus);
-
-    let updatedOrder = order;
     if (normalizedRefundStatus === 'refunded' && shouldRestoreStockOnRefund(order)) {
       const itemsResult = await db.query('SELECT product_id, quantity FROM order_items WHERE order_id = $1', [order.id]);
       for (const item of itemsResult.rows || []) {
