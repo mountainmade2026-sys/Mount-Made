@@ -1257,7 +1257,7 @@
                 // Try to fetch site settings for badge image URLs and links
                 let settings = {};
                 try {
-                    const resp = await fetch('/products/settings?_=' + Date.now());
+                    const resp = await fetch('/api/products/settings?_=' + Date.now());
                     const json = await resp.json();
                     settings = json?.settings || {};
                 } catch (e) {
