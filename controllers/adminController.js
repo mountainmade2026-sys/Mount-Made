@@ -1234,7 +1234,9 @@ exports.refundOrder = async (req, res) => {
     updatedOrder = updateResult.rows[0];
 
     res.json({
-      message: normalizedRefundStatus === 'refunded' ? 'Refund processed successfully.' : 'Refund initiated successfully.',
+      message: normalizedRefundStatus === 'refunded'
+        ? 'Refund accepted by Razorpay. Bank credit timing depends on the customer\'s bank or UPI provider.'
+        : 'Refund initiated with Razorpay. It is still being processed.',
       order: updatedOrder,
       refund: {
         id: refundResponse?.id,

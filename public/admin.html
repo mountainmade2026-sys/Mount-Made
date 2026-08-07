@@ -6584,8 +6584,8 @@
                 if (provider === 'razorpay' && pgPayId) {
                     const refundState = String(o.refund_status || '').toLowerCase();
                     const refundHtml =
-                        refundState === 'refunded' || pStatus === 'refunded' ? `<span class="pay-refund-badge pay-refunded">Refunded</span>` :
-                        refundState === 'refund_pending' || pStatus === 'refund_pending' ? `<span class="pay-refund-badge pay-refund-pending">Processing Refund</span>` :
+                        refundState === 'refunded' || pStatus === 'refunded' ? `<span class="pay-refund-badge pay-refunded">Refund Accepted</span>` :
+                        refundState === 'refund_pending' || pStatus === 'refund_pending' ? `<span class="pay-refund-badge pay-refund-pending">Refund Initiated</span>` :
                         refundState === 'refund_failed' || pStatus === 'refund_failed' ? `<span class="pay-refund-badge pay-refund-failed">Refund Failed</span>` : '';
                     const safeId = escapeHtml(pgPayId);
                     return `<div class="pay-block">
