@@ -13153,19 +13153,17 @@
                 total,
                 thankYou: thankYouVal,
                 layout,
-                selectedBlock: 'logo'
+                selectedBlock: 'logo',
+                printMode: true,
+                thermalReceipt: true
             }) : '';
 
             const html = `<!DOCTYPE html><html><head><title>Invoice ${escapeHtml(invoiceNumber)}</title>
-            <style>body{font-family:Arial,sans-serif;max-width:760px;margin:40px auto;color:#222;font-size:14px;}
-            table{width:100%;border-collapse:collapse;margin-top:1rem;}
-            th{background:#f0fdf4;padding:0.5rem 0.75rem;border:1px solid #ddd;font-weight:700;text-align:left;}
-            .total-row td{font-weight:700;}
-            @media print{body{margin:20px;}.no-print{display:none}}</style></head><body>
-            <div style="border:1px solid #ddd;border-radius:10px;padding:1rem;background:#fff;">
+            <style>*{box-sizing:border-box;}html,body{margin:0;padding:0;width:100%;}body{font-family:Arial,sans-serif;background:#fff;color:#111;font-size:12px;line-height:1.3;} .receipt-wrapper{width:80mm;max-width:80mm;margin:0 auto;padding:4px 4px;box-shadow:0 0 0 1px #e2e8f0;} .receipt-header{text-align:center;padding-bottom:6px;border-bottom:1px dashed #bbb;margin-bottom:6px;} .receipt-logo{max-width:70px;width:auto;height:auto;margin:0 auto 4px;display:block;} .receipt-title{font-size:13px;font-weight:700;margin-bottom:2px;} .receipt-meta,.receipt-info{font-size:11px;color:#111;margin-bottom:4px;} .receipt-table{width:100%;border-collapse:collapse;font-size:11px;margin-top:4px;} .receipt-table th,.receipt-table td{padding:3px 4px;text-align:left;vertical-align:top;border-bottom:1px dashed #ddd;} .receipt-table th{font-weight:700;} .receipt-table .qty,.receipt-table .price,.receipt-table .total{text-align:right;} .receipt-summary{margin-top:6px;font-size:11px;} .summary-row{display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px dashed #eee;} .summary-row:last-child{border-bottom:none;} .summary-label{color:#111;} .summary-value{font-weight:700;text-align:right;min-width:40px;} .receipt-note{font-size:10px;color:#555;text-align:center;margin-top:8px;} .no-print{display:block;margin-top:8px;text-align:center;} .print-btn{display:inline-block;width:100%;padding:0.6rem 0;font-weight:700;border:none;border-radius:6px;background:#1a4731;color:#fff;cursor:pointer;font-size:12px;} @page{size:80mm auto;margin:0;} @media print{html,body{width:80mm;margin:0;padding:0;}body{background:#fff;} .receipt-wrapper{padding:4px 4px;} .receipt-table th,.receipt-table td{font-size:11px;padding:2px 3px;} .no-print{display:none !important;}}</style></head><body>
+            <div class="receipt-wrapper">
                 ${invoiceMarkup}
             </div>
-            <div class="no-print" style="margin-top:1.5rem;"><button onclick="window.print()" style="padding:0.5rem 1rem;background:#1a4731;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:1rem;">&#128424; Print / Save PDF</button></div>
+            <div class="no-print"><button class="print-btn" onclick="window.print()">Print Receipt</button></div>
             </body></html>`;
             const w = window.open('', '_blank', 'width=760,height=920');
             if (!w) { showAlert('Pop-up blocked. Please allow pop-ups for this site.', 'error'); return; }
@@ -13556,6 +13554,8 @@
             const thankYou = options.thankYou || (document.getElementById('invoice-editor-thankyou') && document.getElementById('invoice-editor-thankyou').value) || window.getInvoiceThankYouMessageDefault(company);
             const layout = options.layout || window.invoiceEditorLayout || (window.getInvoiceLayoutState ? window.getInvoiceLayoutState() : {});
             const selectedBlock = options.selectedBlock || window.invoiceEditorSelectedLayoutBlock || 'logo';
+            const isPrintMode = !!options.printMode;
+            const thermalReceipt = !!options.thermalReceipt;
 
             const companyText = `<div style="font-size:${layout.company?.fontSize ?? 16}px;font-weight:${layout.company?.fontWeight ?? 700};line-height:${layout.company?.lineHeight ?? 1};color:${layout.company?.color || '#111'};text-align:${layout.company?.textAlign || 'left'};">${escapeHtml(company)}</div>`;
             const metaLines = [`<div><strong>Invoice:</strong> ${escapeHtml(invNum)}</div>`, `<div><strong>Date:</strong> ${new Date().toLocaleDateString('en-IN')}</div>`];
@@ -13564,6 +13564,21 @@
             const renderBlock = (blockKey, content, extraCss = '') => {
                 const cfg = layout[blockKey] || {};
                 const borderStyle = 'border: none;';
+                if (isPrintMode) {
+                    const commonPrintStyles = 'box-sizing:border-box; padding: 0.15rem 0; overflow:hidden;';
+                    const blockLayout = {
+                        logo: 'width:100%; text-align:center; margin-bottom:0.65rem;',
+                        company: 'display:inline-block; vertical-align:top; width:calc(55% - 0.35rem); margin-bottom:0.6rem; padding-right:0.35rem; max-width:55%;',
+                        meta: 'display:inline-block; vertical-align:top; width:calc(45% - 0.35rem); margin-bottom:0.6rem; padding-left:0.35rem; text-align:right; max-width:45%;',
+                        customer: 'width:100%; margin-bottom:0.5rem;',
+                        thankYou: 'width:100%; margin-bottom:0.5rem;'
+                    }[blockKey] || 'width:100%; margin-bottom:0.5rem;';
+                    return `
+                        <div style="${blockLayout} ${commonPrintStyles} ${extraCss}">
+                            ${content}
+                        </div>
+                    `;
+                }
                 return `
                     <div data-block="${blockKey}" style="position:absolute; left:${cfg.x || 0}px; top:${cfg.y || 0}px; width:${cfg.width || 160}px; height:${cfg.height || 60}px; ${borderStyle} ${extraCss}; box-sizing:border-box; padding: 0.25rem; overflow:hidden;">
                         ${content}
@@ -13574,7 +13589,10 @@
             let siteLogoSrc = null;
             try { const siteLogoEl = document.querySelector('.navbar-brand img.site-logo-dynamic'); if (siteLogoEl && siteLogoEl.src) siteLogoSrc = siteLogoEl.src; } catch (e) {}
             const chosenLogo = (layout && layout.logo && layout.logo.logoDataUrl) ? layout.logo.logoDataUrl : siteLogoSrc;
-            const logoMarkup = chosenLogo ? `<img src="${chosenLogo}" alt="Invoice Logo" style="max-width:100%; max-height:100%; object-fit:contain; width:100%; height:100%; display:block;">` : `<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-weight:700;color:#1a4731;">${escapeHtml(company)}</div>`;
+            const logoStyle = isPrintMode
+                ? 'max-width:140px; max-height:80px; width:auto; height:auto; object-fit:contain; display:block; margin:0 auto;'
+                : 'max-width:160px; max-height:90px; width:auto; height:auto; object-fit:contain; display:block;';
+            const logoMarkup = chosenLogo ? `<img src="${chosenLogo}" alt="Invoice Logo" style="${logoStyle}">` : `<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-weight:700;color:#1a4731;">${escapeHtml(company)}</div>`;
 
             const blocks = [
                 renderBlock('logo', logoMarkup, 'display:flex;align-items:center;justify-content:center;'),
@@ -13623,12 +13641,11 @@
                 paidSubtotal += paidLineTotal;
 
                 return `
-                    <tr style="border: 1px solid #ddd;">
-                        <td style="padding: 0.5rem 0.75rem; border-right: 1px solid #ddd;">${escapeHtml(item.name || item.product_name || '')}</td>
-                        <td style="padding: 0.5rem 0.75rem; text-align: center; border-right: 1px solid #ddd;">${qty}</td>
-                        <td style="padding: 0.5rem 0.75rem; text-align: right; border-right: 1px solid #ddd;">₹${unitPriceDisplayed.toFixed(2)}</td>
-                        <td style="padding: 0.5rem 0.75rem; text-align: right; border-right: 1px solid #ddd;">${perItemDiscount > 0 ? `-₹${discountForLine.toFixed(2)}` : '—'}</td>
-                        <td style="padding: 0.5rem 0.75rem; text-align: right;">₹${paidLineTotal.toFixed(2)}</td>
+                    <tr style="border-bottom: 1px solid #ddd;">
+                        <td style="padding: 0.35rem 0.4rem; white-space:normal; word-break:break-word; line-height:1.35; font-size:11px;">${escapeHtml(item.name || item.product_name || '')}</td>
+                        <td style="padding: 0.35rem 0.4rem; text-align: center; font-size:11px;">${qty}</td>
+                        <td style="padding: 0.35rem 0.4rem; text-align: right; font-size:11px;">₹${paidPrice.toFixed(2)}</td>
+                        <td style="padding: 0.35rem 0.4rem; text-align: right; font-size:11px;">₹${paidLineTotal.toFixed(2)}</td>
                     </tr>
                 `;
             }).join('');
@@ -13703,18 +13720,73 @@
                 </tfoot>
             `;
 
+            if (thermalReceipt) {
+                const logoSection = chosenLogo ? `<img src="${chosenLogo}" alt="Logo" style="max-width:70px;width:auto;height:auto;margin:0 auto 4px;display:block;">` : '';
+                const addressHtml = address ? `<div style="font-size:11px;color:#111;line-height:1.3;white-space:pre-wrap;text-align:center;margin-bottom:4px;">${escapeHtml(address).replace(/\n/g, '<br>')}</div>` : '';
+                const customerHtml = customer ? `<div style="font-size:11px;color:#111;line-height:1.3;margin-bottom:2px;"><strong>Customer:</strong> ${escapeHtml(customer)}</div>` : '';
+                const contactHtml = `${phone ? `<div style="font-size:11px;color:#111;line-height:1.3;margin-bottom:2px;"><strong>Phone:</strong> ${escapeHtml(phone)}</div>` : ''}${email ? `<div style="font-size:11px;color:#111;line-height:1.3;margin-bottom:2px;"><strong>Email:</strong> ${escapeHtml(email)}</div>` : ''}`;
+                const infoLines = [`<div style="font-size:11px;color:#111;line-height:1.3;margin-bottom:2px;"><strong>Invoice:</strong> ${escapeHtml(invNum)}</div>`, `<div style="font-size:11px;color:#111;line-height:1.3;margin-bottom:2px;"><strong>Date:</strong> ${new Date().toLocaleDateString('en-IN')}</div>`].join('');
+                const paymentSection = contactHtml || customerHtml ? `<div style="margin-top:4px;">${customerHtml}${contactHtml}</div>` : '';
+                const discountLine = discount > 0 ? `<div class="summary-row"><span class="summary-label">Discount</span><span class="summary-value">-₹${discount.toFixed(2)}</span></div>` : '';
+                const deliveryLine = delivery > 0 ? `<div class="summary-row"><span class="summary-label">Delivery</span><span class="summary-value">+₹${delivery.toFixed(2)}</span></div>` : '';
+                const gstLine = gst > 0 ? `<div class="summary-row"><span class="summary-label">${gstLabel}</span><span class="summary-value">₹${gst.toFixed(2)}</span></div>` : '';
+                return `
+                    <div style="width:80mm;max-width:80mm;margin:0 auto;padding:4px 4px;font-family:Arial,sans-serif;font-size:11px;color:#111;">
+                        <div style="text-align:center;margin-bottom:6px;">
+                            ${logoSection}
+                            <div style="font-size:13px;font-weight:700;margin-bottom:2px;">${escapeHtml(company)}</div>
+                            ${addressHtml}
+                        </div>
+                        <div style="font-size:11px;color:#111;line-height:1.3;margin-bottom:6px;">${infoLines}</div>
+                        ${paymentSection}
+                        <table style="width:100%;border-collapse:collapse;font-size:11px;margin-top:4px;">
+                            <thead>
+                                <tr>
+                                    <th style="padding:3px 4px;text-align:left;font-weight:700;">Product</th>
+                                    <th style="padding:3px 4px;text-align:center;font-weight:700;">Qty</th>
+                                    <th style="padding:3px 4px;text-align:right;font-weight:700;">Price</th>
+                                    <th style="padding:3px 4px;text-align:right;font-weight:700;">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>${normalizedRows}</tbody>
+                        </table>
+                        <div style="margin-top:8px;font-size:11px;">
+                            <div class="summary-row"><span class="summary-label">Subtotal</span><span class="summary-value">₹${paidSubtotal.toFixed(2)}</span></div>
+                            ${gstLine}
+                            ${discountLine}
+                            ${deliveryLine}
+                            <div class="summary-row" style="margin-top:4px;font-size:12px;font-weight:800;"><span class="summary-label">TOTAL</span><span class="summary-value">₹${total.toFixed(2)}</span></div>
+                        </div>
+                        <div style="font-size:10px;color:#555;text-align:center;margin-top:8px;line-height:1.3;">${escapeHtml(thankYou).replace(/\n/g, '<br>')}</div>
+                    </div>
+                `;
+            }
+            const canvasStyle = isPrintMode
+                ? 'position:relative; border: 1px solid #ddd; border-radius: 8px; padding: 0.85rem; background: white; font-family: Arial, sans-serif; font-size: 13px; overflow: visible; width:100%; max-width:190mm; margin:0 auto;'
+                : 'position:relative; min-height:760px; border: 1px solid #ddd; border-radius: 8px; padding: 1rem; background: white; font-family: Arial, sans-serif; font-size: 13px; overflow: hidden; width:100%; max-width:190mm; margin:0 auto;';
+            const itemsContainerStyle = isPrintMode
+                ? 'position:relative; margin-top: 0.75rem;'
+                : 'position:absolute; left:20px; top:260px; right:20px; bottom:160px; overflow:auto;';
+
             return `
-                <div data-invoice-canvas="1" style="position:relative; min-height:760px; border: 1px solid #ddd; border-radius: 8px; padding: 1rem; background: white; font-family: Arial, sans-serif; font-size: 13px; overflow: hidden;">
+                <div data-invoice-canvas="1" style="${canvasStyle}">
                     ${blocks}
-                    <div style="position:absolute; left:20px; top:260px; right:20px; bottom:160px; overflow:auto;">
-                        <table style="width:100%; border-collapse:collapse; margin-bottom:1rem;">
+                    <div style="${itemsContainerStyle}">
+                        <table style="width:100%; border-collapse:collapse; margin-bottom:1rem; font-size:12px;">
+                            <colgroup>
+                                <col style="width:45%;">
+                                <col style="width:11%;">
+                                <col style="width:18%;">
+                                <col style="width:13%;">
+                                <col style="width:13%;">
+                            </colgroup>
                             <thead>
                                 <tr style="background:#f0fdf4;">
-                                    <th style="padding:0.5rem 0.75rem;border:1px solid #ddd;text-align:left;font-weight:700;">Product</th>
-                                    <th style="padding:0.5rem 0.75rem;border:1px solid #ddd;text-align:center;font-weight:700;">Qty</th>
-                                    <th style="padding:0.5rem 0.75rem;border:1px solid #ddd;text-align:right;font-weight:700;">Unit Price</th>
-                                    <th style="padding:0.5rem 0.75rem;border:1px solid #ddd;text-align:right;font-weight:700;">Discount</th>
-                                    <th style="padding:0.5rem 0.75rem;border:1px solid #ddd;text-align:right;font-weight:700;">Subtotal</th>
+                                    <th style="padding:0.55rem 0.75rem;border:1px solid #ddd;text-align:left;font-weight:700;white-space:normal;">Product</th>
+                                    <th style="padding:0.55rem 0.75rem;border:1px solid #ddd;text-align:center;font-weight:700;">Qty</th>
+                                    <th style="padding:0.55rem 0.75rem;border:1px solid #ddd;text-align:right;font-weight:700;">Unit Price</th>
+                                    <th style="padding:0.55rem 0.75rem;border:1px solid #ddd;text-align:right;font-weight:700;">Discount</th>
+                                    <th style="padding:0.55rem 0.75rem;border:1px solid #ddd;text-align:right;font-weight:700;">Subtotal</th>
                                 </tr>
                             </thead>
                             <tbody>${normalizedRows}</tbody>
@@ -13826,7 +13898,7 @@
                 subtotal += lineTotal;
                 return `
                     <tr style="border: 1px solid #ddd;">
-                        <td style="padding: 0.5rem 0.75rem; border-right: 1px solid #ddd;">${escapeHtml(item.name)}</td>
+                        <td style="padding: 0.5rem 0.75rem; border-right: 1px solid #ddd; white-space:normal; word-break:break-word; line-height:1.4;">${escapeHtml(item.name)}</td>
                         <td style="padding: 0.5rem 0.75rem; text-align: center; border-right: 1px solid #ddd;">${item.quantity}</td>
                         <td style="padding: 0.5rem 0.75rem; text-align: right; border-right: 1px solid #ddd;">₹${item.price.toFixed(2)}</td>
                         <td style="padding: 0.5rem 0.75rem; text-align: right;">₹${lineTotal.toFixed(2)}</td>
@@ -13904,7 +13976,7 @@
 
                 return `
                     <tr>
-                        <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;vertical-align:top;">
+                        <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;vertical-align:top;white-space:normal;word-break:break-word;line-height:1.35;">
                             <div style="font-weight:600;color:#111827;">${escapeHtml(item.name)}</div>
                         </td>
                         <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:center;vertical-align:middle;">${qty}</td>
@@ -13923,47 +13995,26 @@
             inferredDiscount = Number.isFinite(Number(inferredDiscount)) ? Number(inferredDiscount.toFixed(2)) : 0;
             const total = paidSubtotal + delivery;
 
+            const printMarkup = window.renderInvoiceLayoutMarkup ? window.renderInvoiceLayoutMarkup({
+                company,
+                invNum,
+                customer,
+                email,
+                phone,
+                address,
+                thankYou,
+                discount: inferredDiscount,
+                delivery,
+                selectedBlock: 'logo',
+                printMode: true,
+                thermalReceipt: true
+            }) : '';
+
             const html = `<!DOCTYPE html><html><head><title>Invoice ${escapeHtml(invNum)}</title>
-            <style>body{font-family:Arial,sans-serif;max-width:700px;margin:40px auto;color:#222;font-size:14px;}
-            .hdr{display:flex;justify-content:space-between;padding-bottom:1rem;border-bottom:2px solid #1a4731;margin-bottom:1.5rem;}
-            .brand{font-size:1.6rem;font-weight:800;color:#1a4731;}
-            table{width:100%;border-collapse:collapse;margin-top:1rem;}
-            th{background:#f0fdf4;padding:0.5rem 0.75rem;border:1px solid #ddd;font-weight:700;text-align:left;}
-            .total-row td{font-weight:700;}
-            @media print{body{margin:20px;}.no-print{display:none}}</style></head><body>
-            <div class="hdr">
-                <div><div class="brand">${escapeHtml(company)}</div><div style="color:#666;">Tax Invoice</div></div>
-                <div style="text-align:right;">
-                    <div><strong>Invoice:</strong> ${escapeHtml(invNum)}</div>
-                    <div><strong>Date:</strong> ${new Date().toLocaleDateString('en-IN')}</div>
-                </div>
+            <style>*{box-sizing:border-box;}html,body{margin:0;padding:0;width:100%;}body{font-family:Arial,sans-serif;background:#fff;color:#111;font-size:12px;line-height:1.3;} .receipt-wrapper{width:80mm;max-width:80mm;margin:0 auto;padding:4px 4px;box-shadow:0 0 0 1px #e2e8f0;} .receipt-header{text-align:center;padding-bottom:6px;border-bottom:1px dashed #bbb;margin-bottom:6px;} .receipt-logo{max-width:70px;width:auto;height:auto;margin:0 auto 4px;display:block;} .receipt-title{font-size:13px;font-weight:700;margin-bottom:2px;} .receipt-meta,.receipt-info{font-size:11px;color:#111;margin-bottom:4px;} .receipt-table{width:100%;border-collapse:collapse;font-size:11px;margin-top:4px;} .receipt-table th,.receipt-table td{padding:3px 4px;text-align:left;vertical-align:top;border-bottom:1px dashed #ddd;} .receipt-table th{font-weight:700;} .receipt-table .qty,.receipt-table .price,.receipt-table .total{text-align:right;} .receipt-summary{margin-top:6px;font-size:11px;} .summary-row{display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px dashed #eee;} .summary-row:last-child{border-bottom:none;} .summary-label{color:#111;} .summary-value{font-weight:700;text-align:right;min-width:40px;} .receipt-note{font-size:10px;color:#555;text-align:center;margin-top:8px;} .no-print{display:block;margin-top:8px;text-align:center;} .print-btn{display:inline-block;width:100%;padding:0.6rem 0;font-weight:700;border:none;border-radius:6px;background:#1a4731;color:#fff;cursor:pointer;font-size:12px;} @page{size:80mm auto;margin:0;} @media print{html,body{width:80mm;margin:0;padding:0;}body{background:#fff;} .receipt-wrapper{padding:4px 4px;} .receipt-table th,.receipt-table td{font-size:11px;padding:2px 3px;} .no-print{display:none !important;}}</style></head><body>
+            <div class="receipt-wrapper">
+                ${printMarkup}
             </div>
-            <div style="margin-bottom:1.5rem;">
-                <strong>Customer:</strong> ${escapeHtml(customer)}<br>
-                ${email ? `<strong>Email:</strong> ${escapeHtml(email)}<br>` : ''}
-                ${phone ? `<strong>Phone:</strong> ${escapeHtml(phone)}<br>` : ''}
-                ${address ? `<strong>Address:</strong><br>${escapeHtml(address).replace(/\n/g, '<br>')}` : ''}
-            </div>
-            <table><thead><tr><th>Product</th><th>Qty</th><th>Unit Price</th><th>Discount</th><th>Subtotal</th></tr></thead>
-            <tbody>${itemRows}</tbody>
-            <tfoot>
-                <tr style="background: white;">
-                    <td colspan="4" style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;font-weight:700;">Subtotal</td>
-                    <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;font-weight:700;">&#8377;${paidSubtotal.toFixed(2)}</td>
-                </tr>
-                ${delivery > 0 ? `
-                    <tr style="background: white;">
-                        <td colspan="4" style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;">Delivery Charge</td>
-                        <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;font-weight:700;">+&#8377;${delivery.toFixed(2)}</td>
-                    </tr>
-                ` : ''}
-                <tr class="total-row" style="background: #f0fdf4;">
-                    <td colspan="4" style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;">Order Total</td>
-                    <td style="border:1px solid #ddd;padding:0.5rem 0.75rem;text-align:right;color:#1a4731;font-size:1.1rem;">&#8377;${total.toFixed(2)}</td>
-                </tr>
-            </tfoot></table>
-            <div style="margin-top:2rem;color:#666;font-size:0.85rem;"><p>${(thankYou ? escapeHtml(thankYou) : `Thank you for shopping with ${escapeHtml(company)}!`)}</p></div>
-            <div class="no-print" style="margin-top:1.5rem;"><button onclick="window.print()" style="padding:0.5rem 1rem;background:#1a4731;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:1rem;">&#128424; Print / Save PDF</button></div>
             </body></html>`;
             const w = window.open('', '_blank', 'width=760,height=920');
             if (!w) { showAlert('Pop-up blocked. Please allow pop-ups for this site.', 'error'); return; }
