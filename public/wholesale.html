@@ -1337,8 +1337,6 @@
             <ul class="navbar-menu" id="wholesale-navbar-menu">
                 <li><a href="#dashboard" class="active" id="wholesale-nav-dashboard" data-wholesale-view="dashboard">Dashboard</a></li>
                 <li><a href="#catalog" id="wholesale-nav-catalog" data-wholesale-view="catalog">Catalog</a></li>
-                <li><a href="#orders" id="wholesale-nav-orders" data-wholesale-view="orders">Orders</a></li>
-                <li><a href="#contact" data-wholesale-view="contact">Contact Us</a></li>
                 <li id="admin-link" class="hidden"><a href="/admin">Admin</a></li>
                 <!-- Mobile-only profile section injected by JS -->
                 <li class="mobile-profile-section" id="mobile-profile-section">
@@ -1397,9 +1395,6 @@
                                 <button class="accd-item" onclick="openProfileModal()">
                                     <span class="accd-icon"><i class="fas fa-user-edit"></i></span>Edit Profile
                                 </button>
-                                <a href="#orders" class="accd-item" data-wholesale-view="orders">
-                                    <span class="accd-icon"><i class="fas fa-box-open"></i></span>My Orders
-                                </a>
                                 <a href="/addresses" class="accd-item accd-desktop-only">
                                     <span class="accd-icon"><i class="fas fa-map-marker-alt"></i></span>Manage Address
                                 </a>
@@ -1477,11 +1472,6 @@
                     <a href="/cart" class="btn btn-secondary">View Cart</a>
                 </div>
 
-                <div class="action-card">
-                    <h3><i class="fas fa-history"></i> Order History</h3>
-                    <p>Track your past and current orders, download invoices, and manage returns with ease.</p>
-                    <a href="#orders" class="btn btn-outline" data-wholesale-view="orders">View Orders</a>
-                </div>
             </div>
 
             <section class="wholesale-section wholesale-catalog-block hidden" id="wholesale-catalog" style="padding:2rem 2.25rem;">
@@ -1559,47 +1549,6 @@
                 </div>
             </section>
 
-            <!-- Contact Us -->
-            <section class="wholesale-section wholesale-dashboard-block" id="wholesale-contact">
-                <h2>Contact Us</h2>
-                <p style="margin: 0 0 1.25rem; color: var(--text-light);">Send a message to the admin team.</p>
-                <form id="wholesale-contact-form" style="max-width: 900px;">
-                    <div style="margin-bottom: 1rem; padding: 0.75rem 0.9rem; border: 1px solid var(--border-primary); border-radius: 8px; background: var(--bg-primary); color: var(--text-primary); font-size: 0.95rem;">
-                        <i class="fas fa-paper-plane" style="margin-right: 0.45rem;"></i>
-                        Sent to: <strong id="wholesale-send-to-email">hello@mountain-made.com</strong>
-                    </div>
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                        <div class="form-group">
-                            <label class="form-label">Full Name</label>
-                            <input id="wholesale-contact-name" type="text" class="form-input" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Phone (optional)</label>
-                            <input id="wholesale-contact-phone" type="tel" class="form-input">
-                        </div>
-                    </div>
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                        <div class="form-group">
-                            <label class="form-label">Email</label>
-                            <input id="wholesale-contact-email" type="email" class="form-input" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Subject (optional)</label>
-                            <input id="wholesale-contact-subject" type="text" class="form-input">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Message</label>
-                        <textarea id="wholesale-contact-message" class="form-textarea" required></textarea>
-                    </div>
-                    <div style="display:flex; justify-content:flex-end;">
-                        <button id="wholesale-contact-submit" type="submit" class="btn btn-primary">
-                            <i class="fas fa-paper-plane"></i> Send
-                        </button>
-                    </div>
-                </form>
-            </section>
-
         </div>
     </main>
 
@@ -1629,7 +1578,6 @@
                 <h3>Wholesale Services</h3>
                 <ul>
                     <li><a href="#catalog" data-wholesale-view="catalog">Product Catalog</a></li>
-                    <li><a href="#orders" data-wholesale-view="orders">Order Management</a></li>
                     <li><a href="/cart">Shopping Cart</a></li>
                     <li><a href="#catalog" data-wholesale-view="bulk-pricing">Bulk Pricing</a></li>
                 </ul>
@@ -1638,12 +1586,9 @@
             <div class="footer-section">
                 <h3>Support</h3>
                 <ul>
-                    <li><a href="/faq">FAQs</a></li>
-                    <li><a href="#contact" data-wholesale-view="contact">Contact Sales Team</a></li>
                     <li><a href="#payment-terms" data-wholesale-view="payment-terms">Payment Terms</a></li>
                 </ul>
             </div>
-            
             <div class="footer-section">
                 <h3>Contact</h3>
                 <ul>

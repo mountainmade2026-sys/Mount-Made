@@ -1227,21 +1227,6 @@ function createAlertContainer() { /* legacy — replaced by mm-toast-container *
         <span class="mm-bnav-icon-wrap"><i class="fas fa-th-large"></i></span>
         <span class="mm-bnav-label">Catalog</span>
       </a>
-      <a href="#orders" class="mm-bnav-item ${active === 'orders' ? 'mm-bnav-active' : ''}" data-role="orders">
-        <span class="mm-bnav-ripple"></span>
-        <span class="mm-bnav-icon-wrap"><i class="fas fa-box-open"></i></span>
-        <span class="mm-bnav-label">Orders</span>
-      </a>
-      <a href="#contact" class="mm-bnav-item" data-role="contact">
-        <span class="mm-bnav-ripple"></span>
-        <span class="mm-bnav-icon-wrap"><i class="fas fa-envelope"></i></span>
-        <span class="mm-bnav-label">Contact</span>
-      </a>
-      <a href="/about" class="mm-bnav-item" data-role="about">
-        <span class="mm-bnav-ripple"></span>
-        <span class="mm-bnav-icon-wrap"><i class="fas fa-info-circle"></i></span>
-        <span class="mm-bnav-label">About</span>
-      </a>
       <button type="button" class="mm-bnav-item" data-role="profile" id="mm-bnav-profile-btn">
         <span class="mm-bnav-ripple"></span>
         <span class="mm-bnav-icon-wrap">
@@ -1496,6 +1481,16 @@ function createAlertContainer() { /* legacy — replaced by mm-toast-container *
     const label = overlay.querySelector('#mm-ps-theme-label');
     if (icon) icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
     if (label) label.textContent = isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode';
+
+    const path = window.location.pathname.replace(/\/+$/, '') || '/';
+    const isWholesalePath = path === '/wholesale' || path.startsWith('/wholesale/');
+    const isWholesaleUser = typeof auth !== 'undefined' && auth.isWholesale && auth.isWholesale();
+    if (isWholesalePath && isWholesaleUser) {
+      overlay.querySelector('#mm-ps-about-us-link')?.remove();
+      overlay.querySelector('#mm-ps-contact-us-link')?.remove();
+      overlay.querySelector('a[href="/orders"]')?.remove();
+    }
+
     // Mark profile tab active
     const profileBtn = document.getElementById('mm-bnav-profile-btn');
     if (profileBtn) profileBtn.classList.add('mm-bnav-profile-active');
@@ -2710,12 +2705,22 @@ async function initApp() {
     const accountDropdown = document.getElementById('account-dropdown');
     if (!accountDropdown) return;
 
+    const path = window.location.pathname.replace(/\/+$/, '') || '/';
+    const isWholesalePath = path === '/wholesale' || path.startsWith('/wholesale/');
+    const isWholesaleUser = typeof auth !== 'undefined' && auth.isWholesale && auth.isWholesale();
+
     const aboutLinkId = 'mobile-account-about-us-link';
     const contactLinkId = 'mobile-account-contact-us-link';
     const existingAbout = document.getElementById(aboutLinkId);
     const existingContact = document.getElementById(contactLinkId);
 
     if (!isMobile) {
+      if (existingAbout) existingAbout.remove();
+      if (existingContact) existingContact.remove();
+      return;
+    }
+
+    if (isWholesalePath && isWholesaleUser) {
       if (existingAbout) existingAbout.remove();
       if (existingContact) existingContact.remove();
       return;
