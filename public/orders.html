@@ -457,7 +457,7 @@
             }
 
             if (refundStatus === 'refund_pending' || paymentStatus === 'refund_pending') {
-                return '<span style="color: var(--warning); font-weight: 700;">Refund pending</span>';
+                return '';
             }
 
             if (refundStatus === 'refund_failed') {
@@ -643,6 +643,9 @@
                     </div>`
                 ).join('');
 
+                const refundHtml = getRefundDisplay(order)
+                    ? `<p style="margin:0 0 0.75rem;color:var(--text-light);">Payment/Refund: ${getRefundDisplay(order)}</p>`
+                    : '';
                 const deliveryNoteHtml = order.status === 'out_for_delivery'
                     ? '<p style="margin:0.35rem 0 0;color:var(--warning,#f59e0b);font-size:0.92rem;font-weight:700;">Delivery within 4 hours</p>'
                     : '';
