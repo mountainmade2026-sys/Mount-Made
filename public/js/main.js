@@ -1523,6 +1523,65 @@ function createAlertContainer() { /* legacy — replaced by mm-toast-container *
       nav.style.display = 'none';
       document.body.classList.remove('has-bottom-nav');
     }
+    // If showing the nav and user is a wholesale member on the wholesale page,
+    // ensure the Catalog/Orders tabs and link interception are adjusted dynamically.
+    try {
+      if (isLoggedIn && typeof auth !== 'undefined' && auth.isWholesale && auth.isWholesale()) {
+        const path = window.location.pathname.replace(/\/+$/, '') || '/';
+        const isWholesalePath = path === '/wholesale' || path.startsWith('/wholesale/');
+        if (isWholesalePath) {
+          // Adjust Products -> Catalog
+          const productsTab = nav.querySelector('.mm-bnav-item[aria-label="Products"]');
+          if (productsTab) {
+            const iconWrap = productsTab.querySelector('.mm-bnav-icon-wrap');
+            if (iconWrap) iconWrap.innerHTML = '<i class="fas fa-th-large"></i>';
+            const labelEl = productsTab.querySelector('.mm-bnav-label');
+            if (labelEl) labelEl.textContent = 'Catalog';
+            productsTab.setAttribute('href', '#catalog');
+          }
+
+          // Orders -> in-page orders
+          const ordersTab = nav.querySelector('.mm-bnav-item[aria-label="Orders"]');
+          if (ordersTab) ordersTab.setAttribute('href', '#orders');
+
+          // Attach global click interceptor once
+          if (!window._mmWholesaleNavInterceptAttached) {
+            window._mmWholesaleNavInterceptAttached = true;
+            document.body.addEventListener('click', (e) => {
+              const a = e.target.closest && e.target.closest('a');
+              if (!a) return;
+              const href = String(a.getAttribute('href') || '').trim().toLowerCase();
+              if (href === '#contact' || href === '/contact' || href === '/wholesale#contact') {
+                e.preventDefault();
+                try { window.location.hash = 'contact'; } catch (err) {}
+                if (typeof switchWholesaleView === 'function') switchWholesaleView('contact');
+                return;
+              }
+              if (href === '#orders' || href === '/orders' || href === '/wholesale#orders') {
+                e.preventDefault();
+                try { window.location.hash = 'orders'; } catch (err) {}
+                if (typeof switchWholesaleView === 'function') switchWholesaleView('orders');
+                return;
+              }
+              if (href === '#about' || href === '/about' || href === '/wholesale#about') {
+                e.preventDefault();
+                const aboutEl = document.getElementById('wholesale-about');
+                if (aboutEl) {
+                  try { window.location.hash = 'about'; } catch (err) {}
+                  if (typeof switchWholesaleView === 'function') switchWholesaleView('about');
+                } else {
+                  try { window.location.hash = 'contact'; } catch (err) {}
+                  if (typeof switchWholesaleView === 'function') switchWholesaleView('contact');
+                }
+                return;
+              }
+            }, { passive: false });
+          }
+        }
+      }
+    } catch (e) {
+      // silent
+    }
   };
 })();
 
