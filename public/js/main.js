@@ -1532,9 +1532,15 @@ function createAlertContainer() { /* legacy — replaced by mm-toast-container *
     const isWholesalePath = path === '/wholesale' || path.startsWith('/wholesale/');
     const isWholesaleUser = typeof auth !== 'undefined' && auth.isWholesale && auth.isWholesale();
     if (isWholesalePath && isWholesaleUser) {
+      // Keep contact link but point it to the wholesale contact view (hash) when
+      // viewing the wholesale page. Remove About and global orders link to avoid
+      // duplicate/irrelevant navigation surfaces for wholesale users.
       overlay.querySelector('#mm-ps-about-us-link')?.remove();
-      overlay.querySelector('#mm-ps-contact-us-link')?.remove();
       overlay.querySelector('a[href="/orders"]')?.remove();
+      const mmContact = overlay.querySelector('#mm-ps-contact-us-link');
+      if (mmContact) {
+        mmContact.setAttribute('href', isWholesalePath ? '#contact' : '/wholesale#contact');
+      }
     }
 
     // Mark profile tab active
