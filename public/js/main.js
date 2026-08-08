@@ -393,8 +393,10 @@ const auth = {
   },
 
   getHomeUrl() {
+    const currentPath = window.location.pathname.replace(/\/+$/, '') || '/';
+    const isWholesaleSalesPage = ['/wholesale/cart', '/wholesale/cart.html', '/wholesale/checkout', '/wholesale/checkout.html', '/wholesale/orders', '/wholesale/orders.html'].includes(currentPath);
     if (this.isAdmin()) return '/admin';
-    if (this.isWholesale()) return '/wholesale';
+    if (this.isWholesale() && !isWholesaleSalesPage) return '/wholesale';
     return '/';
   },
 
@@ -662,18 +664,23 @@ const auth = {
     }
 
     // Update "Home" / "Dashboard" menu links
+    const currentPath = window.location.pathname.replace(/\/+$/, '') || '/';
+    const isWholesaleSalesPage = ['/wholesale/cart', '/wholesale/cart.html', '/wholesale/checkout', '/wholesale/checkout.html', '/wholesale/orders', '/wholesale/orders.html'].includes(currentPath);
     const homeLinks = document.querySelectorAll('.navbar-menu a[href="/"], .navbar-menu a[href="/wholesale"]');
     homeLinks.forEach(link => {
       link.setAttribute('href', homeUrl);
       const currentText = link.textContent.trim();
-      
-      // Update text based on role and current page
-      if (currentText !== 'Dashboard') {
-        if (this.isWholesale() || this.isAdmin()) {
-          link.textContent = 'Dashboard';
-        } else {
-          link.textContent = 'Home';
-        }
+
+      if (this.isAdmin()) {
+        if (currentText !== 'Dashboard') link.textContent = 'Dashboard';
+        return;
+      }
+
+      if (this.isWholesale() && !isWholesaleSalesPage) {
+        if (currentText !== 'Dashboard') link.textContent = 'Dashboard';
+      } else {
+        if (currentText === 'Dashboard') link.textContent = 'Home';
+        else if (currentText !== 'Home') link.textContent = 'Home';
       }
     });
 
@@ -1390,10 +1397,10 @@ function createAlertContainer() { /* legacy — replaced by mm-toast-container *
             if (typeof switchWholesaleView === 'function') switchWholesaleView('contact');
             return;
           }
-          if (href === '#cart' || href === '/cart' || href === '/wholesale#cart') {
-            // Open cart in a new tab to keep the wholesale mobile bottom-nav state intact
+          if (href === '#cart' || href === '/cart' || href === '/wholesale#cart' || href === '/wholesale/cart') {
             e.preventDefault();
-            try { window.open('/cart', '_blank'); } catch (err) { window.location.href = '/cart'; }
+            const target = '/wholesale/cart';
+            window.location.href = target;
             return;
           }
           if (href === '#orders' || href === '/orders' || href === '/wholesale#orders') {
@@ -1707,10 +1714,9 @@ function createAlertContainer() { /* legacy — replaced by mm-toast-container *
                 if (typeof switchWholesaleView === 'function') switchWholesaleView('contact');
                 return;
               }
-              if (href === '#cart' || href === '/cart' || href === '/wholesale#cart') {
-                // Open cart in a new tab so wholesale bottom-nav remains unchanged
+              if (href === '#cart' || href === '/cart' || href === '/wholesale#cart' || href === '/wholesale/cart') {
                 e.preventDefault();
-                try { window.open('/cart', '_blank'); } catch (err) { window.location.href = '/cart'; }
+                window.location.href = '/wholesale/cart';
                 return;
               }
               if (href === '#orders' || href === '/orders' || href === '/wholesale#orders') {
