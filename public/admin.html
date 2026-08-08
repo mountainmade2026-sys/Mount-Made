@@ -2743,50 +2743,7 @@
                     </div>
                 </div>
 
-                <div id="ss-sub-product-card" class="data-table-container" style="margin-top: 1.5rem;">
-                    <div class="table-header">
-                        <h3><i class="fas fa-th-large"></i> Product Card Image Ratio</h3>
-                    </div>
-                    <div style="padding: 2rem;">
-                        <p style="color: var(--text-muted); margin-bottom: 1rem;">
-                            Choose how product card images should be shaped in catalog cards. This setting helps keep product cards aligned across the store and prevents very tall or wide photos from breaking the layout.
-                        </p>
-                        <div style="display:grid;gap:1rem;max-width:560px;">
-                            <div class="form-group">
-                                <label class="form-label" for="product-card-image-ratio">Product card image ratio</label>
-                                <select id="product-card-image-ratio" class="form-input" onchange="updateProductCardImageRatioPreview()">
-                                    <option value="">Default (auto)</option>
-                                    <option value="1/1">Square (1:1)</option>
-                                    <option value="4/3">Standard Landscape (4:3)</option>
-                                    <option value="16/9">Wide Landscape (16:9)</option>
-                                    <option value="3/2">Classic Landscape (3:2)</option>
-                                    <option value="5/4">Soft Landscape (5:4)</option>
-                                    <option value="3/4">Portrait (3:4)</option>
-                                    <option value="9/16">Tall Portrait (9:16)</option>
-                                    <option value="2/3">Portrait (2:3)</option>
-                                    <option value="4/5">Soft Portrait (4:5)</option>
-                                </select>
-                                <small style="color:var(--text-muted); display:block; margin-top:0.35rem;">
-                                    The ratio controls the thumbnail frame for product cards. Preview updates instantly when you change the selection.
-                                </small>
-                            </div>
-
-                            <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-start;">
-                                <div style="flex:1; min-width: 240px;">
-                                    <label class="form-label">Preview</label>
-                                    <div id="product-card-image-ratio-preview-wrap" style="width:100%;max-width:320px;min-height:180px;padding:1rem;border-radius:16px;border:1px solid var(--border-primary);background:var(--bg-primary);display:flex;align-items:center;justify-content:center;overflow:hidden;">
-                                        <img id="product-card-image-ratio-preview" src="/images/placeholder.jpg" alt="Product card preview" style="width:100%;height:100%;object-fit:contain;object-position:center;display:block;">
-                                    </div>
-                                    <div id="product-card-image-ratio-preview-label" style="margin-top:0.75rem;color:var(--text-muted);font-size:0.92rem;">Current ratio: Default (auto)</div>
-                                </div>
-                            </div>
-
-                            <button class="btn btn-primary" type="button" onclick="saveProductCardImageRatioSettings()">
-                                <i class="fas fa-save"></i> Save Product Card Ratio
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <!-- Product Card Image Ratio settings removed -->
 
                 <div id="ss-sub-flipcards" class="data-table-container" style="margin-top: 1.5rem;">
                     <div class="table-header">
@@ -3504,87 +3461,7 @@
                     </div>
                 </div>
 
-                <div id="ss-sub-payments" class="data-table-container" style="margin-top: 1.5rem;">
-                    <div class="table-header">
-                        <h3>Payment Methods</h3>
-                    </div>
-                    <div style="padding: 2rem;">
-                        <p style="color: var(--text-muted); margin-bottom: 1rem;">
-                            Enable or disable checkout payment methods dynamically. These settings apply instantly to the checkout page.
-                        </p>
-
-                        <div class="form-group" style="margin-bottom: 1rem;">
-                            <label class="form-label" style="display:flex; align-items:center; gap:0.5rem;">
-                                <input type="checkbox" id="payment-gpay-enabled" style="width:auto;">
-                                Enable GPay / UPI at checkout
-                            </label>
-                        </div>
-
-                        <div class="form-group" style="margin-bottom: 1rem;">
-                            <label class="form-label" style="display:flex; align-items:center; gap:0.5rem;">
-                                <input type="checkbox" id="payment-phonepe-enabled" style="width:auto;">
-                                Enable PhonePe at checkout
-                            </label>
-                        </div>
-
-                        <div class="form-group" style="margin-bottom: 1rem;">
-                            <label class="form-label" style="display:flex; align-items:center; gap:0.5rem;">
-                                <input type="checkbox" id="payment-paytm-enabled" style="width:auto;">
-                                Enable Paytm at checkout
-                            </label>
-                        </div>
-
-                        <div class="form-group" style="margin-bottom: 1rem;">
-                            <label class="form-label" style="display:flex; align-items:center; gap:0.5rem;">
-                                <input type="checkbox" id="payment-cod-enabled" style="width:auto;">
-                                Enable Cash on Delivery at checkout
-                            </label>
-                        </div>
-
-                        <div class="form-group" style="margin-bottom: 1rem;">
-                            <label class="form-label" style="display:flex; align-items:center; gap:0.5rem;">
-                                <input type="checkbox" id="payment-debit-enabled" style="width:auto;">
-                                Enable Debit Card at checkout
-                            </label>
-                        </div>
-
-                        <div class="form-group" style="margin-bottom: 1rem;">
-                            <label class="form-label" style="display:flex; align-items:center; gap:0.5rem;">
-                                <input type="checkbox" id="payment-credit-enabled" style="width:auto;">
-                                Enable Credit Card at checkout
-                            </label>
-                        </div>
-
-                        <div class="form-group" style="margin-bottom: 1rem;">
-                            <label class="form-label" style="display:flex; align-items:center; gap:0.5rem;">
-                                <input type="checkbox" id="payment-netbank-enabled" style="width:auto;">
-                                Enable Net Banking at checkout
-                            </label>
-                        </div>
-
-                        <div class="form-group" style="margin-bottom: 1rem;">
-                            <label class="form-label" for="online-payment-button-image-url">Online payment button image</label>
-                            <input type="text" id="online-payment-button-image-url" class="form-input" placeholder="Paste image URL for checkout button">
-                            <input type="file" id="online-payment-button-image-file" accept="image/*" style="margin-top:0.75rem;" onchange="previewOnlinePaymentButtonImage(event)">
-                            <div id="online-payment-button-image-preview-wrap" style="margin-top:0.75rem; display:none;">
-                                <img id="online-payment-button-image-preview" src="" alt="Online payment button preview" style="max-width: 220px; max-height: 80px; border:1px solid #d1d5db; border-radius:10px; display:block; object-fit:contain;">
-                            </div>
-                        </div>
-
-                        <div style="display:flex; gap:0.75rem; flex-wrap:wrap; margin-bottom:1rem;">
-                            <button type="button" class="btn btn-primary" onclick="saveOnlinePaymentButtonImage()">
-                                <i class="fas fa-save"></i> Save Online Button
-                            </button>
-                            <button type="button" class="btn btn-secondary" onclick="resetOnlinePaymentButtonImage()">
-                                <i class="fas fa-undo"></i> Reset Online Button
-                            </button>
-                        </div>
-
-                        <button class="btn btn-primary" onclick="savePaymentMethodSettings()">
-                            <i class="fas fa-toggle-on"></i> Save Payment Methods
-                        </button>
-                    </div>
-                </div>
+                <!-- Payment Methods settings removed -->
 
                 <div id="ss-sub-policies" class="data-table-container" style="margin-top: 1.5rem;">
                     <div class="table-header">
@@ -3671,61 +3548,7 @@
                     </div>
                 </div>
 
-                <div id="ss-sub-gpay" class="data-table-container" style="margin-top: 1.5rem;">
-                    <div class="table-header">
-                        <h3>Google Pay Integration</h3>
-                    </div>
-                    <div style="padding: 2rem;">
-                        <p style="color: var(--text-muted); margin-bottom: 1rem;">
-                            Configure real GPay payment details used at checkout. Customers can choose UPI/Phone/QR view, and payment amount opens in GPay automatically.
-                        </p>
-
-                        <div class="form-group" style="margin-bottom: 1rem;">
-                            <label class="form-label" style="display:flex; align-items:center; gap:0.5rem;">
-                                <input type="checkbox" id="gpay-enabled" style="width:auto;">
-                                Enable Google Pay at checkout
-                            </label>
-                        </div>
-
-                        <div class="form-row" style="margin-bottom: 1rem;">
-                            <div>
-                                <label class="form-label" for="gpay-payee-name">Payee Name</label>
-                                <input type="text" id="gpay-payee-name" class="form-input" placeholder="e.g. Mount Made Pvt Ltd">
-                            </div>
-                            <div>
-                                <label class="form-label" for="gpay-bank-name">Bank Name</label>
-                                <input type="text" id="gpay-bank-name" class="form-input" placeholder="e.g. SBI">
-                            </div>
-                        </div>
-
-                        <div class="form-row" style="margin-bottom: 1rem;">
-                            <div>
-                                <label class="form-label" for="gpay-upi-id">UPI ID (required for redirect)</label>
-                                <input type="text" id="gpay-upi-id" class="form-input" placeholder="e.g. MountMade@oksbi">
-                            </div>
-                            <div>
-                                <label class="form-label" for="gpay-phone-number">GPay Phone Number</label>
-                                <input type="text" id="gpay-phone-number" class="form-input" placeholder="e.g. +91 9876543210">
-                            </div>
-                        </div>
-
-                        <div class="form-group" style="margin-bottom: 1rem; max-width: 640px;">
-                            <label class="form-label" for="gpay-qr-image-file">GPay QR Code Image</label>
-                            <input type="file" id="gpay-qr-image-file" class="form-input" accept=".jpg,.jpeg,.png,image/*" onchange="handleGpayQrFileSelection(event)">
-                            <input type="hidden" id="gpay-qr-image-url">
-                            <div id="gpay-qr-preview-wrap" style="margin-top: 0.75rem; display: none;">
-                                <img id="gpay-qr-image-preview" alt="GPay QR Preview" style="max-width: 240px; width: 100%; border: 1px solid var(--border-primary); border-radius: 8px; background: #fff; object-fit: contain;">
-                            </div>
-                            <small style="color: var(--text-muted); display:block; margin-top: 0.35rem;">
-                                Upload your business QR image here. It will be shown to customers during checkout.
-                            </small>
-                        </div>
-
-                        <button class="btn btn-primary" onclick="saveGpayIntegrationSettings()">
-                            <i class="fab fa-google-pay"></i> Save GPay Integration
-                        </button>
-                    </div>
-                </div>
+                <!-- Google Pay Integration UI removed from Site Settings -->
 
                 <!-- Site Notice / Situation Banner -->
                 <div id="ss-sub-notice" class="data-table-container" style="margin-top: 1.5rem;">
@@ -5480,7 +5303,7 @@
 
         function _applySuperAdminOnlySiteSettingsVisibility() {
             const isSuper = _isSuperAdminUser();
-            ['ss-sub-email', 'ss-sub-gpay'].forEach(function(id) {
+            ['ss-sub-email'].forEach(function(id) {
                 var el = document.getElementById(id);
                 if (el) el.style.display = isSuper ? '' : 'none';
             });
@@ -5506,11 +5329,10 @@
             _applySuperAdminOnlySiteSettingsVisibility();
 
             // Collect all labelled sub-sections
-            var subs = [
+                var subs = [
                 { id: 'ss-sub-logo',      label: 'Site Logo' },
                 { id: 'ss-sub-login',     label: 'Login Backgrounds' },
                 { id: 'ss-sub-slider',    label: 'Hero Slider' },
-                { id: 'ss-sub-product-card', label: 'Product Card Image' },
                 { id: 'ss-sub-flipcards', label: 'Flip Cards' },
                 { id: 'ss-sub-banners',   label: 'Hero Banners' },
                 { id: 'ss-sub-admin',     label: 'Admin Account' },
@@ -5519,9 +5341,7 @@
                 { id: 'ss-sub-contact',   label: 'Contact Info' },
                 { id: 'ss-sub-invoice-thankyou', label: 'Invoice Thank You' },
                 { id: 'ss-sub-email',     label: 'Business Email' },
-                { id: 'ss-sub-payments',  label: 'Payment Methods' },
                 { id: 'ss-sub-policies',  label: 'Policy Pages' },
-                { id: 'ss-sub-gpay',      label: 'Google Pay' },
                 { id: 'ss-sub-cod',       label: 'Delivery Pincodes' },
                 { id: 'ss-sub-notice',    label: 'Site Notice' }
             ].filter(function(s) {
@@ -9582,6 +9402,7 @@
                 const gpayPhoneEl = document.getElementById('gpay-phone-number');
                 const gpayBankEl = document.getElementById('gpay-bank-name');
                 const gpayQrEl = document.getElementById('gpay-qr-image-url');
+                // If GPay UI removed, these will be null — guarded elsewhere
                 const onlinePaymentButtonImageUrlEl = document.getElementById('online-payment-button-image-url');
 
                 if (gpayEnabledEl) {
@@ -10377,6 +10198,7 @@
             const ratioSelect = document.getElementById('product-card-image-ratio');
             const previewImage = document.getElementById('product-card-image-ratio-preview');
             const previewLabel = document.getElementById('product-card-image-ratio-preview-label');
+            // If UI removed, silently return
             if (!ratioSelect || !previewImage || !previewLabel) return;
 
             const selectedRatio = (ratioSelect.value || '').trim();
@@ -11235,10 +11057,8 @@
         };
 
         window.handleGpayQrFileSelection = function(event) {
-            if (!_isSuperAdminUser()) {
-                showAlert('Only super admin can update GPay integration.', 'error');
-                return;
-            }
+                    // Guard: if GPay UI removed, do nothing
+                    if (!document.getElementById('gpay-qr-image-file')) return;
             try {
                 const file = event?.target?.files?.[0];
                 if (!file) {
@@ -11378,6 +11198,11 @@
         };
 
         window.savePaymentMethodSettings = async function() {
+            // Payment methods UI removed; guard and exit
+            if (!document.getElementById('payment-gpay-enabled') && !document.getElementById('payment-paytm-enabled')) {
+                showAlert('Payment methods UI is not available.', 'error');
+                return;
+            }
             if (!_canManageDeliveryPincodes()) {
                 showAlert('Only admins can update payment methods.', 'error');
                 return;
@@ -11474,10 +11299,15 @@
         };
 
         window.saveGpayIntegrationSettings = async function() {
-            if (!_isSuperAdminUser()) {
-                showAlert('Only super admin can update GPay integration.', 'error');
-                return;
-            }
+                    // GPay UI removed; guard in case function is called elsewhere
+                    if (!_isSuperAdminUser()) {
+                        showAlert('Only super admin can update GPay integration.', 'error');
+                        return;
+                    }
+                    if (!document.getElementById('gpay-enabled')) {
+                        showAlert('GPay integration UI is not available.', 'error');
+                        return;
+                    }
             try {
                 const gpay_enabled = !!document.getElementById('gpay-enabled')?.checked;
                 const gpay_payee_name = (document.getElementById('gpay-payee-name')?.value || '').trim();
