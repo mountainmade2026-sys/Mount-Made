@@ -13213,7 +13213,7 @@
                 renderBlock('company', companyText, 'display:flex;align-items:center;justify-content:flex-start;'),
                 renderBlock('meta', `<div style="font-size:${layout.meta?.fontSize ?? 12}px;color:${layout.meta?.color || '#666'};">${metaLines.join('')}</div>`, 'display:flex;align-items:flex-start;justify-content:flex-start;'),
                 renderBlock('customer', `<div style="font-size:${layout.customer?.fontSize ?? 12}px;color:${layout.customer?.color || '#333'};">${customerLines.join('')}</div>`, 'display:flex;align-items:flex-start;justify-content:flex-start;'),
-                renderBlock('thankYou', `<div style="font-size:${layout.thankYou?.fontSize ?? 13}px;color:${layout.thankYou?.color || '#666'};text-align:${layout.thankYou?.textAlign || 'center'};">${escapeHtml(thankYou).replace(/\n/g, '<br>')}</div>`, 'display:flex;align-items:center;justify-content:center;')
+                renderBlock('thankYou', `<div style="font-size:${layout.thankYou?.fontSize ?? 13}px;font-weight:${layout.thankYou?.fontWeight ?? 700};color:#000;text-align:${layout.thankYou?.textAlign || 'center'};">${escapeHtml(thankYou).replace(/\n/g, '<br>')}</div>`, 'display:flex;align-items:center;justify-content:center;')
             ].join('');
 
             const itemsList = Array.isArray(options.items) ? options.items : (window.invoiceEditorData && Array.isArray(window.invoiceEditorData.items) ? window.invoiceEditorData.items : []);
@@ -13371,7 +13371,7 @@
                             ${deliveryLine}
                             <div class="summary-row" style="margin-top:4px;font-size:12px;font-weight:800;justify-content:space-between;display:flex;"><span class="summary-label">TOTAL</span><span class="summary-value">₹${total.toFixed(2)}</span></div>
                         </div>
-                        <div style="font-size:10px;color:#555;text-align:center;margin-top:8px;line-height:1.3;">${escapeHtml(thankYou).replace(/\n/g, '<br>')}</div>
+                        <div style="font-size:10px;color:#000;font-weight:700;text-align:center;margin-top:8px;line-height:1.3;">${escapeHtml(thankYou).replace(/\n/g, '<br>')}</div>
                     </div>
                 `;
             }
