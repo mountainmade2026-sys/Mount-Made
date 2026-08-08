@@ -1268,10 +1268,18 @@ function createAlertContainer() { /* legacy — replaced by mm-toast-container *
         <span class="mm-bnav-icon-wrap"><i class="fas fa-tachometer-alt"></i></span>
         <span class="mm-bnav-label">Dashboard</span>
       </a>
-      <a href="#orders" class="mm-bnav-item" data-role="orders">
+      <a href="#orders" class="mm-bnav-item ${active === 'orders' ? 'mm-bnav-active' : ''}" data-role="orders">
         <span class="mm-bnav-ripple"></span>
         <span class="mm-bnav-icon-wrap"><i class="fas fa-box-open"></i></span>
         <span class="mm-bnav-label">Orders</span>
+      </a>
+      <a href="/cart" class="mm-bnav-item ${active === 'cart' ? 'mm-bnav-active' : ''}" data-role="cart">
+        <span class="mm-bnav-ripple"></span>
+        <span class="mm-bnav-icon-wrap">
+          <i class="fas fa-shopping-cart"></i>
+          <span id="mm-bnav-cart-badge" class="mm-bnav-badge hidden">0</span>
+        </span>
+        <span class="mm-bnav-label">Cart</span>
       </a>
       <a href="#catalog" class="mm-bnav-item ${active === 'products' ? 'mm-bnav-active' : ''}" data-role="catalog">
         <span class="mm-bnav-ripple"></span>
@@ -1316,6 +1324,9 @@ function createAlertContainer() { /* legacy — replaced by mm-toast-container *
 
         const ordersTab = nav.querySelector('.mm-bnav-item[data-role="orders"]');
         if (ordersTab) ordersTab.setAttribute('href', '#orders');
+
+        const cartTab = nav.querySelector('.mm-bnav-item[data-role="cart"]');
+        if (cartTab) cartTab.setAttribute('href', '/cart');
 
         const contactTab = nav.querySelector('.mm-bnav-item[data-role="contact"]');
         if (contactTab) contactTab.setAttribute('href', '#contact');
