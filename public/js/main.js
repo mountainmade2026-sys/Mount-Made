@@ -615,7 +615,9 @@ const auth = {
     const productLinks = document.querySelectorAll('.navbar-menu a[href="/products"], .navbar-menu a[href="/wholesale#catalog"], .navbar-menu a[href="/wholesale/#catalog"]');
     productLinks.forEach(link => {
       if (this.isWholesale()) {
-        link.setAttribute('href', '/wholesale#catalog');
+        // Use hash-only links when already on the wholesale page to avoid reloads
+        const useHash = window.location.pathname.replace(/\/+$/, '') === '/wholesale' || window.location.pathname.replace(/\/+$/, '').startsWith('/wholesale/');
+        link.setAttribute('href', useHash ? '#catalog' : '/wholesale#catalog');
         link.textContent = 'Catalog';
       } else {
         link.setAttribute('href', '/products');
@@ -629,7 +631,8 @@ const auth = {
     const ordersLinks = document.querySelectorAll('a[href="/orders"]');
     ordersLinks.forEach(link => {
       if (this.isWholesale()) {
-        link.setAttribute('href', '/wholesale#orders');
+        const useHash = window.location.pathname.replace(/\/+$/, '') === '/wholesale' || window.location.pathname.replace(/\/+$/, '').startsWith('/wholesale/');
+        link.setAttribute('href', useHash ? '#orders' : '/wholesale#orders');
       } else {
         link.setAttribute('href', '/orders');
       }
@@ -1215,6 +1218,31 @@ function createAlertContainer() { /* legacy — replaced by mm-toast-container *
     document.body.classList.add('has-bottom-nav');
     // Keep nav visible immediately; auth will hide/show via `mmBnavSetAuth` if needed
     nav.style.display = '';
+
+    // Wholesale-specific adjustments (only affect the bottom nav on wholesale pages)
+    try {
+      const path = window.location.pathname.replace(/\/+$/, '') || '/';
+      const isWholesalePath = path === '/wholesale' || path.startsWith('/wholesale/');
+      const isWholesaleUser = (typeof auth !== 'undefined' && auth.isWholesale && auth.isWholesale());
+      if (isWholesaleUser && isWholesalePath) {
+        // Replace 'Products' (Shop) with 'Catalog' icon + hash link
+        const productsTab = nav.querySelector('.mm-bnav-item[aria-label="Products"]');
+        if (productsTab) {
+          const iconWrap = productsTab.querySelector('.mm-bnav-icon-wrap');
+          if (iconWrap) iconWrap.innerHTML = '<i class="fas fa-th-large"></i>';
+          productsTab.querySelector('.mm-bnav-label').textContent = 'Catalog';
+          productsTab.setAttribute('href', '#catalog');
+        }
+
+        // Ensure Orders tab uses in-page hash to open wholesale orders section
+        const ordersTab = nav.querySelector('.mm-bnav-item[aria-label="Orders"]');
+        if (ordersTab) {
+          ordersTab.setAttribute('href', '#orders');
+        }
+      }
+    } catch (e) {
+      // silent
+    }
 
     // Profile button → open profile sheet
     const profileBtn = nav.querySelector('#mm-bnav-profile-btn');
