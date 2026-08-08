@@ -658,6 +658,31 @@
             const registerLink = document.getElementById('register-link');
             registerLink.href = `/register?redirect=${encodeURIComponent(redirectUrl)}`;
         }
+        // Hide App Store / Play Store badges when inside mobile app webviews (Capacitor/Cordova/other in-app views)
+        (function() {
+            function isInAppWebView() {
+                try {
+                    if (window.Capacitor || window.cordova) return true;
+                    var ua = navigator.userAgent || '';
+                    if (/\bwv\b|; wv|WebView/.test(ua)) return true;
+                    if (/FBAN|FBAV|Instagram|Twitter|Line|WhatsApp|FB_IAB/.test(ua)) return true;
+                } catch (e) {}
+                return false;
+            }
+
+            function toggleAppBadges() {
+                var hidden = isInAppWebView();
+                var ids = ['app-badges','app-badges-left','app-badge-ios-footer','app-badge-android-footer','app-badge-ios-left','app-badge-android-left'];
+                ids.forEach(function(id) {
+                    var el = document.getElementById(id);
+                    if (!el) return;
+                    el.style.display = hidden ? 'none' : '';
+                });
+            }
+
+            document.addEventListener('DOMContentLoaded', toggleAppBadges);
+            try { toggleAppBadges(); } catch (e) {}
+        })();
         
         // ── CAPTCHA Engine ────────────────────────────────────────────────
         const CAPTCHA_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
