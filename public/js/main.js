@@ -1266,7 +1266,7 @@ function createAlertContainer() { /* legacy — replaced by mm-toast-container *
       <a href="#dashboard" class="mm-bnav-item ${active === 'home' ? 'mm-bnav-active' : ''}" data-role="dashboard">
         <span class="mm-bnav-ripple"></span>
         <span class="mm-bnav-icon-wrap"><i class="fas fa-tachometer-alt"></i></span>
-        <span class="mm-bnav-label">Dashboard</span>
+        <span class="mm-bnav-label">Home</span>
       </a>
       <a href="#orders" class="mm-bnav-item ${active === 'orders' ? 'mm-bnav-active' : ''}" data-role="orders">
         <span class="mm-bnav-ripple"></span>
@@ -1284,7 +1284,7 @@ function createAlertContainer() { /* legacy — replaced by mm-toast-container *
       <a href="#catalog" class="mm-bnav-item ${active === 'products' ? 'mm-bnav-active' : ''}" data-role="catalog">
         <span class="mm-bnav-ripple"></span>
         <span class="mm-bnav-icon-wrap"><i class="fas fa-th-large"></i></span>
-        <span class="mm-bnav-label">Catalog</span>
+        <span class="mm-bnav-label">Shops</span>
       </a>
       <button type="button" class="mm-bnav-item" data-role="profile" id="mm-bnav-profile-btn">
         <span class="mm-bnav-ripple"></span>
@@ -1318,7 +1318,7 @@ function createAlertContainer() { /* legacy — replaced by mm-toast-container *
           const iconWrap = catalogTab.querySelector('.mm-bnav-icon-wrap');
           if (iconWrap) iconWrap.innerHTML = '<i class="fas fa-th-large"></i>';
           const labelEl = catalogTab.querySelector('.mm-bnav-label');
-          if (labelEl) labelEl.textContent = 'Catalog';
+          if (labelEl) labelEl.textContent = 'Shops';
           catalogTab.setAttribute('href', '#catalog');
         }
 
