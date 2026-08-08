@@ -1052,10 +1052,24 @@ function createAlertContainer() { /* legacy — replaced by mm-toast-container *
 
 // ─── Mobile Bottom Navigation Bar ────────────────────────────────────────────
 (function () {
-  const EXCLUDED_PAGES = ['/login', '/register', '/admin', '/admin_backup', '/wholesale'];
+  const EXCLUDED_PAGES = ['/login', '/register', '/admin', '/admin_backup'];
 
   function shouldShowBottomNav() {
     const path = window.location.pathname.replace(/\/+$/, '') || '/';
+
+    // Special-case: allow `/wholesale` pages only for approved wholesale users.
+    if (path === '/wholesale' || path.startsWith('/wholesale/')) {
+      try {
+        if (typeof auth !== 'undefined' && auth.currentUser) {
+          const u = auth.currentUser;
+          if (u && (u.role === 'wholesale' || u.role === 'wholesale_member' || u.role === 'wholesale_user') && u.is_approved) return true;
+        }
+      } catch (e) {
+        // silent fallback: do not show bottom nav if we cannot determine auth state
+      }
+      return false;
+    }
+
     return !EXCLUDED_PAGES.some(p => path === p || path.startsWith(p + '/'));
   }
 
