@@ -584,6 +584,52 @@ const auth = {
     if (this.isAuthenticated() && typeof window.mmBnavUpdateProfile === 'function') {
       window.mmBnavUpdateProfile(this.currentUser);
     }
+
+    // Ensure account dropdown links are correct for wholesale users
+    {
+      const dropdowns = document.querySelectorAll('#account-dropdown');
+      dropdowns.forEach(dropdown => {
+        try {
+          const aboutLink = dropdown.querySelector('#desktop-about-us-link');
+          const contactLink = dropdown.querySelector('#desktop-contact-us-link');
+
+          const isWholesale = this.isWholesale();
+          const onWholesalePage = window.location.pathname.replace(/\/+$/,'') === '/wholesale';
+
+          // Remove About link for wholesale users (only on the account dropdown)
+          if (aboutLink && isWholesale) {
+            aboutLink.remove();
+          }
+
+          // Ensure Contact link exists and points to the wholesale contact view when appropriate
+          if (isWholesale) {
+            const contactHref = onWholesalePage ? '#contact' : '/wholesale#contact';
+            if (contactLink) {
+              contactLink.setAttribute('href', contactHref);
+              // ensure it's visible on desktop only like other desktop links
+              contactLink.classList.remove('mobile-hide-on-mobile');
+              contactLink.classList.add('mobile-hide-on-mobile');
+            } else {
+              // create contact link and append to the dropdown group
+              const group = dropdown.querySelector('.accd-group') || dropdown;
+              const a = document.createElement('a');
+              a.className = 'accd-item mobile-hide-on-mobile';
+              a.id = 'desktop-contact-us-link';
+              a.setAttribute('href', contactHref);
+              a.innerHTML = `<span class="accd-icon"><i class="fas fa-envelope"></i></span>Contact Us`;
+              group.appendChild(a);
+            }
+          } else {
+            // For non-wholesale users ensure contact points to /contact
+            if (contactLink) {
+              contactLink.setAttribute('href', '/contact');
+            }
+          }
+        } catch (e) {
+          console.error('Account dropdown adjustment failed', e);
+        }
+      });
+    }
   },
 
   updateNavigationLinks() {
