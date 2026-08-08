@@ -1888,6 +1888,36 @@ function showPromptDialog(message, options = {}) {
 window.showConfirmDialog = showConfirmDialog;
 window.showPromptDialog = showPromptDialog;
 
+// Ensure About link behavior on wholesale pages: if wholesale lacks
+// an about section, clicking any About link should navigate to the
+// global `/about` page instead of toggling the wholesale dashboard.
+document.addEventListener('DOMContentLoaded', () => {
+  try {
+    const path = window.location.pathname.replace(/\/+/g, '') || '/';
+    const isWholesalePath = window.location.pathname.replace(/\/+$/, '') === '/wholesale' || window.location.pathname.replace(/\/+$/, '').startsWith('/wholesale/');
+    if (!isWholesalePath) return;
+
+    document.body.addEventListener('click', (e) => {
+      const a = e.target.closest && e.target.closest('a');
+      if (!a) return;
+      const href = String(a.getAttribute('href') || '').trim().toLowerCase();
+      if (href === '/about' || href === '#about' || href === '/wholesale#about') {
+        const aboutEl = document.getElementById('wholesale-about');
+        if (!aboutEl) {
+          e.preventDefault();
+          window.location.href = '/about';
+        } else {
+          e.preventDefault();
+          try { window.location.hash = 'about'; } catch (err) {}
+          if (typeof switchWholesaleView === 'function') switchWholesaleView('about');
+        }
+      }
+    }, { passive: false });
+  } catch (e) {
+    // silent
+  }
+});
+
 // Modal System
 function openModal(modalId) {
   const modal = document.getElementById(modalId);
