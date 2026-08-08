@@ -1268,6 +1268,11 @@ function createAlertContainer() { /* legacy — replaced by mm-toast-container *
         <span class="mm-bnav-icon-wrap"><i class="fas fa-tachometer-alt"></i></span>
         <span class="mm-bnav-label">Dashboard</span>
       </a>
+      <a href="#orders" class="mm-bnav-item" data-role="orders">
+        <span class="mm-bnav-ripple"></span>
+        <span class="mm-bnav-icon-wrap"><i class="fas fa-box-open"></i></span>
+        <span class="mm-bnav-label">Orders</span>
+      </a>
       <a href="#catalog" class="mm-bnav-item ${active === 'products' ? 'mm-bnav-active' : ''}" data-role="catalog">
         <span class="mm-bnav-ripple"></span>
         <span class="mm-bnav-icon-wrap"><i class="fas fa-th-large"></i></span>
