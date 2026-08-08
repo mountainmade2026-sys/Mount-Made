@@ -1637,6 +1637,60 @@
         </div>
     </div>
 
+    <!-- Wholesale Contact Section -->
+    <section class="wholesale-section" id="wholesale-contact" style="margin:2rem 0;padding:1.5rem;">
+        <div class="container">
+            <div class="section-title">
+                <h2>Contact Sales</h2>
+                <p>Send a message to our wholesale support team.</p>
+            </div>
+
+            <div class="card contact-card">
+                <div class="card-content">
+                    <form id="wholesale-contact-form" class="contact-form">
+                        <div style="margin-bottom: 1rem; padding: 0.75rem 0.9rem; border: 1px solid var(--border-primary); border-radius: var(--radius-md); background: var(--bg-secondary); color: var(--text-secondary); font-size: 0.95rem;">
+                            <i class="fas fa-paper-plane" style="margin-right: 0.45rem;"></i>
+                            Sent to: <strong id="wholesale-send-to-email">hello@mountain-made.com</strong>
+                        </div>
+
+                        <div class="contact-grid">
+                            <div class="form-group">
+                                <label class="form-label">Full Name <span style="color: var(--accent-red, #ef4444);">*</span></label>
+                                <input id="wholesale-contact-name" type="text" class="form-input" required data-required="true" data-required-message="Full name is required before submitting the wholesale contact form.">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Phone <span style="color: var(--accent-red, #ef4444);">*</span></label>
+                                <input id="wholesale-contact-phone" type="tel" class="form-input" required data-required="true" data-required-message="Phone number is required before submitting the wholesale contact form.">
+                            </div>
+                        </div>
+
+                        <div class="contact-grid">
+                            <div class="form-group">
+                                <label class="form-label">Email <span style="color: var(--accent-red, #ef4444);">*</span></label>
+                                <input id="wholesale-contact-email" type="email" class="form-input" required data-required="true" data-required-message="Email is required before submitting the wholesale contact form.">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Subject (optional)</label>
+                                <input id="wholesale-contact-subject" type="text" class="form-input">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Message <span style="color: var(--accent-red, #ef4444);">*</span></label>
+                            <textarea id="wholesale-contact-message" class="form-textarea" required data-required="true" data-required-message="Message is required before submitting the wholesale contact form."></textarea>
+                        </div>
+
+                        <div class="contact-actions">
+                            <button id="wholesale-contact-submit" type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i> Send
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Footer -->
     <footer class="footer" id="wholesale-footer">
         <div class="footer-content">
@@ -1691,12 +1745,38 @@
                 });
             });
 
+            function getDynamicRequiredMessage(field) {
+                if (field?.dataset?.requiredMessage) return field.dataset.requiredMessage;
+                const label = field?.closest('.form-group')?.querySelector('.form-label')?.textContent || 'This field';
+                return `${label.replace(/\*\s*$/, '').trim()} is required.`;
+            }
+
+            function validateDynamicRequiredFields(form) {
+                const requiredFields = form?.querySelectorAll('[data-required="true"]') || [];
+                for (const field of requiredFields) {
+                    const value = String(field.value || '').trim();
+                    if (!value) {
+                        showAlert(getDynamicRequiredMessage(field), 'error');
+                        field.focus();
+                        return false;
+                    }
+                }
+                return true;
+            }
+
             const contactForm = document.getElementById('wholesale-contact-form');
             if (contactForm) {
                 contactForm.addEventListener('submit', async (e) => {
                     e.preventDefault();
                     const submitBtn = document.getElementById('wholesale-contact-submit');
-
+                    if (!validateDynamicRequiredFields(contactForm)) {
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send';
+                        }
+                        return;
+                    }
+                    
                     const payload = {
                         type: 'message',
                         full_name: (document.getElementById('wholesale-contact-name')?.value || '').trim(),
