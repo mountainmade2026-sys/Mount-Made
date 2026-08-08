@@ -265,10 +265,17 @@ async function sendDeliveryNotificationEmail(toEmail, customerName, orderNumber,
       <p style="color:#065f46;font-size:15px;font-weight:600;margin:0 0 8px;">Order #${orderNumber} is on its way!</p>
       <p style="color:#374151;font-size:14px;margin:0;">If the product is not received, please contact <strong>hello@mountain-made.com</strong> through our website or App. <strong>mountmade.in</strong></p>
     </div>
+    ${(() => {
+      // Include the Important Notice block dynamically. Set env var
+      // INCLUDE_DELIVERY_IMPORTANT_NOTICE=false to remove it from emails.
+      const include = String(process.env.INCLUDE_DELIVERY_IMPORTANT_NOTICE ?? 'true').toLowerCase() !== 'false';
+      if (!include) return '';
+      return `
     <div style="background:#fffbeb;border-left:4px solid #f59e0b;border-radius:6px;padding:14px 16px;text-align:left;margin-bottom:24px;">
       <strong style="color:#92400e;font-size:0.9rem;">&#9888; Important Notice</strong>
       <p style="color:#78350f;font-size:0.9rem;margin:8px 0 0;">Dear Customer, if the product is not received and claim is not made within <strong>2 hours</strong> of the delivery attempt, we will not be able to accept your complaints or claims.</p>
-    </div>
+    </div>`;
+    })()}
     <p style="color:#374151;font-size:14px;margin:0 0 8px;">If you need help, our support team will assist you through the website or app.</p>
     <p style="color:#9ca3af;font-size:13px;margin-top:24px;">Thank you for shopping with Mount Made! &#127807;</p>
   </div>
