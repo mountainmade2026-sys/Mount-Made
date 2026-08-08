@@ -1373,6 +1373,12 @@ function createAlertContainer() { /* legacy — replaced by mm-toast-container *
             if (typeof switchWholesaleView === 'function') switchWholesaleView('contact');
             return;
           }
+          if (href === '#cart' || href === '/cart' || href === '/wholesale#cart') {
+            // Open cart in a new tab to keep the wholesale mobile bottom-nav state intact
+            e.preventDefault();
+            try { window.open('/cart', '_blank'); } catch (err) { window.location.href = '/cart'; }
+            return;
+          }
           if (href === '#orders' || href === '/orders' || href === '/wholesale#orders') {
             e.preventDefault();
             try { window.location.hash = 'orders'; } catch (err) {}
@@ -1682,6 +1688,12 @@ function createAlertContainer() { /* legacy — replaced by mm-toast-container *
                 e.preventDefault();
                 try { window.location.hash = 'contact'; } catch (err) {}
                 if (typeof switchWholesaleView === 'function') switchWholesaleView('contact');
+                return;
+              }
+              if (href === '#cart' || href === '/cart' || href === '/wholesale#cart') {
+                // Open cart in a new tab so wholesale bottom-nav remains unchanged
+                e.preventDefault();
+                try { window.open('/cart', '_blank'); } catch (err) { window.location.href = '/cart'; }
                 return;
               }
               if (href === '#orders' || href === '/orders' || href === '/wholesale#orders') {
