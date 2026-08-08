@@ -1237,7 +1237,7 @@ function createAlertContainer() { /* legacy — replaced by mm-toast-container *
         <span class="mm-bnav-icon-wrap"><i class="fas fa-envelope"></i></span>
         <span class="mm-bnav-label">Contact</span>
       </a>
-      <a href="#about" class="mm-bnav-item" data-role="about">
+      <a href="/about" class="mm-bnav-item" data-role="about">
         <span class="mm-bnav-ripple"></span>
         <span class="mm-bnav-icon-wrap"><i class="fas fa-info-circle"></i></span>
         <span class="mm-bnav-label">About</span>
@@ -1285,7 +1285,7 @@ function createAlertContainer() { /* legacy — replaced by mm-toast-container *
         if (contactTab) contactTab.setAttribute('href', '#contact');
 
         const aboutTab = nav.querySelector('.mm-bnav-item[data-role="about"]');
-        if (aboutTab) aboutTab.setAttribute('href', '#about');
+        if (aboutTab) aboutTab.setAttribute('href', '/about');
       } catch (e) {
         // silent
       }
@@ -1636,15 +1636,9 @@ function createAlertContainer() { /* legacy — replaced by mm-toast-container *
                 if (typeof switchWholesaleView === 'function') switchWholesaleView('orders');
                 return;
               }
-              if (href === '#about' || href === '/about' || href === '/wholesale#about') {
+              if (href === '#about' || href === '/wholesale#about') {
                 e.preventDefault();
-                const aboutEl = document.getElementById('wholesale-about');
-                if (aboutEl) {
-                  try { window.location.hash = 'about'; } catch (err) {}
-                  if (typeof switchWholesaleView === 'function') switchWholesaleView('about');
-                } else {
-                  window.location.href = '/about';
-                }
+                window.location.href = '/about';
                 return;
               }
             }, { passive: false });
