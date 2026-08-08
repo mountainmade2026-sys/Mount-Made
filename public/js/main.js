@@ -1334,17 +1334,8 @@ function createAlertContainer() { /* legacy — replaced by mm-toast-container *
           }
           // Map About → Contact on wholesale page if About section isn't present
           if (href === '#about' || href === '/about' || href === '/wholesale#about') {
-            // If the wholesale page has a dedicated about section, map to it;
-            // otherwise navigate to the global About page (`/about`).
             e.preventDefault();
-            const aboutEl = document.getElementById('wholesale-about');
-            if (aboutEl) {
-              try { window.location.hash = 'about'; } catch (err) {}
-              if (typeof switchWholesaleView === 'function') switchWholesaleView('about');
-            } else {
-              // Navigate to the site-wide About page instead of routing to Contact
-              window.location.href = '/about';
-            }
+            window.location.href = '/about';
             return;
           }
         }, { passive: false });

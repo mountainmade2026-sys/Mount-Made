@@ -1785,14 +1785,8 @@
                     document.getElementById('wholesale-contact')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }, 80);
             } else if (view === 'about') {
-                setTimeout(() => {
-                    const aboutEl = document.getElementById('wholesale-about');
-                    if (aboutEl) {
-                        aboutEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    } else {
-                        window.location.href = '/about';
-                    }
-                }, 80);
+                // Wholesale no longer handles its own About view; fall back to the public About page.
+                window.location.href = '/about';
             } else if (view === 'payment-terms') {
                 setTimeout(() => {
                     document.getElementById('wholesale-account-info')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
