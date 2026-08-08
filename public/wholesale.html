@@ -755,9 +755,16 @@
             display: none !important;
         }
 
+        .mobile-hide-on-mobile {
+            display: initial !important;
+        }
+
         /* Let styles.css control visibility — only override for desktop hide */
 
         @media (max-width: 768px) {
+            .mobile-hide-on-mobile {
+                display: none !important;
+            }
             .wholesale-hero h1 {
                 font-size: 2rem;
             }
@@ -1337,6 +1344,8 @@
             <ul class="navbar-menu" id="wholesale-navbar-menu">
                 <li><a href="#dashboard" class="active" id="wholesale-nav-dashboard" data-wholesale-view="dashboard">Dashboard</a></li>
                 <li><a href="#catalog" id="wholesale-nav-catalog" data-wholesale-view="catalog">Catalog</a></li>
+                <li class="mobile-hide-on-mobile"><a href="#orders" id="wholesale-nav-orders" data-wholesale-view="orders">Orders</a></li>
+                <li class="mobile-hide-on-mobile"><a href="#contact" data-wholesale-view="contact">Contact Us</a></li>
                 <li id="admin-link" class="hidden"><a href="/admin">Admin</a></li>
                 <!-- Mobile-only profile section injected by JS -->
                 <li class="mobile-profile-section" id="mobile-profile-section">
@@ -1395,6 +1404,15 @@
                                 <button class="accd-item" onclick="openProfileModal()">
                                     <span class="accd-icon"><i class="fas fa-user-edit"></i></span>Edit Profile
                                 </button>
+                                <a href="/orders" class="accd-item mobile-hide-on-mobile">
+                                    <span class="accd-icon"><i class="fas fa-box-open"></i></span>My Orders
+                                </a>
+                                <a href="/about" class="accd-item mobile-hide-on-mobile" id="desktop-about-us-link">
+                                    <span class="accd-icon"><i class="fas fa-info-circle"></i></span>About Us
+                                </a>
+                                <a href="/contact" class="accd-item mobile-hide-on-mobile" id="desktop-contact-us-link">
+                                    <span class="accd-icon"><i class="fas fa-envelope"></i></span>Contact Us
+                                </a>
                                 <a href="/addresses" class="accd-item accd-desktop-only">
                                     <span class="accd-icon"><i class="fas fa-map-marker-alt"></i></span>Manage Address
                                 </a>
@@ -1470,6 +1488,12 @@
                     <h3><i class="fas fa-shopping-cart"></i> Current Cart</h3>
                     <p>Review and manage items in your cart before placing your bulk order with automatic pack quantities.</p>
                     <a href="/cart" class="btn btn-secondary">View Cart</a>
+                </div>
+
+                <div class="action-card mobile-hide-on-mobile">
+                    <h3><i class="fas fa-history"></i> Order History</h3>
+                    <p>Track your past and current orders, download invoices, and manage returns with ease.</p>
+                    <a href="#orders" class="btn btn-outline" data-wholesale-view="orders">View Orders</a>
                 </div>
 
             </div>
@@ -1578,6 +1602,7 @@
                 <h3>Wholesale Services</h3>
                 <ul>
                     <li><a href="#catalog" data-wholesale-view="catalog">Product Catalog</a></li>
+                    <li class="mobile-hide-on-mobile"><a href="#orders" data-wholesale-view="orders">Order Management</a></li>
                     <li><a href="/cart">Shopping Cart</a></li>
                     <li><a href="#catalog" data-wholesale-view="bulk-pricing">Bulk Pricing</a></li>
                 </ul>
@@ -1586,6 +1611,8 @@
             <div class="footer-section">
                 <h3>Support</h3>
                 <ul>
+                    <li class="mobile-hide-on-mobile"><a href="/faq">FAQs</a></li>
+                    <li class="mobile-hide-on-mobile"><a href="#contact" data-wholesale-view="contact">Contact Sales Team</a></li>
                     <li><a href="#payment-terms" data-wholesale-view="payment-terms">Payment Terms</a></li>
                 </ul>
             </div>
