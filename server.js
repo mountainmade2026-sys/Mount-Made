@@ -36,6 +36,7 @@ const { authenticateToken } = require('./middleware/auth');
 const { adminCheck } = require('./middleware/adminCheck');
 const backupController = require('./controllers/backupController');
 const { compressImageBuffer } = require('./utils/imageCompression');
+const { createProductSlug } = require('./utils/productSlug');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -867,6 +868,10 @@ app.get('/wholesale/orders.html', (req, res) => {
 });
 
 app.get('/product-details', (req, res) => {
+  return sendHtmlPage(req, res, 'product-details.html');
+});
+
+app.get('/product-details/:slug', (req, res) => {
   return sendHtmlPage(req, res, 'product-details.html');
 });
 

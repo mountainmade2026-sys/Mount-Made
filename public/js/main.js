@@ -6,6 +6,52 @@ const API_BASE = (window.location.protocol === 'file:' || IS_NATIVE_CAPACITOR)
   ? `${APK_API_ORIGIN}/api`
   : '/api';
 
+function slugifyText(value) {
+  return String(value || '')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'product';
+}
+
+function createProductSlug(product) {
+  const base = slugifyText(product?.name || product?.product_name || 'product');
+  const seed = [
+    product?.id != null ? String(product.id) : '',
+    product?.name || product?.product_name || '',
+    product?.created_at || product?.createdAt || '',
+    product?.category_name || product?.category || '',
+    product?.barcode || ''
+  ].filter(Boolean).join('|');
+
+  let hash = 0;
+  for (let i = 0; i < seed.length; i += 1) {
+    hash = ((hash << 5) - hash) + seed.charCodeAt(i);
+    hash |= 0;
+  }
+
+  const suffix = Math.abs(hash).toString(36);
+  return suffix ? `${base}-${suffix}` : base;
+}
+
+function buildProductDetailUrl(product) {
+  const slug = createProductSlug(product);
+  return `/product-details/${encodeURIComponent(slug)}`;
+}
+
+function getProductRouteSlug() {
+  const pathname = String(window.location.pathname || '/');
+  const prefix = '/product-details/';
+  if (pathname.startsWith(prefix)) {
+    return decodeURIComponent(pathname.slice(prefix.length).replace(/\/+$/, ''));
+  }
+
+  const searchSlug = new URLSearchParams(window.location.search || '').get('slug');
+  return searchSlug || '';
+}
+
 // Adaptive refresh tuning (auto-optimizes for low/high-end devices)
 const performanceTuning = {
   STORAGE_KEY: 'refresh_rate_mode', // auto | low | high
@@ -2566,7 +2612,7 @@ function setupNavbarSearch() {
       try {
         const product = await api.get(`/products/barcode?barcode=${encodeURIComponent(query)}`);
         if (product?.product?.id) {
-          window.location.href = `/product-details?id=${encodeURIComponent(product.product.id)}`;
+          window.location.href = buildProductDetailUrl(product.product);
           return;
         }
       } catch (_) {}
@@ -2584,7 +2630,7 @@ function setupNavbarSearch() {
       const normalizedQuery = normalized.trim();
       const exactProduct = products.find((product) => String(product.name || '').toLowerCase() === normalizedQuery);
       if (exactProduct?.id) {
-        window.location.href = `/product-details?id=${encodeURIComponent(exactProduct.id)}`;
+        window.location.href = buildProductDetailUrl(exactProduct);
         return;
       }
 
@@ -2596,7 +2642,7 @@ function setupNavbarSearch() {
       });
 
       if (productMatch?.id) {
-        window.location.href = `/product-details?id=${encodeURIComponent(productMatch.id)}`;
+        window.location.href = buildProductDetailUrl(productMatch);
         return;
       }
 

@@ -2608,7 +2608,7 @@
                                     ${product.stock_quantity === 0 ? 
                                         '<span class="product-badge" style="background: var(--error);">Out of Stock</span>' : ''}
                                     
-                                    <a href="/product-details?id=${product.id}" style="text-decoration: none; color: inherit;">
+                                    <a href="/product-details/${encodeURIComponent(createProductSlug(product))}" style="text-decoration: none; color: inherit;">
                                         <div class="card-image-wrap">
                                             <img src="${product.image_url || '/images/placeholder.jpg'}" 
                                                  alt="${product.name}" 
@@ -2726,7 +2726,7 @@
                 const product = homeProductsMap[productId];
                 if (!product) {
                     // Fallback if product not in map yet
-                    window.location.href = `/product-details?id=${productId}`;
+                    window.location.href = buildProductDetailUrl({ id: productId, name: '' });
                     return;
                 }
 
@@ -2786,7 +2786,7 @@
         function renderCarousel() {
             const track = document.getElementById('carousel-track');
             track.innerHTML = carouselProducts.map((product, index) => `
-                <div class="carousel-item" onclick="location.href='/product-details?id=${product.id}'">
+                <div class="carousel-item" onclick="location.href='/product-details/${encodeURIComponent(createProductSlug(product))}'">
                     <img src="${product.image_url || '/images/placeholder.jpg'}" 
                          alt="${product.name}" 
                          class="carousel-item-image"
@@ -2919,7 +2919,7 @@
 
             const product = await lookupBarcodeProduct(query);
             if (product?.id) {
-                window.location.href = `/product-details?id=${encodeURIComponent(product.id)}`;
+                window.location.href = buildProductDetailUrl(product);
                 return true;
             }
             return false;
@@ -2932,9 +2932,9 @@
             if (looksLikeBarcodeQuery(query)) {
                 const product = await lookupBarcodeProduct(query);
                 if (product && product.id) {
-                window.location.href = `/product-details?id=${encodeURIComponent(product.id)}`;
-                return;
-            }
+                    window.location.href = buildProductDetailUrl(product);
+                    return;
+                }
             }
 
             window.location.href = `/products?search=${encodeURIComponent(query)}`;
@@ -2989,7 +2989,7 @@
                     if (type === 'category') {
                         window.location.href = `/products?category=${encodeURIComponent(id)}`;
                     } else {
-                        window.location.href = `/product-details?id=${encodeURIComponent(id)}`;
+                        window.location.href = buildProductDetailUrl({ id, name: '' });
                     }
                 });
             });

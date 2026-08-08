@@ -1331,9 +1331,25 @@
         }
 
         async function loadProduct() {
+            const pathname = String(window.location.pathname || '/');
+            const slugMatch = pathname.match(/\/product-details\/(.+)$/);
+            const slug = slugMatch ? decodeURIComponent(slugMatch[1]).replace(/\/+$/, '') : '';
             const urlParams = new URLSearchParams(window.location.search);
-            const productId = urlParams.get('id');
-            
+            const requestedId = urlParams.get('id');
+
+            let productId = requestedId || '';
+
+            if (!productId && slug) {
+                try {
+                    const productsResponse = await api.get('/products').catch(() => ({ products: [] }));
+                    const products = Array.isArray(productsResponse?.products) ? productsResponse.products : [];
+                    const match = products.find((item) => createProductSlug(item) === slug);
+                    productId = match?.id ? String(match.id) : '';
+                } catch (error) {
+                    console.warn('Unable to resolve product from slug:', error);
+                }
+            }
+
             if (!productId) {
                 window.location.href = '/products';
                 return;
@@ -1396,7 +1412,7 @@
                                     </div>
                                     <div class="price-row">
                                         <strong>${formatCurrency(price || 0)}</strong>
-                                        <a href="/product-details?id=${item.id}" class="view-link">View <i class="fas fa-arrow-right"></i></a>
+                                        <a href="/product-details/${encodeURIComponent(createProductSlug(item))}" class="view-link">View <i class="fas fa-arrow-right"></i></a>
                                     </div>
                                 </article>
                             `;
@@ -2117,7 +2133,7 @@
 
         function getShareUrl() {
             if (product && product.id != null) {
-                return `${window.location.origin}/product-details?id=${encodeURIComponent(String(product.id))}`;
+                return `${window.location.origin}/product-details/${encodeURIComponent(createProductSlug(product))}`;
             }
             return window.location.href;
         }

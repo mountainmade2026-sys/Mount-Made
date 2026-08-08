@@ -2190,7 +2190,7 @@
                             <div class="wholesale-stock-row ${stockClass}">${stockText}</div>
                             <div class="ws-moq-hint"><i class="fas fa-info-circle"></i> Min. order: ${minQty} units &nbsp;&bull;&nbsp; Total: ${formatCurrency(unitPrice * minQty)}</div>
                             <div class="wholesale-product-actions">
-                                <a class="ws-btn-detail" href="/product-details?id=${product.id}"><i class="fas fa-eye"></i> View</a>
+                                <a class="ws-btn-detail" href="/product-details/${encodeURIComponent(createProductSlug(product))}"><i class="fas fa-eye"></i> View</a>
                                 <button class="ws-btn-add" onclick="addWholesaleToCart(${product.id}, ${minQty})" ${inStock <= 0 ? 'disabled' : ''}>
                                     <i class="fas fa-cart-plus"></i> Add MOQ
                                 </button>
