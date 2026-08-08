@@ -1179,20 +1179,21 @@ function createAlertContainer() { /* legacy — replaced by mm-toast-container *
     nav.id = 'mm-bottom-nav';
     nav.className = 'mm-bottom-nav';
     nav.setAttribute('aria-label', 'Bottom navigation');
-    nav.innerHTML = `
-      <a href="/" class="mm-bnav-item ${active === 'home' ? 'mm-bnav-active' : ''}" aria-label="Home">
+    // Default (public site) bottom nav markup
+    const defaultNav = `
+      <a href="/" class="mm-bnav-item ${active === 'home' ? 'mm-bnav-active' : ''}" data-role="home">
         <span class="mm-bnav-ripple"></span>
         <span class="mm-bnav-icon-wrap"><i class="fas fa-home"></i></span>
         <span class="mm-bnav-label">Home</span>
       </a>
-      <a href="/products" class="mm-bnav-item ${active === 'products' ? 'mm-bnav-active' : ''}" aria-label="Products">
+      <a href="/products" class="mm-bnav-item ${active === 'products' ? 'mm-bnav-active' : ''}" data-role="products">
         <span class="mm-bnav-ripple"></span>
         <span class="mm-bnav-icon-wrap">
           <i class="fas fa-store"></i>
         </span>
         <span class="mm-bnav-label">Shop</span>
       </a>
-      <a href="/cart" class="mm-bnav-item ${active === 'cart' ? 'mm-bnav-active' : ''}" aria-label="Cart">
+      <a href="/cart" class="mm-bnav-item ${active === 'cart' ? 'mm-bnav-active' : ''}" data-role="cart">
         <span class="mm-bnav-ripple"></span>
         <span class="mm-bnav-icon-wrap">
           <i class="fas fa-shopping-basket"></i>
@@ -1200,12 +1201,12 @@ function createAlertContainer() { /* legacy — replaced by mm-toast-container *
         </span>
         <span class="mm-bnav-label">Cart</span>
       </a>
-      <a href="/orders" class="mm-bnav-item ${active === 'orders' ? 'mm-bnav-active' : ''}" aria-label="Orders">
+      <a href="/orders" class="mm-bnav-item ${active === 'orders' ? 'mm-bnav-active' : ''}" data-role="orders">
         <span class="mm-bnav-ripple"></span>
         <span class="mm-bnav-icon-wrap"><i class="fas fa-box-open"></i></span>
         <span class="mm-bnav-label">Orders</span>
       </a>
-      <button type="button" class="mm-bnav-item" aria-label="Profile" id="mm-bnav-profile-btn">
+      <button type="button" class="mm-bnav-item" data-role="profile" id="mm-bnav-profile-btn">
         <span class="mm-bnav-ripple"></span>
         <span class="mm-bnav-icon-wrap">
           <span class="mm-bnav-avatar" id="mm-bnav-profile-avatar">U</span>
@@ -1213,6 +1214,43 @@ function createAlertContainer() { /* legacy — replaced by mm-toast-container *
         <span class="mm-bnav-label">Profile</span>
       </button>
     `;
+
+    // Wholesale-specific bottom nav (mobile) — replace only for approved wholesale users on wholesale pages
+    const wholesaleNav = `
+      <a href="#catalog" class="mm-bnav-item ${active === 'products' ? 'mm-bnav-active' : ''}" data-role="catalog">
+        <span class="mm-bnav-ripple"></span>
+        <span class="mm-bnav-icon-wrap"><i class="fas fa-th-large"></i></span>
+        <span class="mm-bnav-label">Catalog</span>
+      </a>
+      <a href="#orders" class="mm-bnav-item ${active === 'orders' ? 'mm-bnav-active' : ''}" data-role="orders">
+        <span class="mm-bnav-ripple"></span>
+        <span class="mm-bnav-icon-wrap"><i class="fas fa-box-open"></i></span>
+        <span class="mm-bnav-label">Orders</span>
+      </a>
+      <a href="#contact" class="mm-bnav-item" data-role="contact">
+        <span class="mm-bnav-ripple"></span>
+        <span class="mm-bnav-icon-wrap"><i class="fas fa-envelope"></i></span>
+        <span class="mm-bnav-label">Contact</span>
+      </a>
+      <a href="#about" class="mm-bnav-item" data-role="about">
+        <span class="mm-bnav-ripple"></span>
+        <span class="mm-bnav-icon-wrap"><i class="fas fa-info-circle"></i></span>
+        <span class="mm-bnav-label">About</span>
+      </a>
+      <button type="button" class="mm-bnav-item" data-role="profile" id="mm-bnav-profile-btn">
+        <span class="mm-bnav-ripple"></span>
+        <span class="mm-bnav-icon-wrap">
+          <span class="mm-bnav-avatar" id="mm-bnav-profile-avatar">U</span>
+        </span>
+        <span class="mm-bnav-label">Profile</span>
+      </button>
+    `;
+
+    // Choose markup based on path & auth (wholesale-only adjustments)
+    const path = window.location.pathname.replace(/\/+$/, '') || '/';
+    const isWholesalePath = path === '/wholesale' || path.startsWith('/wholesale/');
+    const isWholesaleUser = (typeof auth !== 'undefined' && auth.isWholesale && auth.isWholesale());
+    nav.innerHTML = (isWholesalePath && isWholesaleUser) ? wholesaleNav : defaultNav;
 
     document.body.appendChild(nav);
     document.body.classList.add('has-bottom-nav');
@@ -1226,18 +1264,23 @@ function createAlertContainer() { /* legacy — replaced by mm-toast-container *
         const isWholesalePath = path === '/wholesale' || path.startsWith('/wholesale/');
         const isWholesaleUser = (typeof auth !== 'undefined' && auth.isWholesale && auth.isWholesale());
         if (!isWholesaleUser || !isWholesalePath) return;
-
-        const productsTab = nav.querySelector('.mm-bnav-item[aria-label="Products"]');
-        if (productsTab) {
-          const iconWrap = productsTab.querySelector('.mm-bnav-icon-wrap');
+        const catalogTab = nav.querySelector('.mm-bnav-item[data-role="catalog"]');
+        if (catalogTab) {
+          const iconWrap = catalogTab.querySelector('.mm-bnav-icon-wrap');
           if (iconWrap) iconWrap.innerHTML = '<i class="fas fa-th-large"></i>';
-          const labelEl = productsTab.querySelector('.mm-bnav-label');
+          const labelEl = catalogTab.querySelector('.mm-bnav-label');
           if (labelEl) labelEl.textContent = 'Catalog';
-          productsTab.setAttribute('href', '#catalog');
+          catalogTab.setAttribute('href', '#catalog');
         }
 
-        const ordersTab = nav.querySelector('.mm-bnav-item[aria-label="Orders"]');
+        const ordersTab = nav.querySelector('.mm-bnav-item[data-role="orders"]');
         if (ordersTab) ordersTab.setAttribute('href', '#orders');
+
+        const contactTab = nav.querySelector('.mm-bnav-item[data-role="contact"]');
+        if (contactTab) contactTab.setAttribute('href', '#contact');
+
+        const aboutTab = nav.querySelector('.mm-bnav-item[data-role="about"]');
+        if (aboutTab) aboutTab.setAttribute('href', '#about');
       } catch (e) {
         // silent
       }
@@ -1254,20 +1297,8 @@ function createAlertContainer() { /* legacy — replaced by mm-toast-container *
       const isWholesalePath = path === '/wholesale' || path.startsWith('/wholesale/');
       const isWholesaleUser = (typeof auth !== 'undefined' && auth.isWholesale && auth.isWholesale());
       if (isWholesaleUser && isWholesalePath) {
-        // Replace 'Products' (Shop) with 'Catalog' icon + hash link
-        const productsTab = nav.querySelector('.mm-bnav-item[aria-label="Products"]');
-        if (productsTab) {
-          const iconWrap = productsTab.querySelector('.mm-bnav-icon-wrap');
-          if (iconWrap) iconWrap.innerHTML = '<i class="fas fa-th-large"></i>';
-          productsTab.querySelector('.mm-bnav-label').textContent = 'Catalog';
-          productsTab.setAttribute('href', '#catalog');
-        }
-
-        // Ensure Orders tab uses in-page hash to open wholesale orders section
-        const ordersTab = nav.querySelector('.mm-bnav-item[aria-label="Orders"]');
-        if (ordersTab) {
-          ordersTab.setAttribute('href', '#orders');
-        }
+        // If nav wasn't already the wholesale markup (older pages), ensure Catalog/Orders/Contact/About
+        ensureWholesaleBottomNavState();
       }
     } catch (e) {
       // silent
@@ -1560,19 +1591,8 @@ function createAlertContainer() { /* legacy — replaced by mm-toast-container *
         const path = window.location.pathname.replace(/\/+$/, '') || '/';
         const isWholesalePath = path === '/wholesale' || path.startsWith('/wholesale/');
         if (isWholesalePath) {
-          // Adjust Products -> Catalog
-          const productsTab = nav.querySelector('.mm-bnav-item[aria-label="Products"]');
-          if (productsTab) {
-            const iconWrap = productsTab.querySelector('.mm-bnav-icon-wrap');
-            if (iconWrap) iconWrap.innerHTML = '<i class="fas fa-th-large"></i>';
-            const labelEl = productsTab.querySelector('.mm-bnav-label');
-            if (labelEl) labelEl.textContent = 'Catalog';
-            productsTab.setAttribute('href', '#catalog');
-          }
-
-          // Orders -> in-page orders
-          const ordersTab = nav.querySelector('.mm-bnav-item[aria-label="Orders"]');
-          if (ordersTab) ordersTab.setAttribute('href', '#orders');
+          // Ensure nav uses wholesale roles and hashes
+          ensureWholesaleBottomNavState();
 
           // Attach global click interceptor once
           if (!window._mmWholesaleNavInterceptAttached) {
@@ -1600,7 +1620,6 @@ function createAlertContainer() { /* legacy — replaced by mm-toast-container *
                   try { window.location.hash = 'about'; } catch (err) {}
                   if (typeof switchWholesaleView === 'function') switchWholesaleView('about');
                 } else {
-                  // If wholesale doesn't expose an About section, go to the global About page
                   window.location.href = '/about';
                 }
                 return;
