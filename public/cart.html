@@ -293,6 +293,15 @@
         font-weight: 600;
         color: var(--text-primary);
     }
+    /* Mobile-specific per-item total shown inside the product card */
+    .cart-item-mobile-total {
+        display: none;
+        text-align: right;
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--primary-700);
+        margin-top: 0.25rem;
+    }
     .cart-item-price {
         min-width: 80px;
         text-align: right;
@@ -364,6 +373,8 @@
             max-width: 120px;
             height: auto;
         }
+        /* show the mobile subtotal element and keep desktop price hidden */
+        .cart-item-mobile-total { display: block; }
     }
     @media (max-width: 600px) {
         .card-content { padding: 0.7rem !important; }
@@ -1275,6 +1286,7 @@
                     <div class="cart-item-details">
                         <h4 style="margin-bottom: 0.5rem;">${item.name}</h4>
                         <p style="color: var(--text-light); margin-bottom: 0.5rem;">${priceBlock} each</p>
+                        <div class="cart-item-mobile-total"><strong data-item-subtotal-mobile>${formatCurrency(item.subtotal)}</strong></div>
                         ${(() => {
                             const weightLabel = item.weight_label || (item.weight_value != null && item.weight_unit ? `${item.weight_value} ${item.weight_unit}` : '');
                             return weightLabel ? `<p style="color: var(--text-secondary); margin-bottom: 0.45rem; font-size: 0.92rem;">Weight: ${weightLabel}</p>` : '';
@@ -1389,9 +1401,12 @@
             if (!itemEl) return;
             const unit = parseFloat(itemEl.dataset.unitPrice || '0') || 0;
             const subtotalEl = itemEl.querySelector('[data-item-subtotal]');
-            if (subtotalEl) {
+            const mobileSubtotalEl = itemEl.querySelector('[data-item-subtotal-mobile]');
+            if (subtotalEl || mobileSubtotalEl) {
                 const newSubtotal = unit * Number(newQty || 0);
-                subtotalEl.textContent = formatCurrency(newSubtotal);
+                const formatted = formatCurrency(newSubtotal);
+                if (subtotalEl) subtotalEl.textContent = formatted;
+                if (mobileSubtotalEl) mobileSubtotalEl.textContent = formatted;
             }
 
             // Recompute cart totals by summing all item subtotals
@@ -1548,6 +1563,16 @@
                 const curSubtotal = parseFloat((subtotalEl.textContent || '').replace(/[^0-9.-]+/g, '')) || 0;
                 if (Math.round(curSubtotal*100) !== Math.round(newSubtotal*100)) {
                     subtotalEl.textContent = formatCurrency(newSubtotal);
+                }
+            }
+            // Also update mobile subtotal duplicate if present
+            const mobileSubtotalEl = el.querySelector('[data-item-subtotal-mobile]');
+            if (mobileSubtotalEl) {
+                const unitMobile = parseFloat(el.dataset.unitPrice || '0') || 0;
+                const newSubtotalMobile = unitMobile * desiredQty;
+                const curSubtotalMobile = parseFloat((mobileSubtotalEl.textContent || '').replace(/[^0-9.-]+/g, '')) || 0;
+                if (Math.round(curSubtotalMobile*100) !== Math.round(newSubtotalMobile*100)) {
+                    mobileSubtotalEl.textContent = formatCurrency(newSubtotalMobile);
                 }
             }
 
