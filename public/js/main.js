@@ -1217,6 +1217,11 @@ function createAlertContainer() { /* legacy — replaced by mm-toast-container *
 
     // Wholesale-specific bottom nav (mobile) — replace only for approved wholesale users on wholesale pages
     const wholesaleNav = `
+      <a href="#dashboard" class="mm-bnav-item ${active === 'home' ? 'mm-bnav-active' : ''}" data-role="dashboard">
+        <span class="mm-bnav-ripple"></span>
+        <span class="mm-bnav-icon-wrap"><i class="fas fa-tachometer-alt"></i></span>
+        <span class="mm-bnav-label">Dashboard</span>
+      </a>
       <a href="#catalog" class="mm-bnav-item ${active === 'products' ? 'mm-bnav-active' : ''}" data-role="catalog">
         <span class="mm-bnav-ripple"></span>
         <span class="mm-bnav-icon-wrap"><i class="fas fa-th-large"></i></span>
@@ -1910,7 +1915,7 @@ window.showPromptDialog = showPromptDialog;
 // Ensure About link behavior on wholesale pages: if wholesale lacks
 // an about section, clicking any About link should navigate to the
 // global `/about` page instead of toggling the wholesale dashboard.
-document.addEventListener('DOMContentLoaded', () => {
+function _mmAttachWholesaleAboutHandler() {
   try {
     const path = window.location.pathname.replace(/\/+/g, '') || '/';
     const isWholesalePath = window.location.pathname.replace(/\/+$/, '') === '/wholesale' || window.location.pathname.replace(/\/+$/, '').startsWith('/wholesale/');
@@ -1935,7 +1940,13 @@ document.addEventListener('DOMContentLoaded', () => {
   } catch (e) {
     // silent
   }
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', _mmAttachWholesaleAboutHandler);
+} else {
+  _mmAttachWholesaleAboutHandler();
+}
 
 // Modal System
 function openModal(modalId) {
