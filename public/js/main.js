@@ -1219,6 +1219,35 @@ function createAlertContainer() { /* legacy — replaced by mm-toast-container *
     // Keep nav visible immediately; auth will hide/show via `mmBnavSetAuth` if needed
     nav.style.display = '';
 
+    // Helper to enforce wholesale bottom-nav appearance when on wholesale pages
+    function ensureWholesaleBottomNavState() {
+      try {
+        const path = window.location.pathname.replace(/\/+$/, '') || '/';
+        const isWholesalePath = path === '/wholesale' || path.startsWith('/wholesale/');
+        const isWholesaleUser = (typeof auth !== 'undefined' && auth.isWholesale && auth.isWholesale());
+        if (!isWholesaleUser || !isWholesalePath) return;
+
+        const productsTab = nav.querySelector('.mm-bnav-item[aria-label="Products"]');
+        if (productsTab) {
+          const iconWrap = productsTab.querySelector('.mm-bnav-icon-wrap');
+          if (iconWrap) iconWrap.innerHTML = '<i class="fas fa-th-large"></i>';
+          const labelEl = productsTab.querySelector('.mm-bnav-label');
+          if (labelEl) labelEl.textContent = 'Catalog';
+          productsTab.setAttribute('href', '#catalog');
+        }
+
+        const ordersTab = nav.querySelector('.mm-bnav-item[aria-label="Orders"]');
+        if (ordersTab) ordersTab.setAttribute('href', '#orders');
+      } catch (e) {
+        // silent
+      }
+    }
+
+    // Re-assert wholesale nav state whenever nav is interacted with (prevents other logic from reverting it)
+    nav.addEventListener('click', () => setTimeout(ensureWholesaleBottomNavState, 20));
+    // Also call immediately to apply initial state
+    ensureWholesaleBottomNavState();
+
     // Wholesale-specific adjustments (only affect the bottom nav on wholesale pages)
     try {
       const path = window.location.pathname.replace(/\/+$/, '') || '/';
