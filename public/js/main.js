@@ -1244,6 +1244,49 @@ function createAlertContainer() { /* legacy — replaced by mm-toast-container *
       // silent
     }
 
+    // Intercept common site links on wholesale pages (mobile) and route to in-page views
+    try {
+      const path = window.location.pathname.replace(/\/+$/, '') || '/';
+      const isWholesalePath = path === '/wholesale' || path.startsWith('/wholesale/');
+      const isWholesaleUser = (typeof auth !== 'undefined' && auth.isWholesale && auth.isWholesale());
+      if (isWholesaleUser && isWholesalePath) {
+        document.body.addEventListener('click', (e) => {
+          const a = e.target.closest && e.target.closest('a');
+          if (!a) return;
+          const href = String(a.getAttribute('href') || '').trim().toLowerCase();
+          // Only handle internal hash or simple paths (avoid external links)
+          if (href === '#contact' || href === '/contact' || href === '/wholesale#contact') {
+            e.preventDefault();
+            try { window.location.hash = 'contact'; } catch (err) {}
+            if (typeof switchWholesaleView === 'function') switchWholesaleView('contact');
+            return;
+          }
+          if (href === '#orders' || href === '/orders' || href === '/wholesale#orders') {
+            e.preventDefault();
+            try { window.location.hash = 'orders'; } catch (err) {}
+            if (typeof switchWholesaleView === 'function') switchWholesaleView('orders');
+            return;
+          }
+          // Map About → Contact on wholesale page if About section isn't present
+          if (href === '#about' || href === '/about' || href === '/wholesale#about') {
+            // If the wholesale page has a dedicated about section, map to it, else route to contact
+            e.preventDefault();
+            const aboutEl = document.getElementById('wholesale-about');
+            if (aboutEl) {
+              try { window.location.hash = 'about'; } catch (err) {}
+              if (typeof switchWholesaleView === 'function') switchWholesaleView('about');
+            } else {
+              try { window.location.hash = 'contact'; } catch (err) {}
+              if (typeof switchWholesaleView === 'function') switchWholesaleView('contact');
+            }
+            return;
+          }
+        }, { passive: false });
+      }
+    } catch (e) {
+      // silent
+    }
+
     // Profile button → open profile sheet
     const profileBtn = nav.querySelector('#mm-bnav-profile-btn');
     if (profileBtn) profileBtn.addEventListener('click', openProfileSheet);
