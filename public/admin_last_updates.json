@@ -1,30 +1,10 @@
 [
   {
-    "key": "payment_gpay_enabled",
-    "value": "false"
+    "key": "logo_size",
+    "value": "80"
   },
   {
-    "key": "payment_phonepe_enabled",
-    "value": "false"
-  },
-  {
-    "key": "payment_paytm_enabled",
-    "value": "false"
-  },
-  {
-    "key": "payment_cod_enabled",
-    "value": "true"
-  },
-  {
-    "key": "payment_debit_enabled",
-    "value": "true"
-  },
-  {
-    "key": "payment_credit_enabled",
-    "value": "true"
-  },
-  {
-    "key": "payment_netbank_enabled",
-    "value": "true"
+    "key": "logo_size_mobile",
+    "value": "40"
   }
 ]
