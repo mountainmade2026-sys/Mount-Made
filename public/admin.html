@@ -12585,6 +12585,34 @@
         };
 
         /* ── Order Invoice Printer ── */
+        function normalizeInvoiceAddressValue(value) {
+            const oldAddress = 'South Delhi, New Delhi, 110030, India';
+            const newAddress = 'E-49/5 First Floor Okhla Industrial Area Phase II New Delhi Near – Delhi 110020';
+
+            if (!value) return '';
+
+            if (typeof value === 'string') {
+                const trimmed = value.trim();
+                return trimmed === oldAddress ? newAddress : trimmed;
+            }
+
+            if (typeof value === 'object') {
+                const parts = [
+                    value.address || value.street || value.line1 || value.line_1,
+                    value.area || value.locality || value.landmark,
+                    value.city || value.town,
+                    value.state,
+                    value.pincode || value.postal_code || value.zip,
+                    value.country
+                ].filter(Boolean);
+                const joined = parts.join(', ');
+                return joined === oldAddress ? newAddress : joined;
+            }
+
+            const fallback = String(value).trim();
+            return fallback === oldAddress ? newAddress : fallback;
+        }
+
         window.printOrderInvoice = async function(orderId) {
             // Refresh the order data from server to ensure we have the latest thank you message
             try {
@@ -12626,7 +12654,7 @@
                 if (!value) return '';
                 if (typeof value === 'string') {
                     const trimmed = value.trim();
-                    if (trimmed) return trimmed;
+                    if (trimmed) return normalizeInvoiceAddressValue(trimmed);
                     return '';
                 }
                 if (typeof value === 'object') {
@@ -12638,9 +12666,9 @@
                         value.pincode || value.postal_code || value.zip,
                         value.country
                     ].filter(Boolean);
-                    return parts.join(', ');
+                    return normalizeInvoiceAddressValue(parts.join(', '));
                 }
-                return String(value).trim();
+                return normalizeInvoiceAddressValue(String(value).trim());
             }
 
             const invoiceNumber = edited.invoice_number || o.order_number || String(o.id);
@@ -12774,7 +12802,7 @@
 
             const edited = order.edited_invoice && typeof order.edited_invoice === 'object' ? order.edited_invoice : {};
             const addr = order.delivery_address || order.shipping_address || order.address || '';
-            const addrStr = typeof addr === 'string' ? addr : (addr.address || '');
+            const addrStr = typeof addr === 'string' ? normalizeInvoiceAddressValue(addr) : normalizeInvoiceAddressValue(addr.address || '');
             const invoiceItems = Array.isArray(edited.items) && edited.items.length
                 ? edited.items
                 : (Array.isArray(order.items) ? order.items : []).map(it => ({
@@ -12834,7 +12862,7 @@
             document.getElementById('invoice-editor-phone').value = edited.phone || order.phone || order.customer?.phone || order.user_phone || '';
             document.getElementById('invoice-editor-discount').value = window.invoiceEditorData.discount;
             document.getElementById('invoice-editor-delivery').value = window.invoiceEditorData.deliveryCharge;
-            document.getElementById('invoice-editor-address').value = edited.address || addrStr;
+            document.getElementById('invoice-editor-address').value = normalizeInvoiceAddressValue(edited.address || addrStr);
             document.getElementById('invoice-editor-thankyou').value = edited.thankYou || window.getInvoiceThankYouMessageDefault(document.getElementById('invoice-editor-company').value || 'Mount Made');
 
             renderInvoiceItems();
