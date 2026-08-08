@@ -1596,7 +1596,25 @@ function createAlertContainer() { /* legacy — replaced by mm-toast-container *
         const path = window.location.pathname.replace(/\/+$/, '') || '/';
         const isWholesalePath = path === '/wholesale' || path.startsWith('/wholesale/');
         if (isWholesalePath) {
-          // Ensure nav uses wholesale roles and hashes
+          // Ensure nav uses wholesale roles and hashes. If the nav was built before auth
+          // became available, replace it with the wholesale markup so Dashboard is present.
+          if (!nav.querySelector('.mm-bnav-item[data-role="dashboard"]')) {
+            try {
+              nav.innerHTML = wholesaleNav;
+              // Re-bind profile button if necessary
+              // Rebind the profile button and cart badge for the newly-inserted markup
+              try {
+                const profileBtnNew = nav.querySelector('#mm-bnav-profile-btn');
+                if (profileBtnNew) profileBtnNew.addEventListener('click', openProfileSheet);
+                // Sync cart badge immediately
+                syncCartBadge && typeof syncCartBadge === 'function' && syncCartBadge(nav);
+              } catch (err) {
+                // ignore
+              }
+            } catch (err) {
+              // ignore
+            }
+          }
           ensureWholesaleBottomNavState();
 
           // Attach global click interceptor once
