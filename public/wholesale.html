@@ -759,12 +759,25 @@
             display: initial !important;
         }
 
+        .desktop-hide-on-pc {
+            display: initial !important;
+        }
+
         /* Let styles.css control visibility — only override for desktop hide */
 
         @media (max-width: 768px) {
             .mobile-hide-on-mobile {
                 display: none !important;
             }
+        }
+
+        @media (min-width: 769px) {
+            .desktop-hide-on-pc {
+                display: none !important;
+            }
+        }
+
+        @media (max-width: 768px) {
             .wholesale-hero h1 {
                 font-size: 2rem;
             }
@@ -1407,7 +1420,7 @@
                                 <a href="/orders" class="accd-item mobile-hide-on-mobile">
                                     <span class="accd-icon"><i class="fas fa-box-open"></i></span>My Orders
                                 </a>
-                                <a href="/about" class="accd-item mobile-hide-on-mobile" id="desktop-about-us-link">
+                                <a href="/about" class="accd-item desktop-hide-on-pc" id="desktop-about-us-link">
                                     <span class="accd-icon"><i class="fas fa-info-circle"></i></span>About Us
                                 </a>
                                 <a href="/contact" class="accd-item mobile-hide-on-mobile" id="desktop-contact-us-link">
