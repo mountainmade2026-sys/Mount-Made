@@ -1783,6 +1783,15 @@
                 setTimeout(() => {
                     document.getElementById('wholesale-contact')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }, 80);
+            } else if (view === 'about') {
+                setTimeout(() => {
+                    const aboutEl = document.getElementById('wholesale-about');
+                    if (aboutEl) {
+                        aboutEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    } else {
+                        window.location.href = '/about';
+                    }
+                }, 80);
             } else if (view === 'payment-terms') {
                 setTimeout(() => {
                     document.getElementById('wholesale-account-info')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1793,12 +1802,13 @@
         function initializeWholesaleViewRouting() {
             const routeByHash = () => {
                 const hash = (window.location.hash || '').toLowerCase();
-                const view = hash === '#catalog' ? 'catalog'
-                    : hash === '#orders' ? 'orders'
-                    : hash === '#contact' ? 'contact'
-                    : hash === '#payment-terms' ? 'payment-terms'
-                    : hash === '#bulk-pricing' ? 'bulk-pricing'
-                    : 'dashboard';
+                    const view = hash === '#catalog' ? 'catalog'
+                        : hash === '#orders' ? 'orders'
+                        : hash === '#contact' ? 'contact'
+                        : hash === '#about' ? 'about'
+                        : hash === '#payment-terms' ? 'payment-terms'
+                        : hash === '#bulk-pricing' ? 'bulk-pricing'
+                        : 'dashboard';
                 switchWholesaleView(view);
             };
 
