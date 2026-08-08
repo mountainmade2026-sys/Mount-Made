@@ -1356,7 +1356,7 @@
     }
 
     function updateCartShoppingLinks() {
-        const target = auth.isWholesale && auth.isWholesale() ? '/wholesale#catalog' : '/products';
+        const target = auth.isWholesale && auth.isWholesale() ? '/wholesale' : '/products';
         document.querySelectorAll('#continue-shopping-link, [data-continue-shopping]').forEach(link => {
             link.setAttribute('href', target);
         });

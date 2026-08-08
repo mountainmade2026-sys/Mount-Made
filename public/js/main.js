@@ -398,6 +398,26 @@ const auth = {
     return '/';
   },
 
+  getRouteFor(type) {
+    const map = {
+      home: '/wholesale',
+      products: '/wholesale',
+      catalog: '/wholesale',
+      cart: '/wholesale/cart',
+      checkout: '/wholesale/checkout',
+      orders: '/wholesale/orders'
+    };
+    if (this.isWholesale()) return map[type] || '/wholesale';
+    return {
+      home: '/',
+      products: '/products',
+      catalog: '/products',
+      cart: '/cart',
+      checkout: '/checkout',
+      orders: '/orders'
+    }[type] || '/';
+  },
+
   updateUI() {
     const authButtons = document.getElementById('auth-buttons');
     const userMenu = document.getElementById('user-menu');
@@ -661,9 +681,7 @@ const auth = {
     const productLinks = document.querySelectorAll('.navbar-menu a[href="/products"], .navbar-menu a[href="/wholesale#catalog"], .navbar-menu a[href="/wholesale/#catalog"]');
     productLinks.forEach(link => {
       if (this.isWholesale()) {
-        // Use hash-only links when already on the wholesale page to avoid reloads
-        const useHash = window.location.pathname.replace(/\/+$/, '') === '/wholesale' || window.location.pathname.replace(/\/+$/, '').startsWith('/wholesale/');
-        link.setAttribute('href', useHash ? '#catalog' : '/wholesale#catalog');
+        link.setAttribute('href', '/wholesale');
         link.textContent = 'Catalog';
       } else {
         link.setAttribute('href', '/products');
@@ -677,8 +695,7 @@ const auth = {
     const ordersLinks = document.querySelectorAll('a[href="/orders"]');
     ordersLinks.forEach(link => {
       if (this.isWholesale()) {
-        const useHash = window.location.pathname.replace(/\/+$/, '') === '/wholesale' || window.location.pathname.replace(/\/+$/, '').startsWith('/wholesale/');
-        link.setAttribute('href', useHash ? '#orders' : '/wholesale#orders');
+        link.setAttribute('href', '/wholesale/orders');
       } else {
         link.setAttribute('href', '/orders');
       }

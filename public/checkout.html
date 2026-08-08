@@ -3184,8 +3184,8 @@
             if (!modal || !content) return;
 
             const orderNumber = order?.order_number || '—';
-            const ordersUrl = auth.isWholesale && auth.isWholesale() ? '/wholesale#orders' : '/orders';
-            const catalogUrl = auth.isWholesale && auth.isWholesale() ? '/wholesale#catalog' : '/products';
+            const ordersUrl = auth.isWholesale && auth.isWholesale() ? '/wholesale/orders' : '/orders';
+            const catalogUrl = auth.isWholesale && auth.isWholesale() ? '/wholesale' : '/products';
 
             modal.classList.remove('hidden');
             content.innerHTML = `

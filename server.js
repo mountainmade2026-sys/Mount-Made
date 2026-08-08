@@ -242,7 +242,16 @@ app.use((req, res, next) => {
     if (method !== 'GET' && method !== 'HEAD') return next();
 
     const pathname = req.path || '/';
-    const wholesalePages = new Set(['/wholesale', '/wholesale.html']);
+    const wholesalePages = new Set([
+      '/wholesale',
+      '/wholesale.html',
+      '/wholesale/cart',
+      '/wholesale/cart.html',
+      '/wholesale/checkout',
+      '/wholesale/checkout.html',
+      '/wholesale/orders',
+      '/wholesale/orders.html'
+    ]);
     const adminPages = new Set(['/admin', '/admin.html']);
     const publicOnlyPages = new Set([
       '/',
@@ -255,6 +264,10 @@ app.use((req, res, next) => {
       '/products.html',
       '/orders',
       '/orders.html',
+      '/cart',
+      '/cart.html',
+      '/checkout',
+      '/checkout.html',
       '/contact',
       '/contact.html',
       '/login',
@@ -324,8 +337,11 @@ app.use((req, res, next) => {
 
     if (isPublicOnlyPage) {
       if (isApprovedWholesale) {
+        if (pathname === '/cart' || pathname === '/cart.html') return res.redirect(302, '/wholesale/cart');
+        if (pathname === '/checkout' || pathname === '/checkout.html') return res.redirect(302, '/wholesale/checkout');
+        if (pathname === '/orders' || pathname === '/orders.html') return res.redirect(302, '/wholesale/orders');
         const sendToCatalog = pathname === '/products' || pathname === '/products.html' || pathname === '/product-details' || pathname === '/product-details.html';
-        return res.redirect(302, sendToCatalog ? '/wholesale#catalog' : '/wholesale');
+        return res.redirect(302, sendToCatalog ? '/wholesale' : '/wholesale');
       }
       return next();
     }
@@ -806,6 +822,14 @@ app.get('/cart', (req, res) => {
   return sendHtmlPage(req, res, 'cart.html');
 });
 
+app.get('/wholesale/cart', (req, res) => {
+  return sendHtmlPage(req, res, 'cart.html');
+});
+
+app.get('/wholesale/cart.html', (req, res) => {
+  return sendHtmlPage(req, res, 'cart.html');
+});
+
 app.get('/admin', (req, res) => {
   return sendHtmlPage(req, res, 'admin.html');
 });
@@ -822,7 +846,23 @@ app.get('/checkout', (req, res) => {
   return sendHtmlPage(req, res, 'checkout.html');
 });
 
+app.get('/wholesale/checkout', (req, res) => {
+  return sendHtmlPage(req, res, 'checkout.html');
+});
+
+app.get('/wholesale/checkout.html', (req, res) => {
+  return sendHtmlPage(req, res, 'checkout.html');
+});
+
 app.get('/orders', (req, res) => {
+  return sendHtmlPage(req, res, 'orders.html');
+});
+
+app.get('/wholesale/orders', (req, res) => {
+  return sendHtmlPage(req, res, 'orders.html');
+});
+
+app.get('/wholesale/orders.html', (req, res) => {
   return sendHtmlPage(req, res, 'orders.html');
 });
 

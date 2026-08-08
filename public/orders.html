@@ -596,8 +596,9 @@
             _ordersCache = data.orders || [];
             const container = document.getElementById('orders-list');
             
+            const emptyStartPath = (auth && typeof auth.isWholesale === 'function' && auth.isWholesale()) ? '/wholesale' : '/products';
             if (!data.orders || data.orders.length === 0) {
-                container.innerHTML = '<div class="card"><div class="card-content text-center"><p>You have no orders yet</p><a href="/products" class="btn btn-primary mt-2">Start Shopping</a></div></div>';
+                container.innerHTML = '<div class="card"><div class="card-content text-center"><p>You have no orders yet</p><a href="' + emptyStartPath + '" class="btn btn-primary mt-2">Start Shopping</a></div></div>';
                 return;
             }
             
